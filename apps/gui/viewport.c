@@ -97,7 +97,6 @@ static void set_clear_update_valid_vp(enum screen_type screen, struct viewport *
     {
         screens[screen].set_viewport(vp);
         screens[screen].clear_viewport();
-        screens[screen].update_viewport();
     }
 }
 

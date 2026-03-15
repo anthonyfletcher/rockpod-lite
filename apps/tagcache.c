@@ -2362,6 +2362,10 @@ static void NO_INLINE add_tagcache(char *path, unsigned long mtime)
         return ;
     }
 
+    /* Skip files with video tracks (e.g. music videos in MP4 containers) */
+    if (id3.has_video)
+        return ;
+
     logf("-> %s", path);
 
     if (id3.tracknum < 0)              /* Track number missing? */

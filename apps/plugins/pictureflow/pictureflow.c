@@ -4640,7 +4640,7 @@ static void draw_album_text(void)
     int c;
     /* Draw album text */
     if ( pf_state == pf_scrolling ) {
-        c = ((slide_frame & 0xffff )/ 255);
+        c = fade;
         if (step < 0) c = 255-c;
         if (c > 128 ) { /* half way to next slide .. still not perfect! */
             albumtxt_index = center_index+step;
@@ -4675,7 +4675,9 @@ static void draw_album_text(void)
 #else
     mylcd_set_foreground(G_BRIGHT(c));
 #endif
-    if (albumtxt_index != prev_albumtxt_index || pf_cfg.show_year != prev_show_year) {
+    bool album_changed = (albumtxt_index != prev_albumtxt_index
+                         || pf_cfg.show_year != prev_show_year);
+    if (album_changed) {
         set_scroll_line(album_and_year, PF_SCROLL_ALBUM);
         prev_albumtxt_index = albumtxt_index;
         prev_show_year = pf_cfg.show_year;
@@ -4710,7 +4712,8 @@ static void draw_album_text(void)
             mylcd_putsxy(albumtxt_x, albumtxt_y, album_and_year);
 
         artisttxt = get_album_artist(albumtxt_index);
-        set_scroll_line(artisttxt, PF_SCROLL_ARTIST);
+        if (album_changed)
+            set_scroll_line(artisttxt, PF_SCROLL_ARTIST);
         artisttxt_x = get_scroll_line_offset(PF_SCROLL_ARTIST);
         int y_offset = char_height * 3 / 4;
         mylcd_putsxy(artisttxt_x, albumtxt_y + y_offset, artisttxt);

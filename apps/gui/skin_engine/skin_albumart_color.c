@@ -32,10 +32,11 @@
 #include "appevents.h"
 #include "skin_albumart_color.h"
 
-#define AA_FADE_DURATION  (HZ / 2)   /* 500ms */
+#define AA_FADE_DURATION  (HZ / 4)   /* 250ms */
 #define HISTOGRAM_BUCKETS 4096
 #define SAMPLE_STRIDE     4          /* sample every 4th pixel */
 #define MIN_CONTRAST      100        /* minimum luminance contrast 0-255 */
+#define SATURATION_BASE   8          /* base score for unsaturated colors */
 #define NO_ART_TIMEOUT    HZ         /* 1s timeout before concluding no art */
 
 #ifndef MIN
@@ -168,9 +169,9 @@ static void extract_colors(const struct bitmap *bmp)
             histogram[bucket]++;
     }
 
-    /* Find dominant bucket (skip near-black and near-white) */
+    /* Find dominant bucket (skip near-black/near-white, prefer saturated) */
     int best_bucket = -1;
-    uint16_t best_count = 0;
+    unsigned int best_score = 0;
     int fallback_bucket = -1;
     uint16_t fallback_count = 0;
 
@@ -195,10 +196,21 @@ static void extract_colors(const struct bitmap *bmp)
             continue;
         if (r4 > 13 && g4 > 13 && b4 > 13)
             continue;
+        /* Skip very dark colors regardless of hue */
+        int lum4 = (r4 * 5 + g4 * 9 + b4 * 2) >> 4;
+        if (lum4 < 2)
+            continue;
 
-        if (histogram[i] > best_count)
+        /* Score by count weighted by saturation (vibrant colors preferred) */
+        int max_c = MAX(MAX(r4, g4), b4);
+        int min_c = MIN(MIN(r4, g4), b4);
+        int sat = max_c > 0 ? ((max_c - min_c) * 15) / max_c : 0;
+        unsigned int score = (unsigned int)histogram[i]
+                           * (sat + SATURATION_BASE) / SATURATION_BASE;
+
+        if (score > best_score)
         {
-            best_count = histogram[i];
+            best_score = score;
             best_bucket = i;
         }
     }
@@ -235,9 +247,9 @@ static void extract_colors(const struct bitmap *bmp)
     unsigned int dominant = LCD_RGBPACK(dom_r, dom_g, dom_b);
     int dom_lum = compute_luminance(dom_r, dom_g, dom_b);
 
-    /* Find accent: best-count bucket with sufficient contrast */
+    /* Find accent: best-scored bucket with sufficient contrast */
     int accent_bucket = -1;
-    uint16_t accent_count = 0;
+    unsigned int accent_score = 0;
 
     for (i = 0; i < HISTOGRAM_BUCKETS; i++)
     {
@@ -255,10 +267,20 @@ static void extract_colors(const struct bitmap *bmp)
         int lum = compute_luminance(r8, g8, b8);
 
         int contrast = dom_lum > lum ? dom_lum - lum : lum - dom_lum;
-        if (contrast >= MIN_CONTRAST && histogram[i] > accent_count)
+        if (contrast >= MIN_CONTRAST)
         {
-            accent_count = histogram[i];
-            accent_bucket = i;
+            /* Score by count weighted by saturation */
+            int max_c = MAX(MAX(r4, g4), b4);
+            int min_c = MIN(MIN(r4, g4), b4);
+            int sat = max_c > 0 ? ((max_c - min_c) * 15) / max_c : 0;
+            unsigned int score = (unsigned int)histogram[i]
+                               * (sat + SATURATION_BASE) / SATURATION_BASE;
+
+            if (score > accent_score)
+            {
+                accent_score = score;
+                accent_bucket = i;
+            }
         }
     }
 
@@ -304,34 +326,30 @@ static void extract_colors(const struct bitmap *bmp)
         accent = LCD_RGBPACK(acc_r, acc_g, acc_b);
     }
 
-    /* Readability enforcement: push accent toward white/black if needed */
+    /* Readability enforcement: scale accent to hit target luminance
+     * while preserving hue (proportional channel scaling) */
     int acc_lum = compute_luminance(acc_r, acc_g, acc_b);
     int contrast = dom_lum > acc_lum ? dom_lum - acc_lum : acc_lum - dom_lum;
     if (contrast < MIN_CONTRAST)
     {
+        int target_lum;
         if (dom_lum < 128)
+            target_lum = MIN(dom_lum + MIN_CONTRAST, 255);
+        else
+            target_lum = MAX(dom_lum - MIN_CONTRAST, 0);
+
+        if (acc_lum > 0)
         {
-            /* Dark bg: push accent brighter */
-            while (contrast < MIN_CONTRAST && acc_lum < 255)
-            {
-                acc_r = MIN(acc_r + 8, 255);
-                acc_g = MIN(acc_g + 8, 255);
-                acc_b = MIN(acc_b + 8, 255);
-                acc_lum = compute_luminance(acc_r, acc_g, acc_b);
-                contrast = acc_lum - dom_lum;
-            }
+            int scale = (target_lum * 256) / acc_lum;
+            acc_r = MIN((acc_r * scale) >> 8, 255);
+            acc_g = MIN((acc_g * scale) >> 8, 255);
+            acc_b = MIN((acc_b * scale) >> 8, 255);
         }
         else
         {
-            /* Light bg: push accent darker */
-            while (contrast < MIN_CONTRAST && acc_lum > 0)
-            {
-                acc_r = MAX(acc_r - 8, 0);
-                acc_g = MAX(acc_g - 8, 0);
-                acc_b = MAX(acc_b - 8, 0);
-                acc_lum = compute_luminance(acc_r, acc_g, acc_b);
-                contrast = dom_lum - acc_lum;
-            }
+            acc_r = target_lum;
+            acc_g = target_lum;
+            acc_b = target_lum;
         }
         accent = LCD_RGBPACK(acc_r, acc_g, acc_b);
     }

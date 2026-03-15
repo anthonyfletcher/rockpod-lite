@@ -528,13 +528,6 @@ static void gwps_leave_wps(bool theme_enabled)
         {
 #ifdef HAVE_BACKDROP_IMAGE
             skin_backdrop_show(sb_get_backdrop(i));
-
-            /* Re-render SBS to update the backdrop buffer (including
-               dynamic colors) before toggle_theme() clears dead space
-               from the backdrop and flushes it to the LCD. */
-            skin_render_inhibit_flush(true);
-            skin_update(CUSTOM_STATUSBAR, i, SKIN_REFRESH_ALL);
-            skin_render_inhibit_flush(false);
 #endif
             viewportmanager_theme_undo(i, skin_has_sbs(gwps));
         }
