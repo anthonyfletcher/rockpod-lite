@@ -85,6 +85,9 @@ iriver_flash.c
 #if defined(IPOD_NANO2G)
 crypt_firmware.c
 #endif
+#if defined(IPOD_6G)
+h264_poc.c
+#endif
 #endif
 
 /* Overlays loaders */
