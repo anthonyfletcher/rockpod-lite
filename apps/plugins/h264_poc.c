@@ -140,14 +140,36 @@
 #define VPP_PP_CLEAR        (*(REG32_PTR_T)(VPP_POSTPROC_BASE + 0x3C0))
 #define VPP_PP_COMMIT       (*(REG32_PTR_T)(VPP_POSTPROC_BASE + 0x3D0))
 
-/* --- Clock / IRQ Constants --- */
+/* --- Clock / IRQ / Power Constants --- */
 
-/* Clock gate 57 enables the video decoder.
- * PWRCON(1) bit 25 (57 - 32 = 25).
- * Note: gate 57 is unnamed for S5L8702; S5L8720 labels it CLOCKGATE_TIMERF. */
+/* PWRCON(1) bit 25: clock gate for the video decoder region.
+ * RE found the firmware calling FUN_0036d3f0(0x39, 1, 1) which
+ * turns out to write GPIOCMD, not PWRCON. The actual PWRCON gate
+ * for these blocks is already enabled at boot (bit 25 = 0).
+ * Kept for reference. */
 #define CLOCKGATE_VDEC      57
 #define CLOCKGATE_VDEC_BIT  (1 << (CLOCKGATE_VDEC & 0x1f))
 #define CLOCKGATE_VDEC_REG  1  /* PWRCON(1) */
+
+/* GPIO power enable: the firmware sets GPIO port 7 pin 1 HIGH
+ * to physically power the video decoder (via GPIOCMD register).
+ * GPIO pin 57 = port (57>>3)=7, pin (57&7)=1.
+ * GPIOCMD value: (port << 16) | (pin << 8) | direction_value
+ *   0xf = output HIGH, 0xe = output LOW */
+#define VDEC_GPIO_PORT      7
+#define VDEC_GPIO_PIN       1
+#define GPIOCMD_OUTPUT_HI   0x0f
+#define GPIOCMD_OUTPUT_LO   0x0e
+#define VDEC_GPIO_CMD_ON    ((VDEC_GPIO_PORT << 16) | \
+                             (VDEC_GPIO_PIN << 8) | GPIOCMD_OUTPUT_HI)
+#define VDEC_GPIO_CMD_OFF   ((VDEC_GPIO_PORT << 16) | \
+                             (VDEC_GPIO_PIN << 8) | GPIOCMD_OUTPUT_LO)
+
+/* PWRCON(0) bit 6: suspected additional clock gate for video
+ * decoder blocks. In the log, bit 6 is SET (disabled) while
+ * the VPP writes don't persist. The IRAM function
+ * thunk_EXT_FUN_220043e8(1, 0x40) likely clears this bit. */
+#define VDEC_PWRCON0_BIT    (1 << 6)  /* 0x40 */
 
 /* IRQ 14 is the video decoder interrupt.
  * Note: Rockbox labels this IRQ_LCD.
@@ -261,6 +283,72 @@ static void vdec_clockgate(bool enable)
              CLOCKGATE_VDEC, enable ? 1 : 0);
 
     decoder_powered = enable;
+}
+
+/*
+ * Full power-on sequence discovered from firmware RE:
+ *
+ * 1. thunk_EXT_FUN_220043e8(1, 0x40) — likely clears PWRCON(0) bit 6
+ * 2. thunk_EXT_FUN_22002980()        — sync/barrier (unknown)
+ * 3. GPIO pin 57 (port 7 pin 1) → output HIGH via GPIOCMD
+ *
+ * This function attempts all discoverable power steps.
+ */
+static void vdec_full_power(bool enable)
+{
+    logf_msg("=== Full Power %s Sequence ===", enable ? "ON" : "OFF");
+
+    /* Step 1: PWRCON(1) bit 25 — clock gate */
+    vdec_clockgate(enable);
+
+    /* Step 2: PWRCON(0) bit 6 — suspected additional gate
+     * The IRAM function thunk_EXT_FUN_220043e8(1, 0x40) likely does this.
+     * 0x40 = bit 6 of PWRCON(0). */
+    {
+        uint32_t before = PWRCON(0);
+        if (enable)
+            PWRCON(0) &= ~VDEC_PWRCON0_BIT;
+        else
+            PWRCON(0) |= VDEC_PWRCON0_BIT;
+        uint32_t after = PWRCON(0);
+        logf_msg("PWRCON(0) bit 6: 0x%08lx -> 0x%08lx",
+                 (unsigned long)before, (unsigned long)after);
+    }
+
+    /* Step 3: GPIO power enable — port 7 pin 1
+     * FUN_0036d3f0(0x39, 1, 1) writes GPIOCMD to set this HIGH. */
+    if (enable)
+        GPIOCMD = VDEC_GPIO_CMD_ON;
+    else
+        GPIOCMD = VDEC_GPIO_CMD_OFF;
+    logf_msg("GPIOCMD = 0x%08lx (GPIO 7.1 %s)",
+             (unsigned long)(enable ? VDEC_GPIO_CMD_ON : VDEC_GPIO_CMD_OFF),
+             enable ? "HIGH" : "LOW");
+
+    /* Brief delay for clocks/power to stabilize */
+    rb->sleep(HZ / 10);
+
+    /* Log all PWRCON registers for analysis */
+    if (log_fd >= 0)
+    {
+        int i;
+        for (i = 0; i <= 4; i++)
+            rb->fdprintf(log_fd, "[%08lx]   PWRCON(%d) = 0x%08lx\n",
+                         *rb->current_tick, i, (unsigned long)PWRCON(i));
+    }
+
+    /* Verify: try writing a test value to scaler and read it back */
+    if (enable)
+    {
+        uint32_t test_before = VPP_SC_HSCALE;
+        VPP_SC_HSCALE = 0x8000000;
+        uint32_t test_after = VPP_SC_HSCALE;
+        logf_msg("Write test: SC_HSCALE 0x%08lx -> write 0x08000000 -> read 0x%08lx %s",
+                 (unsigned long)test_before, (unsigned long)test_after,
+                 (test_after == 0x8000000) ? "OK!" : "FAILED");
+    }
+
+    logf_msg("=== Full Power %s Done ===", enable ? "ON" : "OFF");
 }
 
 /*
@@ -409,10 +497,10 @@ static void vdec_dump_regs(void)
     logf_msg("PWRCON state:");
     if (log_fd >= 0)
     {
-        rb->fdprintf(log_fd, "[%08lx]   PWRCON(0) = 0x%08lx\n",
-                     *rb->current_tick, (unsigned long)PWRCON(0));
-        rb->fdprintf(log_fd, "[%08lx]   PWRCON(1) = 0x%08lx\n",
-                     *rb->current_tick, (unsigned long)PWRCON(1));
+        int i;
+        for (i = 0; i <= 4; i++)
+            rb->fdprintf(log_fd, "[%08lx]   PWRCON(%d) = 0x%08lx\n",
+                         *rb->current_tick, i, (unsigned long)PWRCON(i));
     }
 
     logf_msg("VIC status for IRQ %d (video decoder):", IRQ_VDEC);
@@ -713,13 +801,13 @@ static void h264_submit_slice(
  */
 
 enum menu_action {
-    MENU_POWER_ON = 0,
+    MENU_FULL_POWER_ON = 0,
     MENU_READ_STATUS,
     MENU_INIT_VPP,
+    MENU_DUMP_REGS,
     MENU_SHUTDOWN_VPP,
     MENU_CLEAR_IRQS,
-    MENU_DUMP_REGS,
-    MENU_POWER_OFF,
+    MENU_FULL_POWER_OFF,
     MENU_QUIT,
 };
 
@@ -732,31 +820,37 @@ enum plugin_status plugin_start(const void *parameter)
     struct vdec_status st;
 
     MENUITEM_STRINGLIST(menu, "H264 Video Decoder PoC", NULL,
-                        "Power ON (clkgate 57)",
+                        "FULL Power ON (gate+GPIO)",
                         "Read HW status",
                         "Init VPP pipeline",
+                        "Dump all regs -> log",
                         "Shutdown VPP",
                         "Clear IRQs",
-                        "Dump all regs -> log",
-                        "Power OFF (clkgate 57)",
+                        "FULL Power OFF",
                         "Quit");
 
     log_open();
-    logf_msg("Plugin started. PWRCON(1)=0x%08lx", (unsigned long)PWRCON(1));
+    logf_msg("Plugin started");
+    if (log_fd >= 0)
+    {
+        int i;
+        for (i = 0; i <= 4; i++)
+            rb->fdprintf(log_fd, "[%08lx]   PWRCON(%d) = 0x%08lx\n",
+                         *rb->current_tick, i, (unsigned long)PWRCON(i));
+    }
 
     while (!quit)
     {
         switch (rb->do_menu(&menu, &selection, NULL, false))
         {
-            case MENU_POWER_ON:
+            case MENU_FULL_POWER_ON:
                 if (decoder_powered)
                 {
                     rb->splash(HZ, "Already powered on");
                     break;
                 }
-                vdec_clockgate(true);
-                rb->sleep(HZ / 10);  /* let clocks stabilize */
-                rb->splash(HZ, "Decoder clock enabled");
+                vdec_full_power(true);
+                rb->splash(HZ, "Full power sequence done");
                 break;
 
             case MENU_READ_STATUS:
@@ -801,12 +895,12 @@ enum plugin_status plugin_start(const void *parameter)
                 vdec_dump_regs();
                 break;
 
-            case MENU_POWER_OFF:
+            case MENU_FULL_POWER_OFF:
                 if (pipeline_active)
                     vpp_shutdown_pipeline();
                 if (decoder_powered)
-                    vdec_clockgate(false);
-                rb->splash(HZ, "Decoder clock disabled");
+                    vdec_full_power(false);
+                rb->splash(HZ, "Full power off done");
                 break;
 
             case MENU_QUIT:
@@ -824,8 +918,8 @@ enum plugin_status plugin_start(const void *parameter)
     }
     if (decoder_powered)
     {
-        logf_msg("Cleanup: disabling decoder clock gate");
-        vdec_clockgate(false);
+        logf_msg("Cleanup: full power off");
+        vdec_full_power(false);
     }
 
     logf_msg("Plugin exit OK");
