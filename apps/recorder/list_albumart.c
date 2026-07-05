@@ -34,10 +34,13 @@
 
 #ifdef HAVE_ALBUMART
 
+#include <stdint.h>
 #include "string-extra.h"
 #include "system.h"
 #include "kernel.h"
 #include "file.h"
+#include "dir.h"
+#include "rbpaths.h"
 #include "core_alloc.h"
 #include "metadata.h"
 #include "albumart.h"
@@ -50,6 +53,21 @@
 /* Sized for the rows visible on screen plus a small scroll lookahead;
  * this is a browse-time cache, not a whole-library index. */
 #define AA_CACHE_SIZE 12
+
+/* On-disk cache of decoded thumbnails, so a repeat visit (even in a later
+ * session) can skip both find_albumart()'s filesystem probing and the
+ * JPEG/BMP decode. Format/naming mirrors apps/plugins/pictureflow's "pfraw"
+ * scheme (raw native-format pixels behind a tiny width/height header),
+ * adapted to core calls instead of the plugin API, plus a size suffix since
+ * unlike PictureFlow's single fixed slide size, different themes can request
+ * %La at different dimensions. */
+#define AA_CACHE_DIR ROCKBOX_DIR "/database_art_cache"
+
+struct pfraw_header
+{
+    int32_t width;
+    int32_t height;
+};
 
 struct aa_cache_entry
 {
@@ -103,6 +121,112 @@ static struct aa_cache_entry *claim_slot(void)
     return e;
 }
 
+/* FNV-1a-ish hash, matches apps/plugins/pictureflow/pictureflow.c's mfnv()
+ * so the same style of filename derivation is used for both caches. */
+static unsigned int fnv_hash(const char *str)
+{
+    const unsigned int p = 16777619;
+    unsigned int hash = 0x811C9DC5;
+
+    if (!str)
+        return 0;
+
+    while (*str)
+        hash = (hash ^ (unsigned char)*str++) * p;
+    hash += hash << 13;
+    hash ^= hash >> 7;
+    hash += hash << 3;
+    hash ^= hash >> 17;
+    hash += hash << 5;
+    return hash;
+}
+
+/* Builds the pfraw cache path for (album, albumartist, size). Returns false
+ * for an untagged album (no album string) rather than caching it -- both
+ * hashing to 0 would collide every untagged album onto the same file. */
+static bool get_pfraw_path(char *buf, size_t buflen, const char *album,
+                           const char *albumartist, const struct dim *size)
+{
+    if (!album || !album[0])
+        return false;
+
+    snprintf(buf, buflen, AA_CACHE_DIR "/%x%x_%dx%d.pfraw",
+              fnv_hash(album), fnv_hash(albumartist),
+              size->width, size->height);
+    return true;
+}
+
+static bool save_pfraw(const char *path, const struct bitmap *bm)
+{
+    struct pfraw_header hdr;
+    int fd;
+
+    if (!dir_exists(AA_CACHE_DIR))
+        mkdir(AA_CACHE_DIR);
+
+    hdr.width = bm->width;
+    hdr.height = bm->height;
+
+    fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (fd < 0)
+        return false;
+
+    write(fd, &hdr, sizeof(hdr));
+    write(fd, bm->data, sizeof(fb_data) * bm->width * bm->height);
+    close(fd);
+    return true;
+}
+
+/* Reads a previously-saved pfraw file straight into a fresh core_alloc
+ * buffer -- no JPEG/BMP decode needed on a cache hit. Rejects a file whose
+ * stored dimensions don't match what's being requested now (a different
+ * theme/viewport size reusing the same album+artist hash). */
+static bool read_pfraw(const char *path, struct aa_cache_entry *e,
+                       const struct dim *requested_size)
+{
+    struct pfraw_header hdr;
+    int fd, handle;
+    size_t size;
+
+    fd = open(path, O_RDONLY);
+    if (fd < 0)
+        return false;
+
+    if (read(fd, &hdr, sizeof(hdr)) != (ssize_t)sizeof(hdr) ||
+        hdr.width != requested_size->width ||
+        hdr.height != requested_size->height)
+    {
+        close(fd);
+        return false;
+    }
+
+    size = sizeof(fb_data) * hdr.width * hdr.height;
+    handle = core_alloc(size);
+    if (handle < 0)
+    {
+        close(fd);
+        return false;
+    }
+
+    e->bmp.width = hdr.width;
+    e->bmp.height = hdr.height;
+    e->bmp.data = core_get_data(handle);
+#if LCD_DEPTH > 1 || (defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1)
+    e->bmp.maskdata = NULL;
+#endif
+
+    if (read(fd, e->bmp.data, size) != (ssize_t)size)
+    {
+        close(fd);
+        core_free(handle);
+        return false;
+    }
+    close(fd);
+
+    e->handle = handle;
+    return true;
+}
+
 static bool decode_art(const char *path, struct aa_cache_entry *e,
                        const struct dim *requested_size)
 {
@@ -150,6 +274,8 @@ const struct bitmap *list_albumart_get_bitmap(const char *path,
     struct aa_cache_entry *e = find_entry(row_key);
     struct mp3entry id3;
     char art_path[MAX_PATH];
+    char pfraw_path[MAX_PATH];
+    bool have_pfraw_path;
     bool found;
 
     if (e)
@@ -161,6 +287,22 @@ const struct bitmap *list_albumart_get_bitmap(const char *path,
         return &e->bmp;
     }
 
+    e = claim_slot();
+    e->row_key = row_key;
+    e->valid = true;
+    e->last_used_tick = current_tick;
+
+    /* Disk-cache fast path: skip both find_albumart()'s filesystem probing
+     * and the image decode entirely if we've already resolved this album
+     * before (even in an earlier session). */
+    have_pfraw_path = get_pfraw_path(pfraw_path, sizeof(pfraw_path),
+                                     album, albumartist, requested_size);
+    if (have_pfraw_path && read_pfraw(pfraw_path, e, requested_size))
+    {
+        e->has_art = true;
+        return &e->bmp;
+    }
+
     memset(&id3, 0, sizeof(id3));
     strlcpy(id3.path, path, sizeof(id3.path));
     id3.album = (album && album[0]) ? (char *)album : NULL;
@@ -168,16 +310,14 @@ const struct bitmap *list_albumart_get_bitmap(const char *path,
 
     found = find_albumart(&id3, art_path, sizeof(art_path), requested_size);
 
-    e = claim_slot();
-    e->row_key = row_key;
-    e->valid = true;
-    e->last_used_tick = current_tick;
-
     if (!found || !decode_art(art_path, e, requested_size))
     {
         e->has_art = false;
         return NULL;
     }
+
+    if (have_pfraw_path)
+        save_pfraw(pfraw_path, &e->bmp);
 
     e->has_art = true;
     return &e->bmp;

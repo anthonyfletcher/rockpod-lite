@@ -33,8 +33,10 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 #include "config.h"
+#include "pcm.h"
 #include "pcm_mixer.h"
 #include "fixedpoint.h"
 #include "spectrum_meter.h"
