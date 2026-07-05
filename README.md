@@ -2,12 +2,12 @@ Rockpod is a [Rockbox](https://www.rockbox.org) fork for iPod Classic (6th/7th g
 
 Rockpod Lite is a trimmed-down version with the following key changes:
 - Almost all plugins removed - if you want to play doom on your iPod, you might need help.
-- Database views promoted to the main menu
+- Database views promoted to the main menu (renamed to Music)
 - Modified Themify 2 embedded as the default theme
-- Album art icons in the albums database view (skinnable)
+- Album art icons in the albums view (skinnable)
 - Small spectrum visualizer added to UI (skinnable)
-- Improved "Now playing" album art cache usage
-- Toggle off for reflection in PictureFlow
+- Improved "Now playing" album art cache usage when playing through the same albumLas
+- Toggle off for reflection in PictureFlow (default off)
 
 ## Credits
 

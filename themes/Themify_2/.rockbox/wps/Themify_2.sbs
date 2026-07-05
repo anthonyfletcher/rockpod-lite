@@ -233,12 +233,21 @@
 # glyphs sized specifically for the 30px row height used elsewhere.
 #
 %Vl(Album_List,0,0,302,56,-)%?Lc<%Vs(invert)%dr(0,0,-,-)>
-%Vl(Album_List,4,4,48,48,-)%La
-%Vl(Album_List,60,17,238,22,4)%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT
+# The "[By album]"/"[All tracks]"/"[Random]" rows tagtree.c inserts ahead of
+# real albums aren't albums, so they get a plain row -- no art gutter, text
+# using the full row width -- instead of the art+title layout below. The row
+# itself is still 56px tall like every other row in this list (Rockbox's list
+# widget uses one fixed item height for the whole list, so per-row height
+# isn't something a theme can vary), but at least it isn't drawing an empty
+# art square for these.
+%Vl(Album_List,4,4,48,48,-)%?and(%if(%LT,!=,%Sx([All tracks])),%if(%LT,!=,%Sx([Random])),%if(%LT,!=,%Sx([By album])))<%La>
+%Vl(Album_List,60,17,238,22,4)%?and(%if(%LT,!=,%Sx([All tracks])),%if(%LT,!=,%Sx([Random])),%if(%LT,!=,%Sx([By album])))<%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT>
+%Vl(Album_List,8,17,286,22,4)%?or(%if(%LT,=,%Sx([All tracks])),%if(%LT,=,%Sx([Random])),%if(%LT,=,%Sx([By album])))<%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT>
 #
 %Vl(No_Scroll_Album_List,0,0,314,56,-)%?Lc<%Vs(invert)%dr(0,0,-,-)>
-%Vl(No_Scroll_Album_List,4,4,48,48,-)%La
-%Vl(No_Scroll_Album_List,60,17,250,22,4)%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT
+%Vl(No_Scroll_Album_List,4,4,48,48,-)%?and(%if(%LT,!=,%Sx([All tracks])),%if(%LT,!=,%Sx([Random])),%if(%LT,!=,%Sx([By album])))<%La>
+%Vl(No_Scroll_Album_List,60,17,250,22,4)%?and(%if(%LT,!=,%Sx([All tracks])),%if(%LT,!=,%Sx([Random])),%if(%LT,!=,%Sx([By album])))<%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT>
+%Vl(No_Scroll_Album_List,8,17,298,22,4)%?or(%if(%LT,=,%Sx([All tracks])),%if(%LT,=,%Sx([Random])),%if(%LT,=,%Sx([By album])))<%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT>
 #
 #
 #-- Rounded Corners on menus --#

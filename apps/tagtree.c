@@ -2042,6 +2042,34 @@ static int load_root(struct tree_context *c)
     return i;
 }
 
+/* Set by tagtree_enter_by_tag_on_next_load(); consumed the next time
+ * tagtree_load() sees a fresh root load. -1 means none armed. */
+static int pending_root_shortcut_tag = -1;
+
+void tagtree_enter_by_tag_on_next_load(int tag)
+{
+    pending_root_shortcut_tag = tag;
+}
+
+/* Finds the row in the currently-loaded root ("main") menu whose first tag
+ * matches 'tag' (e.g. tag_album), independent of tagnavi.config's row order.
+ * Returns the row index, or -1 if not found. Must be called after load_root()
+ * has populated 'menu'. */
+static int tagtree_find_root_entry_by_tag(int tag)
+{
+    int i;
+    if (!menu)
+        return -1;
+    for (i = 0; i < menu->itemcount; i++)
+    {
+        if (menu->items[i]->type == menu_next &&
+            menu->items[i]->si.tagorder_count > 0 &&
+            menu->items[i]->si.tagorder[0] == tag)
+            return i;
+    }
+    return -1;
+}
+
 int tagtree_load(struct tree_context* c)
 {
     logf( "%s", __func__);
@@ -2057,6 +2085,29 @@ int tagtree_load(struct tree_context* c)
         table = TABLE_ROOT;
         c->currtable = table;
         c->currextra = rootmenu;
+    }
+
+    /* A shortcut (e.g. root_menu.c's Artists/Albums/Genres entries) armed a
+     * jump straight into a specific tag's browse table. This must happen
+     * here, on the first load of a fresh root, rather than before
+     * rockbox_browse() is called -- rockbox_browse() unconditionally resets
+     * dirlevel/selected_item to 0 for any ID3-DB entry (tree.c), which would
+     * silently discard a dirlevel bump made any earlier. */
+    if (pending_root_shortcut_tag != -1 && table == TABLE_ROOT && c->dirlevel == 0)
+    {
+        int target_tag = pending_root_shortcut_tag;
+        pending_root_shortcut_tag = -1;
+
+        load_root(c);
+        int idx = tagtree_find_root_entry_by_tag(target_tag);
+        if (idx >= 0)
+        {
+            c->selected_item = idx;
+            tagtree_enter(c, false);
+            return tagtree_load(c);
+        }
+        /* Tag not found (e.g. removed from tagnavi_user.config) -- fall
+         * through and show the root menu instead of a blank screen. */
     }
 
     switch (table)

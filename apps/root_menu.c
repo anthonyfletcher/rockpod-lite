@@ -311,22 +311,24 @@ static int browser(void* param)
             filter = SHOW_ID3DB;
             last_ft_dirlevel = tc->dirlevel;
             /* Jump straight into the Artist/Album/Genre branch of the
-             * Database's root menu (apps/tagnavi.config's fixed order:
-             * 0=Album Artist, 1=Artist, 2=Album, 3=Genre, ...), independent
-             * of the plain Database entry's own last_db_dirlevel/selection
-             * resume memory. */
-            tc->dirlevel = 0;
-            tc->currtable = 0; /* tagtree_load() defaults an unset table to
-                                  TABLE_ROOT + the configured root menu */
-            tagtree_load(tc);
-            switch ((intptr_t)param)
+             * Database's root menu, independent of the plain Database
+             * entry's own last_db_dirlevel/selection resume memory. Looked
+             * up by tag identity (not position) so it survives
+             * tagnavi.config reordering, and armed for tagtree_load() to
+             * apply on its next fresh root load -- rockbox_browse() (called
+             * below) unconditionally resets dirlevel/selected_item to 0 for
+             * any ID3-DB entry, so doing this before that call would just
+             * get discarded. */
             {
-                case GO_TO_ARTISTS: tc->selected_item = 1; break;
-                case GO_TO_ALBUMS:  tc->selected_item = 2; break;
-                case GO_TO_GENRES:  tc->selected_item = 3; break;
+                int target_tag;
+                switch ((intptr_t)param)
+                {
+                    case GO_TO_ARTISTS: target_tag = tag_virt_canonicalartist; break;
+                    case GO_TO_ALBUMS:  target_tag = tag_album; break;
+                    default:            target_tag = tag_genre; break;
+                }
+                tagtree_enter_by_tag_on_next_load(target_tag);
             }
-            tagtree_enter(tc, false);
-            tagtree_load(tc);
             push_current_activity(ACTIVITY_DATABASEBROWSER);
         break;
 #endif /*HAVE_TAGCACHE*/
@@ -589,7 +591,7 @@ MENUITEM_RETURNVALUE(shortcut_menu, ID2P(LANG_SHORTCUTS), GO_TO_SHORTCUTMENU,
 MENUITEM_RETURNVALUE(file_browser, ID2P(LANG_DIR_BROWSER), GO_TO_FILEBROWSER,
                         NULL, Icon_file_view_menu);
 #ifdef HAVE_TAGCACHE
-MENUITEM_RETURNVALUE(db_browser, ID2P(LANG_TAGCACHE), GO_TO_DBBROWSER,
+MENUITEM_RETURNVALUE(db_browser, "Music", GO_TO_DBBROWSER,
                         NULL, Icon_Audio);
 MENUITEM_RETURNVALUE(pictureflow_item, "Cover Flow", GO_TO_PICTUREFLOW,
                         NULL, Icon_Rockbox);

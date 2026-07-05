@@ -183,6 +183,14 @@ enum plugin_status plugin_start(const void* parameter)
     menu_table = rb->root_menu_get_options(&menu_item_count);
     load_from_cfg();
 
+    /* This screen builds its own gui_synclist directly instead of going
+     * through rb->do_menu() (it needs custom OK-to-toggle and a
+     * move-up/down context menu, which don't fit do_menu()'s model), so it
+     * has to enable theme rendering itself -- otherwise it draws with the
+     * bare, unthemed list style instead of the theme's menu skin. */
+    FOR_NB_SCREENS(i)
+        rb->viewportmanager_theme_enable(i, true, NULL);
+
     rb->gui_synclist_init(&list, menu_get_name, NULL, false, 1, NULL);
     if (rb->global_settings->talk_menu)
         rb->gui_synclist_set_voice_callback(&list, menu_speak_item);
@@ -275,6 +283,9 @@ enum plugin_status plugin_start(const void* parameter)
         rb->settings_save();
     }
     rb->global_settings->show_icons = show_icons;
+
+    FOR_NB_SCREENS(i)
+        rb->viewportmanager_theme_undo(i, false);
 
     return ret;
 }

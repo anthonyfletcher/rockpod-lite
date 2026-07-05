@@ -45,6 +45,12 @@ char *tagtree_get_title(struct tree_context* c);
 int tagtree_get_attr(struct tree_context* c);
 int tagtree_get_icon(struct tree_context* c);
 bool tagtree_currtable_is_albums(struct tree_context* c);
+/* Arms a one-shot jump: the next time tagtree_load() sees a fresh root load
+ * (dirlevel 0, TABLE_ROOT), it enters the root menu's row whose first tag
+ * matches 'tag' (e.g. tag_album), looked up by tag identity rather than
+ * position so it's robust to tagnavi.config reordering. Used by
+ * root_menu.c's Artists/Albums/Genres shortcuts. */
+void tagtree_enter_by_tag_on_next_load(int tag);
 int tagtree_get_filename(struct tree_context* c, char *buf, int buflen);
 int tagtree_get_albumart_path(struct tree_context* c, int id,
                                char *path_buf, size_t path_buflen,

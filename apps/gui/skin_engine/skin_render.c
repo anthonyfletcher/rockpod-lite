@@ -357,6 +357,15 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                 if (bar_w < 1)
                     bar_w = 1;
 
+                /* This is a partial (~20fps) refresh, not a full redraw, so
+                 * nothing else clears stale pixels between frames -- without
+                 * this, a shrinking bar leaves the previous, taller fill in
+                 * place next to the new, shorter one. Buffer-only op (no
+                 * lcd_update() here), so it doesn't cause a visible blank
+                 * frame -- the actual screen push happens once, after this
+                 * whole token pass completes. */
+                gwps->display->clear_viewport();
+
                 gwps->display->set_drawmode(DRMODE_SOLID);
                 for (i = 0; i < sb->bars; i++)
                 {
@@ -365,13 +374,17 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                     int x = i * (bar_w + gap);
                     int y;
 
+                    /* Always show at least a sliver -- a fully-empty gap
+                     * reads as "the meter stopped", not "it's quiet". */
+                    if (bar_h < 1)
+                        bar_h = 1;
+
                     if (sb->center_aligned)
                         y = (vp_h - bar_h) / 2;
                     else
                         y = vp_h - bar_h;
 
-                    if (bar_h > 0)
-                        gwps->display->fillrect(x, y, bar_w, bar_h);
+                    gwps->display->fillrect(x, y, bar_w, bar_h);
                 }
             }
             break;
@@ -1024,6 +1037,19 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
         }
         else if ((skin_viewport->hidden_flags&VP_DRAW_HIDDEN))
         {
+            /* On the frame this viewport *becomes* hidden (not on every
+             * subsequent frame it stays hidden -- VP_DRAW_WASHIDDEN not set
+             * yet distinguishes the two), clear whatever it last drew.
+             * Otherwise its content lingers on screen indefinitely: nothing
+             * else in this loop touches a hidden viewport's screen region,
+             * and the matching "just reappeared" branch below only clears
+             * *itself* when *it* next becomes visible again -- which may be
+             * a mutually-exclusive alternate viewport that never does. */
+            if (!(skin_viewport->hidden_flags & VP_DRAW_WASHIDDEN))
+            {
+                display->set_viewport_ex(&skin_viewport->vp, VP_FLAG_VP_SET_CLEAN);
+                display->clear_viewport();
+            }
             skin_viewport->hidden_flags |= VP_DRAW_WASHIDDEN;
             continue;
         }

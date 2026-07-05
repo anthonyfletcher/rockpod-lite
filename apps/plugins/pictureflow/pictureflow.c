@@ -767,7 +767,9 @@ static void config_set_defaults(struct pf_config_t *cfg)
      cfg->num_slides = 4;   /* 3 visible + 1 animation buffer per side */
      cfg->zoom = 100;
      cfg->show_fps = false;
-     cfg->auto_wps = 0;
+     cfg->auto_wps = 2; /* Via Track List: switch to the WPS when a specific
+                         * track is picked, but keep showing the track list
+                         * when just browsing into an album. */
      cfg->last_album = 0;
 
      cfg->resize = true;
