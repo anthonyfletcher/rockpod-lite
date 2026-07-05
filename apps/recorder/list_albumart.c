@@ -35,6 +35,7 @@
 #ifdef HAVE_ALBUMART
 
 #include <stdint.h>
+#include <stdio.h>
 #include "string-extra.h"
 #include "system.h"
 #include "kernel.h"
