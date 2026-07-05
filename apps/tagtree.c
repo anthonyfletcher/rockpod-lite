@@ -84,6 +84,14 @@ struct tagentry {
     int extraseek;
     int customaction;
     char* album_name;
+    int idx_id; /* master index id (tagcache_search.idx_id) -- distinct from
+                 * extraseek: for a grouping row (e.g. an album listing),
+                 * extraseek holds that tag's own result_seek (used for
+                 * filtering a nested search), while idx_id is the value
+                 * tagcache_retrieve() actually needs to look up a *different*
+                 * tag (filename, albumartist) for this row's representative
+                 * track. Only extraseek happens to equal idx_id already for
+                 * track-level (tag_title/tag_filename) rows. */
 };
 
 static struct tagentry* tagtree_get_entry(struct tree_context *c, int id);
@@ -1714,44 +1722,42 @@ static int retrieve_entries(struct tree_context *c, int offset, bool init)
     tree_lock_cache(c);
     struct tagentry *dptr = core_get_data(c->cache.entries_handle);
 
-    if (tag != tag_title && tag != tag_filename)
+    /* Albums specifically skip the special "[By album]"/"[All Tracks]"/
+     * "[Random]" rows every other grouping level (artist/genre/composer/
+     * year/...) still gets: Rockbox's list widget uses one fixed row height
+     * for an entire list, so there's no way to visually shrink just these
+     * rows back down to plain-text size while the rest of the Albums list
+     * uses taller, art-thumbnail rows -- they'd always look like oversized
+     * blank rows above the real albums. Removing them here also means the
+     * "[By album]" flattened, disc/track-sorted view of every track (
+     * TABLE_ALLSUBENTRIES_SORTED_BY_ALBUMS) is no longer reachable, since
+     * this was its only entry point. */
+    if (tag != tag_title && tag != tag_filename && tag != tag_album)
     {
-        bool show_album_sorted = (tag == tag_album);
-        int show_album_sorted_offset = (show_album_sorted ? 1 : 0);
-        if (offset == 0 && show_album_sorted)
-        {
-            dptr->newtable = TABLE_ALLSUBENTRIES_SORTED_BY_ALBUMS;
-            dptr->name = ID2P(LANG_TAGNAVI_ALL_TRACKS_SORTED_BY_ALBUM);
-            dptr->extraseek = 0;
-            dptr->customaction = ONPLAY_NO_CUSTOMACTION;
-            dptr++;
-            current_entry_count++;
-            c->special_entry_count++;
-        }
-        if (offset <= (show_album_sorted_offset))
+        if (offset <= 0)
         {
             dptr->newtable = TABLE_ALLSUBENTRIES;
             dptr->name = ID2P(LANG_TAGNAVI_ALL_TRACKS);
             dptr->extraseek = 0;
             dptr->customaction = ONPLAY_NO_CUSTOMACTION;
+            dptr->idx_id = 0;
             dptr++;
             current_entry_count++;
             c->special_entry_count++;
         }
-        if (offset <= (1 + show_album_sorted_offset))
+        if (offset <= 1)
         {
             dptr->newtable = TABLE_NAVIBROWSE;
             dptr->name = ID2P(LANG_TAGNAVI_RANDOM);
             dptr->extraseek = -1;
             dptr->customaction = ONPLAY_NO_CUSTOMACTION;
+            dptr->idx_id = 0;
             dptr++;
             current_entry_count++;
             c->special_entry_count++;
         }
 
         total_count += 2;
-        if (show_album_sorted)
-            total_count++;
     }
 
     while (tagcache_get_next(&tcs, tcs_buf, tcs_bufsz))
@@ -1768,6 +1774,7 @@ static int retrieve_entries(struct tree_context *c, int offset, bool init)
         else
             dptr->extraseek = tcs.result_seek;
         dptr->customaction = ONPLAY_NO_CUSTOMACTION;
+        dptr->idx_id = tcs.idx_id;
 
         fmt = NULL;
         /* Check the format */
@@ -2439,17 +2446,22 @@ int tagtree_get_albumart_path(struct tree_context* c, int id,
 {
     struct tagcache_search tcs;
     struct tagentry *entry = tagtree_get_entry(c, id);
-    int extraseek;
+    int idx_id;
 
     if (!entry)
         return -1;
 
-    extraseek = entry->extraseek;
+    /* entry->extraseek is NOT usable here for a grouping row (e.g. an album
+     * listing): it holds that tag's own result_seek (for filtering a nested
+     * search), not a master index id. entry->idx_id is the value
+     * tagcache_retrieve() actually needs to look up a different tag
+     * (filename, albumartist) for this row's representative track. */
+    idx_id = entry->idx_id;
 
     if (!tagcache_search(&tcs, tag_filename))
         return -1;
 
-    if (!tagcache_retrieve(&tcs, extraseek, tcs.type, path_buf, path_buflen))
+    if (!tagcache_retrieve(&tcs, idx_id, tcs.type, path_buf, path_buflen))
     {
         tagcache_search_finish(&tcs);
         return -2;
@@ -2461,7 +2473,7 @@ int tagtree_get_albumart_path(struct tree_context* c, int id,
     artist_buf[0] = '\0';
     if (tagcache_search(&tcs, tag_albumartist))
     {
-        tagcache_retrieve(&tcs, extraseek, tcs.type, artist_buf, artist_buflen);
+        tagcache_retrieve(&tcs, idx_id, tcs.type, artist_buf, artist_buflen);
         tagcache_search_finish(&tcs);
     }
 
@@ -2484,7 +2496,7 @@ bool tagtree_build_albumart_cache(const struct dim *size)
     char path[MAX_PATH];
     char artist[MAX_PATH];
     int total, current = 0;
-    int seek;
+    int idx_id;
 
     if (!tagcache_search(&tcs, tag_album))
         return false;
@@ -2515,23 +2527,26 @@ bool tagtree_build_albumart_cache(const struct dim *size)
         }
 
         current++;
-        splash_progress(current, total, "%s (%d/%d)",
-                         str(LANG_BUILDING_DATABASE), current, total);
+        splash_progress(current, total, "Building album art cache (%d/%d)",
+                         current, total);
 
         strlcpy(album_name, tcs.result, sizeof(album_name));
-        seek = tcs.result_seek;
+        /* tcs.result_seek is this row's position within the tag_album index
+         * (for filtering a nested search), not a master index id -- use
+         * tcs.idx_id, which is what tagcache_retrieve() actually expects. */
+        idx_id = tcs.idx_id;
 
         path[0] = '\0';
         if (tagcache_search(&tcs2, tag_filename))
         {
-            tagcache_retrieve(&tcs2, seek, tcs2.type, path, sizeof(path));
+            tagcache_retrieve(&tcs2, idx_id, tcs2.type, path, sizeof(path));
             tagcache_search_finish(&tcs2);
         }
 
         artist[0] = '\0';
         if (tagcache_search(&tcs2, tag_albumartist))
         {
-            tagcache_retrieve(&tcs2, seek, tcs2.type, artist, sizeof(artist));
+            tagcache_retrieve(&tcs2, idx_id, tcs2.type, artist, sizeof(artist));
             tagcache_search_finish(&tcs2);
         }
 

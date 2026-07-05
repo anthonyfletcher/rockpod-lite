@@ -36,6 +36,7 @@ struct entry {
     #ifdef HAVE_TAGCACHE
     int customaction; /* db use */
     char* album_name; /* db use */
+    int idx_id; /* db use */
     #endif
 };
 
