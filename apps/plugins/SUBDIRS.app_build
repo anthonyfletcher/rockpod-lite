@@ -5,24 +5,13 @@
 #else
 /* For all targets with a bitmap display and a touchscreen
  * In fact, most of the plugins aren't supposed to be used on a touch(mouse) device
+ * Not on this fork's actual build path (iPod targets never set APP_TYPE),
+ * kept only for consistency with SUBDIRS.
  */
-lua
-lua_scripts
-
-#if PLUGIN_BUFFER_SIZE > 0x20000
-fft
-#endif
-
-reversi
 
 #ifdef HAVE_TAGCACHE
 pictureflow
 tagcache
-#endif
-
-/* For all the swcodec targets */
-#if MEMORYSIZE > 2 /* we need a lot of RAM for instruments */
-mikmod
 #endif
 
 #endif /* HAVE_TOUCHSCREEN */

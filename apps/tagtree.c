@@ -2374,6 +2374,46 @@ int tagtree_get_filename(struct tree_context* c, char *buf, int buflen)
     return 0;
 }
 
+/* Resolves an arbitrary row (not just the current selection) to a
+ * representative track path plus its album/albumartist tags, so callers
+ * can look up album art for rows scrolled into view without disturbing
+ * c->selected_item. Unlike tagtree_get_filename(), 'id' is explicit. */
+int tagtree_get_albumart_path(struct tree_context* c, int id,
+                               char *path_buf, size_t path_buflen,
+                               char *album_buf, size_t album_buflen,
+                               char *artist_buf, size_t artist_buflen)
+{
+    struct tagcache_search tcs;
+    struct tagentry *entry = tagtree_get_entry(c, id);
+    int extraseek;
+
+    if (!entry)
+        return -1;
+
+    extraseek = entry->extraseek;
+
+    if (!tagcache_search(&tcs, tag_filename))
+        return -1;
+
+    if (!tagcache_retrieve(&tcs, extraseek, tcs.type, path_buf, path_buflen))
+    {
+        tagcache_search_finish(&tcs);
+        return -2;
+    }
+    tagcache_search_finish(&tcs);
+
+    strlcpy(album_buf, entry->album_name ? entry->album_name : "", album_buflen);
+
+    artist_buf[0] = '\0';
+    if (tagcache_search(&tcs, tag_albumartist))
+    {
+        tagcache_retrieve(&tcs, extraseek, tcs.type, artist_buf, artist_buflen);
+        tagcache_search_finish(&tcs);
+    }
+
+    return 0;
+}
+
 int tagtree_get_custom_action(struct tree_context* c)
 {
     if (c->dirlength == 0)
@@ -2871,4 +2911,13 @@ int tagtree_get_icon(struct tree_context* c)
         icon = Icon_Audio;
 
     return icon;
+}
+
+/* True when the current table/level is browsing albums (as opposed to
+ * artists, genres, years, tracks, etc). Used to decide whether a row
+ * has meaningful album art to show. */
+bool tagtree_currtable_is_albums(struct tree_context* c)
+{
+    return (c->currtable == TABLE_NAVIBROWSE
+            && csi->tagorder[c->currextra] == tag_album);
 }

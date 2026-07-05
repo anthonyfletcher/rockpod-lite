@@ -67,6 +67,11 @@ enum {
     GO_TO_SHORTCUTMENU,
 #ifdef HAVE_TAGCACHE
     GO_TO_PICTUREFLOW,
+    /* Quick-jump shortcuts into a specific Database browse level, bypassing
+     * the Database submenu itself. */
+    GO_TO_ARTISTS,
+    GO_TO_ALBUMS,
+    GO_TO_GENRES,
 #endif
 };
 #ifndef PLUGIN

@@ -203,14 +203,14 @@ uuuuuuu
 %?or(%if(%ft(themes/Themify_2.preferences,minimal player mode: ),=,on),%if(%ft(themes/Themify_2.preferences,minimal player mode:),=,on))<%?if(%mp,<=,3)<%?mv(1)<%Vd(Player_Volume_Short)|%Vd(Player_Status_Short)>|%Vd(Player_Status_Short)>|%?if(%pe,!=,1)<%?if(%mp,<=,3)<%?mv(1)<%Vd(Player_Volume_Long)|%Vd(Player_Status_Long)>|%Vd(Player_Status_Long)>|%?if(%mp,<=,3)<%?mv(1)<%Vd(Player_Volume_Short)|%Vd(Player_Status_Short)>|%Vd(Player_Status_Short)>>>
 #
 #- Shorter Dialog Positions -#
-# animate the fast forward and rewind icons, plus pause and play
-%Vl(Player_Status_Short,260,160,46,46,4)%?or(%if(%ft(themes/Themify_2.preferences,animations: ),=,off),%if(%ft(themes/Themify_2.preferences,animations:),=,off))<%?mp<|0|1|%t(0.1)æ|%t(0.1)õ;|>|%?mp<|%?pS(1)<0|%t(0.1)Ą;%t(0.1)ą;%t(0.1)Ć;%t(0.1)ć;%t(0.1)Ĉ;%t(0.1)ĉ;%t(0.1)Ċ;%t(0.1)ċ;%t(0.1)Č;%t(0.1)č;%t(0.1)Ď;%t(0.1)ď;%t(0.1)Đ;%t(0.1)đ;%t(0.1)Ē;%t(0.1)ē;%t(0.1)Ĕ;%t(0.1)ĕ;%t(0.1)Ė;%t(0.1)ė;%t(0.1)Ę;%t(0.1)ę;%t(0.1)Ě;%t(0.1)ě;%t(0.1)Ĝ;%t(0.1)ĝ;%t(0.1)Ğ;%t(0.1)ğ;%t(0.1)Ġ;%t(0.1)0>|1|%t(0.1)æ;%t(0.1)ç;%t(0.1)è;%t(0.1)é;%t(0.1)ê;%t(0.1)ë;%t(0.1)ì;%t(0.1)í;%t(0.1)î;%t(0.1)ï;%t(0.1)ð;%t(0.1)ñ;%t(0.1)ò;%t(0.1)ó;%t(0.1)ô;|%t(0.1)õ;%t(0.1)ö;%t(0.1)÷;%t(0.1)ø;%t(0.1)ù;%t(0.1)ú;%t(0.1)û;%t(0.1)ü;%t(0.1)ý;%t(0.1)þ;%t(0.1)ÿ;%t(0.1)Ā;%t(0.1)ā;%t(0.1)Ă;%t(0.1)ă;|>>
+# small 5-bar spectrum in place of the old play/pause animation
+%Vl(Player_Status_Short,260,160,46,46,4)%Sb(5,center)
 # volume Slider, one character for the 91 positions of regular volume settings.
 %Vl(Player_Volume_Short,260,160,46,46,4)%?pv<4|5|6|7|8|9|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|À|Á|Â|Ã|Ä|Å|Ç|È|É|Ê|Ë|Ì|Í|Î|Ï|Ð|Ñ|Ò|Ó|Ô|Õ|Ö|×|Ø|Ù|Ú|Û|Ü|Ý|Þ|ß|à|á|â|ã|ä|ä|å>
 #
 #- Longer Dialog Positions -#
-# animate the fast forward and rewind icons, plus pause and play
-%Vl(Player_Status_Long,202,160,46,46,4)%?or(%if(%ft(themes/Themify_2.preferences,animations: ),=,off),%if(%ft(themes/Themify_2.preferences,animations:),=,off))<%?mp<|0|1|%t(0.1)æ|%t(0.1)õ;|>|%?mp<|%?pS(1)<0|%t(0.1)Ą;%t(0.1)ą;%t(0.1)Ć;%t(0.1)ć;%t(0.1)Ĉ;%t(0.1)ĉ;%t(0.1)Ċ;%t(0.1)ċ;%t(0.1)Č;%t(0.1)č;%t(0.1)Ď;%t(0.1)ď;%t(0.1)Đ;%t(0.1)đ;%t(0.1)Ē;%t(0.1)ē;%t(0.1)Ĕ;%t(0.1)ĕ;%t(0.1)Ė;%t(0.1)ė;%t(0.1)Ę;%t(0.1)ę;%t(0.1)Ě;%t(0.1)ě;%t(0.1)Ĝ;%t(0.1)ĝ;%t(0.1)Ğ;%t(0.1)ğ;%t(0.1)Ġ;%t(0.1)0>|1|%t(0.1)æ;%t(0.1)ç;%t(0.1)è;%t(0.1)é;%t(0.1)ê;%t(0.1)ë;%t(0.1)ì;%t(0.1)í;%t(0.1)î;%t(0.1)ï;%t(0.1)ð;%t(0.1)ñ;%t(0.1)ò;%t(0.1)ó;%t(0.1)ô;|%t(0.1)õ;%t(0.1)ö;%t(0.1)÷;%t(0.1)ø;%t(0.1)ù;%t(0.1)ú;%t(0.1)û;%t(0.1)ü;%t(0.1)ý;%t(0.1)þ;%t(0.1)ÿ;%t(0.1)Ā;%t(0.1)ā;%t(0.1)Ă;%t(0.1)ă;|>>
+# small 5-bar spectrum in place of the old play/pause animation
+%Vl(Player_Status_Long,202,160,46,46,4)%Sb(5,center)
 # volume Slider, one character for the 91 positions of regular volume settings.
 #
 %Vl(Player_Volume_Long,202,160,46,46,4)%?pv<4|5|6|7|8|9|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|À|Á|Â|Ã|Ä|Å|Ç|È|É|Ê|Ë|Ì|Í|Î|Ï|Ð|Ñ|Ò|Ó|Ô|Õ|Ö|×|Ø|Ù|Ú|Û|Ü|Ý|Þ|ß|à|á|â|ã|ä|ä|å>

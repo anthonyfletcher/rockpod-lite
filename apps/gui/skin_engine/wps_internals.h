@@ -330,6 +330,11 @@ struct listitem {
     int16_t offset;
 };
 
+struct spectrum_bars {
+    int16_t bars;
+    bool center_aligned;
+};
+
 struct listitem_viewport_cfg {
     struct wps_data *data;
     OFFSETTYPE(char *)   label;
@@ -393,6 +398,7 @@ struct wps_data
 #endif
 
     bool peak_meter_enabled;
+    bool spectrum_enabled;
     bool wps_sb_tag;
     bool show_sb_on_wps;
     bool wps_loaded;

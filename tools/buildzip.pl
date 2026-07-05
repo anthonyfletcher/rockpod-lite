@@ -657,24 +657,23 @@ sub buildzip {
         print STDERR "No wps module present, can't do the WPS magic!\n";
     }
 
-    # until buildwps.pl is fixed, manually copy the classic_statusbar theme across
-    mkdir "$temp_dir/wps/classic_statusbar", 0777;
-    glob_copy("$ROOT/wps/classic_statusbar/*.bmp", "$temp_dir/wps/classic_statusbar");
-    if ($depth >= 16 && $height > 480) {
-        copy("$ROOT/wps/classic_statusbar.24.sbs", "$temp_dir/wps/classic_statusbar.sbs");
-    } elsif ($depth == 16) {
-        copy("$ROOT/wps/classic_statusbar.sbs", "$temp_dir/wps");
-    } elsif ($depth > 1) {
-        copy("$ROOT/wps/classic_statusbar.grey.sbs", "$temp_dir/wps/classic_statusbar.sbs");
-    } else {
-        copy("$ROOT/wps/classic_statusbar.mono.sbs", "$temp_dir/wps/classic_statusbar.sbs");
-    }
-    if ($remote_depth != $depth) {
-        copy("$ROOT/wps/classic_statusbar.mono.sbs", "$temp_dir/wps/classic_statusbar.rsbs");
-    } else {
-        copy("$temp_dir/wps/classic_statusbar.sbs", "$temp_dir/wps/classic_statusbar.rsbs");
-    }
+    # Stock "classic_statusbar" built-in theme removed -- this fork ships only
+    # Themify_2 (bundled below).
     copy("$temp_dir/wps/rockbox_none.sbs", "$temp_dir/wps/rockbox_none.rsbs");
+
+    # Bundle Themify_2 -- this fork's only shipped theme -- and make it the
+    # first-boot default via a pre-populated config.cfg (applied before any
+    # compiled DEFAULT_WPSNAME/DEFAULT_SBSNAME fallback takes effect).
+    my $themify_src = "$ROOT/themes/Themify_2/.rockbox";
+    glob_mkdir("$temp_dir/fonts");
+    glob_copy("$themify_src/fonts/*.fnt", "$temp_dir/fonts/");
+    copy("$themify_src/themes/Themify_2.cfg", "$temp_dir/themes/Themify_2.cfg");
+    copy("$themify_src/themes/Themify_2.preferences", "$temp_dir/themes/Themify_2.preferences");
+    copy("$themify_src/wps/Themify_2.wps", "$temp_dir/wps/Themify_2.wps");
+    copy("$themify_src/wps/Themify_2.sbs", "$temp_dir/wps/Themify_2.sbs");
+    mkdir "$temp_dir/wps/Themify_2", 0777;
+    glob_copy("$themify_src/wps/Themify_2/*", "$temp_dir/wps/Themify_2/");
+    copy("$ROOT/themes/Themify_2/default-config.cfg", "$temp_dir/config.cfg");
 
     # and the info file
     copy("rockbox-info.txt", "$temp_dir/rockbox-info.txt");

@@ -45,6 +45,7 @@
 #include "cuesheet.h"
 #include "language.h"
 #include "playback.h"
+#include "spectrum_meter.h"
 #include "playlist.h"
 #include "root_menu.h"
 #include "misc.h"
@@ -317,7 +318,64 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
             }
             break;
         }
+        case SKIN_TOKEN_LIST_ITEM_ALBUMART:
+        {
+            if (do_refresh)
+            {
+                struct listitem *li = (struct listitem *)
+                        SKINOFFSETTOPTR(skin_buffer, token->value.data);
+                if (!li) break;
+                struct dim size = { skin_vp->vp.width, skin_vp->vp.height };
+                const struct bitmap *bmp =
+                        skinlist_get_item_albumart(li->offset, li->wrap, &size);
+                if (bmp)
+                {
+                    int width = MIN(bmp->width, skin_vp->vp.width);
+                    int height = MIN(bmp->height, skin_vp->vp.height);
+                    gwps->display->set_drawmode(DRMODE_SOLID);
+                    gwps->display->bmp_part(bmp, 0, 0, 0, 0, width, height);
+                }
+            }
+            break;
+        }
 #endif
+        case SKIN_TOKEN_SPECTRUM_BARS:
+        {
+            data->spectrum_enabled = true;
+            if (do_refresh)
+            {
+                struct spectrum_bars *sb = (struct spectrum_bars *)
+                        SKINOFFSETTOPTR(skin_buffer, token->value.data);
+                if (!sb) break;
+
+                int vp_w = skin_vp->vp.width;
+                int vp_h = skin_vp->vp.height;
+                int gap = (sb->bars > 1) ? 1 : 0;
+                int bar_w = (vp_w - gap * (sb->bars - 1)) / sb->bars;
+                int i;
+
+                if (bar_w < 1)
+                    bar_w = 1;
+
+                gwps->display->set_drawmode(DRMODE_SOLID);
+                for (i = 0; i < sb->bars; i++)
+                {
+                    int level = spectrum_meter_get_bar(i, sb->bars);
+                    int bar_h = (level * vp_h) / 100;
+                    int x = i * (bar_w + gap);
+                    int y;
+
+                    if (sb->center_aligned)
+                        y = (vp_h - bar_h) / 2;
+                    else
+                        y = vp_h - bar_h;
+
+                    if (bar_h > 0)
+                        gwps->display->fillrect(x, y, bar_w, bar_h);
+                }
+            }
+            break;
+        }
         case SKIN_TOKEN_DRAW_INBUILTBAR:
             gui_statusbar_draw(&(statusbars.statusbars[gwps->display->screen_type]),
                                info->refresh_type == SKIN_REFRESH_ALL,

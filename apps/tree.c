@@ -64,6 +64,9 @@
 #ifdef HAVE_TAGCACHE
 #include "tagcache.h"
 #endif
+#ifdef HAVE_ALBUMART
+#include "recorder/list_albumart.h"
+#endif
 #include "yesno.h"
 #include "eeprom_settings.h"
 #include "playlist_catalog.h"
@@ -203,6 +206,32 @@ static enum themable_icons tree_get_fileicon(int selected_item, void * data)
         return filetype_get_icon(entry->attr);
     }
 }
+
+#ifdef HAVE_ALBUMART
+static const struct bitmap *tree_get_albumart(int selected_item, void * data,
+                                              struct dim *size)
+{
+    struct tree_context * local_tc=(struct tree_context *)data;
+#ifdef HAVE_TAGCACHE
+    bool id3db = *(local_tc->dirfilter) == SHOW_ID3DB;
+    if (id3db && tagtree_currtable_is_albums(&tc))
+    {
+        char path[MAX_PATH], album[MAX_PATH], artist[MAX_PATH];
+        if (tagtree_get_albumart_path(&tc, selected_item, path, sizeof(path),
+                                       album, sizeof(album),
+                                       artist, sizeof(artist)) >= 0)
+        {
+            return list_albumart_get_bitmap(path, album, artist,
+                                            selected_item, size);
+        }
+    }
+#else
+    (void)local_tc;
+    (void)size;
+#endif
+    return NULL;
+}
+#endif /* HAVE_ALBUMART */
 
 static int tree_voice_cb(int selected_item, void * data)
 {
@@ -521,6 +550,9 @@ static int update_dir(void)
     gui_synclist_set_nb_items(list, tc.filesindir);
     gui_synclist_set_icon_callback(list,
                             global_settings.show_icons?tree_get_fileicon:NULL);
+#ifdef HAVE_ALBUMART
+    gui_synclist_set_albumart_callback(list, tree_get_albumart);
+#endif
     gui_synclist_set_voice_callback(list, &tree_voice_cb);
 #ifdef HAVE_LCD_COLOR
     gui_synclist_set_color_callback(list, &tree_get_filecolor);

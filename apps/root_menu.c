@@ -52,6 +52,7 @@
 #include "viewport.h"
 
 #include "tree.h"
+#include "tagtree.h"
 #if CONFIG_TUNER
 #include "radio.h"
 #endif
@@ -110,6 +111,110 @@ static void rootmenu_track_changed_callback(unsigned short id, void* param)
     struct mp3entry *id3 = ((struct track_event *)param)->id3;
     strmemccpy(current_track_path, id3->path, MAX_PATH);
 }
+#ifdef HAVE_TAGCACHE
+/* Waits for the tagcache to become usable, showing build/init progress as
+ * needed. Returns false if the user aborted (caller should bail out). */
+static bool wait_for_tagcache_ready(void)
+{
+    if (!tagcache_is_usable())
+    {
+        bool reinit_attempted = false;
+
+        /* Now display progress until it's ready or the user exits */
+        while(!tagcache_is_usable())
+        {
+            struct tagcache_stat *stat = tagcache_get_stat();
+
+            /* Allow user to exit */
+            if (action_userabort(HZ/2))
+                break;
+
+            /* Maybe just needs to reboot due to delayed commit */
+            if (stat->commit_delayed)
+            {
+                splash(HZ*2, ID2P(LANG_PLEASE_REBOOT));
+                break;
+            }
+
+            /* Check if ready status is known */
+            if (!stat->readyvalid)
+            {
+                splash(0, ID2P(LANG_TAGCACHE_BUSY));
+                continue;
+            }
+
+            /* Re-init if required */
+            if (!reinit_attempted && !stat->ready &&
+                stat->processed_entries == 0 && stat->commit_step == 0)
+            {
+                /* Prompt the user */
+                reinit_attempted = true;
+                static const char *lines[]={
+                    ID2P(LANG_TAGCACHE_BUSY), ID2P(LANG_TAGCACHE_FORCE_UPDATE)};
+                static const struct text_message message={lines, 2};
+                if(gui_syncyesno_run(&message, NULL, NULL) == YESNO_NO)
+                    break;
+                FOR_NB_SCREENS(i)
+                    screens[i].clear_display();
+
+                /* Start initialisation */
+                tagcache_rebuild();
+            }
+
+            /* Display building progress */
+            static long talked_tick = 0;
+            if(global_settings.talk_menu &&
+               (talked_tick == 0
+                || TIME_AFTER(current_tick, talked_tick+7*HZ)))
+            {
+                talked_tick = current_tick;
+                if (stat->commit_step > 0)
+                {
+                    talk_id(LANG_TAGCACHE_INIT, false);
+                    talk_number(stat->commit_step, true);
+                    talk_id(VOICE_OF, true);
+                    talk_number(tagcache_get_max_commit_step(), true);
+                } else if(stat->processed_entries)
+                {
+                    talk_number(stat->processed_entries, false);
+                    talk_id(LANG_BUILDING_DATABASE, true);
+                }
+            }
+            if (stat->commit_step > 0)
+            {
+                /* (prevent redundant voicing by splash_progress */
+                bool tmp = global_settings.talk_menu;
+                global_settings.talk_menu = false;
+
+                if (lang_is_rtl())
+                {
+                    splash_progress(stat->commit_step,
+                                    tagcache_get_max_commit_step(),
+                                    "[%d/%d] %s", stat->commit_step,
+                                    tagcache_get_max_commit_step(),
+                                    str(LANG_TAGCACHE_INIT));
+                }
+                else
+                {
+                    splash_progress(stat->commit_step,
+                                    tagcache_get_max_commit_step(),
+                                    "%s [%d/%d]", str(LANG_TAGCACHE_INIT),
+                                    stat->commit_step,
+                                    tagcache_get_max_commit_step());
+                }
+                global_settings.talk_menu = tmp;
+            }
+            else
+            {
+                splashf(0, str(LANG_BUILDING_DATABASE),
+                           stat->processed_entries); /* (voiced above) */
+            }
+        }
+    }
+    return tagcache_is_usable();
+}
+#endif /*HAVE_TAGCACHE*/
+
 static int browser(void* param)
 {
     int ret_val;
@@ -173,107 +278,39 @@ static int browser(void* param)
         break;
 #ifdef HAVE_TAGCACHE
         case GO_TO_DBBROWSER:
-            if (!tagcache_is_usable())
-            {
-                bool reinit_attempted = false;
-
-                /* Now display progress until it's ready or the user exits */
-                while(!tagcache_is_usable())
-                {
-                    struct tagcache_stat *stat = tagcache_get_stat();
-
-                    /* Allow user to exit */
-                    if (action_userabort(HZ/2))
-                        break;
-
-                    /* Maybe just needs to reboot due to delayed commit */
-                    if (stat->commit_delayed)
-                    {
-                        splash(HZ*2, ID2P(LANG_PLEASE_REBOOT));
-                        break;
-                    }
-
-                    /* Check if ready status is known */
-                    if (!stat->readyvalid)
-                    {
-                        splash(0, ID2P(LANG_TAGCACHE_BUSY));
-                        continue;
-                    }
-
-                    /* Re-init if required */
-                    if (!reinit_attempted && !stat->ready &&
-                        stat->processed_entries == 0 && stat->commit_step == 0)
-                    {
-                        /* Prompt the user */
-                        reinit_attempted = true;
-                        static const char *lines[]={
-                            ID2P(LANG_TAGCACHE_BUSY), ID2P(LANG_TAGCACHE_FORCE_UPDATE)};
-                        static const struct text_message message={lines, 2};
-                        if(gui_syncyesno_run(&message, NULL, NULL) == YESNO_NO)
-                            break;
-                        FOR_NB_SCREENS(i)
-                            screens[i].clear_display();
-
-                        /* Start initialisation */
-                        tagcache_rebuild();
-                    }
-
-                    /* Display building progress */
-                    static long talked_tick = 0;
-                    if(global_settings.talk_menu &&
-                       (talked_tick == 0
-                        || TIME_AFTER(current_tick, talked_tick+7*HZ)))
-                    {
-                        talked_tick = current_tick;
-                        if (stat->commit_step > 0)
-                        {
-                            talk_id(LANG_TAGCACHE_INIT, false);
-                            talk_number(stat->commit_step, true);
-                            talk_id(VOICE_OF, true);
-                            talk_number(tagcache_get_max_commit_step(), true);
-                        } else if(stat->processed_entries)
-                        {
-                            talk_number(stat->processed_entries, false);
-                            talk_id(LANG_BUILDING_DATABASE, true);
-                        }
-                    }
-                    if (stat->commit_step > 0)
-                    {
-                        /* (prevent redundant voicing by splash_progress */
-                        bool tmp = global_settings.talk_menu;
-                        global_settings.talk_menu = false;
-
-                        if (lang_is_rtl())
-                        {
-                            splash_progress(stat->commit_step,
-                                            tagcache_get_max_commit_step(),
-                                            "[%d/%d] %s", stat->commit_step,
-                                            tagcache_get_max_commit_step(),
-                                            str(LANG_TAGCACHE_INIT));
-                        }
-                        else
-                        {
-                            splash_progress(stat->commit_step,
-                                            tagcache_get_max_commit_step(),
-                                            "%s [%d/%d]", str(LANG_TAGCACHE_INIT),
-                                            stat->commit_step,
-                                            tagcache_get_max_commit_step());
-                        }
-                        global_settings.talk_menu = tmp;
-                    }
-                    else
-                    {
-                        splashf(0, str(LANG_BUILDING_DATABASE),
-                                   stat->processed_entries); /* (voiced above) */
-                    }
-                }
-            }
-            if (!tagcache_is_usable())
+            if (!wait_for_tagcache_ready())
                 return GO_TO_PREVIOUS;
             filter = SHOW_ID3DB;
             last_ft_dirlevel = tc->dirlevel;
             tc->dirlevel = last_db_dirlevel;
             tc->selected_item = last_db_selection;
+            push_current_activity(ACTIVITY_DATABASEBROWSER);
+        break;
+
+        case GO_TO_ARTISTS:
+        case GO_TO_ALBUMS:
+        case GO_TO_GENRES:
+            if (!wait_for_tagcache_ready())
+                return GO_TO_PREVIOUS;
+            filter = SHOW_ID3DB;
+            last_ft_dirlevel = tc->dirlevel;
+            /* Jump straight into the Artist/Album/Genre branch of the
+             * Database's root menu (apps/tagnavi.config's fixed order:
+             * 0=Album Artist, 1=Artist, 2=Album, 3=Genre, ...), independent
+             * of the plain Database entry's own last_db_dirlevel/selection
+             * resume memory. */
+            tc->dirlevel = 0;
+            tc->currtable = 0; /* tagtree_load() defaults an unset table to
+                                  TABLE_ROOT + the configured root menu */
+            tagtree_load(tc);
+            switch ((intptr_t)param)
+            {
+                case GO_TO_ARTISTS: tc->selected_item = 1; break;
+                case GO_TO_ALBUMS:  tc->selected_item = 2; break;
+                case GO_TO_GENRES:  tc->selected_item = 3; break;
+            }
+            tagtree_enter(tc, false);
+            tagtree_load(tc);
             push_current_activity(ACTIVITY_DATABASEBROWSER);
         break;
 #endif /*HAVE_TAGCACHE*/
@@ -309,6 +346,15 @@ static int browser(void* param)
         case GO_TO_DBBROWSER:
             last_db_dirlevel = tc->dirlevel;
             last_db_selection = tc->selected_item;
+            tc->dirlevel = last_ft_dirlevel;
+        break;
+
+        case GO_TO_ARTISTS:
+        case GO_TO_ALBUMS:
+        case GO_TO_GENRES:
+            /* Deliberately not touching last_db_dirlevel/last_db_selection --
+             * these shortcuts stay independent of the plain Database entry's
+             * own resume position. */
             tc->dirlevel = last_ft_dirlevel;
         break;
 #endif
@@ -509,6 +555,9 @@ static const struct root_items items[] = {
     [GO_TO_SHORTCUTMENU] = { do_shortcut_menu, NULL, NULL },
 #ifdef HAVE_TAGCACHE
     [GO_TO_PICTUREFLOW] = { pictureflow_scrn, NULL, NULL },
+    [GO_TO_ARTISTS] =       { browser, (void*)GO_TO_ARTISTS, &tagcache_menu },
+    [GO_TO_ALBUMS] =        { browser, (void*)GO_TO_ALBUMS,  &tagcache_menu },
+    [GO_TO_GENRES] =        { browser, (void*)GO_TO_GENRES,  &tagcache_menu },
 #endif
 
 };
@@ -528,6 +577,9 @@ MENUITEM_RETURNVALUE(db_browser, ID2P(LANG_TAGCACHE), GO_TO_DBBROWSER,
                         NULL, Icon_Audio);
 MENUITEM_RETURNVALUE(pictureflow_item, "Cover Flow", GO_TO_PICTUREFLOW,
                         NULL, Icon_Rockbox);
+MENUITEM_RETURNVALUE(db_artists, "Artists", GO_TO_ARTISTS, NULL, Icon_Audio);
+MENUITEM_RETURNVALUE(db_albums,  "Albums",  GO_TO_ALBUMS,  NULL, Icon_Audio);
+MENUITEM_RETURNVALUE(db_genres,  "Genres",  GO_TO_GENRES,  NULL, Icon_Audio);
 #endif
 MENUITEM_RETURNVALUE(rocks_browser, ID2P(LANG_PLUGINS), GO_TO_BROWSEPLUGINS,
                         NULL, Icon_Plugin);
@@ -568,6 +620,9 @@ static struct menu_table menu_table[] = {
 #ifdef HAVE_TAGCACHE
     { "pictureflow", &pictureflow_item },
     { "database", &db_browser },
+    { "artists", &db_artists },
+    { "albums", &db_albums },
+    { "genres", &db_genres },
 #endif
     { "files", &file_browser },
     { "wps", &wps_item },
@@ -991,6 +1046,9 @@ void root_menu(void)
                 break;
 #ifdef HAVE_TAGCACHE
             case GO_TO_DBBROWSER:
+            case GO_TO_ARTISTS:
+            case GO_TO_ALBUMS:
+            case GO_TO_GENRES:
 #endif
             case GO_TO_FILEBROWSER:
             case GO_TO_PLAYLISTS_SCREEN:

@@ -128,6 +128,7 @@ hosted/android/keyboard.c
 recorder/keyboard.c
 #endif
 recorder/peakmeter.c
+recorder/spectrum_meter.c
 #if defined(HAVE_ALBUMART) || defined(HAVE_JPEG)
 recorder/resize.c
 #endif
@@ -139,6 +140,7 @@ recorder/jpeg_idct_arm.S
 #endif
 #ifdef HAVE_ALBUMART
 recorder/albumart.c
+recorder/list_albumart.c
 #endif
 #ifdef HAVE_LCD_COLOR
 gui/color_picker.c
