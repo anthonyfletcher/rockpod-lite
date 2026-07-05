@@ -405,4 +405,28 @@ void list_albumart_clear_cache(void)
         aa_cache[i].handle = -1;
 }
 
+void list_albumart_clear_disk_cache(void)
+{
+    DIR *dir;
+    struct dirent *entry;
+    char path[MAX_PATH];
+
+    list_albumart_clear_cache();
+    list_albumart_cache_mark_incomplete();
+
+    dir = opendir(AA_CACHE_DIR);
+    if (!dir)
+        return;
+
+    while ((entry = readdir(dir)) != NULL)
+    {
+        if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
+            continue;
+
+        snprintf(path, sizeof(path), AA_CACHE_DIR "/%s", entry->d_name);
+        remove(path);
+    }
+    closedir(dir);
+}
+
 #endif /* HAVE_ALBUMART */

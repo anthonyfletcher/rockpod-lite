@@ -1293,8 +1293,7 @@ static int get_tcs_search_res(int type, struct tagcache_search *tcs,
 #define STR_STEP_PREPARING_ARTWORK "5/5 Prepare Artwork"
 
 /*adds <untagged> albums/artist to existing album index */
-static int create_album_untagged(struct tagcache_search *tcs,
-                                 void **buf, size_t *bufsz)
+static int create_album_untagged(struct tagcache_search *tcs, size_t *bufsz)
 {
     static char tcs_buf[TAGCACHE_BUFSZ];
     const long tcs_bufsz = sizeof(tcs_buf);
@@ -1501,7 +1500,7 @@ static int create_album_index(void)
         return res;
 
     /* Build artist list for untagged albums */
-    res = create_album_untagged(&tcs, &buf, &buf_size);
+    res = create_album_untagged(&tcs, &buf_size);
 
     if (res < SUCCESS)
         return res;
@@ -1990,7 +1989,7 @@ static bool track_buffer_avail(size_t needed)
 }
 
 
-static int pf_tcs_retrieve_track_title(int string_index, int disc_num, int track_num)
+static int pf_tcs_retrieve_track_title(int string_index)
 {
     char file_name[MAX_PATH];
     char *track_title = NULL;
@@ -2061,7 +2060,7 @@ static void create_track_index(const int slide_index)
         int track_num = rb->tagcache_get_numeric(&tcs, tag_tracknumber);
         disc_num = disc_num > 0 ? disc_num : 0;
         track_num = track_num > 0 ? track_num : 0;
-        int fn_idx = 1 + pf_tcs_retrieve_track_title(string_index, disc_num, track_num);
+        int fn_idx = 1 + pf_tcs_retrieve_track_title(string_index);
         if (fn_idx <= 1)
             goto fail;
         pf_tracks.used += fn_idx;

@@ -164,6 +164,12 @@ static void albumart_cache_rebuild_with_splash(void)
     if (tagtree_build_albumart_cache(&aa_size))
         splash(HZ*2, "Album art cache updated");
 }
+
+static void albumart_cache_clear_with_splash(void)
+{
+    list_albumart_clear_disk_cache();
+    splash(HZ*2, "Album art cache cleared");
+}
 #endif
 
 #ifdef HAVE_TC_RAMCACHE
@@ -189,6 +195,9 @@ MENUITEM_FUNCTION(tc_paths, 0, ID2P(LANG_SELECT_DATABASE_DIRS),
 MENUITEM_FUNCTION(aa_cache_build, 0, "Build Album Art Cache",
                   (int(*)(void))albumart_cache_rebuild_with_splash,
                   NULL, Icon_NOICON);
+MENUITEM_FUNCTION(aa_cache_clear, 0, "Clear Album Art Cache",
+                  (int(*)(void))albumart_cache_clear_with_splash,
+                  NULL, Icon_NOICON);
 #endif
 
 MAKE_MENU(tagcache_menu, ID2P(LANG_TAGCACHE), 0, Icon_NOICON,
@@ -198,7 +207,7 @@ MAKE_MENU(tagcache_menu, ID2P(LANG_TAGCACHE), 0, Icon_NOICON,
                 &tagcache_autoupdate, &tc_init, &tc_update, &runtimedb,
                 &tc_export, &tc_import, &tc_paths
 #ifdef HAVE_ALBUMART
-                , &aa_cache_build
+                , &aa_cache_build, &aa_cache_clear
 #endif
                 );
 #endif /* HAVE_TAGCACHE */

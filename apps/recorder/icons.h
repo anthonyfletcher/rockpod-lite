@@ -26,11 +26,6 @@
 #include <lcd.h>
 #include "metadata.h"
 
-/* External bitmaps */
-#include "bitmaps/rockboxlogo.h"
-#ifdef HAVE_REMOTE_LCD
-#include "bitmaps/remote_rockboxlogo.h"
-#endif
 #endif /* !(PLUGIN || __PCTOOL__) */
 
 struct cbmp_bitmap_info_entry /* */

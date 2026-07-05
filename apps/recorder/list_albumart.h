@@ -70,6 +70,15 @@ bool list_albumart_is_cached(int row_key, const struct bitmap **out);
  * Database browser. */
 void list_albumart_clear_cache(void);
 
+/* Wipes the on-disk pfraw cache (apps/recorder/list_albumart.c's AA_CACHE_DIR)
+ * and the RAM cache above, e.g. from a settings-menu "Clear Album Art Cache"
+ * action. Each cached file is keyed by (album, albumartist, size), so
+ * switching to a theme that requests a different %La size never serves stale
+ * art -- it just leaves the old size's files as unused disk space, which is
+ * what this is for. Also marks the cache incomplete so the next visit to the
+ * Albums screen rebuilds it (see tagtree_build_albumart_cache()). */
+void list_albumart_clear_disk_cache(void);
+
 /* Bulk-build support (apps/tagtree.c's tagtree_build_albumart_cache()) --
  * ensures art for one album is disk-cached at 'size' without touching the
  * small browse-time RAM cache (aa_cache[] above is sized/LRU-managed for
