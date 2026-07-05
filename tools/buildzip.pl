@@ -597,15 +597,6 @@ sub buildzip {
     if(-e "$temp_dir/rocks/demos/pictureflow.rock") {
         copy("$ROOT/apps/plugins/bitmaps/native/pictureflow_emptyslide.100x100x16.bmp",
              "$temp_dir/rocks/demos/pictureflow_emptyslide.bmp");
-        my ($pf_logo);
-        if ($width < 200) {
-            $pf_logo = "pictureflow_logo.100x18x16.bmp";
-        } else {
-            $pf_logo = "pictureflow_logo.193x34x16.bmp";
-        }
-        copy("$ROOT/apps/plugins/bitmaps/native/$pf_logo",
-             "$temp_dir/rocks/demos/pictureflow_splash.bmp");
-
     }
 
     if($image) {

@@ -47,6 +47,7 @@
 #include "settings.h"
 #include "audiohw.h"
 #include "general.h"
+#include "string-extra.h"
 #include <stdio.h>
 
 #ifdef HAVE_TAGCACHE
@@ -190,6 +191,21 @@ static struct albumart_slot
 
 static char last_folder_aa_path[MAX_PATH] = "\0";
 static int last_folder_aa_hid[MAX_MULTIPLE_AA] = {0};
+
+/* Same idea as last_folder_aa_path/last_folder_aa_hid above, but for
+ * embedded album art (e.g. FLAC), which has no shared file path to key a
+ * cache off of. Without this, tracks on the same album with byte-identical
+ * embedded art get it re-extracted and re-decoded from scratch on every
+ * track change. Keyed by (album, albumartist, discnum) rather than exact
+ * picture bytes -- cheap (these are already-parsed tag strings, no extra
+ * work), at the cost of trusting that same-tagged tracks share art, which
+ * is why discnum is included: multi-disc sets can share album/albumartist
+ * tags while carrying different per-disc art, unlike the folder-path cache
+ * above which busts naturally since discs are normally separate folders. */
+static char last_embedded_aa_album[MAX_PATH] = "\0";
+static char last_embedded_aa_albumartist[MAX_PATH] = "\0";
+static int last_embedded_aa_discnum = 0;
+static int last_embedded_aa_hid[MAX_MULTIPLE_AA] = {0};
 
 #define FOREACH_ALBUMART(i) for (int i = 0; i < MAX_MULTIPLE_AA; i++)
 #endif /* HAVE_ALBUMART */
@@ -885,6 +901,19 @@ static void clear_last_folder_album_art(void)
         last_folder_aa_hid[i] = 0;
     }
 }
+
+static void clear_last_embedded_album_art(void)
+{
+    if (last_embedded_aa_album[0] == 0)
+        return;
+
+    last_embedded_aa_album[0] = 0;
+    FOREACH_ALBUMART(i)
+    {
+        bufclose(last_embedded_aa_hid[i]);
+        last_embedded_aa_hid[i] = 0;
+    }
+}
 #endif
 
 /* Set up the audio buffer for playback
@@ -925,6 +954,7 @@ static void audio_reset_buffer_noalloc(
 
 #ifdef HAVE_ALBUMART
     clear_last_folder_album_art();
+    clear_last_embedded_album_art();
 #endif
 
     buffering_reset(filebuf, filebuflen);
@@ -1972,10 +2002,43 @@ static int audio_load_albumart(struct track_info *infop,
             hid < 0 && hid != ERR_BUFFER_FULL &&
             track_id3->has_embedded_albumart && (track_id3->albumart.type & AA_CLEAR_FLAGS_MASK) == AA_TYPE_JPG)
         {
-            if (is_current_track)
-                clear_last_folder_album_art();
-            user_data.embedded_albumart = &track_id3->albumart;
-            hid = bufopen(track_id3->path, 0, TYPE_BITMAP, &user_data);
+            /* Tracks on the same album (same album+albumartist+discnum tags)
+             * typically carry byte-identical embedded art -- reuse the
+             * already-decoded handle instead of re-extracting/re-decoding
+             * on every track change (see statics/comment near
+             * last_embedded_aa_album above). */
+            bool same_album = track_id3->album && track_id3->album[0] &&
+                               track_id3->albumartist && track_id3->albumartist[0] &&
+                               strcmp(last_embedded_aa_album, track_id3->album) == 0 &&
+                               strcmp(last_embedded_aa_albumartist, track_id3->albumartist) == 0 &&
+                               last_embedded_aa_discnum == track_id3->discnum;
+
+            if (same_album && last_embedded_aa_hid[i] != 0)
+            {
+                hid = last_embedded_aa_hid[i];
+            }
+            else
+            {
+                if (is_current_track)
+                    clear_last_folder_album_art();
+
+                bool is_cacheable = i == 0 &&
+                                    (is_current_track || last_embedded_aa_album[0] == 0);
+                if (!same_album && is_cacheable)
+                {
+                    clear_last_embedded_album_art();
+                    strlcpy(last_embedded_aa_album, track_id3->album,
+                            sizeof(last_embedded_aa_album));
+                    strlcpy(last_embedded_aa_albumartist, track_id3->albumartist,
+                            sizeof(last_embedded_aa_albumartist));
+                    last_embedded_aa_discnum = track_id3->discnum;
+                }
+
+                user_data.embedded_albumart = &track_id3->albumart;
+                hid = bufopen(track_id3->path, 0, TYPE_BITMAP, &user_data);
+                if (hid != ERR_BUFFER_FULL && (same_album || is_cacheable))
+                    last_embedded_aa_hid[i] = hid;
+            }
         }
 
         if (global_settings.album_art != AA_OFF && !checked_image_file &&
@@ -3171,6 +3234,7 @@ static void audio_stop_playback(void)
     wipe_track_metadata(true);
 #ifdef HAVE_ALBUMART
     clear_last_folder_album_art();
+    clear_last_embedded_album_art();
 #endif
     /* Go idle */
     filling = STATE_IDLE;

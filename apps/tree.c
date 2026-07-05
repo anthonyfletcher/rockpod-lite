@@ -216,6 +216,22 @@ static const struct bitmap *tree_get_albumart(int selected_item, void * data,
     bool id3db = *(local_tc->dirfilter) == SHOW_ID3DB;
     if (id3db && tagtree_currtable_is_albums(&tc))
     {
+        /* The synthetic "[By album]"/"[All tracks]"/"[Random]" rows at the
+         * top of this list aren't albums -- render them as plain rows. */
+        if (selected_item < tc.special_entry_count)
+            return NULL;
+
+        const struct bitmap *cached;
+        /* Check the cache BEFORE resolving path/album/artist -- that
+         * resolution costs real tagcache disk queries, and this list gets
+         * redrawn far more often than its rows actually change (every
+         * scroll tick, not just when a row first scrolls into view). Doing
+         * the tagcache lookup unconditionally here turned every redraw of
+         * an already-resolved row into disk I/O, which is what made this
+         * unusably slow on real hardware. */
+        if (list_albumart_is_cached(selected_item, &cached))
+            return cached;
+
         char path[MAX_PATH], album[MAX_PATH], artist[MAX_PATH];
         if (tagtree_get_albumart_path(&tc, selected_item, path, sizeof(path),
                                        album, sizeof(album),

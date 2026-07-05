@@ -53,6 +53,9 @@
 
 #include "tree.h"
 #include "tagtree.h"
+#ifdef HAVE_ALBUMART
+#include "recorder/list_albumart.h"
+#endif
 #if CONFIG_TUNER
 #include "radio.h"
 #endif
@@ -292,6 +295,19 @@ static int browser(void* param)
         case GO_TO_GENRES:
             if (!wait_for_tagcache_ready())
                 return GO_TO_PREVIOUS;
+#ifdef HAVE_ALBUMART
+            if ((intptr_t)param == GO_TO_ALBUMS &&
+                !list_albumart_cache_is_complete())
+            {
+                const struct dim aa_size = { LIST_ALBUMART_DEFAULT_WIDTH,
+                                             LIST_ALBUMART_DEFAULT_HEIGHT };
+                /* First visit to Albums: build the on-disk art cache with a
+                 * visible progress bar up front, rather than leaving the
+                 * user to wonder why browsing is slow/blank on a per-row
+                 * basis the first time each album scrolls into view. */
+                tagtree_build_albumart_cache(&aa_size);
+            }
+#endif
             filter = SHOW_ID3DB;
             last_ft_dirlevel = tc->dirlevel;
             /* Jump straight into the Artist/Album/Genre branch of the

@@ -62,11 +62,14 @@ static int spectrum_level[SPECTRUM_MAX_BANDS];
 
 /* Rough perceptual (log-like) compression range: ln(raw magnitude) below
  * SPECTRUM_LOG_MIN maps to level 0, above SPECTRUM_LOG_MAX maps to level
- * 100. These are starting-point constants pending on-device tuning --
- * raw Goertzel magnitude depends on block size and input amplitude in a
- * way that's easier to calibrate by ear/eye than to derive analytically. */
-#define SPECTRUM_LOG_MIN (7L << 16)
-#define SPECTRUM_LOG_MAX (13L << 16)
+ * 100. Now that goertzel_magnitude() normalizes back to an amplitude-
+ * comparable scale (0-32767ish), these are calibrated against that range:
+ * ln(50)=~4 (near-silent noise floor) and ln(20000)=~10 (a hot but not
+ * necessarily full-scale signal reaches 100, giving some headroom rather
+ * than requiring literal 0dBFS). Starting-point constants pending
+ * on-device tuning by ear/eye. */
+#define SPECTRUM_LOG_MIN (4L << 16)
+#define SPECTRUM_LOG_MAX (10L << 16)
 
 /* Goertzel magnitude of 'freq_hz' within 'count' mono samples, for a
  * mixer output rate of 'samplerate' Hz. Fixed point throughout (Q14 via
@@ -87,6 +90,16 @@ static int goertzel_magnitude(const int16_t *samples, int count,
         q2 = q1;
         q1 = q0;
     }
+
+    /* Q1/Q2 grow proportional to (count/2 * amplitude) for a tone at the
+     * target frequency -- e.g. at count=256 a full-scale (32767) signal
+     * pushes them to roughly 128x that. Left unnormalized, mag_sq blows
+     * past any sane clamp at a tiny fraction of real full-scale volume,
+     * which is why the bars used to peg at a fixed height for virtually
+     * any audible content instead of tracking actual loudness. Divide back
+     * down to an amplitude-comparable scale first. */
+    q1 /= (count / 2);
+    q2 /= (count / 2);
 
     mag_sq = (long long)q1 * q1 + (long long)q2 * q2
            - (((long long)coeff_q14 * q1) >> 14) * q2;
@@ -147,9 +160,18 @@ void spectrum_meter_peek(void)
 
         if (level > spectrum_level[band])
             spectrum_level[band] = level; /* instant attack */
-        else
-            spectrum_level[band] -=
-                (spectrum_level[band] - level) >> SPECTRUM_RELEASE_SHIFT;
+        else if (spectrum_level[band] > level)
+        {
+            /* >> SPECTRUM_RELEASE_SHIFT truncates to 0 once the remaining
+             * gap drops below 8, which would otherwise freeze the level a
+             * few points short of the true (quieter) target forever.
+             * Guarantee at least 1 unit of decay per update so it always
+             * reaches the target. */
+            int decay = (spectrum_level[band] - level) >> SPECTRUM_RELEASE_SHIFT;
+            if (decay < 1)
+                decay = 1;
+            spectrum_level[band] -= decay;
+        }
     }
 }
 

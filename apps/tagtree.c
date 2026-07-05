@@ -60,6 +60,9 @@
 #include "plugin.h"
 #include "language.h"
 #include "playlist_catalog.h"
+#ifdef HAVE_ALBUMART
+#include "recorder/list_albumart.h"
+#endif
 
 #define str_or_empty(x) (x ? x : "(NULL)")
 
@@ -2413,6 +2416,83 @@ int tagtree_get_albumart_path(struct tree_context* c, int id,
 
     return 0;
 }
+
+#ifdef HAVE_ALBUMART
+/* Walks every unique album in the database, disk-caching its art (pfraw,
+ * via list_albumart_precache_one()) so browsing the Albums list doesn't
+ * have to resolve+decode art the first time each album scrolls into view.
+ * Shows a progress bar and allows abort, matching the exact core idiom
+ * apps/root_menu.c's wait_for_tagcache_ready() already uses for a similar
+ * blocking/abortable operation (action_userabort() + splash_progress()).
+ * Returns false if the user aborted partway through. */
+bool tagtree_build_albumart_cache(const struct dim *size)
+{
+    struct tagcache_search tcs, tcs2;
+    char tcs_buf[TAGCACHE_BUFSZ];
+    char album_name[MAX_PATH];
+    char path[MAX_PATH];
+    char artist[MAX_PATH];
+    int total, current = 0;
+    int seek;
+
+    if (!tagcache_search(&tcs, tag_album))
+        return false;
+
+    /* entry_count is populated immediately by tagcache_search() (from the
+     * tag's index header on disk, or the ramcache header) -- an upper
+     * bound on the number of unique albums, good enough for a progress
+     * bar denominator without a separate counting pass. */
+    total = tcs.entry_count;
+    if (total <= 0)
+    {
+        tagcache_search_finish(&tcs);
+        return true; /* nothing to build */
+    }
+
+    /* Same dedup mechanism retrieve_entries() uses when walking a grouping
+     * tag like this one (apps/tagtree.c's own uniqbuf, safe to reuse here
+     * since this function runs to completion before any browsing UI that
+     * might also use it resumes). */
+    tagcache_search_set_uniqbuf(&tcs, uniqbuf, UNIQBUF_SIZE);
+
+    while (tagcache_get_next(&tcs, tcs_buf, sizeof(tcs_buf)))
+    {
+        if (action_userabort(HZ/2))
+        {
+            tagcache_search_finish(&tcs);
+            return false;
+        }
+
+        current++;
+        splash_progress(current, total, "%s (%d/%d)",
+                         str(LANG_BUILDING_DATABASE), current, total);
+
+        strlcpy(album_name, tcs.result, sizeof(album_name));
+        seek = tcs.result_seek;
+
+        path[0] = '\0';
+        if (tagcache_search(&tcs2, tag_filename))
+        {
+            tagcache_retrieve(&tcs2, seek, tcs2.type, path, sizeof(path));
+            tagcache_search_finish(&tcs2);
+        }
+
+        artist[0] = '\0';
+        if (tagcache_search(&tcs2, tag_albumartist))
+        {
+            tagcache_retrieve(&tcs2, seek, tcs2.type, artist, sizeof(artist));
+            tagcache_search_finish(&tcs2);
+        }
+
+        if (path[0])
+            list_albumart_precache_one(path, album_name, artist, size);
+    }
+    tagcache_search_finish(&tcs);
+
+    list_albumart_cache_mark_complete();
+    return true;
+}
+#endif /* HAVE_ALBUMART */
 
 int tagtree_get_custom_action(struct tree_context* c)
 {

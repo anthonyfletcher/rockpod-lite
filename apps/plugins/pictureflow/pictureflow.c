@@ -308,7 +308,6 @@ static inline pix_t pf_color_mix(int brightness)
 
 #define EMPTY_SLIDE CACHE_PREFIX "/emptyslide.pfraw"
 #define EMPTY_SLIDE_BMP PLUGIN_DEMOS_DIR "/pictureflow_emptyslide.bmp"
-#define SPLASH_BMP PLUGIN_DEMOS_DIR "/pictureflow_splash.bmp"
 
 /* Ordered Bayer dithering for 24-bit to RGB565 conversion */
 #ifdef HAVE_LCD_COLOR
@@ -361,6 +360,7 @@ struct pf_config_t
      bool resize;
      bool show_fps;
      bool show_statusbar;
+     bool show_reflection;
 
      bool update_albumart;
 
@@ -577,6 +577,7 @@ static struct configdata config[] =
     { TYPE_BOOL, 0, 1, { .bool_p = &pf_cfg.parallel_slides }, "parallel slides",
       NULL },
     { TYPE_BOOL, 0, 1, { .bool_p = &pf_cfg.show_statusbar }, "show statusbar", NULL },
+    { TYPE_BOOL, 0, 1, { .bool_p = &pf_cfg.show_reflection }, "show reflection", NULL },
     { TYPE_BOOL, 0, 1, { .bool_p = &pf_cfg.update_albumart }, "update albumart", NULL },
     { TYPE_INT, 100, 400, { .int_p = &pf_cfg.scroll_speed }, "scroll speed", NULL },
     { TYPE_INT, 100, 400, { .int_p = &pf_cfg.transition_speed }, "transition speed",
@@ -691,7 +692,6 @@ static bool free_slide_prio(int prio);
 bool load_new_slide(void);
 int load_surface(int);
 static void draw_progressbar(int step, int count, char *msg);
-static void draw_splashscreen(unsigned char * buf_tmp, size_t buf_tmp_size);
 static void free_all_slide_prio(int prio);
 
 static inline void buf_ctx_lock(void)
@@ -745,8 +745,6 @@ static bool progress_cancel(int step, int count, char *msg)
             return true;
         rb->lcd_clear_display();
     }
-    else
-        msg = NULL;
 
     if (count)
         draw_progressbar(step, count, msg);
@@ -781,9 +779,10 @@ static void config_set_defaults(struct pf_config_t *cfg)
      cfg->show_year = false;
      cfg->parallel_slides = true;
      cfg->show_statusbar = true;
+     cfg->show_reflection = false;
      cfg->update_albumart = false;
      cfg->scroll_speed = 200;
-     cfg->transition_speed = 200;
+     cfg->transition_speed = 400;
      cfg->text_crossfade = true;
 }
 
@@ -1305,7 +1304,7 @@ static int create_album_untagged(struct tagcache_search *tcs,
     long seek;
     int last, final, retry;
     int i, j;
-    draw_splashscreen(*buf, *bufsz);
+    rb->splash_progress_set_delay(HZ / 2);
     draw_progressbar(0, total_count, STR_STEP_INDEXING_UNTAGGED);
 
     /* search tagcache for all <untagged> albums & save the albumartist seek pos */
@@ -1341,7 +1340,6 @@ static int create_album_untagged(struct tagcache_search *tcs,
         rb->tagcache_search_finish(tcs);
 
         if (ret == SUCCESS) {
-            draw_splashscreen(*buf, *bufsz);
             draw_progressbar(0, pf_idx.album_ct, STR_STEP_INDEXING_UNTAGGED);
 
             last = 0;
@@ -1429,6 +1427,7 @@ static int assign_album_year(void)
 {
     char tcs_buf[TAGCACHE_BUFSZ];
     const long tcs_bufsz = sizeof(tcs_buf);
+    rb->splash_progress_set_delay(HZ / 2);
     draw_progressbar(0, pf_idx.album_ct, STR_STEP_ASSIGNING_ALBUM_YEAR);
     for (int album_idx = 0; album_idx < pf_idx.album_ct; album_idx++)
     {
@@ -1477,7 +1476,6 @@ static int create_album_index(void)
 
     int i, j, last, final, retry, res;
 
-    draw_splashscreen(buf, buf_size);
     ALIGN_BUFFER(buf, buf_size, sizeof(long));
 
     /* Artists */
@@ -1519,7 +1517,7 @@ static int create_album_index(void)
     buf = pf_idx.album_index + pf_idx.album_ct;
 
     /* Assign indices */
-    draw_splashscreen(buf, buf_size);
+    rb->splash_progress_set_delay(HZ / 2);
     draw_progressbar(0, pf_idx.album_ct, STR_STEP_ASSIGNING_ALBUMS);
     for (j = 0; j < pf_idx.album_ct; j++)
     {
@@ -1566,8 +1564,6 @@ retry_artist_lookup:
         rb->tagcache_search_finish(&tcs);
     }
 
-    draw_splashscreen(buf, buf_size);
-
     res = assign_album_year();
 
     if (res < SUCCESS)
@@ -1577,7 +1573,7 @@ retry_artist_lookup:
     rb->qsort(pf_idx.album_index, pf_idx.album_ct,
               sizeof(struct album_data), compare_album_artists);
 
-    draw_splashscreen(buf, buf_size);
+    rb->splash_progress_set_delay(HZ / 2);
     draw_progressbar(0, pf_idx.album_ct, STR_STEP_REMOVING_DUPLICATES);
     /* mark duplicate albums for deletion */
     for (i = 0; i < pf_idx.album_ct - 1; i++) /* -1 don't check last entry */
@@ -2173,107 +2169,13 @@ static bool get_albumart_for_index_from_db(const int slide_index, char *buf,
 }
 
 /**
-  Draw the PictureFlow logo
- */
-static void draw_splashscreen(unsigned char * buf_tmp, size_t buf_tmp_size)
-{
-    struct screen* display = rb->screens[SCREEN_MAIN];
-#if FB_DATA_SZ > 1
-    ALIGN_BUFFER(buf_tmp, buf_tmp_size, sizeof(fb_data));
-#endif
-    struct bitmap logo = {
-#if LCD_WIDTH < 200
-        .width = 100,
-        .height = 18,
-#else
-        .width = 193,
-        .height = 34,
-#endif
-        .data = buf_tmp
-    };
-    int ret = rb->read_bmp_file(SPLASH_BMP, &logo, buf_tmp_size,
-                                FORMAT_NATIVE, NULL);
-#if LCD_DEPTH > 1
-#ifdef HAVE_LCD_COLOR
-    rb->lcd_set_background(pf_bg_color);
-    rb->lcd_set_foreground(pf_fg_color);
-#else
-    rb->lcd_set_background(N_BRIGHT(0));
-    rb->lcd_set_foreground(N_BRIGHT(255));
-#endif
-#else
-    rb->lcd_set_drawmode(PICTUREFLOW_DRMODE);
-#endif
-    rb->lcd_clear_display();
-
-    if (ret > 0)
-    {
-#if LCD_DEPTH == 1  /* Mono LCDs need the logo inverted */
-        rb->lcd_set_drawmode(PICTUREFLOW_DRMODE ^ DRMODE_INVERSEVID);
-#endif
-        display->bitmap(logo.data, (LCD_WIDTH - logo.width) / 2, 10,
-            logo.width, logo.height);
-#if LCD_DEPTH == 1  /* Mono LCDs need the logo inverted */
-        rb->lcd_set_drawmode(PICTUREFLOW_DRMODE);
-#endif
-    }
-
-    rb->lcd_update();
-}
-
-
-/**
-  Draw a simple progress bar
+  Draw a progress popup using the shared firmware progress widget, so
+  index-building looks like every other long-running operation (e.g. the
+  Album art cache builder) instead of a bespoke full-screen bar.
  */
 static void draw_progressbar(int step, int count, char *msg)
 {
-    static int txt_w, txt_h;
-    const int bar_height = 22;
-    const int w = LCD_WIDTH - 20;
-    const int x = 10;
-    static int y;
-    if (msg != NULL)
-    {
-#if LCD_DEPTH > 1
-#ifdef HAVE_LCD_COLOR
-        rb->lcd_set_background(pf_bg_color);
-        rb->lcd_set_foreground(pf_fg_color);
-#else
-        rb->lcd_set_background(N_BRIGHT(0));
-        rb->lcd_set_foreground(N_BRIGHT(255));
-#endif
-#else
-        rb->lcd_set_drawmode(PICTUREFLOW_DRMODE);
-#endif
-        rb->lcd_getstringsize(msg, &txt_w, &txt_h);
-
-        y = (LCD_HEIGHT - txt_h)/2;
-
-        rb->lcd_putsxy((LCD_WIDTH - txt_w)/2, y, msg);
-        y += (txt_h + 5);
-    }
-#if LCD_DEPTH > 1
-#ifdef HAVE_LCD_COLOR
-    rb->lcd_set_foreground(pf_color_mix(100));
-#else
-    rb->lcd_set_foreground(N_BRIGHT(100));
-#endif
-#endif
-    rb->lcd_drawrect(x, y, w+2, bar_height);
-#if LCD_DEPTH > 1
-    rb->lcd_set_foreground(N_PIX(165, 231, 82));
-#endif
-
-    rb->lcd_fillrect(x+1, y+1, step * w / count, bar_height-2);
-#if LCD_DEPTH > 1
-#ifdef HAVE_LCD_COLOR
-    rb->lcd_set_foreground(pf_fg_color);
-#else
-    rb->lcd_set_foreground(N_BRIGHT(255));
-#endif
-#endif
-    rb->lcd_update();
-    rb->yield();
+    rb->splash_progress(step, count, "%s", msg);
 }
 
 /* Calculate modified FNV hash of string
@@ -2408,13 +2310,14 @@ aa_success:
  */
 static bool create_albumart_cache(void)
 {
-    draw_splashscreen(pf_idx.buf, pf_idx.buf_sz);
+    rb->splash_progress_set_delay(HZ / 2);
     draw_progressbar(0, pf_idx.album_ct, STR_STEP_PREPARING_ARTWORK);
     aa_cache.inspected = 0;
     for (int i=0; i < pf_idx.album_ct; i++)
     {
         incremental_albumart_cache(true);
-        draw_progressbar(aa_cache.inspected, pf_idx.album_ct, NULL);
+        draw_progressbar(aa_cache.inspected, pf_idx.album_ct,
+                          STR_STEP_PREPARING_ARTWORK);
         if (rb->button_get(false) > BUTTON_NONE)
             return true;
     }
@@ -3752,6 +3655,7 @@ static int display_settings_menu(void)
                         ID2P(LANG_SPACING),
                         ID2P(LANG_RESIZE_COVERS),
                         "Show Statusbar",
+                        "Show Reflection",
                         "Scroll Speed %",
                         "Transition Speed %",
                         "Text Crossfade");
@@ -3819,16 +3723,26 @@ static int display_settings_menu(void)
                 }
                 break;
             case 7:
+                old_val = pf_cfg.show_reflection;
+                rb->set_bool("Show Reflection", &pf_cfg.show_reflection);
+                if (old_val != pf_cfg.show_reflection)
+                {
+                    configfile_save(CONFIG_FILE, config,
+                                    CONFIG_NUM_ITEMS, CONFIG_VERSION);
+                    return -3; /* re-init to recompute layout */
+                }
+                break;
+            case 8:
                 rb->set_int("Scroll Speed %", "", 1,
                             &pf_cfg.scroll_speed,
                             NULL, 25, 100, 400, NULL );
                 break;
-            case 8:
+            case 9:
                 rb->set_int("Transition Speed %", "", 1,
                             &pf_cfg.transition_speed,
                             NULL, 25, 100, 400, NULL );
                 break;
-            case 9:
+            case 10:
                 rb->set_bool("Text Crossfade", &pf_cfg.text_crossfade);
                 break;
             case MENU_ATTACHED_USB:
@@ -4772,7 +4686,7 @@ static bool init(void)
     pf_height = pf_cfg.show_statusbar ? pf_vp.height : LCD_HEIGHT;
     pf_half_height = LCD_HEIGHT / 2 - pf_vp_y + (pf_cfg.show_statusbar ? 8 : 0);
     pf_lower_half = pf_height - pf_half_height;
-    pf_reflect_height = REFLECT_HEIGHT;
+    pf_reflect_height = pf_cfg.show_reflection ? REFLECT_HEIGHT : 0;
     pf_display_offs = DISPLAY_OFFS;
 
 #ifdef HAVE_LCD_COLOR

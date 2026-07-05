@@ -266,6 +266,23 @@ static bool decode_art(const char *path, struct aa_cache_entry *e,
     return true;
 }
 
+bool list_albumart_is_cached(int row_key, const struct bitmap **out)
+{
+    struct aa_cache_entry *e = find_entry(row_key);
+    if (!e)
+        return false;
+
+    e->last_used_tick = current_tick;
+    if (!e->has_art)
+    {
+        *out = NULL;
+        return true;
+    }
+    e->bmp.data = core_get_data(e->handle);
+    *out = &e->bmp;
+    return true;
+}
+
 const struct bitmap *list_albumart_get_bitmap(const char *path,
                                                const char *album,
                                                const char *albumartist,
@@ -288,6 +305,10 @@ const struct bitmap *list_albumart_get_bitmap(const char *path,
         return &e->bmp;
     }
 
+    /* Callers are expected to have already tried list_albumart_is_cached()
+     * before paying the tagcache cost of resolving path/album/artist -- if
+     * we get here it should be a genuine miss, not a redraw of a row we've
+     * already seen. */
     e = claim_slot();
     e->row_key = row_key;
     e->valid = true;
@@ -322,6 +343,50 @@ const struct bitmap *list_albumart_get_bitmap(const char *path,
 
     e->has_art = true;
     return &e->bmp;
+}
+
+void list_albumart_precache_one(const char *path, const char *album,
+                                 const char *albumartist,
+                                 const struct dim *size)
+{
+    char pfraw_path[MAX_PATH];
+    struct aa_cache_entry tmp;
+
+    if (!get_pfraw_path(pfraw_path, sizeof(pfraw_path), album, albumartist, size))
+        return; /* untagged album: nothing to cache */
+    if (file_exists(pfraw_path))
+        return; /* already cached from a previous build/browse */
+
+    memset(&tmp, 0, sizeof(tmp));
+    tmp.handle = -1;
+    if (decode_art(path, &tmp, size))
+    {
+        save_pfraw(pfraw_path, &tmp.bmp);
+        if (tmp.handle >= 0)
+            core_free(tmp.handle);
+    }
+}
+
+#define AA_CACHE_COMPLETE_MARKER AA_CACHE_DIR "/complete"
+
+bool list_albumart_cache_is_complete(void)
+{
+    return file_exists(AA_CACHE_COMPLETE_MARKER);
+}
+
+void list_albumart_cache_mark_complete(void)
+{
+    int fd;
+    if (!dir_exists(AA_CACHE_DIR))
+        mkdir(AA_CACHE_DIR);
+    fd = open(AA_CACHE_COMPLETE_MARKER, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (fd >= 0)
+        close(fd);
+}
+
+void list_albumart_cache_mark_incomplete(void)
+{
+    remove(AA_CACHE_COMPLETE_MARKER);
 }
 
 void list_albumart_clear_cache(void)

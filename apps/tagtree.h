@@ -50,6 +50,10 @@ int tagtree_get_albumart_path(struct tree_context* c, int id,
                                char *path_buf, size_t path_buflen,
                                char *album_buf, size_t album_buflen,
                                char *artist_buf, size_t artist_buflen);
+#ifdef HAVE_ALBUMART
+#include "skin_engine/skin_engine.h" /* struct dim */
+bool tagtree_build_albumart_cache(const struct dim *size);
+#endif
 int tagtree_get_custom_action(struct tree_context* c);
 bool tagtree_get_subentry_filename(char *buf, size_t bufsize);
 bool tagtree_subentries_do_action(bool (*action_cb)(const char *file_name));
