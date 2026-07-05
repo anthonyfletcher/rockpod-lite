@@ -317,8 +317,11 @@ static int browser(void* param)
              * tagnavi.config reordering, and armed for tagtree_load() to
              * apply on its next fresh root load -- rockbox_browse() (called
              * below) unconditionally resets dirlevel/selected_item to 0 for
-             * any ID3-DB entry, so doing this before that call would just
-             * get discarded. */
+             * any ID3-DB entry, but NOT currtable/currextra, so those must
+             * be forced back to the root here or tagtree_load() will just
+             * keep showing whatever table was last displayed and the armed
+             * shortcut below will never see a fresh root load to apply on. */
+            tc->currtable = 0;
             {
                 int target_tag;
                 switch ((intptr_t)param)

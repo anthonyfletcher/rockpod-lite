@@ -1037,19 +1037,6 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
         }
         else if ((skin_viewport->hidden_flags&VP_DRAW_HIDDEN))
         {
-            /* On the frame this viewport *becomes* hidden (not on every
-             * subsequent frame it stays hidden -- VP_DRAW_WASHIDDEN not set
-             * yet distinguishes the two), clear whatever it last drew.
-             * Otherwise its content lingers on screen indefinitely: nothing
-             * else in this loop touches a hidden viewport's screen region,
-             * and the matching "just reappeared" branch below only clears
-             * *itself* when *it* next becomes visible again -- which may be
-             * a mutually-exclusive alternate viewport that never does. */
-            if (!(skin_viewport->hidden_flags & VP_DRAW_WASHIDDEN))
-            {
-                display->set_viewport_ex(&skin_viewport->vp, VP_FLAG_VP_SET_CLEAN);
-                display->clear_viewport();
-            }
             skin_viewport->hidden_flags |= VP_DRAW_WASHIDDEN;
             continue;
         }
