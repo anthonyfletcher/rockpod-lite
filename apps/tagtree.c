@@ -60,9 +60,6 @@
 #include "plugin.h"
 #include "language.h"
 #include "playlist_catalog.h"
-#ifdef HAVE_ALBUMART
-#include "recorder/list_albumart.h"
-#endif
 
 #define str_or_empty(x) (x ? x : "(NULL)")
 
@@ -2101,6 +2098,16 @@ static int find_album_row_by_name(void)
     if (!tagcache_search(&search, tag_album))
         return -1;
 
+    /* retrieve_entries() (what tagtree_get_entry()'s lazy fetch actually
+     * uses to populate the Album table) always dedups via a uniqbuf -- this
+     * search must too, or its position numbering silently drifts from
+     * retrieve_entries()' the moment any duplicate album entry is skipped
+     * before the target row, landing this two-hop jump on the wrong album
+     * (or none) without any error. Safe to reuse retrieve_entries()' own
+     * uniqbuf: this search always runs to completion (and calls
+     * tagcache_search_finish()) before anything else touches it. */
+    tagcache_search_set_uniqbuf(&search, uniqbuf, UNIQBUF_SIZE);
+
     while (tagcache_get_next(&search, buf, sizeof(buf)))
     {
         if (strcmp(search.result, pending_album_name) == 0)
@@ -2592,131 +2599,6 @@ int tagtree_get_filename(struct tree_context* c, char *buf, int buflen)
 
     return 0;
 }
-
-/* Resolves an arbitrary row (not just the current selection) to a
- * representative track path plus its album/albumartist tags, so callers
- * can look up album art for rows scrolled into view without disturbing
- * c->selected_item. Unlike tagtree_get_filename(), 'id' is explicit. */
-int tagtree_get_albumart_path(struct tree_context* c, int id,
-                               char *path_buf, size_t path_buflen,
-                               char *album_buf, size_t album_buflen,
-                               char *artist_buf, size_t artist_buflen)
-{
-    struct tagcache_search tcs;
-    struct tagentry *entry = tagtree_get_entry(c, id);
-    int idx_id;
-
-    if (!entry)
-        return -1;
-
-    /* entry->extraseek is NOT usable here for a grouping row (e.g. an album
-     * listing): it holds that tag's own result_seek (for filtering a nested
-     * search), not a master index id. entry->idx_id is the value
-     * tagcache_retrieve() actually needs to look up a different tag
-     * (filename, albumartist) for this row's representative track. */
-    idx_id = entry->idx_id;
-
-    if (!tagcache_search(&tcs, tag_filename))
-        return -1;
-
-    if (!tagcache_retrieve(&tcs, idx_id, tcs.type, path_buf, path_buflen))
-    {
-        tagcache_search_finish(&tcs);
-        return -2;
-    }
-    tagcache_search_finish(&tcs);
-
-    strlcpy(album_buf, entry->album_name ? entry->album_name : "", album_buflen);
-
-    artist_buf[0] = '\0';
-    if (tagcache_search(&tcs, tag_albumartist))
-    {
-        tagcache_retrieve(&tcs, idx_id, tcs.type, artist_buf, artist_buflen);
-        tagcache_search_finish(&tcs);
-    }
-
-    return 0;
-}
-
-#ifdef HAVE_ALBUMART
-/* Walks every unique album in the database, disk-caching its art (pfraw,
- * via list_albumart_precache_one()) so browsing the Albums list doesn't
- * have to resolve+decode art the first time each album scrolls into view.
- * Shows a progress bar and allows abort, matching the exact core idiom
- * apps/root_menu.c's wait_for_tagcache_ready() already uses for a similar
- * blocking/abortable operation (action_userabort() + splash_progress()).
- * Returns false if the user aborted partway through. */
-bool tagtree_build_albumart_cache(const struct dim *size)
-{
-    struct tagcache_search tcs, tcs2;
-    char tcs_buf[TAGCACHE_BUFSZ];
-    char album_name[MAX_PATH];
-    char path[MAX_PATH];
-    char artist[MAX_PATH];
-    int total, current = 0;
-    int idx_id;
-
-    if (!tagcache_search(&tcs, tag_album))
-        return false;
-
-    /* entry_count is populated immediately by tagcache_search() (from the
-     * tag's index header on disk, or the ramcache header) -- an upper
-     * bound on the number of unique albums, good enough for a progress
-     * bar denominator without a separate counting pass. */
-    total = tcs.entry_count;
-    if (total <= 0)
-    {
-        tagcache_search_finish(&tcs);
-        return true; /* nothing to build */
-    }
-
-    /* Same dedup mechanism retrieve_entries() uses when walking a grouping
-     * tag like this one (apps/tagtree.c's own uniqbuf, safe to reuse here
-     * since this function runs to completion before any browsing UI that
-     * might also use it resumes). */
-    tagcache_search_set_uniqbuf(&tcs, uniqbuf, UNIQBUF_SIZE);
-
-    while (tagcache_get_next(&tcs, tcs_buf, sizeof(tcs_buf)))
-    {
-        if (action_userabort(HZ/2))
-        {
-            tagcache_search_finish(&tcs);
-            return false;
-        }
-
-        current++;
-        splash_progress(current, total, "Building album art cache (%d/%d)",
-                         current, total);
-
-        strlcpy(album_name, tcs.result, sizeof(album_name));
-        /* tcs.result_seek is this row's position within the tag_album index
-         * (for filtering a nested search), not a master index id -- use
-         * tcs.idx_id, which is what tagcache_retrieve() actually expects. */
-        idx_id = tcs.idx_id;
-
-        path[0] = '\0';
-        if (tagcache_search(&tcs2, tag_filename))
-        {
-            tagcache_retrieve(&tcs2, idx_id, tcs2.type, path, sizeof(path));
-            tagcache_search_finish(&tcs2);
-        }
-
-        artist[0] = '\0';
-        if (tagcache_search(&tcs2, tag_albumartist))
-        {
-            tagcache_retrieve(&tcs2, idx_id, tcs2.type, artist, sizeof(artist));
-            tagcache_search_finish(&tcs2);
-        }
-
-        if (path[0])
-            list_albumart_precache_one(path, album_name, artist, size);
-    }
-    tagcache_search_finish(&tcs);
-
-    list_albumart_cache_mark_complete();
-    return true;
-}
-#endif /* HAVE_ALBUMART */
 
 int tagtree_get_custom_action(struct tree_context* c)
 {
@@ -3217,11 +3099,3 @@ int tagtree_get_icon(struct tree_context* c)
     return icon;
 }
 
-/* True when the current table/level is browsing albums (as opposed to
- * artists, genres, years, tracks, etc). Used to decide whether a row
- * has meaningful album art to show. */
-bool tagtree_currtable_is_albums(struct tree_context* c)
-{
-    return (c->currtable == TABLE_NAVIBROWSE
-            && csi->tagorder[c->currextra] == tag_album);
-}

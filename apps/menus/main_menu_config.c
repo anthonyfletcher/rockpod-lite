@@ -62,6 +62,12 @@ static int menu_item_count;
 struct items
 {
     unsigned char *name;
+    /* Backing buffer for dynamic-name items (e.g. root_menu.c's tagnavi
+     * entries, MENU_DYNAMIC_DESC) -- unlike MENU_HAS_DESC's static, always
+     * P2STR-resolvable 'desc' pointer, a dynamic name only exists once its
+     * list_get_name() callback actually runs, so it has to be resolved into
+     * a real buffer up front (see item_name()) rather than deferred. */
+    char dyn_name[MAX_ITEM_NAME];
     char string[MAX_ITEM_NAME];
     bool enabled;
 };
@@ -90,9 +96,22 @@ static enum themable_icons menu_get_icon(int selected_item, void * data)
     return menu_items[selected_item].enabled ? Icon_Config : Icon_NOICON;
 }
 
-static unsigned char *item_name(int n)
+/* 'dest' is the menu_items[] slot this name is being resolved for -- needed
+ * because a MENU_DYNAMIC_DESC item's name doesn't exist as a static pointer
+ * anywhere; it has to be rendered into a real buffer via list_get_name() now,
+ * since that's the only time this code has a specific slot to render it into. */
+static unsigned char *item_name(int n, struct items *dest)
 {
     const struct menu_item_ex *item = menu_table[n].item;
+
+    if (item->flags & MENU_DYNAMIC_DESC)
+    {
+        const struct menu_get_name_and_icon *dyn = item->menu_get_name_and_icon;
+        dyn->list_get_name(0, dyn->list_get_name_data,
+                           dest->dyn_name, sizeof(dest->dyn_name));
+        return (unsigned char *)dest->dyn_name;
+    }
+
     return (item->flags & MENU_HAS_DESC) ?
       item->callback_and_desc->desc :
       (strcmp("wps", menu_table[n].string) ?
@@ -122,7 +141,7 @@ static void load_from_cfg(void)
         }
         if (found && done < MAX_ITEMS)
         {
-            menu_items[done].name = item_name(i);
+            menu_items[done].name = item_name(i, &menu_items[done]);
             strcpy(menu_items[done].string, token);
             menu_items[done].enabled = true;
             done++;
@@ -142,7 +161,7 @@ static void load_from_cfg(void)
 
             if (!found)
             {
-                menu_items[done].name = item_name(i);
+                menu_items[done].name = item_name(i, &menu_items[done]);
                 strcpy(menu_items[done].string, menu_table[i].string);
                 menu_items[done].enabled = false;
                 done++;

@@ -50,7 +50,7 @@
 %?if(%cs, =, 1)<%?and(%if(%ss(0,2,%St(font)),!=,22),%if(%ss(0,2,%St(font)),!=,24))<%VI(Home_Menu_Viewport_Full)|%Vd(Home_Corners)%?St(scrollbar)<%VI(Home_Menu_Viewport_Full)|%VI(Home_Menu_Viewport_Right)%Vd(Scrollbar_Tall_Left)|%VI(Home_Menu_Viewport_Left)%Vd(Scrollbar_Tall_Right)>%?St(scrollbar)<%?St(show icons)<%Lb(No_Scroll_Home_Menu_With_Icons,302,30)|%Lb(No_Scroll_Home_Menu_No_Icons,302,30)>|%?St(show icons)<%Lb(Home_Menu_With_Icons,302,30)|%Lb(Home_Menu_No_Icons,302,30)>>>>
 #
 #- Sub Menu Initialisation -#
-%?and(%if(%cs,!=,1),%if(%cs,!=,10),%if(%cs,!=,14),%if(%cs,!=,16),%if(%cs,!=,21))<%Vd(Sub_Menu_Header)%?or(%if(%cs,=,7),%if(%Li, =, 4),%if(%Li, =, 11),%if(%Li, =, 26),%if(%Li, =, 27),%if(%Li, =, 32),%and(%if(%cs, =, 15),%if(%Lt, !=, %Sx(Context Menu))),%if(%cs, =, 17),%if(%cs, =, 19),%if(%cs, =, 20),%if(%Lt,=,%Sx(Album Artist)),%if(%Lt,=,%Sx([All tracks])),%if(%Lt,=,%Sx([Untagged])),%if(%Lt,=,%Sx([By album])),%if(%Lt,=,%Sx(Artist)),%if(%Lt,=,%Sx(Album)),%if(%Lt,=,%Sx(Genre)),%if(%Lt,=,%Sx(Year)),%if(%Lt,=,%Sx(Composer)),%if(%Lt,=,%Sx(Tracks by)),%if(%Lt,=,%Sx(Search by...)),%if(%Lt,=,%Sx(User Rating)),%if(%Lt,=,%Sx(Recently Added)),%if(%Lt,=,%Sx(User Rating)),%if(%Lt,=,%Sx(Settings)),%if(%Lt,=,%Sx(Sound Settings)),%if(%Lt,=,%Sx(Playback Settings)),%if(%Lt,=,%Sx(General Settings)),%if(%Lt,=,%Sx(Database)),%if(%Lt,=,%Sx(Theme Settings)),%if(%Lt,=,%Sx(Recording Settings)),%if(%Lt,=,%Sx(Manage Settings)),%if(%Lt,=,%Sx(Display)),%if(%Lt,=,%Sx(Language)),%if(%Lt,=,%Sx(Voice)),%if(%Lt,=,%Sx(Main Menu)),%if(%Lt,=,%Sx(Brightness)))<%?St(show icons)<%Vd(Header_with_Icon)|%Vd(Header_without_Icon)>|%Vd(Header_without_Icon)>%?and(%if(%ss(0,2,%St(font)),!=,22),%if(%ss(0,2,%St(font)),!=,24))<%VI(Sub_Menu_Viewport_Full)|%Vd(Sub_Menu_Corners)%?St(scrollbar)<%VI(Sub_Menu_Viewport_Full)|%VI(Sub_Menu_Viewport_Right)%Vd(Scrollbar_Short_Left)|%VI(Sub_Menu_Viewport_Left)%Vd(Scrollbar_Short_Right)>%?St(scrollbar)<%?or(%and(%if(%Lt,=,%Sx(Database)),%if(%Li,=,3)),%if(%Lt,=,%Sx(Settings)))<%?St(show icons)<%Lb(No_Scroll_Menu_With_Icons,182,30)|%Lb(No_Scroll_Menu_No_Icons,182,30)>|%?if(%Lt,=,%Sx(Album))<%Lb(No_Scroll_Album_List,182,56)|%Lb(No_Scroll_Menu_No_Icons,182,30)>>|%?or(%and(%if(%Lt,=,%Sx(Database)),%if(%Li,=,3)),%if(%Lt,=,%Sx(Settings)))<%?St(show icons)<%Lb(Menu_With_Icons,182,30)|%Lb(Menu_No_Icons,182,30)>|%?if(%Lt,=,%Sx(Album))<%Lb(Album_List,182,56)|%Lb(Menu_No_Icons,182,30)>>>>>
+%?and(%if(%cs,!=,1),%if(%cs,!=,10),%if(%cs,!=,14),%if(%cs,!=,16),%if(%cs,!=,21))<%Vd(Sub_Menu_Header)%?or(%if(%cs,=,7),%if(%Li, =, 4),%if(%Li, =, 11),%if(%Li, =, 26),%if(%Li, =, 27),%if(%Li, =, 32),%and(%if(%cs, =, 15),%if(%Lt, !=, %Sx(Context Menu))),%if(%cs, =, 17),%if(%cs, =, 19),%if(%cs, =, 20),%if(%Lt,=,%Sx(Album Artist)),%if(%Lt,=,%Sx([All tracks])),%if(%Lt,=,%Sx([Untagged])),%if(%Lt,=,%Sx([By album])),%if(%Lt,=,%Sx(Artist)),%if(%Lt,=,%Sx(Album)),%if(%Lt,=,%Sx(Genre)),%if(%Lt,=,%Sx(Year)),%if(%Lt,=,%Sx(Composer)),%if(%Lt,=,%Sx(Tracks by)),%if(%Lt,=,%Sx(Search by...)),%if(%Lt,=,%Sx(User Rating)),%if(%Lt,=,%Sx(Recently Added)),%if(%Lt,=,%Sx(User Rating)),%if(%Lt,=,%Sx(Settings)),%if(%Lt,=,%Sx(Sound Settings)),%if(%Lt,=,%Sx(Playback Settings)),%if(%Lt,=,%Sx(General Settings)),%if(%Lt,=,%Sx(Database)),%if(%Lt,=,%Sx(Theme Settings)),%if(%Lt,=,%Sx(Recording Settings)),%if(%Lt,=,%Sx(Manage Settings)),%if(%Lt,=,%Sx(Display)),%if(%Lt,=,%Sx(Language)),%if(%Lt,=,%Sx(Voice)),%if(%Lt,=,%Sx(Main Menu)),%if(%Lt,=,%Sx(Brightness)))<%?St(show icons)<%Vd(Header_with_Icon)|%Vd(Header_without_Icon)>|%Vd(Header_without_Icon)>%?and(%if(%ss(0,2,%St(font)),!=,22),%if(%ss(0,2,%St(font)),!=,24))<%VI(Sub_Menu_Viewport_Full)|%Vd(Sub_Menu_Corners)%?St(scrollbar)<%VI(Sub_Menu_Viewport_Full)|%VI(Sub_Menu_Viewport_Right)%Vd(Scrollbar_Short_Left)|%VI(Sub_Menu_Viewport_Left)%Vd(Scrollbar_Short_Right)>%?St(scrollbar)<%?or(%and(%if(%Lt,=,%Sx(Database)),%if(%Li,=,3)),%if(%Lt,=,%Sx(Settings)))<%?St(show icons)<%Lb(No_Scroll_Menu_With_Icons,182,30)|%Lb(No_Scroll_Menu_No_Icons,182,30)>|%Lb(No_Scroll_Menu_No_Icons,182,30)>|%?or(%and(%if(%Lt,=,%Sx(Database)),%if(%Li,=,3)),%if(%Lt,=,%Sx(Settings)))<%?St(show icons)<%Lb(Menu_With_Icons,182,30)|%Lb(Menu_No_Icons,182,30)>|%Lb(Menu_No_Icons,182,30)>>>>
 #
 #- Album Covers Initialisation -#
 # 22 == ACTIVITY_ALBUMCOVERS (apps/misc.h). Full-width coverflow rendered
@@ -247,19 +247,6 @@
 #
 %Vl(No_Scroll_Menu_No_Icons,9,4,295,22,-)%?and(%if(%LT,!=,%Sx([All tracks])),%if(%LT,!=,%Sx([Random])),%if(%LT,!=,%Sx([Untagged])),%if(%LT,!=,%Sx([By album])))<%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT>
 #
-# Album list rows: 48x48 cover art + title, 56px tall to fit the art.
-# Flat highlight-on-select style rather than the rounded-corner pill used
-# by the other menus, since that background is built from custom font
-# glyphs sized specifically for the 30px row height used elsewhere.
-#
-%Vl(Album_List,0,0,302,56,-)%?Lc<%Vs(invert)%dr(0,0,-,-)>
-%Vl(Album_List,4,4,48,48,-)%La
-%Vl(Album_List,60,17,238,22,4)%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT
-#
-%Vl(No_Scroll_Album_List,0,0,314,56,-)%?Lc<%Vs(invert)%dr(0,0,-,-)>
-%Vl(No_Scroll_Album_List,4,4,48,48,-)%La
-%Vl(No_Scroll_Album_List,60,17,250,22,4)%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT
-#
 #
 #-- Rounded Corners on menus --#
 #Draw rounded corners on the menus. Draw on foreground and background to prevent some minor clipping from the menu items.
@@ -269,12 +256,8 @@
 %Vl(Home_Corners,0,25,200,12,6)
 #
 #
-# The Album list's rows are plain squared rectangles (Album_List's %dr(0,0,-,-)
-# selection highlight has no rounding), so the shared rounded top-left corner
-# here looks inconsistent specifically on that screen -- suppressed (leaving
-# just the top-right corner) only when the current list's title is "Album".
-%Vl(Sub_Menu_Corners,0,52,-,12,6)%VB%?if(%Lt,=,%Sx(Album))<%?St(scrollbar)<%aRV|%aRV|%aRT>|%?St(scrollbar)<S%aRV|U%aRV|S%aRT>>
-%Vl(Sub_Menu_Corners,0,52,-,12,6)%?if(%Lt,=,%Sx(Album))<%?St(scrollbar)<%aRV|%aRV|%aRT>|%?St(scrollbar)<S%aRV|U%aRV|S%aRT>>
+%Vl(Sub_Menu_Corners,0,52,-,12,6)%VB%?St(scrollbar)<S%aRV|U%aRV|S%aRT>
+%Vl(Sub_Menu_Corners,0,52,-,12,6)%?St(scrollbar)<S%aRV|U%aRV|S%aRT>
 #
 #--- END ---#
 #

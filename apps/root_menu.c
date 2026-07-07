@@ -53,9 +53,6 @@
 
 #include "tree.h"
 #include "tagtree.h"
-#ifdef HAVE_ALBUMART
-#include "recorder/list_albumart.h"
-#endif
 #if CONFIG_TUNER
 #include "radio.h"
 #endif
@@ -307,18 +304,6 @@ static int browser(void* param)
             if (!tagtree_get_main_menu_tag_row(slot, &target_tag, NULL))
                 return GO_TO_PREVIOUS; /* slot not backed by a real row */
 
-#ifdef HAVE_ALBUMART
-            if (target_tag == tag_album && !list_albumart_cache_is_complete())
-            {
-                const struct dim aa_size = { LIST_ALBUMART_DEFAULT_WIDTH,
-                                             LIST_ALBUMART_DEFAULT_HEIGHT };
-                /* First visit to Albums: build the on-disk art cache with a
-                 * visible progress bar up front, rather than leaving the
-                 * user to wonder why browsing is slow/blank on a per-row
-                 * basis the first time each album scrolls into view. */
-                tagtree_build_albumart_cache(&aa_size);
-            }
-#endif
             filter = SHOW_ID3DB;
             last_ft_dirlevel = tc->dirlevel;
             /* Jump straight into this row's branch of the Database's root
@@ -400,13 +385,17 @@ static int browser(void* param)
         break;
 
         case GO_TO_ALBUM_COVERS_TRACKS:
+            /* NOTE: no GO_TO_ROOT -> GO_TO_PICTUREFLOW translation here
+             * (an earlier version of this did that, to try to land back on
+             * Album covers after backing all the way out). tree.c's
+             * dirbrowse() returns GO_TO_ROOT for BOTH "backed out past
+             * dirlevel 0" and "pressed MENU" -- they're indistinguishable
+             * here, so redirecting either one to Album covers also hijacked
+             * the MENU button's normal "go to the root menu" behavior,
+             * trapping the user in a loop between Album covers and this
+             * browse with no way back to the actual main menu. Behaves like
+             * every other tag-tree browse now: GO_TO_ROOT really means root. */
             tc->dirlevel = last_ft_dirlevel;
-            /* Backing all the way out of this browse session should return
-             * to Album covers, not the generic root menu that tree.c's
-             * dirlevel==0 exit path returns by default -- this is the one
-             * place that translation happens. */
-            if (ret_val == GO_TO_ROOT)
-                ret_val = GO_TO_PICTUREFLOW;
         break;
 #endif
     }

@@ -3476,7 +3476,14 @@ static bool init(void)
 
     pf_vp_y = pf_vp.y;
     pf_height = pf_vp.height;
-    pf_half_height = LCD_HEIGHT / 2 - pf_vp_y + 8;
+    /* Split around the viewport's OWN vertical center, not the physical
+     * screen's -- the old "LCD_HEIGHT / 2 - pf_vp_y" formula only worked
+     * because pf_vp used to always extend to the bottom of the screen, so
+     * the screen's center and the viewport's center were the same point.
+     * Now that a theme can give the coverflow a shorter viewport that ends
+     * well above the screen bottom, anchoring to LCD_HEIGHT/2 pushes the
+     * whole render toward the top of that (smaller) area. */
+    pf_half_height = pf_height / 2 + 8;
     pf_lower_half = pf_height - pf_half_height;
 
     pf_update_dynamic_colors();
@@ -3643,6 +3650,10 @@ static int album_covers_loop(void)
     char fpstxt[10];
     int fpstxt_y;
     bool instant_update;
+    int shown_index = -1; /* last center_index the %Cn/%Ca footer was drawn
+                           * for -- forces one skin_update() the first time
+                           * through, then again only when the settled
+                           * selection actually changes. */
 
     while (true) {
         /* Get input first. The SBS renders during get_custom_action() and
@@ -3671,6 +3682,19 @@ static int album_covers_loop(void)
         if (pf_state == pf_scrolling)
             update_scroll_animation();
         render_all_slides();
+
+        /* %Cn/%Ca (the theme's name/artist footer) only get re-evaluated
+         * when something explicitly asks the SBS to redraw -- nothing does
+         * that as covers scroll by, so without this the footer would just
+         * show whatever (if anything) was current at the moment the screen
+         * was entered, forever. Only fire once the scroll has settled on a
+         * new cover, not on every frame of the animation. */
+        if (pf_state == pf_idle && center_index != shown_index)
+        {
+            shown_index = center_index;
+            FOR_NB_SCREENS(i)
+                skin_update(CUSTOM_STATUSBAR, i, SKIN_REFRESH_ALL);
+        }
 
         if (aa_cache.inspected < pf_idx.album_ct)
         {
@@ -3704,7 +3728,6 @@ static int album_covers_loop(void)
                 fpstxt_y = 0;
             lcd_putsxy(0, fpstxt_y, fpstxt);
         }
-        draw_album_text();
 
         /* Copy offscreen buffer to LCD and give time to other threads */
         lcd_update();

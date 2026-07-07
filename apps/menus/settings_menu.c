@@ -35,9 +35,6 @@
 #include "exported_menus.h"
 #include "tree.h"
 #include "tagtree.h"
-#ifdef HAVE_ALBUMART
-#include "recorder/list_albumart.h"
-#endif
 #include "usb.h"
 #include "splash.h"
 #include "yesno.h"
@@ -150,28 +147,6 @@ static int dirs_to_scan(void)
     return 0;
 }
 
-#ifdef HAVE_ALBUMART
-static void albumart_cache_rebuild_with_splash(void)
-{
-    const struct dim aa_size = { LIST_ALBUMART_DEFAULT_WIDTH,
-                                 LIST_ALBUMART_DEFAULT_HEIGHT };
-    /* Force a full re-walk instead of seeing a prior build's "complete"
-     * marker and no-opping -- the per-album file_exists() skip inside
-     * list_albumart_precache_one() still makes this fast for albums
-     * already cached, so a re-run only costs real time for newly-added
-     * albums. */
-    list_albumart_cache_mark_incomplete();
-    if (tagtree_build_albumart_cache(&aa_size))
-        splash(HZ*2, "Album art cache updated");
-}
-
-static void albumart_cache_clear_with_splash(void)
-{
-    list_albumart_clear_disk_cache();
-    splash(HZ*2, "Album art cache cleared");
-}
-#endif
-
 #ifdef HAVE_TC_RAMCACHE
 MENUITEM_SETTING(tagcache_ram, &global_settings.tagcache_ram, NULL);
 #endif
@@ -191,14 +166,6 @@ MENUITEM_FUNCTION(tc_import, 0, ID2P(LANG_TAGCACHE_IMPORT),
                   NULL, Icon_NOICON);
 MENUITEM_FUNCTION(tc_paths, 0, ID2P(LANG_SELECT_DATABASE_DIRS),
                   dirs_to_scan, NULL, Icon_NOICON);
-#ifdef HAVE_ALBUMART
-MENUITEM_FUNCTION(aa_cache_build, 0, "Build Album Art Cache",
-                  (int(*)(void))albumart_cache_rebuild_with_splash,
-                  NULL, Icon_NOICON);
-MENUITEM_FUNCTION(aa_cache_clear, 0, "Clear Album Art Cache",
-                  (int(*)(void))albumart_cache_clear_with_splash,
-                  NULL, Icon_NOICON);
-#endif
 
 MAKE_MENU(tagcache_menu, ID2P(LANG_TAGCACHE), 0, Icon_NOICON,
 #ifdef HAVE_TC_RAMCACHE
@@ -206,9 +173,6 @@ MAKE_MENU(tagcache_menu, ID2P(LANG_TAGCACHE), 0, Icon_NOICON,
 #endif
                 &tagcache_autoupdate, &tc_init, &tc_update, &runtimedb,
                 &tc_export, &tc_import, &tc_paths
-#ifdef HAVE_ALBUMART
-                , &aa_cache_build, &aa_cache_clear
-#endif
                 );
 #endif /* HAVE_TAGCACHE */
 /*    TAGCACHE MENU                */

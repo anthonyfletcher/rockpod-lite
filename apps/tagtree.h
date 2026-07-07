@@ -44,7 +44,6 @@ int tagtree_add_to_playlist(const char* playlist, bool new_playlist);
 char *tagtree_get_title(struct tree_context* c);
 int tagtree_get_attr(struct tree_context* c);
 int tagtree_get_icon(struct tree_context* c);
-bool tagtree_currtable_is_albums(struct tree_context* c);
 /* Arms a one-shot jump: the next time tagtree_load() sees a fresh root load
  * (dirlevel 0, TABLE_ROOT), it enters the root menu's row whose first tag
  * matches 'tag' (e.g. tag_album), looked up by tag identity rather than
@@ -67,14 +66,6 @@ int tagtree_get_main_menu_tag_row_count(void);
 bool tagtree_get_main_menu_tag_row(int index, int *out_tag,
                                    const unsigned char **out_name);
 int tagtree_get_filename(struct tree_context* c, char *buf, int buflen);
-int tagtree_get_albumart_path(struct tree_context* c, int id,
-                               char *path_buf, size_t path_buflen,
-                               char *album_buf, size_t album_buflen,
-                               char *artist_buf, size_t artist_buflen);
-#ifdef HAVE_ALBUMART
-#include "skin_engine/skin_engine.h" /* struct dim */
-bool tagtree_build_albumart_cache(const struct dim *size);
-#endif
 int tagtree_get_custom_action(struct tree_context* c);
 bool tagtree_get_subentry_filename(char *buf, size_t bufsize);
 bool tagtree_subentries_do_action(bool (*action_cb)(const char *file_name));
