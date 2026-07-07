@@ -71,11 +71,14 @@
 #endif
 #include "power.h"
 #include "powermgmt.h"        /* reset_poweroff_timer */
+#include "backlight.h"        /* backlight_set_timeout(_plugged) */
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
 #include "cpu.h"
 #endif
 #include "skin_engine/skin_engine.h"  /* skin_get_gwps, CUSTOM_STATUSBAR */
 #include "skin_engine/wps_internals.h" /* skin_find_item, SKIN_FIND_VP */
+#include "skin_engine/skin_albumart_color.h" /* dynamic_colors_resolve */
+#include "statusbar-skinned.h" /* sb_set_persistent_title */
 #include "album_covers.h"
 
 /******************************* Globals ***********************************/
@@ -1496,12 +1499,12 @@ static int save_album_index(void){
 
 /* reads data from save file to buffer */
 static inline int read2buf(int fildes, void *buf, size_t nbyte){
-    int read;
-    read = read(fildes, buf, nbyte);
-    if (read < (int)nbyte)
+    int nread;
+    nread = read(fildes, buf, nbyte);
+    if (nread < (int)nbyte)
         return 0;
 
-    return read;
+    return nread;
 }
 
 /*Loads the album_index information stored in the hard drive*/
@@ -1520,8 +1523,8 @@ static int load_album_index(void){
     int album_idx, artist_idx;
 
     if (fr >= 0){
-        const unsigned long filesize = filesize(fr);
-        if (filesize > sizeof(data))
+        const unsigned long fsize = filesize(fr);
+        if (fsize > sizeof(data))
         {
             if (read(fr, &data, sizeof(data)) == sizeof(data) &&
                 memcmp(&(data.header), INDEX_HDR, sizeof(data.header)) == 0)
@@ -2024,8 +2027,8 @@ static int create_empty_slide(bool force)
 #endif
         aa_cache.input_bmp.data = (char*)aa_cache.buf;
 
-        scaled_read_bmp_file(EMPTY_SLIDE_BMP, &aa_cache.input_bmp,
-                             aa_cache.buf_sz, format, &format_transposed);
+        read_bmp_file(EMPTY_SLIDE_BMP, &aa_cache.input_bmp,
+                     aa_cache.buf_sz, format, &format_transposed);
 
         if (!save_pfraw(EMPTY_SLIDE, &aa_cache.input_bmp))
             return false;
@@ -2734,7 +2737,7 @@ static inline pix_t fade_color(pix_t c, unsigned a)
  * unlike lcd_fillrect(DRMODE_SOLID) which fills with fg_pattern. */
 static void pf_clear_display(void)
 {
-    screens[SCREEN_MAIN]->clear_viewport();
+    screens[SCREEN_MAIN].clear_viewport();
 }
 
 static void render_slide(struct slide_data *slide, const int alpha)
@@ -3250,8 +3253,13 @@ static void cleanup(void)
 #endif
     end_pf_thread();
 
-    /* Turn on backlight timeout (revert to settings) */
-    backlight_use_settings();
+    /* Turn on backlight timeout (revert to settings) -- inlined equivalent
+     * of apps/plugins/lib/helper.c's backlight_use_settings(), which isn't
+     * linkable from core code. */
+    backlight_set_timeout(global_settings.backlight_timeout);
+#if CONFIG_CHARGING
+    backlight_set_timeout_plugged(global_settings.backlight_timeout_plugged);
+#endif
 
     if (pf_buf_handle > 0)
     {
@@ -3285,10 +3293,10 @@ static int main_menu(void)
                         ID2P(LANG_MENU_QUIT));
 
     static const struct opt_items sort_options[] = {
-        { STR(LANG_ARTIST_PLUS_NAME) },
-        { STR(LANG_ARTIST_PLUS_YEAR) },
-        { STR(LANG_ID3_YEAR) },
-        { STR(LANG_NAME) }};
+        { ID2P(LANG_ARTIST_PLUS_NAME) },
+        { ID2P(LANG_ARTIST_PLUS_YEAR) },
+        { ID2P(LANG_ID3_YEAR) },
+        { ID2P(LANG_NAME) }};
 
     while (1)  {
         switch (do_menu(&main_menu, &selection, NULL, false)) {
@@ -3379,7 +3387,7 @@ static void draw_album_text(void)
         prev_show_year = global_settings.album_covers_show_year;
     }
 
-    char_height = screens[SCREEN_MAIN]->getcharheight();
+    char_height = screens[SCREEN_MAIN].getcharheight();
     switch(global_settings.album_covers_show_album_name){
         case ALBUM_AND_ARTIST_TOP:
             albumtxt_y = 0;
@@ -3426,7 +3434,6 @@ static bool init(void)
     int ret = SUCCESS;
     void *buf;
     size_t buf_size;
-    int i;
 
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
     cpu_boost(true); /* revert in cleanup */
@@ -3518,6 +3525,8 @@ static bool init(void)
         {
             pf_cfg.cache_version = CACHE_REBUILD;
             pf_config_save();
+            if (save_album_index() < 0)
+                splash(HZ, "Could not write index");
         }
     }
 
@@ -3626,7 +3635,6 @@ static int album_covers_loop(void)
 {
     int ret;
     int button;
-    int i;
     long last_update = current_tick;
     long current_update;
     long update_interval = 100;
@@ -3691,7 +3699,7 @@ static int album_covers_loop(void)
 
             if (global_settings.album_covers_show_album_name == ALBUM_NAME_TOP ||
                 global_settings.album_covers_show_album_name == ALBUM_AND_ARTIST_TOP)
-                fpstxt_y = pf_height - screens[SCREEN_MAIN]->getcharheight();
+                fpstxt_y = pf_height - screens[SCREEN_MAIN].getcharheight();
             else
                 fpstxt_y = 0;
             lcd_putsxy(0, fpstxt_y, fpstxt);

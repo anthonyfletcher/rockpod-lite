@@ -3,8 +3,9 @@ NOT STABLE - STILL IN DEVELOPMENT
 Rockpod is a [Rockbox](https://www.rockbox.org) fork for iPod Classic (6th/7th gen, 2007–2014) and iPod Video (5th/5.5th gen, 2005–2006). 
 
 Rockpod Lite is a trimmed-down version with the following key changes:
-- Almost all plugins removed - if you want to play doom on your iPod, you might need help.
-- Database views promoted to the main menu (renamed to Music)
+- Almost all plugins removed - if you want to play doom on your iPod, you might need help
+- Database renamed to Music and views promoted to the main menu for quick access
+- Simplified picture flow for a more modern look, embedded into the core UI
 - Modified Themify 2 embedded as the default theme
 - Album art icons in the albums view (skinnable)
 - Small spectrum visualizer added to UI (skinnable)
