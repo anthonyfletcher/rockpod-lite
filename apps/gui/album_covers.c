@@ -3482,8 +3482,13 @@ static bool init(void)
      * the screen's center and the viewport's center were the same point.
      * Now that a theme can give the coverflow a shorter viewport that ends
      * well above the screen bottom, anchoring to LCD_HEIGHT/2 pushes the
-     * whole render toward the top of that (smaller) area. */
-    pf_half_height = pf_height / 2 + 8;
+     * whole render toward the top of that (smaller) area. No "+8"-style
+     * bias toward extra room below center either -- that existed only to
+     * leave room for the old in-house album/artist text drawn near the
+     * bottom of this same viewport; that text is now the theme's own
+     * separate footer panel, entirely outside this viewport, so the
+     * split should be a plain, even center. */
+    pf_half_height = pf_height / 2;
     pf_lower_half = pf_height - pf_half_height;
 
     pf_update_dynamic_colors();
@@ -3739,7 +3744,12 @@ static int album_covers_loop(void)
         case PF_WPS:
             return GO_TO_WPS;
         case PF_BACK:
-            return GO_TO_WPS;
+            /* Album covers is a first-class main-menu screen now, not just
+             * a WPS browsing mode (the old plugin's assumption, which is
+             * why this unconditionally went to the WPS) -- BACK should
+             * return to whichever screen it was actually opened from, same
+             * as everywhere else in the firmware. */
+            return GO_TO_PREVIOUS;
         case PF_MENU:
             FOR_NB_SCREENS(i)
                 viewportmanager_theme_enable(i, true, NULL);
@@ -3814,6 +3824,14 @@ static int album_covers_loop(void)
                 set_current_slide(target);
             album = get_album_name_idx(center_index, &album_idx);
             artist = get_album_artist(center_index);
+            /* get_album_artist() returns the literal string "?" as a
+             * *display* placeholder when this album has no albumartist tag
+             * (very common -- most libraries only tag plain Artist) -- it's
+             * never a real tagcache value, so passing it through as a search
+             * filter meant this jump could never match any such album,
+             * silently falling back to just showing the Album list. */
+            if (artist && strcmp(artist, "?") == 0)
+                artist = NULL;
             tagtree_enter_album_tracks_on_next_load(album, artist);
             return GO_TO_ALBUM_COVERS_TRACKS;
         }
@@ -3861,6 +3879,12 @@ int album_covers(const char *selected_file)
         pop_current_activity();
         return GO_TO_PREVIOUS;
     }
+
+    /* Was previously only set after returning from the in-screen menu (see
+     * the PF_MENU case in album_covers_loop()) -- meaning the status bar
+     * showed whatever title the previous screen left behind for the entire
+     * time between opening Album covers and the first MENU press. */
+    sb_set_persistent_title("Album covers", Icon_NOICON, SCREEN_MAIN);
 
     /* Jump to selected_file's album if one was passed (e.g. onplay.c's
      * "Album covers" context-menu item on a specific track), otherwise the

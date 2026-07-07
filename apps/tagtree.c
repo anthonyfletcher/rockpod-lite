@@ -1719,17 +1719,7 @@ static int retrieve_entries(struct tree_context *c, int offset, bool init)
     tree_lock_cache(c);
     struct tagentry *dptr = core_get_data(c->cache.entries_handle);
 
-    /* Albums specifically skip the special "[By album]"/"[All Tracks]"/
-     * "[Random]" rows every other grouping level (artist/genre/composer/
-     * year/...) still gets: Rockbox's list widget uses one fixed row height
-     * for an entire list, so there's no way to visually shrink just these
-     * rows back down to plain-text size while the rest of the Albums list
-     * uses taller, art-thumbnail rows -- they'd always look like oversized
-     * blank rows above the real albums. Removing them here also means the
-     * "[By album]" flattened, disc/track-sorted view of every track (
-     * TABLE_ALLSUBENTRIES_SORTED_BY_ALBUMS) is no longer reachable, since
-     * this was its only entry point. */
-    if (tag != tag_title && tag != tag_filename && tag != tag_album)
+    if (tag != tag_title && tag != tag_filename)
     {
         if (offset <= 0)
         {

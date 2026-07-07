@@ -57,7 +57,7 @@
 # directly by apps/gui/album_covers.c (Album_Covers_Viewport only supplies
 # the rect, see ALBUM_COVERS_SKIN_VP_NAME); name/artist panel below it is
 # ordinary skin content using the %Cn/%Ca tokens.
-%?if(%cs, =, 22)<%Vd(Album_Covers_Viewport)%Vd(Album_Covers_Panel)%Vd(Album_Covers_Corners)>
+%?if(%cs, =, 22)<%Vd(Album_Covers_Viewport)%Vd(Album_Covers_Panel)>
 #
 #- USB Screen Logic -#
 %?if(%cs, =, 21)<%VI(USB_Screen_Supression)%Vd(USB_Screen)>
@@ -279,12 +279,6 @@
 #
 %Vl(Album_Covers_Panel,0,192,-,26,3)%Vs(invert)%ac%Cn
 %Vl(Album_Covers_Panel,0,220,-,18,4)%Vs(invert)%ac%Ca
-#
-#-- Rounded Top Corners --#
-# Always both corners rounded -- unlike the menu screens, this panel never
-# has a scrollbar to make room for.
-%Vl(Album_Covers_Corners,0,184,-,12,6)%VBS%aRV
-%Vl(Album_Covers_Corners,0,184,-,12,6)S%aRV
 #
 #--- END ---#
 #
