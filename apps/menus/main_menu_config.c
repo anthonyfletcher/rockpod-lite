@@ -47,7 +47,18 @@ static struct menu_table *menu_table;
 static int menu_item_count;
 
 #define MAX_ITEM_NAME 64
+/* root_menu.c's menu_table[] now holds the ~9 fixed entries plus one slot
+ * per tagnavi.config root-menu row (TAGNAVI_MAIN_MENU_SLOTS, see
+ * root_menu.h) -- this used to be a safe fixed 16, but the tagnavi slots
+ * alone can already exceed that, silently overflowing menu_items[] below
+ * (a real crash, not hypothetical -- this is exactly what happened before
+ * this was fixed). Give it real headroom over the fixed-entry count rather
+ * than guessing a bigger fixed number again. */
+#ifdef HAVE_TAGCACHE
+#define MAX_ITEMS (16 + TAGNAVI_MAIN_MENU_SLOTS)
+#else
 #define MAX_ITEMS 16
+#endif
 struct items
 {
     unsigned char *name;
@@ -109,7 +120,7 @@ static void load_from_cfg(void)
             found = strcmp(token, menu_table[i].string) == 0;
             if (found) break;
         }
-        if (found)
+        if (found && done < MAX_ITEMS)
         {
             menu_items[done].name = item_name(i);
             strcpy(menu_items[done].string, token);
@@ -121,7 +132,7 @@ static void load_from_cfg(void)
 
     if (done < menu_item_count)
     {
-        for (i = 0; i < menu_item_count; i++)
+        for (i = 0; i < menu_item_count && done < MAX_ITEMS; i++)
         {
             found = false;
             for (int j = 0; !found && j < done; j++)

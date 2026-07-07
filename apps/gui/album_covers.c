@@ -3820,6 +3820,18 @@ int album_covers(const char *selected_file)
         return GO_TO_PREVIOUS;
     }
 
+    /* render_slide() writes pixels directly into lcd_fb, and pf_framebuffer
+     * (assigned to pf_vp.buffer in init()) needs the real frame_buffer_t
+     * contents -- both dropped silently during the plugin-to-core port,
+     * leaving every direct pixel write going to a NULL pointer (lcd_fb's
+     * BSS default) instead of the real framebuffer. Matches plugin_start()'s
+     * original setup exactly. */
+    {
+        struct viewport *vp_main = lcd_set_viewport(NULL);
+        lcd_fb = vp_main->buffer->fb_ptr;
+        pf_framebuffer = *vp_main->buffer;
+    }
+
     if (!init())
     {
         cleanup();
