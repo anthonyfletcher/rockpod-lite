@@ -349,6 +349,8 @@ void list_albumart_precache_one(const char *path, const char *album,
                                  const char *albumartist,
                                  const struct dim *size)
 {
+    struct mp3entry id3;
+    char art_path[MAX_PATH];
     char pfraw_path[MAX_PATH];
     struct aa_cache_entry tmp;
 
@@ -357,9 +359,24 @@ void list_albumart_precache_one(const char *path, const char *album,
     if (file_exists(pfraw_path))
         return; /* already cached from a previous build/browse */
 
+    /* 'path' is the representative track's own audio file path, not an
+     * image -- find_albumart() resolves it to an actual cover file or
+     * embedded-art extraction marker first, same as list_albumart_get_bitmap()
+     * does for the browse-time (cache miss) path. Calling decode_art()
+     * directly on the audio file path (as this used to) always fails, since
+     * it isn't a JPEG/BMP -- which is why the disk cache never got any
+     * files written despite the build appearing to run to completion. */
+    memset(&id3, 0, sizeof(id3));
+    strlcpy(id3.path, path, sizeof(id3.path));
+    id3.album = (album && album[0]) ? (char *)album : NULL;
+    id3.albumartist = (albumartist && albumartist[0]) ? (char *)albumartist : NULL;
+
+    if (!find_albumart(&id3, art_path, sizeof(art_path), size))
+        return;
+
     memset(&tmp, 0, sizeof(tmp));
     tmp.handle = -1;
-    if (decode_art(path, &tmp, size))
+    if (decode_art(art_path, &tmp, size))
     {
         save_pfraw(pfraw_path, &tmp.bmp);
         if (tmp.handle >= 0)

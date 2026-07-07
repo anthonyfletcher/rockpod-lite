@@ -20,6 +20,9 @@ menu.c
 menus/menu_common.c
 menus/display_menu.c
 menus/theme_menu.c
+#ifdef HAVE_TAGCACHE
+menus/album_covers_menu.c
+#endif
 menus/plugin_menu.c
 #if CONFIG_TUNER
 menus/radio_menu.c
@@ -32,6 +35,7 @@ buffering.c
 voice_thread.c
 rbcodec_helpers.c
 menus/main_menu.c
+menus/main_menu_config.c
 menus/playback_menu.c
 menus/playlist_menu.c
 #ifdef HAVE_RECORDING
@@ -105,6 +109,14 @@ hosted/android/notification.c
 gui/yesno.c
 #endif
 gui/viewport.c
+
+/* Core-linked "Album covers" screen (ported from apps/plugins/pictureflow/,
+ * which remains in-tree but is no longer reachable from the main menu).
+ * Gated on HAVE_TAGCACHE like the rest of the tag-database UI it replaces
+ * the old plugin's entry point for -- see root_menu.c's GO_TO_PICTUREFLOW. */
+#ifdef HAVE_TAGCACHE
+gui/album_covers.c
+#endif
 
 gui/skin_engine/skin_backdrops.c
 gui/skin_engine/skin_display.c

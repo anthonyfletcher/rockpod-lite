@@ -1,3 +1,5 @@
+NOT STABLE - STILL IN DEVELOPMENT
+
 Rockpod is a [Rockbox](https://www.rockbox.org) fork for iPod Classic (6th/7th gen, 2007–2014) and iPod Video (5th/5.5th gen, 2005–2006). 
 
 Rockpod Lite is a trimmed-down version with the following key changes:

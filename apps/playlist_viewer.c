@@ -53,6 +53,10 @@
 #include "playback.h"
 #ifdef HAVE_TAGCACHE
 #include "tagcache.h"
+#include "root_menu.h"
+#ifdef HAVE_TAGCACHE
+#include "gui/album_covers.h"
+#endif
 #endif
 
 /* Maximum number of tracks we can have loaded at one time                   */
@@ -666,9 +670,25 @@ static enum pv_context_result open_with(const struct playlist_entry *current_tra
 #endif /* HAVE_HOTKEY */
 
 #ifdef HAVE_TAGCACHE
+/* Album covers is core-linked, not a loadable plugin, so it doesn't match
+ * open_with_plugin()'s loadplugin(plugin_name, file) callback shape or its
+ * PLUGIN_*-return-code switch -- this adapts both, translating
+ * album_covers()'s GO_TO_* results into the PLUGIN_* ones open_with_plugin()
+ * already understands, rather than changing that generic function. */
+static int open_album_covers_adapter(const char *plugin_name, const char *file)
+{
+    int ret;
+    (void)plugin_name;
+    ret = album_covers(file);
+    if (ret == GO_TO_ROOT)
+        return PLUGIN_USB_CONNECTED;
+    if (ret == GO_TO_WPS)
+        return PLUGIN_GOTO_WPS;
+    return PLUGIN_OK;
+}
 static enum pv_context_result open_pictureflow(const struct playlist_entry *current_track)
 {
-    return open_with_plugin(current_track, "pictureflow", &filetype_load_plugin);
+    return open_with_plugin(current_track, "", &open_album_covers_adapter);
 }
 #endif
 #endif /*defined(HAVE_HOTKEY) || defined(HAVE_TAGCACHE)*/

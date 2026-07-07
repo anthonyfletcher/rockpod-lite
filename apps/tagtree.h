@@ -49,8 +49,23 @@ bool tagtree_currtable_is_albums(struct tree_context* c);
  * (dirlevel 0, TABLE_ROOT), it enters the root menu's row whose first tag
  * matches 'tag' (e.g. tag_album), looked up by tag identity rather than
  * position so it's robust to tagnavi.config reordering. Used by
- * root_menu.c's Artists/Albums/Genres shortcuts. */
+ * root_menu.c's tagnavi-derived main-menu shortcuts. */
 void tagtree_enter_by_tag_on_next_load(int tag);
+/* Arms a two-hop jump: root -> Album grouping row -> this specific album's
+ * tracks, matched by (album, albumartist) name rather than position. Used
+ * by apps/gui/album_covers.c so selecting a cover lands directly on that
+ * album's tracks in the core database browser. */
+void tagtree_enter_album_tracks_on_next_load(const char *album,
+                                             const char *albumartist);
+/* Number of direct tag-browse ("->") rows in the root ("main") menu -- rows
+ * that load a nested sub-menu ("==>") or trigger an action (e.g. "~>"
+ * shuffle) don't count. Used by root_menu.c to know how many of its reserved
+ * GO_TO_TAGNAVI_FIRST..LAST slots are backed by a real row. */
+int tagtree_get_main_menu_tag_row_count(void);
+/* Returns the tag and raw (P2STR-resolvable) display name of the Nth (0-based)
+ * such row. Returns false if index is out of range. */
+bool tagtree_get_main_menu_tag_row(int index, int *out_tag,
+                                   const unsigned char **out_name);
 int tagtree_get_filename(struct tree_context* c, char *buf, int buflen);
 int tagtree_get_albumart_path(struct tree_context* c, int id,
                                char *path_buf, size_t path_buflen,

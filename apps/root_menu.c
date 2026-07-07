@@ -73,6 +73,7 @@
 #endif
 #ifdef HAVE_TAGCACHE
 #include "tagcache.h"
+#include "gui/album_covers.h"
 #endif
 #include "language.h"
 #include "plugin.h"
@@ -290,14 +291,24 @@ static int browser(void* param)
             push_current_activity(ACTIVITY_DATABASEBROWSER);
         break;
 
-        case GO_TO_ARTISTS:
-        case GO_TO_ALBUMS:
-        case GO_TO_GENRES:
+#define TAGNAVI_CASE(n) case GO_TO_TAGNAVI_FIRST + (n):
+        TAGNAVI_CASE(0)  TAGNAVI_CASE(1)  TAGNAVI_CASE(2)  TAGNAVI_CASE(3)
+        TAGNAVI_CASE(4)  TAGNAVI_CASE(5)  TAGNAVI_CASE(6)  TAGNAVI_CASE(7)
+        TAGNAVI_CASE(8)  TAGNAVI_CASE(9)  TAGNAVI_CASE(10) TAGNAVI_CASE(11)
+        TAGNAVI_CASE(12) TAGNAVI_CASE(13) TAGNAVI_CASE(14) TAGNAVI_CASE(15)
+        TAGNAVI_CASE(16) TAGNAVI_CASE(17) TAGNAVI_CASE(18) TAGNAVI_CASE(19)
+#undef TAGNAVI_CASE
+        {
+            int slot = (intptr_t)param - GO_TO_TAGNAVI_FIRST;
+            int target_tag;
+
             if (!wait_for_tagcache_ready())
                 return GO_TO_PREVIOUS;
+            if (!tagtree_get_main_menu_tag_row(slot, &target_tag, NULL))
+                return GO_TO_PREVIOUS; /* slot not backed by a real row */
+
 #ifdef HAVE_ALBUMART
-            if ((intptr_t)param == GO_TO_ALBUMS &&
-                !list_albumart_cache_is_complete())
+            if (target_tag == tag_album && !list_albumart_cache_is_complete())
             {
                 const struct dim aa_size = { LIST_ALBUMART_DEFAULT_WIDTH,
                                              LIST_ALBUMART_DEFAULT_HEIGHT };
@@ -310,28 +321,33 @@ static int browser(void* param)
 #endif
             filter = SHOW_ID3DB;
             last_ft_dirlevel = tc->dirlevel;
-            /* Jump straight into the Artist/Album/Genre branch of the
-             * Database's root menu, independent of the plain Database
-             * entry's own last_db_dirlevel/selection resume memory. Looked
-             * up by tag identity (not position) so it survives
-             * tagnavi.config reordering, and armed for tagtree_load() to
-             * apply on its next fresh root load -- rockbox_browse() (called
-             * below) unconditionally resets dirlevel/selected_item to 0 for
-             * any ID3-DB entry, but NOT currtable/currextra, so those must
-             * be forced back to the root here or tagtree_load() will just
-             * keep showing whatever table was last displayed and the armed
+            /* Jump straight into this row's branch of the Database's root
+             * menu, independent of the plain Database entry's own
+             * last_db_dirlevel/selection resume memory. Looked up by tag
+             * identity (not position) so it survives tagnavi.config
+             * reordering, and armed for tagtree_load() to apply on its next
+             * fresh root load -- rockbox_browse() (called below)
+             * unconditionally resets dirlevel/selected_item to 0 for any
+             * ID3-DB entry, but NOT currtable/currextra, so those must be
+             * forced back to the root here or tagtree_load() will just keep
+             * showing whatever table was last displayed and the armed
              * shortcut below will never see a fresh root load to apply on. */
             tc->currtable = 0;
-            {
-                int target_tag;
-                switch ((intptr_t)param)
-                {
-                    case GO_TO_ARTISTS: target_tag = tag_virt_canonicalartist; break;
-                    case GO_TO_ALBUMS:  target_tag = tag_album; break;
-                    default:            target_tag = tag_genre; break;
-                }
-                tagtree_enter_by_tag_on_next_load(target_tag);
-            }
+            tagtree_enter_by_tag_on_next_load(target_tag);
+            push_current_activity(ACTIVITY_DATABASEBROWSER);
+        }
+        break;
+
+        case GO_TO_ALBUM_COVERS_TRACKS:
+            if (!wait_for_tagcache_ready())
+                return GO_TO_PREVIOUS;
+            filter = SHOW_ID3DB;
+            last_ft_dirlevel = tc->dirlevel;
+            /* tagtree_enter_album_tracks_on_next_load() was already armed by
+             * album_covers.c's SELECT handler before it returned this code --
+             * just need the standard ID3DB browse boilerplate here, same as
+             * the TAGNAVI_CASE block above. */
+            tc->currtable = 0;
             push_current_activity(ACTIVITY_DATABASEBROWSER);
         break;
 #endif /*HAVE_TAGCACHE*/
@@ -370,13 +386,27 @@ static int browser(void* param)
             tc->dirlevel = last_ft_dirlevel;
         break;
 
-        case GO_TO_ARTISTS:
-        case GO_TO_ALBUMS:
-        case GO_TO_GENRES:
+#define TAGNAVI_CASE(n) case GO_TO_TAGNAVI_FIRST + (n):
+        TAGNAVI_CASE(0)  TAGNAVI_CASE(1)  TAGNAVI_CASE(2)  TAGNAVI_CASE(3)
+        TAGNAVI_CASE(4)  TAGNAVI_CASE(5)  TAGNAVI_CASE(6)  TAGNAVI_CASE(7)
+        TAGNAVI_CASE(8)  TAGNAVI_CASE(9)  TAGNAVI_CASE(10) TAGNAVI_CASE(11)
+        TAGNAVI_CASE(12) TAGNAVI_CASE(13) TAGNAVI_CASE(14) TAGNAVI_CASE(15)
+        TAGNAVI_CASE(16) TAGNAVI_CASE(17) TAGNAVI_CASE(18) TAGNAVI_CASE(19)
+#undef TAGNAVI_CASE
             /* Deliberately not touching last_db_dirlevel/last_db_selection --
              * these shortcuts stay independent of the plain Database entry's
              * own resume position. */
             tc->dirlevel = last_ft_dirlevel;
+        break;
+
+        case GO_TO_ALBUM_COVERS_TRACKS:
+            tc->dirlevel = last_ft_dirlevel;
+            /* Backing all the way out of this browse session should return
+             * to Album covers, not the generic root menu that tree.c's
+             * dirlevel==0 exit path returns by default -- this is the one
+             * place that translation happens. */
+            if (ret_val == GO_TO_ROOT)
+                ret_val = GO_TO_PICTUREFLOW;
         break;
 #endif
     }
@@ -523,17 +553,7 @@ static int load_bmarks(void* param)
 static int pictureflow_scrn(void* param)
 {
     (void)param;
-    int ret = filetype_load_plugin("pictureflow", NULL);
-    switch (ret)
-    {
-        case PLUGIN_GOTO_WPS:
-            return GO_TO_WPS;
-        case PLUGIN_USB_CONNECTED:
-        case PLUGIN_ERROR:
-            return GO_TO_ROOT;
-        default:
-            return GO_TO_PREVIOUS;
-    }
+    return album_covers(NULL);
 }
 #endif
 
@@ -576,9 +596,21 @@ static const struct root_items items[] = {
     [GO_TO_SHORTCUTMENU] = { do_shortcut_menu, NULL, NULL },
 #ifdef HAVE_TAGCACHE
     [GO_TO_PICTUREFLOW] = { pictureflow_scrn, NULL, NULL },
-    [GO_TO_ARTISTS] =       { browser, (void*)GO_TO_ARTISTS, &tagcache_menu },
-    [GO_TO_ALBUMS] =        { browser, (void*)GO_TO_ALBUMS,  &tagcache_menu },
-    [GO_TO_GENRES] =        { browser, (void*)GO_TO_GENRES,  &tagcache_menu },
+    [GO_TO_ALBUM_COVERS_TRACKS] = { browser, (void*)GO_TO_ALBUM_COVERS_TRACKS, &tagcache_menu },
+/* One reserved slot per tagnavi.config root-menu tag-browse row (see
+ * GO_TO_TAGNAVI_FIRST in root_menu.h); all share the same dispatch function
+ * and only differ in which slot index they carry as param. */
+#define TAGNAVI_ITEMS_ENTRY(n) \
+    [GO_TO_TAGNAVI_FIRST + (n)] = \
+        { browser, (void*)(GO_TO_TAGNAVI_FIRST + (n)), &tagcache_menu }
+    TAGNAVI_ITEMS_ENTRY(0),  TAGNAVI_ITEMS_ENTRY(1),  TAGNAVI_ITEMS_ENTRY(2),
+    TAGNAVI_ITEMS_ENTRY(3),  TAGNAVI_ITEMS_ENTRY(4),  TAGNAVI_ITEMS_ENTRY(5),
+    TAGNAVI_ITEMS_ENTRY(6),  TAGNAVI_ITEMS_ENTRY(7),  TAGNAVI_ITEMS_ENTRY(8),
+    TAGNAVI_ITEMS_ENTRY(9),  TAGNAVI_ITEMS_ENTRY(10), TAGNAVI_ITEMS_ENTRY(11),
+    TAGNAVI_ITEMS_ENTRY(12), TAGNAVI_ITEMS_ENTRY(13), TAGNAVI_ITEMS_ENTRY(14),
+    TAGNAVI_ITEMS_ENTRY(15), TAGNAVI_ITEMS_ENTRY(16), TAGNAVI_ITEMS_ENTRY(17),
+    TAGNAVI_ITEMS_ENTRY(18), TAGNAVI_ITEMS_ENTRY(19),
+#undef TAGNAVI_ITEMS_ENTRY
 #endif
 
 };
@@ -596,11 +628,72 @@ MENUITEM_RETURNVALUE(file_browser, ID2P(LANG_DIR_BROWSER), GO_TO_FILEBROWSER,
 #ifdef HAVE_TAGCACHE
 MENUITEM_RETURNVALUE(db_browser, "Music", GO_TO_DBBROWSER,
                         NULL, Icon_Audio);
-MENUITEM_RETURNVALUE(pictureflow_item, "Cover Flow", GO_TO_PICTUREFLOW,
+MENUITEM_RETURNVALUE(pictureflow_item, "Album covers", GO_TO_PICTUREFLOW,
                         NULL, Icon_Rockbox);
-MENUITEM_RETURNVALUE(db_artists, "Artists", GO_TO_ARTISTS, NULL, Icon_Audio);
-MENUITEM_RETURNVALUE(db_albums,  "Albums",  GO_TO_ALBUMS,  NULL, Icon_Audio);
-MENUITEM_RETURNVALUE(db_genres,  "Genres",  GO_TO_GENRES,  NULL, Icon_Audio);
+
+/* Dynamic-text menu items for the reserved GO_TO_TAGNAVI_FIRST.. slots: the
+ * displayed name/voice for slot N is fetched fresh from tagtree's parsed
+ * "main" menu every time it's drawn (via list_get_name_data carrying the
+ * slot index), rather than a compile-time string -- so these track
+ * tagnavi.config's actual row names/order without needing a rebuild. A slot
+ * with no backing row (index >= tagtree_get_main_menu_tag_row_count())
+ * safely renders as blank rather than returning NULL. */
+static char *tagnavi_item_get_name(int selected_item, void *data,
+                                    char *buffer, size_t buffer_len)
+{
+    (void)selected_item;
+    int index = (int)(intptr_t)data;
+    const unsigned char *name;
+
+    if (!tagtree_get_main_menu_tag_row(index, NULL, &name))
+    {
+        buffer[0] = '\0';
+        return buffer;
+    }
+    strlcpy(buffer, P2STR((unsigned char *)name), buffer_len);
+    return buffer;
+}
+
+static int tagnavi_item_speak(int selected_item, void *data)
+{
+    (void)selected_item;
+    int index = (int)(intptr_t)data;
+    const unsigned char *name;
+
+    if (tagtree_get_main_menu_tag_row(index, NULL, &name))
+    {
+        int id = P2ID(name);
+        if (id != -1)
+            talk_id(id, false);
+    }
+    return 0;
+}
+
+#define TAGNAVI_DECL(n) \
+    MENUITEM_RETURNVALUE_DYNTEXT(tagnavi_item_##n, GO_TO_TAGNAVI_FIRST + (n), \
+        NULL, tagnavi_item_get_name, tagnavi_item_speak, \
+        (void*)(intptr_t)(n), Icon_Audio)
+TAGNAVI_DECL(0)
+TAGNAVI_DECL(1)
+TAGNAVI_DECL(2)
+TAGNAVI_DECL(3)
+TAGNAVI_DECL(4)
+TAGNAVI_DECL(5)
+TAGNAVI_DECL(6)
+TAGNAVI_DECL(7)
+TAGNAVI_DECL(8)
+TAGNAVI_DECL(9)
+TAGNAVI_DECL(10)
+TAGNAVI_DECL(11)
+TAGNAVI_DECL(12)
+TAGNAVI_DECL(13)
+TAGNAVI_DECL(14)
+TAGNAVI_DECL(15)
+TAGNAVI_DECL(16)
+TAGNAVI_DECL(17)
+TAGNAVI_DECL(18)
+TAGNAVI_DECL(19)
+#undef TAGNAVI_DECL
 #endif
 MENUITEM_RETURNVALUE(rocks_browser, ID2P(LANG_PLUGINS), GO_TO_BROWSEPLUGINS,
                         NULL, Icon_Plugin);
@@ -641,9 +734,6 @@ static struct menu_table menu_table[] = {
 #ifdef HAVE_TAGCACHE
     { "pictureflow", &pictureflow_item },
     { "database", &db_browser },
-    { "artists", &db_artists },
-    { "albums", &db_albums },
-    { "genres", &db_genres },
 #endif
     { "files", &file_browser },
     { "wps", &wps_item },
@@ -652,13 +742,93 @@ static struct menu_table menu_table[] = {
     { "shortcuts", &shortcut_menu },
     { "settings", &menu_ },
     { "system_menu", &system_menu_ },
+#ifdef HAVE_TAGCACHE
+    /* Kept last: root_menu_get_options()/root_menu_set_default() trim the
+     * *tail* of this array down to however many of these are actually backed
+     * by a tagnavi.config row (tagtree_get_main_menu_tag_row_count()), so any
+     * unbacked slots must be the last entries here, not mixed in earlier. */
+#define TAGNAVI_TABLE_ENTRY(n) { "tagnavi" #n, &tagnavi_item_##n }
+    TAGNAVI_TABLE_ENTRY(0),  TAGNAVI_TABLE_ENTRY(1),  TAGNAVI_TABLE_ENTRY(2),
+    TAGNAVI_TABLE_ENTRY(3),  TAGNAVI_TABLE_ENTRY(4),  TAGNAVI_TABLE_ENTRY(5),
+    TAGNAVI_TABLE_ENTRY(6),  TAGNAVI_TABLE_ENTRY(7),  TAGNAVI_TABLE_ENTRY(8),
+    TAGNAVI_TABLE_ENTRY(9),  TAGNAVI_TABLE_ENTRY(10), TAGNAVI_TABLE_ENTRY(11),
+    TAGNAVI_TABLE_ENTRY(12), TAGNAVI_TABLE_ENTRY(13), TAGNAVI_TABLE_ENTRY(14),
+    TAGNAVI_TABLE_ENTRY(15), TAGNAVI_TABLE_ENTRY(16), TAGNAVI_TABLE_ENTRY(17),
+    TAGNAVI_TABLE_ENTRY(18), TAGNAVI_TABLE_ENTRY(19),
+#undef TAGNAVI_TABLE_ENTRY
+#endif
 };
 #define MAX_MENU_ITEMS (sizeof(menu_table) / sizeof(struct menu_table))
 static struct menu_item_ex *root_menu__[MAX_MENU_ITEMS];
 
+/* Of MAX_MENU_ITEMS, how many are actually usable right now -- hides any
+ * trailing GO_TO_TAGNAVI_FIRST.. slots beyond tagtree's real row count (see
+ * the comment on menu_table[] above) from both the Customize Main Menu
+ * screen and the default-enabled root menu. Safe to call at any time: with
+ * no tagcache/tagtree, or before tagtree_init() has parsed tagnavi.config,
+ * tagtree_get_main_menu_tag_row_count() simply returns 0 and every reserved
+ * slot is hidden until real data is available. */
+static int root_menu_active_count(void)
+{
+#ifdef HAVE_TAGCACHE
+    int real = tagtree_get_main_menu_tag_row_count();
+    if (real > TAGNAVI_MAIN_MENU_SLOTS)
+        real = TAGNAVI_MAIN_MENU_SLOTS;
+    return MAX_MENU_ITEMS - (TAGNAVI_MAIN_MENU_SLOTS - real);
+#else
+    return MAX_MENU_ITEMS;
+#endif
+}
+
+#ifdef HAVE_TAGCACHE
+/* settings_load() (via root_menu_set_default()/root_menu_load_from_cfg(),
+ * both driven off the root_menu_customized CUSTOM_SETTING) runs before
+ * tagtree_init() has parsed tagnavi.config, so root_menu_active_count()
+ * would have seen zero real tagnavi rows at that point and every reserved
+ * slot got silently omitted from root_menu__[] -- this would otherwise mean
+ * a fresh install boots with no Album/Artist/etc shortcuts at all. Called
+ * once from root_menu()'s first entry, well after tagtree is guaranteed
+ * ready, this appends any now-available tagnavi slots that aren't already
+ * present. No-op if they were already there (i.e. tagtree happened to be
+ * ready by settings-load time after all). */
+static void root_menu_fixup_tagnavi_slots(void)
+{
+    unsigned count = MENU_GET_COUNT(root_menu_.flags);
+    int real = tagtree_get_main_menu_tag_row_count();
+    int tagnavi_start = MAX_MENU_ITEMS - TAGNAVI_MAIN_MENU_SLOTS;
+    int n;
+
+    if (real > TAGNAVI_MAIN_MENU_SLOTS)
+        real = TAGNAVI_MAIN_MENU_SLOTS;
+
+    for (n = 0; n < real; n++)
+    {
+        struct menu_item_ex *item =
+            (struct menu_item_ex *)menu_table[tagnavi_start + n].item;
+        unsigned i;
+        bool present = false;
+
+        for (i = 0; i < count; i++)
+        {
+            if (root_menu__[i] == item)
+            {
+                present = true;
+                break;
+            }
+        }
+        if (!present && count < MAX_MENU_ITEMS)
+            root_menu__[count++] = item;
+    }
+
+    if (count != MENU_GET_COUNT(root_menu_.flags))
+        root_menu_.flags = (root_menu_.flags & ~(MENU_COUNT_MASK << MENU_COUNT_SHIFT))
+                            | MENU_ITEM_COUNT(count);
+}
+#endif
+
 struct menu_table *root_menu_get_options(int *nb_options)
 {
-    *nb_options = MAX_MENU_ITEMS;
+    *nb_options = root_menu_active_count();
 
     return menu_table;
 }
@@ -690,7 +860,7 @@ void root_menu_load_from_cfg(void* setting, char *value)
         start = skip_whitespace(start);
         if ((end = strchr(start, ' ')))
             *end = '\0';
-        for (i=0; i<MAX_MENU_ITEMS; i++)
+        for (i=0; i<(unsigned)root_menu_active_count(); i++)
         {
             if (*start && !strcmp(start, menu_table[i].string))
             {
@@ -730,17 +900,18 @@ char* root_menu_write_to_cfg(void* setting, char*buf, int buf_len)
 void root_menu_set_default(void* setting, void* defaultval)
 {
     unsigned i;
+    int active_count = root_menu_active_count();
     (void)defaultval;
 
     root_menu_.flags = MENU_HAS_DESC | MT_MENU;
     root_menu_.submenus = (const struct menu_item_ex **)&root_menu__;
     root_menu_.callback_and_desc = &root_menu_desc;
 
-    for (i=0; i<MAX_MENU_ITEMS; i++)
+    for (i=0; i<(unsigned)active_count; i++)
     {
         root_menu__[i] = (struct menu_item_ex *)menu_table[i].item;
     }
-    root_menu_.flags |= MENU_ITEM_COUNT(MAX_MENU_ITEMS);
+    root_menu_.flags |= MENU_ITEM_COUNT(active_count);
     *(bool*)setting = false;
 }
 
@@ -813,6 +984,12 @@ static inline int load_screen(int screen)
         activity = ACTIVITY_SETTINGS;
     else if (screen == GO_TO_SYSTEM_SCREEN)
         activity =  ACTIVITY_SYSTEMSCREEN;
+    /* Deliberately NOT handling GO_TO_PICTUREFLOW here: album_covers()
+     * itself is also reachable directly from apps/gui/wps.c (the "coverflow"
+     * WPS select-action and the custom STOP-opens-coverflow behavior),
+     * bypassing this dispatcher entirely, so it pushes/pops
+     * ACTIVITY_ALBUMCOVERS itself to cover both entry paths. See
+     * apps/gui/album_covers.c's album_covers(). */
 
     if (activity != ACTIVITY_UNKNOWN)
         push_current_activity(activity);
@@ -1040,6 +1217,9 @@ void root_menu(void)
     int selected = 0;
     int shortcut_origin = GO_TO_ROOT;
 
+#ifdef HAVE_TAGCACHE
+    root_menu_fixup_tagnavi_slots();
+#endif
     push_current_activity(ACTIVITY_MAINMENU);
     next_screen = root_menu_setup_screens();
 
@@ -1067,9 +1247,13 @@ void root_menu(void)
                 break;
 #ifdef HAVE_TAGCACHE
             case GO_TO_DBBROWSER:
-            case GO_TO_ARTISTS:
-            case GO_TO_ALBUMS:
-            case GO_TO_GENRES:
+#define TAGNAVI_CASE(n) case GO_TO_TAGNAVI_FIRST + (n):
+            TAGNAVI_CASE(0)  TAGNAVI_CASE(1)  TAGNAVI_CASE(2)  TAGNAVI_CASE(3)
+            TAGNAVI_CASE(4)  TAGNAVI_CASE(5)  TAGNAVI_CASE(6)  TAGNAVI_CASE(7)
+            TAGNAVI_CASE(8)  TAGNAVI_CASE(9)  TAGNAVI_CASE(10) TAGNAVI_CASE(11)
+            TAGNAVI_CASE(12) TAGNAVI_CASE(13) TAGNAVI_CASE(14) TAGNAVI_CASE(15)
+            TAGNAVI_CASE(16) TAGNAVI_CASE(17) TAGNAVI_CASE(18) TAGNAVI_CASE(19)
+#undef TAGNAVI_CASE
 #endif
             case GO_TO_FILEBROWSER:
             case GO_TO_PLAYLISTS_SCREEN:

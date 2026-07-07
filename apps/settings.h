@@ -652,6 +652,24 @@ struct user_settings
 #endif
 #endif
 
+#ifdef HAVE_TAGCACHE
+    /* apps/gui/album_covers.c settings -- see enum show_album_name_values /
+     * sort_albums_by_values / year_sort_order_values in album_covers.h for
+     * what the choice settings' integer values mean. */
+    bool album_covers_show_fps;
+    int  album_covers_center_margin;
+    int  album_covers_slide_tuck;
+    int  album_covers_zoom;
+    bool album_covers_parallel_slides;
+    bool album_covers_resize;
+    int  album_covers_scroll_speed;
+    int  album_covers_transition_speed;
+    int  album_covers_show_album_name;
+    int  album_covers_sort_albums_by;
+    int  album_covers_year_sort_order;
+    bool album_covers_show_year;
+#endif
+
     int browser_default;        /* Default browser when accessed from WPS */
 
     /* playlist/playback settings */

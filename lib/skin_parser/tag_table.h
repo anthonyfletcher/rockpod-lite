@@ -188,6 +188,12 @@ enum skin_token_type {
     SKIN_TOKEN_METADATA_YEAR,
     SKIN_TOKEN_METADATA_COMMENT,
 
+    /* Album covers (apps/gui/album_covers.c) -- name/artist of the cover
+     * currently centered in the coverflow, not necessarily the playing
+     * track. */
+    SKIN_TOKEN_ALBUM_COVERS_NAME,
+    SKIN_TOKEN_ALBUM_COVERS_ARTIST,
+
     /* Mode */
     SKIN_TOKEN_REPEAT_MODE,
     SKIN_TOKEN_PLAYBACK_STATUS,
