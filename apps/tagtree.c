@@ -2098,12 +2098,20 @@ static int tagtree_find_root_entry_by_tag(int tag)
 /* Consumes pending_album_seek: points csi straight at the root's "Album"
  * row's own search_instruction (same one a normal two-level Album browse
  * uses) but jumps directly to its title level, filtered by album_seek,
- * without ever entering/displaying the grouping level itself. Mirrors the
- * bookkeeping tagtree_enter() does for a single level of depth (history
- * arrays, dirlevel++) -- see its TABLE_ROOT/TABLE_NAVIBROWSE cases -- since
- * this is deliberately not calling tagtree_enter() at all (that would land
- * on the grouping level first, which is exactly the extra level this
- * exists to skip).
+ * without ever entering/displaying the grouping level itself.
+ *
+ * Deliberately does NOT touch dirlevel/table_history/extra_history the way
+ * tagtree_enter() would (leaves dirlevel at 0, wherever rockbox_browse()'s
+ * own reset left it) -- apps/tree.c's dirbrowse() only treats BACK as "exit
+ * the browse" when dirlevel == 0; at any deeper level it instead pops one
+ * level via tagtree_exit() and keeps browsing. Bumping dirlevel to 1 (tried
+ * first) meant BACK from an album's tracks landed on the root Music menu
+ * first, needing a second BACK to actually leave -- not the single-press
+ * exit this entry point is supposed to give. Leaving dirlevel at 0 makes
+ * this look, to tree.c, exactly like any other one-level-deep tag browse
+ * (e.g. root_menu.c's GO_TO_DBBROWSER), so BACK exits immediately, which
+ * root_menu.c then redirects straight back to Album covers.
+ *
  * Returns false if the root has no tag_album row or it isn't a plain
  * "album -> title" chain (e.g. tagnavi_user.config was customized away
  * from the shipped shape) -- caller falls back to just loading the root. */
@@ -2119,11 +2127,6 @@ static bool enter_album_tracks_directly(struct tree_context *c, long album_seek,
     si = &menu->items[idx]->si;
     if (si->tagorder_count < 2 || si->tagorder[1] != tag_title)
         return false;
-
-    table_history[c->dirlevel] = c->currtable;
-    extra_history[c->dirlevel] = c->currextra;
-    if (c->dirlevel + 1 < MAX_DIR_LEVELS)
-        c->dirlevel++;
 
     csi = si;
     csi->result_seek[0] = album_seek;

@@ -370,11 +370,6 @@ static int pf_vp_y;             /* viewport y-offset (status bar height) */
 static struct viewport pf_vp;   /* PF rendering viewport (below status bar) */
 static struct frame_buffer_t pf_framebuffer; /* bypass backdrop in clear_viewport */
 
-/* Name/artist footer panel -- fixed layout (see init()), drawn directly
- * every frame by draw_footer_panel(), same as the coverflow above. */
-static struct viewport pf_footer_vp;
-static int pf_name_rel_y, pf_name_font;
-static int pf_artist_rel_y, pf_artist_font;
 static struct slide_data center_slide;
 static struct slide_data left_slides[MAX_SLIDES_COUNT];
 static struct slide_data right_slides[MAX_SLIDES_COUNT];
@@ -3143,6 +3138,25 @@ static void update_scroll_animation(void)
         int accel = 16384 * (PFREAL_ONE + fsin(ia)) / PFREAL_ONE;
         speed = 512 * global_settings.album_covers_transition_speed / 100
               + accel * global_settings.album_covers_scroll_speed / 100;
+
+        /* This advances slide_frame by a fixed amount per loop iteration,
+         * not per unit of wall-clock time (the original plugin's own
+         * update_scroll_animation() worked exactly the same way, so this
+         * isn't a regression) -- meaning the same logical animation plays
+         * out in fewer, larger jumps whenever the loop itself runs slower,
+         * which is exactly what happens now that playback stays active
+         * and competes with this screen for CPU time (see
+         * plugin_get_buffer()'s comment in init()). A true fix would make
+         * this frame-rate independent (scale by measured elapsed ticks
+         * rather than a flat per-iteration constant); this is the cheaper,
+         * targeted version of that: a flat multiplier specifically while
+         * something is actually competing for the CPU, rather than always.
+         * The 3/2 factor is a guess, not a measurement -- there's no way
+         * to test actual frame timing from here, so treat this as a
+         * starting point to tune against how it actually feels on
+         * hardware, not a calibrated value. */
+        if (audio_status() & AUDIO_STATUS_PLAY)
+            speed = speed * 3 / 2;
     }
 
     slide_frame += speed * step;
@@ -3326,19 +3340,23 @@ static int main_menu(void)
     }
 }
 
-/* Draws the name/artist footer panel directly into pf_footer_vp, entirely
- * outside the coverflow's own viewport. Called every frame alongside
- * render_all_slides() (see album_covers_loop()) -- deliberately not
- * throttled to "only when the selection settles", since this screen now
- * owns this screen area exclusively and nothing else can leave it stale.
- * ALBUM_NAME_HIDE/TOP/BOTTOM/AND_ARTIST_* predate the theme owning layout;
- * position is now fixed (see init()), so these only still distinguish
- * "nothing", "name only" and "name + artist". */
-static void draw_footer_panel(void)
+/* Restored to (almost) exactly how the original plugin's draw_album_text()
+ * worked: drawn directly inside pf_vp -- the same viewport the coverflow
+ * itself uses, not a separate panel -- overlaid near the top or bottom of
+ * that same area, in FONT_UI, using pf_fg_color (dynamic_colors_resolve()
+ * -derived, so the now-playing dynamic colour fade applies here too, same
+ * as everywhere else in the UI). Differences from the original: no
+ * text_crossfade (removed, see B2) so this always uses center_index rather
+ * than tracking a mid-scroll transition index; no show_statusbar variant
+ * (the status bar is always theme-controlled now, never toggled off by
+ * this screen). */
+static void draw_album_text(void)
 {
     char album_and_year[MAX_PATH];
     char *albumtxt, *artisttxt;
     int album_idx = 0;
+    int char_height;
+    int albumtxt_x, albumtxt_y, artisttxt_x;
     bool show_artist;
 
     if (global_settings.album_covers_show_album_name == ALBUM_NAME_HIDE)
@@ -3346,18 +3364,6 @@ static void draw_footer_panel(void)
 
     show_artist = (global_settings.album_covers_show_album_name == ALBUM_AND_ARTIST_TOP
                 || global_settings.album_covers_show_album_name == ALBUM_AND_ARTIST_BOTTOM);
-
-    /* pf_fg_color/pf_bg_color (dynamic_colors_resolve()-derived, updated
-     * every frame by pf_update_dynamic_colors() in the main loop) rather
-     * than the raw global_settings values: playback now keeps running while
-     * this screen is open (see the plugin_get_buffer() comment in init()),
-     * so the dynamic, now-playing-album-art-derived colour scheme -- and
-     * its fade whenever the track changes -- is live and meaningful here,
-     * the same as everywhere else in the UI. */
-    lcd_set_viewport(&pf_footer_vp);
-    lcd_set_background(pf_fg_color);
-    lcd_clear_viewport();
-    lcd_set_foreground(pf_bg_color);
 
     albumtxt = get_album_name_idx(center_index, &album_idx);
     if (global_settings.album_covers_show_year
@@ -3369,30 +3375,50 @@ static void draw_footer_panel(void)
     else
         snprintf(album_and_year, sizeof(album_and_year), "%s", albumtxt);
 
-    static int prev_index = -1;
-    bool changed = (center_index != prev_index);
-    prev_index = center_index;
+    lcd_set_foreground(pf_fg_color);
 
-    if (pf_idx.album_index[center_index].seek != pf_idx.album_untagged_seek)
+    static int prev_albumtxt_index = -1;
+    static bool prev_show_year = false;
+    bool album_changed = (center_index != prev_albumtxt_index
+                         || global_settings.album_covers_show_year != prev_show_year);
+    if (album_changed)
     {
-        lcd_setfont(pf_name_font);
-        if (changed)
-            set_scroll_line(album_and_year, PF_SCROLL_ALBUM);
-        lcd_putsxy(get_scroll_line_offset(PF_SCROLL_ALBUM), pf_name_rel_y,
-                   album_and_year);
+        set_scroll_line(album_and_year, PF_SCROLL_ALBUM);
+        prev_albumtxt_index = center_index;
+        prev_show_year = global_settings.album_covers_show_year;
     }
+
+    char_height = screens[SCREEN_MAIN].getcharheight();
+    switch (global_settings.album_covers_show_album_name)
+    {
+        case ALBUM_AND_ARTIST_TOP:
+            albumtxt_y = 0;
+            break;
+        case ALBUM_NAME_BOTTOM:
+        case ALBUM_AND_ARTIST_BOTTOM:
+            albumtxt_y = pf_height - (char_height * 9 / 4);
+            break;
+        case ALBUM_NAME_TOP:
+        default:
+            albumtxt_y = char_height / 2;
+            break;
+    }
+
+    albumtxt_x = get_scroll_line_offset(PF_SCROLL_ALBUM);
 
     if (show_artist)
     {
-        artisttxt = get_album_artist(center_index);
-        lcd_setfont(pf_artist_font);
-        if (changed)
-            set_scroll_line(artisttxt, PF_SCROLL_ARTIST);
-        lcd_putsxy(get_scroll_line_offset(PF_SCROLL_ARTIST), pf_artist_rel_y,
-                   artisttxt);
-    }
+        if (pf_idx.album_index[center_index].seek != pf_idx.album_untagged_seek)
+            lcd_putsxy(albumtxt_x, albumtxt_y, album_and_year);
 
-    lcd_set_viewport(&pf_vp);
+        artisttxt = get_album_artist(center_index);
+        if (album_changed)
+            set_scroll_line(artisttxt, PF_SCROLL_ARTIST);
+        artisttxt_x = get_scroll_line_offset(PF_SCROLL_ARTIST);
+        lcd_putsxy(artisttxt_x, albumtxt_y + char_height * 3 / 4, artisttxt);
+    }
+    else
+        lcd_putsxy(albumtxt_x, albumtxt_y, album_and_year);
 }
 
 static void error_wait(const char *message)
@@ -3432,28 +3458,6 @@ static bool init(void)
     pf_vp.buffer = &pf_framebuffer;
     pf_vp.x = 0;
     pf_vp.width = LCD_WIDTH;
-
-    /* Fixed layout: no theme control over any of this (see the "Not
-     * theme-controlled" block comment near SLIDE_CACHE_SIZE above for why).
-     * The name/artist footer is a fixed number of text lines carved off
-     * the bottom of the coverflow's own viewport; the coverflow gets
-     * whatever's left above it. */
-    {
-        int line_height = font_get(FONT_UI)->height;
-        int footer_height = line_height * 2 + line_height / 2;
-
-        pf_footer_vp = pf_vp;
-        pf_footer_vp.buffer = &pf_framebuffer;
-        pf_footer_vp.height = footer_height;
-        pf_footer_vp.y = pf_vp.y + pf_vp.height - footer_height;
-
-        pf_vp.height -= footer_height;
-
-        pf_name_rel_y = line_height / 4;
-        pf_name_font = FONT_UI;
-        pf_artist_rel_y = line_height + line_height / 2;
-        pf_artist_font = FONT_UI;
-    }
 
     pf_vp_y = pf_vp.y;
     pf_height = pf_vp.height;
@@ -3653,16 +3657,7 @@ static int album_covers_loop(void)
         if (pf_state == pf_scrolling)
             update_scroll_animation();
         render_all_slides();
-
-        /* Drawn directly every frame, not just when the selection settles:
-         * get_custom_action() above still runs the SBS's own internal render
-         * pass (only its *flush* is inhibited), which can write stale
-         * content left "shown" by whatever screen preceded Album covers
-         * (e.g. a scrollbar) into this area, same as it can into pf_vp's
-         * area -- render_all_slides() just handled that for the coverflow;
-         * this is the same fix for the footer. */
-        draw_footer_panel();
-        lcd_set_viewport(&pf_vp);
+        draw_album_text();
 
         if (aa_cache.inspected < pf_idx.album_ct)
         {

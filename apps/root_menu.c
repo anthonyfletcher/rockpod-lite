@@ -389,17 +389,38 @@ static int browser(void* param)
             /* Unlike the general tag-tree browse cases above, redirecting
              * GO_TO_ROOT here is safe: this entry point is only ever reached
              * from Album covers (never from the main Music menu), and
-             * tagtree.c's enter_album_tracks_directly() only ever goes one
-             * level deep from the root -- so there's no deeper history that
-             * a redirect could hijack or trap the user in, unlike an earlier
+             * tagtree.c's enter_album_tracks_directly() never advances
+             * dirlevel past 0 -- so there's no deeper history that a
+             * redirect could hijack or trap the user in, unlike an earlier
              * version of this that tried the same translation for the
              * general two-hop Album browse (GO_TO_ROOT there is ambiguous
              * between "backed out" and "pressed MENU" *at any depth*, which
              * did trap users). Requested explicitly: BACK from an album's
              * track list should return straight to Album covers, not the
-             * main menu. */
+             * main menu.
+             *
+             * GO_TO_PREVIOUS, not GO_TO_PICTUREFLOW directly: this case's
+             * items[] entry is invoked through load_screen(), which already
+             * tracks "the screen active before this one" itself (its local
+             * old_previous, restored into the global last_screen exactly
+             * when a callee returns GO_TO_PREVIOUS). Returning
+             * GO_TO_PICTUREFLOW directly bypassed that and left last_screen
+             * pointing at GO_TO_ALBUM_COVERS_TRACKS itself (the screen that
+             * "ran" from load_screen()'s point of view) -- a value that
+             * only makes sense as a one-shot dispatch armed by Album
+             * covers' own select handler, never as something to resume.
+             * The next time Album covers' own quick-MENU (PF_QUIT) returned
+             * GO_TO_PREVIOUS, root_menu()'s loop resolved *that* against
+             * the poisoned last_screen and re-entered the plain database
+             * browser instead of Album covers -- an endless bounce between
+             * Album covers and the bare Music menu that never reached the
+             * real main menu. GO_TO_PREVIOUS here instead lets
+             * load_screen()'s own bookkeeping do this correctly: it was
+             * called with old_previous already equal to GO_TO_PICTUREFLOW
+             * (Album covers is the only caller of this entry point), so
+             * returning GO_TO_PREVIOUS resolves back to exactly that. */
             if (ret_val == GO_TO_ROOT)
-                ret_val = GO_TO_PICTUREFLOW;
+                ret_val = GO_TO_PREVIOUS;
         break;
 #endif
     }
