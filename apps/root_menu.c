@@ -1130,7 +1130,14 @@ static int item_callback(int action,
 static int get_selection(int last_screen)
 {
     int i;
-    int len = ARRAYLEN(root_menu__);
+    /* Only the populated prefix of root_menu__[] is valid -- MAX_MENU_ITEMS
+     * (ARRAYLEN(root_menu__)) now includes the reserved-but-often-unused
+     * tagnavi slots (see menu_table[]'s comment), and entries beyond the
+     * current count are stale/uninitialized, not NULL-safe zeroed slots to
+     * skip past silently. Scanning past the real count risks dereferencing
+     * garbage on a target where address 0 is mapped, ordinary DRAM rather
+     * than a faulting NULL page. */
+    int len = MENU_GET_COUNT(root_menu_.flags);
     for(i=0; i < len; i++)
     {
         if (((root_menu__[i]->flags&MENU_TYPE_MASK) == MT_RETURN_VALUE) &&

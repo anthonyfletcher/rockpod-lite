@@ -52,6 +52,7 @@
 #include "debug_menu.h"
 #include "font.h"
 #include "language.h"
+#include "bitmaps/rockpodlogo.h"
 #include "wps.h"
 #include "playlist.h"
 #include "core_alloc.h"
@@ -246,6 +247,8 @@ int show_logo_boot( void )
     ver_w = font_getstringsize(version, NULL, &font_h, FONT_SYSFIXED);
     lcd_clear_display();
     lcd_setfont(FONT_SYSFIXED);
+    lcd_bmp(&bm_rockpodlogo, (LCD_WIDTH - BMPWIDTH_rockpodlogo) / 2,
+                             (LCD_HEIGHT - BMPHEIGHT_rockpodlogo) / 2);
     if (ver_w > LCD_WIDTH)
         lcd_putsxy(0, LCD_HEIGHT-font_h, rbversion);
     else
