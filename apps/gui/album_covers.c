@@ -163,22 +163,6 @@ static void pf_update_dynamic_colors(void)
     pf_bg_g  = pf_bg_color & 0x7e0;
 }
 
-/* Interpolate between pf_bg_color (brightness=0) and pf_fg_color (brightness=255) */
-static inline pix_t pf_color_mix(int brightness)
-{
-    int bg_r = RGB_UNPACK_RED(pf_bg_color);
-    int bg_g = RGB_UNPACK_GREEN(pf_bg_color);
-    int bg_b = RGB_UNPACK_BLUE(pf_bg_color);
-    int fg_r = RGB_UNPACK_RED(pf_fg_color);
-    int fg_g = RGB_UNPACK_GREEN(pf_fg_color);
-    int fg_b = RGB_UNPACK_BLUE(pf_fg_color);
-    return LCD_RGBPACK(
-        bg_r + (fg_r - bg_r) * brightness / 255,
-        bg_g + (fg_g - bg_g) * brightness / 255,
-        bg_b + (fg_b - bg_b) * brightness / 255
-    );
-}
-
 /* for fixed-point arithmetic, we need minimum 32-bit long
    long long (64-bit) might be useful for multiplication and division */
 #define PFreal long
@@ -215,6 +199,23 @@ static inline pix_t pf_color_mix(int brightness)
  * back to full-screen-minus-statusbar (viewport_set_defaults()' own rect)
  * if not found. */
 #define ALBUM_COVERS_SKIN_VP_NAME "Album_Covers_Viewport"
+
+/* Name/artist footer panel -- like ALBUM_COVERS_SKIN_VP_NAME above, these are
+ * declaration-only (no skin tag content, never %Vd()'d): Album covers reads
+ * their rect/font once at init() and then draws the panel fill and text
+ * itself every frame, the same way it draws the coverflow. Relying on the
+ * SBS's own token rendering for this instead (tried first, reverted) meant
+ * asking the SBS to redraw this content whenever the selection settled --
+ * but skin_update() redraws *everything* currently "shown" in the SBS
+ * document, including viewports left shown by whatever screen was open
+ * before Album covers (e.g. a scrollbar or header from the main menu), and
+ * nothing in this screen's own %cs gate ever hides those. That produced the
+ * transient title-bar/scrollbar bleed-through and an otherwise-empty footer.
+ * Owning this area directly sidesteps the whole class of bug: nothing but
+ * Album covers' own code ever touches these pixels while it's open. */
+#define ALBUM_COVERS_PANEL_VP_NAME "Album_Covers_Panel"
+#define ALBUM_COVERS_NAME_VP_NAME "Album_Covers_Name"
+#define ALBUM_COVERS_ARTIST_VP_NAME "Album_Covers_Artist"
 
 #define THREAD_STACK_SIZE DEFAULT_STACK_SIZE + 0x200
 #define CACHE_PREFIX ROCKBOX_DIR "/album_covers"
@@ -380,6 +381,17 @@ static int pf_lower_half;       /* pf_height - pf_half_height, rows below center
 static int pf_vp_y;             /* viewport y-offset (status bar height) */
 static struct viewport pf_vp;   /* PF rendering viewport (below status bar) */
 static struct frame_buffer_t pf_framebuffer; /* bypass backdrop in clear_viewport */
+
+/* Name/artist footer panel -- rect/font/colours read once from the theme
+ * (see ALBUM_COVERS_PANEL_VP_NAME etc. above), then drawn directly every
+ * frame by draw_footer_panel(). pf_footer_valid is false when the theme
+ * declares no such viewport; in that case the footer is skipped entirely
+ * rather than guessing a layout. */
+static struct viewport pf_footer_vp;
+static bool pf_footer_valid;
+static int pf_name_rel_y, pf_name_font;
+static int pf_artist_rel_y, pf_artist_font;
+static pix_t pf_footer_fg, pf_footer_bg;
 static struct slide_data center_slide;
 static struct slide_data left_slides[MAX_SLIDES_COUNT];
 static struct slide_data right_slides[MAX_SLIDES_COUNT];
@@ -2790,8 +2802,18 @@ static void render_slide(struct slide_data *slide, const int alpha)
     const int half_height = pf_half_height;
     const int lower_half = pf_lower_half;
     const bool perspective = (zo != 0 || slide->angle != 0);
-    const int p_start_upper = (sh - 1) * PFREAL_ONE;
-    const int p_start_lower = sh * PFREAL_ONE;
+    /* The original plugin offset these by pf_display_offs, a value that
+     * existed only to leave room below the real image for the reflection
+     * effect (now removed entirely, see B2). Algebraically,
+     * (sh - 1 - display_offs) and (sh - display_offs) always reduced to
+     * (half_height - 1) and half_height once display_offs = sh - half_height
+     * is substituted in -- sh cancels out, since without a reflection there
+     * is no reason to offset the split point at all. Using sh directly here
+     * (as if display_offs were 0) instead of dropping it from the formula
+     * entirely was the bug: it drew the image's bottom rows into the
+     * viewport's top half and left the bottom half never drawn. */
+    const int p_start_upper = (half_height - 1) * PFREAL_ONE;
+    const int p_start_lower = half_height * PFREAL_ONE;
     for (x = xi; x < w; x++) {
         int column = (unsigned)(xs - slide_left) >> PFREAL_SHIFT;
         if (column >= sw)
@@ -3342,83 +3364,78 @@ static int main_menu(void)
     }
 }
 
-static void draw_album_text(void)
+/* Declaration-only viewport lookup shared by the coverflow viewport and the
+ * footer panel/name/artist viewports -- see the #define block comments
+ * above for why these exist purely as rect/font sources. */
+static struct skin_viewport *find_sbs_named_vp(const char *name)
+{
+    struct gui_wps *sbs_gwps = skin_get_gwps(CUSTOM_STATUSBAR, SCREEN_MAIN);
+    return sbs_gwps ?
+        skin_find_item(name, SKIN_FIND_VP, sbs_gwps->data) : NULL;
+}
+
+/* Draws the name/artist footer panel directly into pf_footer_vp, entirely
+ * outside the coverflow's own viewport. Called every frame alongside
+ * render_all_slides() (see album_covers_loop()) -- deliberately not
+ * throttled to "only when the selection settles", since this screen now
+ * owns this screen area exclusively and nothing else can leave it stale.
+ * ALBUM_NAME_HIDE/TOP/BOTTOM/AND_ARTIST_* predate the theme owning layout;
+ * position is now fixed by the theme, so these only still distinguish
+ * "nothing", "name only" and "name + artist". */
+static void draw_footer_panel(void)
 {
     char album_and_year[MAX_PATH];
+    char *albumtxt, *artisttxt;
+    int album_idx = 0;
+    bool show_artist;
 
-    if (global_settings.album_covers_show_album_name == ALBUM_NAME_HIDE)
+    if (!pf_footer_valid
+        || global_settings.album_covers_show_album_name == ALBUM_NAME_HIDE)
         return;
 
-    static int prev_albumtxt_index = -1;
-    static bool prev_show_year = false;
-    int albumtxt_index;
-    int char_height;
-    int albumtxt_x, albumtxt_y, artisttxt_x;
-    int album_idx = 0;
+    show_artist = (global_settings.album_covers_show_album_name == ALBUM_AND_ARTIST_TOP
+                || global_settings.album_covers_show_album_name == ALBUM_AND_ARTIST_BOTTOM);
 
-    char *albumtxt;
-    char *artisttxt;
-    int c;
+    lcd_set_viewport(&pf_footer_vp);
+    lcd_set_background(pf_footer_fg);
+    lcd_clear_viewport();
 
-    if (pf_state == pf_scrolling) {
-        c = fade;
-        if (step < 0) c = 255-c;
-        albumtxt_index = (c > 128) ? center_index + step : center_index;
-    }
-    else {
-        albumtxt_index = center_index;
-    }
-    c = 255;
-    albumtxt = get_album_name_idx(albumtxt_index, &album_idx);
-
-    if (global_settings.album_covers_show_year && pf_idx.album_index[albumtxt_index].year > 0)
+    albumtxt = get_album_name_idx(center_index, &album_idx);
+    if (global_settings.album_covers_show_year
+        && pf_idx.album_index[center_index].year > 0)
     {
         snprintf(album_and_year, sizeof(album_and_year), "%s \xe2\x80\x93 %d",
-             albumtxt, pf_idx.album_index[albumtxt_index].year);
-    } else
+                  albumtxt, pf_idx.album_index[center_index].year);
+    }
+    else
         snprintf(album_and_year, sizeof(album_and_year), "%s", albumtxt);
 
-    lcd_set_foreground(pf_color_mix(c));
-    bool album_changed = (albumtxt_index != prev_albumtxt_index
-                         || global_settings.album_covers_show_year != prev_show_year);
-    if (album_changed) {
+    lcd_set_foreground(pf_footer_bg);
+
+    static int prev_index = -1;
+    bool changed = (center_index != prev_index);
+    prev_index = center_index;
+
+    if (changed)
         set_scroll_line(album_and_year, PF_SCROLL_ALBUM);
-        prev_albumtxt_index = albumtxt_index;
-        prev_show_year = global_settings.album_covers_show_year;
+    if (pf_idx.album_index[center_index].seek != pf_idx.album_untagged_seek)
+    {
+        lcd_setfont(pf_name_font);
+        lcd_putsxy(get_scroll_line_offset(PF_SCROLL_ALBUM), pf_name_rel_y,
+                   album_and_year);
     }
 
-    char_height = screens[SCREEN_MAIN].getcharheight();
-    switch(global_settings.album_covers_show_album_name){
-        case ALBUM_AND_ARTIST_TOP:
-            albumtxt_y = 0;
-            break;
-        case ALBUM_NAME_BOTTOM:
-        case ALBUM_AND_ARTIST_BOTTOM:
-            albumtxt_y = pf_height - (char_height * 9 / 4);
-            break;
-        case ALBUM_NAME_TOP:
-        default:
-            albumtxt_y = char_height / 2;
-            break;
-    }
-
-    albumtxt_x = get_scroll_line_offset(PF_SCROLL_ALBUM);
-
-    if ((global_settings.album_covers_show_album_name == ALBUM_AND_ARTIST_TOP)
-        || (global_settings.album_covers_show_album_name == ALBUM_AND_ARTIST_BOTTOM)){
-
-        if (pf_idx.album_index[albumtxt_index].seek != pf_idx.album_untagged_seek)
-            lcd_putsxy(albumtxt_x, albumtxt_y, album_and_year);
-
-        artisttxt = get_album_artist(albumtxt_index);
-        if (album_changed)
+    if (show_artist)
+    {
+        artisttxt = get_album_artist(center_index);
+        if (changed)
             set_scroll_line(artisttxt, PF_SCROLL_ARTIST);
-        artisttxt_x = get_scroll_line_offset(PF_SCROLL_ARTIST);
-        int y_offset = char_height * 3 / 4;
-        lcd_putsxy(artisttxt_x, albumtxt_y + y_offset, artisttxt);
-    } else {
-        lcd_putsxy(albumtxt_x, albumtxt_y, album_and_year);
+        lcd_setfont(pf_artist_font);
+        lcd_putsxy(get_scroll_line_offset(PF_SCROLL_ARTIST), pf_artist_rel_y,
+                   artisttxt);
     }
+
+    lcd_set_viewport(&pf_vp);
 }
 
 static void error_wait(const char *message)
@@ -3459,10 +3476,7 @@ static bool init(void)
      * ALBUM_COVERS_SKIN_VP_NAME above); silently keep the default rect from
      * viewport_set_defaults() above if the theme hasn't defined one. */
     {
-        struct gui_wps *sbs_gwps = skin_get_gwps(CUSTOM_STATUSBAR, SCREEN_MAIN);
-        struct skin_viewport *svp = sbs_gwps ?
-            skin_find_item(ALBUM_COVERS_SKIN_VP_NAME, SKIN_FIND_VP,
-                           sbs_gwps->data) : NULL;
+        struct skin_viewport *svp = find_sbs_named_vp(ALBUM_COVERS_SKIN_VP_NAME);
         if (svp)
         {
             pf_vp.y = svp->vp.y;
@@ -3473,6 +3487,50 @@ static bool init(void)
     pf_vp.buffer = &pf_framebuffer;
     pf_vp.x = 0;
     pf_vp.width = LCD_WIDTH;
+
+    /* Footer panel: rect/colours from Album_Covers_Panel, text position and
+     * font from Album_Covers_Name/Album_Covers_Artist. All three are
+     * declaration-only (see the block comment by their #defines) -- Album
+     * covers owns drawing this area completely, so there is nothing to %Vd()
+     * and nothing for the SBS to ever render here itself. */
+    pf_footer_valid = false;
+    {
+        struct skin_viewport *svp = find_sbs_named_vp(ALBUM_COVERS_PANEL_VP_NAME);
+        if (svp)
+        {
+            pf_footer_vp = svp->vp;
+            pf_footer_vp.buffer = &pf_framebuffer;
+            pf_footer_fg = (pix_t)svp->vp.fg_pattern;
+            pf_footer_bg = (pix_t)svp->vp.bg_pattern;
+            pf_footer_valid = true;
+        }
+    }
+    if (pf_footer_valid)
+    {
+        struct skin_viewport *svp = find_sbs_named_vp(ALBUM_COVERS_NAME_VP_NAME);
+        if (svp)
+        {
+            pf_name_rel_y = svp->vp.y - pf_footer_vp.y;
+            pf_name_font = svp->vp.font;
+        }
+        else
+        {
+            pf_name_rel_y = 0;
+            pf_name_font = pf_footer_vp.font;
+        }
+
+        svp = find_sbs_named_vp(ALBUM_COVERS_ARTIST_VP_NAME);
+        if (svp)
+        {
+            pf_artist_rel_y = svp->vp.y - pf_footer_vp.y;
+            pf_artist_font = svp->vp.font;
+        }
+        else
+        {
+            pf_artist_rel_y = pf_footer_vp.height / 2;
+            pf_artist_font = pf_footer_vp.font;
+        }
+    }
 
     pf_vp_y = pf_vp.y;
     pf_height = pf_vp.height;
@@ -3647,18 +3705,7 @@ static int album_covers_loop(void)
 {
     int ret;
     int button;
-    long last_update = current_tick;
-    long current_update;
-    long update_interval = 100;
-    int fps = 0;
-    int frames = 0;
-    char fpstxt[10];
-    int fpstxt_y;
     bool instant_update;
-    int shown_index = -1; /* last center_index the %Cn/%Ca footer was drawn
-                           * for -- forces one skin_update() the first time
-                           * through, then again only when the settled
-                           * selection actually changes. */
 
     while (true) {
         /* Get input first. The SBS renders during get_custom_action() and
@@ -3678,9 +3725,6 @@ static int album_covers_loop(void)
          * Restore ours so LCD API calls use the correct coordinates. */
         lcd_set_viewport(&pf_vp);
 
-        current_update = current_tick;
-        frames++;
-
         pf_update_dynamic_colors();
         update_scroll_lines();
 
@@ -3688,64 +3732,21 @@ static int album_covers_loop(void)
             update_scroll_animation();
         render_all_slides();
 
-        /* %Cn/%Ca (the theme's name/artist footer) only get re-evaluated
-         * when something explicitly asks the SBS to redraw -- nothing does
-         * that as covers scroll by, so without this the footer would just
-         * show whatever (if anything) was current at the moment the screen
-         * was entered, forever. Only fire once the scroll has settled on a
-         * new cover, not on every frame of the animation.
-         *
-         * Must be wrapped in skin_render_inhibit_flush() exactly like the
-         * get_custom_action() call above -- without it, skin_update() pushes
-         * its own redraw straight to the display immediately, racing this
-         * loop's own lcd_update() a few lines down. That race is what was
-         * causing the glitching/flicker and the footer appearing to get
-         * wiped out: two out-of-sync flushes of the same screen region,
-         * each one partially overwriting the other's just-drawn content.
-         * Also, restore our own viewport afterward for the same reason the
-         * get_custom_action() call needs it restored -- skin_update()
-         * renders through the SBS's viewports internally. */
-        if (pf_state == pf_idle && center_index != shown_index)
-        {
-            shown_index = center_index;
-            skin_render_inhibit_flush(true);
-            FOR_NB_SCREENS(i)
-                skin_update(CUSTOM_STATUSBAR, i, SKIN_REFRESH_ALL);
-            skin_render_inhibit_flush(false);
-            lcd_set_viewport(&pf_vp);
-        }
+        /* Drawn directly every frame, not just when the selection settles:
+         * get_custom_action() above still runs the SBS's own internal render
+         * pass (only its *flush* is inhibited), which can write stale
+         * content left "shown" by whatever screen preceded Album covers
+         * (e.g. a scrollbar) into this area, same as it can into pf_vp's
+         * area -- render_all_slides() just handled that for the coverflow;
+         * this is the same fix for the footer. */
+        draw_footer_panel();
+        lcd_set_viewport(&pf_vp);
 
         if (aa_cache.inspected < pf_idx.album_ct)
         {
             buf_ctx_lock();
             incremental_albumart_cache(false);
             buf_ctx_unlock();
-        }
-
-        /* Calculate FPS */
-        if (current_update - last_update > update_interval) {
-            fps = frames * HZ / (current_update - last_update);
-            last_update = current_update;
-            frames = 0;
-        }
-        /* Draw FPS or draw percentage of already built album cache */
-        if (global_settings.album_covers_show_fps || aa_cache.inspected < pf_idx.album_ct)
-        {
-            lcd_set_foreground(G_PIX(255,0,0));
-            if (aa_cache.inspected >= pf_idx.album_ct)
-                 snprintf(fpstxt, sizeof(fpstxt), "FPS: %d", fps);
-            else
-            {
-                int progress_pct = 100 * aa_cache.inspected / pf_idx.album_ct;
-                snprintf(fpstxt, sizeof(fpstxt), "%d %%", progress_pct);
-            }
-
-            if (global_settings.album_covers_show_album_name == ALBUM_NAME_TOP ||
-                global_settings.album_covers_show_album_name == ALBUM_AND_ARTIST_TOP)
-                fpstxt_y = pf_height - screens[SCREEN_MAIN].getcharheight();
-            else
-                fpstxt_y = 0;
-            lcd_putsxy(0, fpstxt_y, fpstxt);
         }
 
         /* Copy offscreen buffer to LCD and give time to other threads */

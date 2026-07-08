@@ -656,7 +656,6 @@ struct user_settings
     /* apps/gui/album_covers.c settings -- see enum show_album_name_values /
      * sort_albums_by_values / year_sort_order_values in album_covers.h for
      * what the choice settings' integer values mean. */
-    bool album_covers_show_fps;
     int  album_covers_center_margin;
     int  album_covers_slide_tuck;
     int  album_covers_zoom;

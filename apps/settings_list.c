@@ -2194,8 +2194,6 @@ const struct settings_list settings[] = {
 #endif
 #endif
 #ifdef HAVE_TAGCACHE
-    OFFON_SETTING(0, album_covers_show_fps, LANG_DISPLAY_FPS, false,
-                  "album covers show fps", NULL),
     INT_SETTING(0, album_covers_center_margin, LANG_CENTRE_MARGIN, 0,
                 "album covers center margin", UNIT_INT, 0, 80, 1,
                 NULL, NULL, NULL),

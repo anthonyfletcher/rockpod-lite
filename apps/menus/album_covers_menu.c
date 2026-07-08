@@ -51,7 +51,6 @@ static int album_covers_resize_callback(int action,
     return ACTION_REDRAW;
 }
 
-MENUITEM_SETTING(album_covers_show_fps, &global_settings.album_covers_show_fps, NULL);
 MENUITEM_SETTING(album_covers_center_margin, &global_settings.album_covers_center_margin, NULL);
 MENUITEM_SETTING(album_covers_slide_tuck, &global_settings.album_covers_slide_tuck, NULL);
 MENUITEM_SETTING(album_covers_zoom, &global_settings.album_covers_zoom, NULL);
@@ -88,7 +87,6 @@ MAKE_MENU(album_covers_menu, "Album covers", NULL, Icon_Audio,
             &album_covers_show_year,
             &album_covers_year_sort_order,
             &album_covers_sort_albums_by,
-            &album_covers_show_fps,
             &album_covers_center_margin,
             &album_covers_slide_tuck,
             &album_covers_zoom,

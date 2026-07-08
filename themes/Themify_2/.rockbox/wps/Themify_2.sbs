@@ -50,14 +50,14 @@
 %?if(%cs, =, 1)<%?and(%if(%ss(0,2,%St(font)),!=,22),%if(%ss(0,2,%St(font)),!=,24))<%VI(Home_Menu_Viewport_Full)|%Vd(Home_Corners)%?St(scrollbar)<%VI(Home_Menu_Viewport_Full)|%VI(Home_Menu_Viewport_Right)%Vd(Scrollbar_Tall_Left)|%VI(Home_Menu_Viewport_Left)%Vd(Scrollbar_Tall_Right)>%?St(scrollbar)<%?St(show icons)<%Lb(No_Scroll_Home_Menu_With_Icons,302,30)|%Lb(No_Scroll_Home_Menu_No_Icons,302,30)>|%?St(show icons)<%Lb(Home_Menu_With_Icons,302,30)|%Lb(Home_Menu_No_Icons,302,30)>>>>
 #
 #- Sub Menu Initialisation -#
-%?and(%if(%cs,!=,1),%if(%cs,!=,10),%if(%cs,!=,14),%if(%cs,!=,16),%if(%cs,!=,21))<%Vd(Sub_Menu_Header)%?or(%if(%cs,=,7),%if(%Li, =, 4),%if(%Li, =, 11),%if(%Li, =, 26),%if(%Li, =, 27),%if(%Li, =, 32),%and(%if(%cs, =, 15),%if(%Lt, !=, %Sx(Context Menu))),%if(%cs, =, 17),%if(%cs, =, 19),%if(%cs, =, 20),%if(%Lt,=,%Sx(Album Artist)),%if(%Lt,=,%Sx([All tracks])),%if(%Lt,=,%Sx([Untagged])),%if(%Lt,=,%Sx([By album])),%if(%Lt,=,%Sx(Artist)),%if(%Lt,=,%Sx(Album)),%if(%Lt,=,%Sx(Genre)),%if(%Lt,=,%Sx(Year)),%if(%Lt,=,%Sx(Composer)),%if(%Lt,=,%Sx(Tracks by)),%if(%Lt,=,%Sx(Search by...)),%if(%Lt,=,%Sx(User Rating)),%if(%Lt,=,%Sx(Recently Added)),%if(%Lt,=,%Sx(User Rating)),%if(%Lt,=,%Sx(Settings)),%if(%Lt,=,%Sx(Sound Settings)),%if(%Lt,=,%Sx(Playback Settings)),%if(%Lt,=,%Sx(General Settings)),%if(%Lt,=,%Sx(Database)),%if(%Lt,=,%Sx(Theme Settings)),%if(%Lt,=,%Sx(Recording Settings)),%if(%Lt,=,%Sx(Manage Settings)),%if(%Lt,=,%Sx(Display)),%if(%Lt,=,%Sx(Language)),%if(%Lt,=,%Sx(Voice)),%if(%Lt,=,%Sx(Main Menu)),%if(%Lt,=,%Sx(Brightness)))<%?St(show icons)<%Vd(Header_with_Icon)|%Vd(Header_without_Icon)>|%Vd(Header_without_Icon)>%?and(%if(%ss(0,2,%St(font)),!=,22),%if(%ss(0,2,%St(font)),!=,24))<%VI(Sub_Menu_Viewport_Full)|%Vd(Sub_Menu_Corners)%?St(scrollbar)<%VI(Sub_Menu_Viewport_Full)|%VI(Sub_Menu_Viewport_Right)%Vd(Scrollbar_Short_Left)|%VI(Sub_Menu_Viewport_Left)%Vd(Scrollbar_Short_Right)>%?St(scrollbar)<%?or(%and(%if(%Lt,=,%Sx(Database)),%if(%Li,=,3)),%if(%Lt,=,%Sx(Settings)))<%?St(show icons)<%Lb(No_Scroll_Menu_With_Icons,182,30)|%Lb(No_Scroll_Menu_No_Icons,182,30)>|%Lb(No_Scroll_Menu_No_Icons,182,30)>|%?or(%and(%if(%Lt,=,%Sx(Database)),%if(%Li,=,3)),%if(%Lt,=,%Sx(Settings)))<%?St(show icons)<%Lb(Menu_With_Icons,182,30)|%Lb(Menu_No_Icons,182,30)>|%Lb(Menu_No_Icons,182,30)>>>>
+%?and(%if(%cs,!=,1),%if(%cs,!=,10),%if(%cs,!=,14),%if(%cs,!=,16),%if(%cs,!=,21),%if(%cs,!=,22))<%Vd(Sub_Menu_Header)%?or(%if(%cs,=,7),%if(%Li, =, 4),%if(%Li, =, 11),%if(%Li, =, 26),%if(%Li, =, 27),%if(%Li, =, 32),%and(%if(%cs, =, 15),%if(%Lt, !=, %Sx(Context Menu))),%if(%cs, =, 17),%if(%cs, =, 19),%if(%cs, =, 20),%if(%Lt,=,%Sx(Album Artist)),%if(%Lt,=,%Sx([All tracks])),%if(%Lt,=,%Sx([Untagged])),%if(%Lt,=,%Sx([By album])),%if(%Lt,=,%Sx(Artist)),%if(%Lt,=,%Sx(Album)),%if(%Lt,=,%Sx(Genre)),%if(%Lt,=,%Sx(Year)),%if(%Lt,=,%Sx(Composer)),%if(%Lt,=,%Sx(Tracks by)),%if(%Lt,=,%Sx(Search by...)),%if(%Lt,=,%Sx(User Rating)),%if(%Lt,=,%Sx(Recently Added)),%if(%Lt,=,%Sx(User Rating)),%if(%Lt,=,%Sx(Settings)),%if(%Lt,=,%Sx(Sound Settings)),%if(%Lt,=,%Sx(Playback Settings)),%if(%Lt,=,%Sx(General Settings)),%if(%Lt,=,%Sx(Database)),%if(%Lt,=,%Sx(Theme Settings)),%if(%Lt,=,%Sx(Recording Settings)),%if(%Lt,=,%Sx(Manage Settings)),%if(%Lt,=,%Sx(Display)),%if(%Lt,=,%Sx(Language)),%if(%Lt,=,%Sx(Voice)),%if(%Lt,=,%Sx(Main Menu)),%if(%Lt,=,%Sx(Brightness)))<%?St(show icons)<%Vd(Header_with_Icon)|%Vd(Header_without_Icon)>|%Vd(Header_without_Icon)>%?and(%if(%ss(0,2,%St(font)),!=,22),%if(%ss(0,2,%St(font)),!=,24))<%VI(Sub_Menu_Viewport_Full)|%Vd(Sub_Menu_Corners)%?St(scrollbar)<%VI(Sub_Menu_Viewport_Full)|%VI(Sub_Menu_Viewport_Right)%Vd(Scrollbar_Short_Left)|%VI(Sub_Menu_Viewport_Left)%Vd(Scrollbar_Short_Right)>%?St(scrollbar)<%?or(%and(%if(%Lt,=,%Sx(Database)),%if(%Li,=,3)),%if(%Lt,=,%Sx(Settings)))<%?St(show icons)<%Lb(No_Scroll_Menu_With_Icons,182,30)|%Lb(No_Scroll_Menu_No_Icons,182,30)>|%Lb(No_Scroll_Menu_No_Icons,182,30)>|%?or(%and(%if(%Lt,=,%Sx(Database)),%if(%Li,=,3)),%if(%Lt,=,%Sx(Settings)))<%?St(show icons)<%Lb(Menu_With_Icons,182,30)|%Lb(Menu_No_Icons,182,30)>|%Lb(Menu_No_Icons,182,30)>>>>
 #
 #- Album Covers Initialisation -#
-# 22 == ACTIVITY_ALBUMCOVERS (apps/misc.h). Full-width coverflow rendered
-# directly by apps/gui/album_covers.c (Album_Covers_Viewport only supplies
-# the rect, see ALBUM_COVERS_SKIN_VP_NAME); name/artist panel below it is
-# ordinary skin content using the %Cn/%Ca tokens.
-%?if(%cs, =, 22)<%Vd(Album_Covers_Viewport)%Vd(Album_Covers_Panel)>
+# 22 == ACTIVITY_ALBUMCOVERS (apps/misc.h). Nothing to do here: the coverflow
+# viewport and the name/artist panel (below, "$AC" section) are declaration
+# -only -- their rects/fonts are read once via skin_find_item() and then
+# apps/gui/album_covers.c draws all of it itself every frame, so none of it
+# is ever %Vd()'d or rendered by the SBS.
 #
 #- USB Screen Logic -#
 %?if(%cs, =, 21)<%VI(USB_Screen_Supression)%Vd(USB_Screen)>
@@ -274,11 +274,15 @@
 %Vl(Album_Covers_Viewport,0,28,-,156,-)
 #
 #-- Name/Artist Panel --#
-%Vl(Album_Covers_Panel,0,184,-,56,-)%VB%dr(0,0,-,-)
+# All three declarations below are also declaration-only, same as the
+# coverflow viewport above -- no skin content follows any of them, and none
+# are ever %Vd()'d. album_covers.c reads each rect once at init: the panel's
+# own rect/colours (fg_pattern becomes the fill colour, bg_pattern becomes
+# the text colour, matching the old %VB%dr(...)+%Vs(invert) look), and the
+# name/artist declarations' y-offset and font only.
 %Vl(Album_Covers_Panel,0,184,-,56,-)
-#
-%Vl(Album_Covers_Panel,0,192,-,26,3)%Vs(invert)%ac%Cn
-%Vl(Album_Covers_Panel,0,220,-,18,4)%Vs(invert)%ac%Ca
+%Vl(Album_Covers_Name,0,192,-,26,3)
+%Vl(Album_Covers_Artist,0,220,-,18,4)
 #
 #--- END ---#
 #
