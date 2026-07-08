@@ -41,7 +41,8 @@
 #include "action.h"           /* get_action/get_custom_action/button_mapping */
 #include "screen_access.h"    /* FOR_NB_SCREENS, screens[] */
 #include "kernel.h"           /* threads, mutex, queue, current_tick */
-#include "core_alloc.h"       /* core_alloc_maximum, buflib */
+#include "core_alloc.h"       /* buflib types for buf_ctx (see init()) */
+#include "plugin.h"           /* plugin_get_buffer() -- see init() */
 #include "tagcache.h"
 #include "playlist.h"
 #include "playlist_catalog.h"
@@ -75,8 +76,7 @@
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
 #include "cpu.h"
 #endif
-#include "skin_engine/skin_engine.h"  /* skin_get_gwps, CUSTOM_STATUSBAR */
-#include "skin_engine/wps_internals.h" /* skin_find_item, SKIN_FIND_VP */
+#include "skin_engine/skin_engine.h"  /* skin_render_inhibit_flush */
 #include "skin_engine/skin_albumart_color.h" /* dynamic_colors_resolve */
 #include "statusbar-skinned.h" /* sb_set_persistent_title */
 #include "album_covers.h"
@@ -191,32 +191,20 @@ static void pf_update_dynamic_colors(void)
  * constant. */
 #define ALBUM_COVERS_NUM_SLIDES 4
 
-/* Name of the (optional) SBS viewport a theme can declare -- typically
- * gated behind %?if(%cs,=,22)<...> (22 == ACTIVITY_ALBUMCOVERS, see
- * apps/misc.h) -- to carve out the coverflow's vertical extent, leaving
- * room above for the status bar and below for a name/artist panel. Only
- * y/height are used; this fork's coverflow is always full LCD width. Falls
- * back to full-screen-minus-statusbar (viewport_set_defaults()' own rect)
- * if not found. */
-#define ALBUM_COVERS_SKIN_VP_NAME "Album_Covers_Viewport"
-
-/* Name/artist footer panel -- like ALBUM_COVERS_SKIN_VP_NAME above, these are
- * declaration-only (no skin tag content, never %Vd()'d): Album covers reads
- * their rect/font once at init() and then draws the panel fill and text
- * itself every frame, the same way it draws the coverflow. Relying on the
- * SBS's own token rendering for this instead (tried first, reverted) meant
- * asking the SBS to redraw this content whenever the selection settled --
- * but skin_update() redraws *everything* currently "shown" in the SBS
- * document, including viewports left shown by whatever screen was open
- * before Album covers (e.g. a scrollbar or header from the main menu), and
- * nothing in this screen's own %cs gate ever hides those. That produced the
- * transient title-bar/scrollbar bleed-through and an otherwise-empty footer.
- * Owning this area directly sidesteps the whole class of bug: nothing but
- * Album covers' own code ever touches these pixels while it's open. */
-#define ALBUM_COVERS_PANEL_VP_NAME "Album_Covers_Panel"
-#define ALBUM_COVERS_NAME_VP_NAME "Album_Covers_Name"
-#define ALBUM_COVERS_ARTIST_VP_NAME "Album_Covers_Artist"
-
+/* Not theme-controlled: layout is fixed/proportional (see init()) and
+ * colours come from the theme's normal fg/bg + the dynamic (album-art
+ * derived) colour scheme, same as everywhere else. An earlier version
+ * tried to let the theme drive layout, colours and text rendering via
+ * declaration-only SBS viewports (Album_Covers_Viewport/Panel/Name/Artist)
+ * that this screen read once and then drew into itself -- reverted, since
+ * every attempt to route any part of this through the skin engine at
+ * runtime (colours inherited from ambient, non-deterministic SBS viewport
+ * state; skin_update()-rendered text racing this screen's own lcd_update();
+ * %Vd()'d content left "shown" by whatever screen preceded this one
+ * bleeding through) turned out to fight this screen's own per-frame
+ * raw-framebuffer redraw model. None of that is fixable while this screen
+ * keeps redrawing its own pixels every frame outside the SBS's normal
+ * render cycle, so it isn't themeable beyond the theme's plain fg/bg. */
 #define THREAD_STACK_SIZE DEFAULT_STACK_SIZE + 0x200
 #define CACHE_PREFIX ROCKBOX_DIR "/album_covers"
 #define ALBUM_INDEX CACHE_PREFIX "/album_covers.idx"
@@ -382,13 +370,9 @@ static int pf_vp_y;             /* viewport y-offset (status bar height) */
 static struct viewport pf_vp;   /* PF rendering viewport (below status bar) */
 static struct frame_buffer_t pf_framebuffer; /* bypass backdrop in clear_viewport */
 
-/* Name/artist footer panel -- rect/font/colours read once from the theme
- * (see ALBUM_COVERS_PANEL_VP_NAME etc. above), then drawn directly every
- * frame by draw_footer_panel(). pf_footer_valid is false when the theme
- * declares no such viewport; in that case the footer is skipped entirely
- * rather than guessing a layout. */
+/* Name/artist footer panel -- fixed layout (see init()), drawn directly
+ * every frame by draw_footer_panel(), same as the coverflow above. */
 static struct viewport pf_footer_vp;
-static bool pf_footer_valid;
 static int pf_name_rel_y, pf_name_font;
 static int pf_artist_rel_y, pf_artist_font;
 static struct slide_data center_slide;
@@ -424,7 +408,6 @@ struct event_queue thread_q;
 static struct tagcache_search tcs;
 
 static struct buflib_context buf_ctx;
-static int pf_buf_handle; /* core_alloc_maximum() handle backing buf_ctx */
 
 static struct pf_index_t pf_idx;
 
@@ -1652,26 +1635,6 @@ static char* get_slide_name(const int slide_index, bool artist)
         return get_album_artist(slide_index);
 
     return get_album_name(slide_index);
-}
-
-/* Theme token support (%Cn/%Ca, apps/gui/skin_engine/skin_tokens.c) --
- * usable even when Album covers has never been opened this session (pf_idx
- * is zero-initialized BSS then, so guard against indexing an empty/unset
- * album_index rather than relying on the theme only referencing these
- * inside a %cs-gated viewport). */
-const char *album_covers_current_name(void)
-{
-    int idx;
-    if (pf_idx.album_ct <= 0)
-        return "";
-    return get_album_name_idx(center_index, &idx);
-}
-
-const char *album_covers_current_artist(void)
-{
-    if (pf_idx.album_ct <= 0)
-        return "";
-    return get_album_artist(center_index);
 }
 
 static int jmp_idx_prev(void)
@@ -3285,11 +3248,8 @@ static void cleanup(void)
     backlight_set_timeout_plugged(global_settings.backlight_timeout_plugged);
 #endif
 
-    if (pf_buf_handle > 0)
-    {
-        core_free(pf_buf_handle);
-        pf_buf_handle = 0;
-    }
+    /* Nothing to free: pf_idx.buf points into plugin_get_buffer()'s static
+     * pluginbuf[] (see init()), not a buflib handle. */
 }
 
 enum {
@@ -3366,23 +3326,13 @@ static int main_menu(void)
     }
 }
 
-/* Declaration-only viewport lookup shared by the coverflow viewport and the
- * footer panel/name/artist viewports -- see the #define block comments
- * above for why these exist purely as rect/font sources. */
-static struct skin_viewport *find_sbs_named_vp(const char *name)
-{
-    struct gui_wps *sbs_gwps = skin_get_gwps(CUSTOM_STATUSBAR, SCREEN_MAIN);
-    return sbs_gwps ?
-        skin_find_item(name, SKIN_FIND_VP, sbs_gwps->data) : NULL;
-}
-
 /* Draws the name/artist footer panel directly into pf_footer_vp, entirely
  * outside the coverflow's own viewport. Called every frame alongside
  * render_all_slides() (see album_covers_loop()) -- deliberately not
  * throttled to "only when the selection settles", since this screen now
  * owns this screen area exclusively and nothing else can leave it stale.
  * ALBUM_NAME_HIDE/TOP/BOTTOM/AND_ARTIST_* predate the theme owning layout;
- * position is now fixed by the theme, so these only still distinguish
+ * position is now fixed (see init()), so these only still distinguish
  * "nothing", "name only" and "name + artist". */
 static void draw_footer_panel(void)
 {
@@ -3391,13 +3341,19 @@ static void draw_footer_panel(void)
     int album_idx = 0;
     bool show_artist;
 
-    if (!pf_footer_valid
-        || global_settings.album_covers_show_album_name == ALBUM_NAME_HIDE)
+    if (global_settings.album_covers_show_album_name == ALBUM_NAME_HIDE)
         return;
 
     show_artist = (global_settings.album_covers_show_album_name == ALBUM_AND_ARTIST_TOP
                 || global_settings.album_covers_show_album_name == ALBUM_AND_ARTIST_BOTTOM);
 
+    /* pf_fg_color/pf_bg_color (dynamic_colors_resolve()-derived, updated
+     * every frame by pf_update_dynamic_colors() in the main loop) rather
+     * than the raw global_settings values: playback now keeps running while
+     * this screen is open (see the plugin_get_buffer() comment in init()),
+     * so the dynamic, now-playing-album-art-derived colour scheme -- and
+     * its fade whenever the track changes -- is live and meaningful here,
+     * the same as everywhere else in the UI. */
     lcd_set_viewport(&pf_footer_vp);
     lcd_set_background(pf_fg_color);
     lcd_clear_viewport();
@@ -3473,111 +3429,65 @@ static bool init(void)
     FOR_NB_SCREENS(i)
         viewportmanager_theme_undo(i, false);
 
-    /* Let the theme carve out the coverflow's vertical extent (see
-     * ALBUM_COVERS_SKIN_VP_NAME above); silently keep the default rect from
-     * viewport_set_defaults() above if the theme hasn't defined one. */
-    {
-        struct skin_viewport *svp = find_sbs_named_vp(ALBUM_COVERS_SKIN_VP_NAME);
-        if (svp)
-        {
-            pf_vp.y = svp->vp.y;
-            pf_vp.height = svp->vp.height;
-        }
-    }
-
     pf_vp.buffer = &pf_framebuffer;
     pf_vp.x = 0;
     pf_vp.width = LCD_WIDTH;
 
-    /* Footer panel: rect from Album_Covers_Panel, text position and font
-     * from Album_Covers_Name/Album_Covers_Artist. All three are
-     * declaration-only (see the block comment by their #defines) -- Album
-     * covers owns drawing this area completely, so there is nothing to %Vd()
-     * and nothing for the SBS to ever render here itself.
-     *
-     * Deliberately NOT reading fg_pattern/bg_pattern off these viewports for
-     * the panel's colours (tried first, reverted): a %Vl() viewport that's
-     * never rendered never gets its own %Vf/%Vb tokens executed, so its
-     * colours default to whatever viewport_set_defaults() copies from
-     * sb_skin_get_info_vp() -- the SBS's live info viewport, i.e. whatever
-     * colours it happens to hold at that instant, not a fixed theme value.
-     * That produced exactly the kind of non-deterministic result the
-     * scrollbar/header bug above did: readable one run, a solid unreadable
-     * block the next, depending on what was on screen right before Album
-     * covers opened. pf_fg_color/pf_bg_color (global_settings.fg_color/
-     * bg_color, already resolved for the rest of this screen) are the
-     * theme's actual, stable, explicitly-configured colours. */
-    pf_footer_valid = false;
+    /* Fixed layout: no theme control over any of this (see the "Not
+     * theme-controlled" block comment near SLIDE_CACHE_SIZE above for why).
+     * The name/artist footer is a fixed number of text lines carved off
+     * the bottom of the coverflow's own viewport; the coverflow gets
+     * whatever's left above it. */
     {
-        struct skin_viewport *svp = find_sbs_named_vp(ALBUM_COVERS_PANEL_VP_NAME);
-        if (svp)
-        {
-            pf_footer_vp = svp->vp;
-            pf_footer_vp.buffer = &pf_framebuffer;
-            pf_footer_valid = true;
-        }
-    }
-    if (pf_footer_valid)
-    {
-        struct skin_viewport *svp = find_sbs_named_vp(ALBUM_COVERS_NAME_VP_NAME);
-        if (svp)
-        {
-            pf_name_rel_y = svp->vp.y - pf_footer_vp.y;
-            pf_name_font = svp->vp.font;
-        }
-        else
-        {
-            pf_name_rel_y = 0;
-            pf_name_font = pf_footer_vp.font;
-        }
+        int line_height = font_get(FONT_UI)->height;
+        int footer_height = line_height * 2 + line_height / 2;
 
-        svp = find_sbs_named_vp(ALBUM_COVERS_ARTIST_VP_NAME);
-        if (svp)
-        {
-            pf_artist_rel_y = svp->vp.y - pf_footer_vp.y;
-            pf_artist_font = svp->vp.font;
-        }
-        else
-        {
-            pf_artist_rel_y = pf_footer_vp.height / 2;
-            pf_artist_font = pf_footer_vp.font;
-        }
+        pf_footer_vp = pf_vp;
+        pf_footer_vp.buffer = &pf_framebuffer;
+        pf_footer_vp.height = footer_height;
+        pf_footer_vp.y = pf_vp.y + pf_vp.height - footer_height;
+
+        pf_vp.height -= footer_height;
+
+        pf_name_rel_y = line_height / 4;
+        pf_name_font = FONT_UI;
+        pf_artist_rel_y = line_height + line_height / 2;
+        pf_artist_font = FONT_UI;
     }
 
     pf_vp_y = pf_vp.y;
     pf_height = pf_vp.height;
-    /* Split around the viewport's OWN vertical center, not the physical
-     * screen's -- the old "LCD_HEIGHT / 2 - pf_vp_y" formula only worked
-     * because pf_vp used to always extend to the bottom of the screen, so
-     * the screen's center and the viewport's center were the same point.
-     * Now that a theme can give the coverflow a shorter viewport that ends
-     * well above the screen bottom, anchoring to LCD_HEIGHT/2 pushes the
-     * whole render toward the top of that (smaller) area. No "+8"-style
-     * bias toward extra room below center either -- that existed only to
-     * leave room for the old in-house album/artist text drawn near the
-     * bottom of this same viewport; that text is now the theme's own
-     * separate footer panel, entirely outside this viewport, so the
-     * split should be a plain, even center. */
+    /* Plain, even split around the viewport's own vertical center. */
     pf_half_height = pf_height / 2;
     pf_lower_half = pf_height - pf_half_height;
 
     pf_update_dynamic_colors();
 
-    /* No dedicated plugin buffer exists for core-linked code -- borrow the
-     * largest free block from the same buflib pool the audio buffer draws
-     * from. buflib_ops_locked means this allocation can never be moved by
-     * compaction, so the raw pointers pf_idx.buf/aa_cache.buf and the
-     * separate buf_ctx buflib_context built on top of it all stay valid
-     * without any pin/unpin bookkeeping. This pauses playback while Album
-     * covers is open -- an accepted, documented regression from the old
-     * plugin's separate always-available PLUGIN_BUFFER_SIZE allocation. */
-    pf_buf_handle = core_alloc_maximum(&buf_size, &buflib_ops_locked);
-    if (pf_buf_handle <= 0)
+    /* plugin_get_buffer() -- exactly what the original plugin used in its
+     * PF_PLAYBACK_CAPABLE branch (pictureflow.c's init(), guarded by
+     * PLUGIN_BUFFER_SIZE > 0x10000: true for both of this fork's targets,
+     * ipod6g at 3 MiB and ipodvideo at 512 KiB, per firmware/export/config/
+     * *.h) -- NOT core_alloc_maximum()/plugin_get_audio_buffer(), which was
+     * tried here first and reverted: those hand back the largest free block
+     * of the *audio* buflib pool, which requires the audio system to free
+     * its own buffer first, stopping playback (and, with it, the dynamic
+     * colour scheme that depends on a current track).
+     *
+     * pluginbuf[] (apps/plugin.c) is a plain static array -- a fixed,
+     * always-resident region completely separate from the audio buffer
+     * pool, reserved for whichever plugin is currently loaded, or, when
+     * none is (current_plugin_handle is NULL -- true here, since this is
+     * core-linked code, never a loaded plugin), returned to the caller in
+     * full. It costs nothing new: this RAM was already permanently
+     * reserved for plugin use, sitting idle whenever no plugin is loaded;
+     * Album covers is simply borrowing it back the same way the original
+     * plugin did. Not a buflib handle, so nothing to free in cleanup(). */
+    buf = plugin_get_buffer(&buf_size);
+    if (!buf)
     {
         error_wait("Not enough memory");
         return false;
     }
-    buf = core_get_data(pf_buf_handle);
 
     /* store buffer pointers and sizes */
     pf_idx.buf = buf;
@@ -3846,20 +3756,17 @@ static int album_covers_loop(void)
         case PF_SELECT:
         {
             int album_idx = 0;
-            char *album, *artist;
+            char *album;
+            long album_seek;
             if (pf_state == pf_scrolling)
                 set_current_slide(target);
             album = get_album_name_idx(center_index, &album_idx);
-            artist = get_album_artist(center_index);
-            /* get_album_artist() returns the literal string "?" as a
-             * *display* placeholder when this album has no albumartist tag
-             * (very common -- most libraries only tag plain Artist) -- it's
-             * never a real tagcache value, so passing it through as a search
-             * filter meant this jump could never match any such album,
-             * silently falling back to just showing the Album list. */
-            if (artist && strcmp(artist, "?") == 0)
-                artist = NULL;
-            tagtree_enter_album_tracks_on_next_load(album, artist);
+            /* Identify the album by its own tagcache seek, not by name --
+             * tagtree.c filters directly on this, so there's no name/sort
+             * matching involved at all (the earlier, much more fragile
+             * design that this replaced). */
+            album_seek = pf_idx.album_index[center_index].seek;
+            tagtree_enter_album_tracks_on_next_load(album_seek, album);
             return GO_TO_ALBUM_COVERS_TRACKS;
         }
         default:

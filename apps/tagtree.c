@@ -2045,90 +2045,35 @@ void tagtree_enter_by_tag_on_next_load(int tag)
     pending_root_shortcut_tag = tag;
 }
 
-/* Set by tagtree_enter_album_tracks_on_next_load(); consumed right after the
- * tag_album jump above completes. Empty album name means none armed. */
-static char pending_album_name[MAX_PATH];
-static char pending_albumartist_name[MAX_PATH];
+/* Set by tagtree_enter_album_tracks_on_next_load(); consumed on the next
+ * fresh root load. -1 means none armed. */
+static long pending_album_seek = -1;
+static char pending_album_title[MENUENTRY_MAX_NAME];
 
-/* Arms a two-hop jump: root -> Album grouping row -> this specific album's
- * tracks. Used by Album covers (apps/gui/album_covers.c) so selecting a
- * cover lands directly on that album's tracks in the core database browser,
- * instead of Album covers drawing its own in-house track list. Matched by
- * (album, albumartist) name, not position, since Album covers keeps its own
- * separately-sorted album index with no notion of tagtree's row order. */
-void tagtree_enter_album_tracks_on_next_load(const char *album,
-                                             const char *albumartist)
+/* Arms a direct jump straight from the root into a specific album's own
+ * track list -- skipping the intermediate "Album" grouping listing (all
+ * albums) entirely, unlike a normal Album-browse session. Used by Album
+ * covers (apps/gui/album_covers.c): it already knows exactly which album
+ * by tagcache seek (pf_idx.album_index[].seek), the same identifier
+ * tagcache_search_add_filter() takes elsewhere in this file, so there's no
+ * need to search for the album by name/position at all -- that was the
+ * root cause of an earlier, much more fragile version of this landing on
+ * the wrong row (or none): it tried to replicate retrieve_entries()' qsort
+ * + special-entry-count row numbering with a separate, unsorted search.
+ * Filtering directly by seek sidesteps that whole class of bug.
+ *
+ * This also means dirlevel only ever advances by one from the root (see
+ * enter_album_tracks_directly()), not two -- so a single BACK press exits
+ * the browse entirely, matching Album covers' own requirement that this
+ * "specific entry point" not need to show or remember the intermediate
+ * Album listing at all. */
+void tagtree_enter_album_tracks_on_next_load(long album_seek,
+                                             const char *album_title)
 {
-    strlcpy(pending_album_name, album ? album : "", sizeof(pending_album_name));
-    strlcpy(pending_albumartist_name, albumartist ? albumartist : "",
-            sizeof(pending_albumartist_name));
+    pending_album_seek = album_seek;
+    strlcpy(pending_album_title, album_title ? album_title : "",
+            sizeof(pending_album_title));
     tagtree_enter_by_tag_on_next_load(tag_album);
-}
-
-/* Finds the 0-based row position of the album matching pending_album_name/
- * pending_albumartist_name within the Album level's *actual* row list --
- * i.e. via retrieve_entries()/tagtree_get_entry(), the same lazily-paginated,
- * post-qsort entry cache the real browse UI uses, rather than a second,
- * independent tagcache_search.
- *
- * An earlier version of this ran its own plain, unfiltered tag_album search
- * and counted raw tagcache_get_next() enumeration order as the position.
- * That's a different order than what actually ends up at each row index:
- * retrieve_entries() collects entries in raw tagcache order but then, for a
- * root-level tag_album grouping, always re-sorts them alphabetically via
- * qsort() (see its 'sort' handling) before they're addressable by position --
- * and prepends c->special_entry_count synthetic rows ("[All Tracks]",
- * "[Random]") ahead of the real, sorted ones. The old code accounted for
- * neither, so the position it computed essentially never matched the row
- * tagtree_enter() would actually land on. Reusing tagtree_get_entry() makes
- * this consistent by construction instead of by (fragile) replication.
- *
- * Must be called with 'c' already entered into the Album level (i.e. right
- * after the tag_album hop's own tagtree_enter()), and requires retrieve_entries()
- * to run for that level, which is one reason this can't be called before
- * that hop. c->special_entry_count is populated as a side effect and read
- * back here to skip the synthetic rows.
- * Returns the position, or -1 if no match. */
-static int find_album_row_by_name(struct tree_context *c)
-{
-    int total, i;
-
-    if (pending_album_name[0] == '\0')
-        return -1;
-
-    total = retrieve_entries(c, 0, true);
-    if (total < 0)
-        return -1;
-
-    for (i = c->special_entry_count; i < total; i++)
-    {
-        struct tagentry *entry = tagtree_get_entry(c, i);
-        const char *name = entry->album_name ? entry->album_name : entry->name;
-        bool match;
-
-        if (!name || strcmp(name, pending_album_name) != 0)
-            continue;
-
-        match = true;
-        if (pending_albumartist_name[0] != '\0')
-        {
-            struct tagcache_search artist_search;
-            char artist_buf[MAX_PATH];
-            match = false;
-            if (tagcache_search(&artist_search, tag_albumartist))
-            {
-                if (tagcache_retrieve(&artist_search, entry->idx_id,
-                                      artist_search.type, artist_buf,
-                                      sizeof(artist_buf)))
-                    match = (strcmp(artist_buf,
-                                    pending_albumartist_name) == 0);
-                tagcache_search_finish(&artist_search);
-            }
-        }
-        if (match)
-            return i;
-    }
-    return -1;
 }
 
 /* Finds the row in the currently-loaded root ("main") menu whose first tag
@@ -2148,6 +2093,46 @@ static int tagtree_find_root_entry_by_tag(int tag)
             return i;
     }
     return -1;
+}
+
+/* Consumes pending_album_seek: points csi straight at the root's "Album"
+ * row's own search_instruction (same one a normal two-level Album browse
+ * uses) but jumps directly to its title level, filtered by album_seek,
+ * without ever entering/displaying the grouping level itself. Mirrors the
+ * bookkeeping tagtree_enter() does for a single level of depth (history
+ * arrays, dirlevel++) -- see its TABLE_ROOT/TABLE_NAVIBROWSE cases -- since
+ * this is deliberately not calling tagtree_enter() at all (that would land
+ * on the grouping level first, which is exactly the extra level this
+ * exists to skip).
+ * Returns false if the root has no tag_album row or it isn't a plain
+ * "album -> title" chain (e.g. tagnavi_user.config was customized away
+ * from the shipped shape) -- caller falls back to just loading the root. */
+static bool enter_album_tracks_directly(struct tree_context *c, long album_seek,
+                                        const char *album_title)
+{
+    int idx = tagtree_find_root_entry_by_tag(tag_album);
+    struct search_instruction *si;
+
+    if (idx < 0)
+        return false;
+
+    si = &menu->items[idx]->si;
+    if (si->tagorder_count < 2 || si->tagorder[1] != tag_title)
+        return false;
+
+    table_history[c->dirlevel] = c->currtable;
+    extra_history[c->dirlevel] = c->currextra;
+    if (c->dirlevel + 1 < MAX_DIR_LEVELS)
+        c->dirlevel++;
+
+    csi = si;
+    csi->result_seek[0] = album_seek;
+    c->currtable = TABLE_NAVIBROWSE;
+    c->currextra = 1;
+    c->selected_item = 0;
+    strmemccpy(current_title[c->currextra], album_title,
+               sizeof(current_title[0]));
+    return true;
 }
 
 /* root_menu.c's tagnavi-derived main-menu shortcuts (GO_TO_TAGNAVI_FIRST..LAST)
@@ -2239,38 +2224,36 @@ int tagtree_load(struct tree_context* c)
         pending_root_shortcut_tag = -1;
 
         load_root(c);
-        int idx = tagtree_find_root_entry_by_tag(target_tag);
-        if (idx >= 0)
-        {
-            c->selected_item = idx;
-            tagtree_enter(c, false);
 
-            /* If Album covers also armed a specific-album jump (only ever
-             * paired with target_tag == tag_album), drill one level further
-             * into that album's tracks now that its grouping table (csi) is
-             * set up -- find_album_row_by_name() populates and searches the
-             * real Album-level entry cache itself (via retrieve_entries()),
-             * so this doesn't need the listing to already be loaded. */
-            if (pending_album_name[0] != '\0')
-            {
-                int album_row = find_album_row_by_name(c);
-                pending_album_name[0] = '\0';
-                pending_albumartist_name[0] = '\0';
-                if (album_row >= 0)
-                {
-                    c->selected_item = album_row;
-                    tagtree_enter(c, false);
-                }
-                /* Album not found (e.g. deleted from the library since Album
-                 * covers last scanned it) -- fall through to showing the
-                 * Album listing itself instead of a dead end. */
-            }
-            return tagtree_load(c);
+        /* Album covers' jump (only ever paired with target_tag == tag_album)
+         * bypasses the normal single-hop tagtree_enter() below entirely --
+         * it goes straight to the album's track level itself, never
+         * entering/displaying the "Album" grouping listing at all. */
+        if (target_tag == tag_album && pending_album_seek != -1)
+        {
+            long album_seek = pending_album_seek;
+            char album_title[MENUENTRY_MAX_NAME];
+            strlcpy(album_title, pending_album_title, sizeof(album_title));
+            pending_album_seek = -1;
+
+            if (enter_album_tracks_directly(c, album_seek, album_title))
+                return tagtree_load(c);
+            /* Root has no plain tag_album row to anchor on (e.g. tagnavi
+             * customized away from the shipped shape) -- fall through to
+             * the root menu instead of a dead end. */
         }
-        /* Tag not found (e.g. removed from tagnavi_user.config) -- fall
-         * through and show the root menu instead of a blank screen. */
-        pending_album_name[0] = '\0';
-        pending_albumartist_name[0] = '\0';
+        else
+        {
+            int idx = tagtree_find_root_entry_by_tag(target_tag);
+            if (idx >= 0)
+            {
+                c->selected_item = idx;
+                tagtree_enter(c, false);
+                return tagtree_load(c);
+            }
+            /* Tag not found (e.g. removed from tagnavi_user.config) -- fall
+             * through and show the root menu instead of a blank screen. */
+        }
     }
 
     switch (table)

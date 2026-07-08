@@ -39,10 +39,4 @@ int album_covers(const char *selected_file);
 void album_covers_rebuild_cache(void);
 void album_covers_update_cache(void);
 
-/* Name/artist of the cover currently centered in the coverflow -- backs the
- * %Cn/%Ca theme tokens (apps/gui/skin_engine/skin_tokens.c). Safe to call
- * even if Album covers has never been opened this session (returns ""). */
-const char *album_covers_current_name(void);
-const char *album_covers_current_artist(void);
-
 #endif

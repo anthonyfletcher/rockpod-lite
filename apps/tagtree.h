@@ -50,12 +50,14 @@ int tagtree_get_icon(struct tree_context* c);
  * position so it's robust to tagnavi.config reordering. Used by
  * root_menu.c's tagnavi-derived main-menu shortcuts. */
 void tagtree_enter_by_tag_on_next_load(int tag);
-/* Arms a two-hop jump: root -> Album grouping row -> this specific album's
- * tracks, matched by (album, albumartist) name rather than position. Used
- * by apps/gui/album_covers.c so selecting a cover lands directly on that
- * album's tracks in the core database browser. */
-void tagtree_enter_album_tracks_on_next_load(const char *album,
-                                             const char *albumartist);
+/* Arms a direct jump: root -> straight into that specific album's own track
+ * list, identified by its tagcache seek (not name/position), skipping the
+ * intermediate "Album" grouping listing entirely. Used by
+ * apps/gui/album_covers.c so selecting a cover lands directly on that
+ * album's tracks in the core database browser, with a single BACK press
+ * exiting straight back out (no intermediate level to unwind through). */
+void tagtree_enter_album_tracks_on_next_load(long album_seek,
+                                             const char *album_title);
 /* Number of direct tag-browse ("->") rows in the root ("main") menu -- rows
  * that load a nested sub-menu ("==>") or trigger an action (e.g. "~>"
  * shuffle) don't count. Used by root_menu.c to know how many of its reserved

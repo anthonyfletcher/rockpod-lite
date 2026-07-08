@@ -44,9 +44,6 @@
 #include "peakmeter.h"
 /* Image stuff */
 #include "albumart.h"
-#ifdef HAVE_TAGCACHE
-#include "gui/album_covers.h"
-#endif
 #include "playlist.h"
 #include "playback.h"
 #include "tdspeed.h"
@@ -1782,13 +1779,6 @@ const char *get_token_value(struct gui_wps *gwps,
 
         case SKIN_TOKEN_LANG_IS_RTL:
             return lang_is_rtl() ? "r" : NULL;
-
-#ifdef HAVE_TAGCACHE
-        case SKIN_TOKEN_ALBUM_COVERS_NAME:
-            return album_covers_current_name();
-        case SKIN_TOKEN_ALBUM_COVERS_ARTIST:
-            return album_covers_current_artist();
-#endif
 
 #ifdef HAVE_SKIN_VARIABLES
         case SKIN_TOKEN_VAR_GETVAL:

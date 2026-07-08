@@ -137,10 +137,6 @@ static const struct tag_info legal_tags[] =
     TAG(SKIN_TOKEN_METADATA_YEAR,         "Iy", "", SKIN_REFRESH_STATIC),
     TAG(SKIN_TOKEN_METADATA_COMMENT,      "IC", "", SKIN_REFRESH_STATIC),
 
-    /* Album covers (apps/gui/album_covers.c) */
-    TAG(SKIN_TOKEN_ALBUM_COVERS_NAME,     "Cn", "", SKIN_REFRESH_DYNAMIC),
-    TAG(SKIN_TOKEN_ALBUM_COVERS_ARTIST,   "Ca", "", SKIN_REFRESH_DYNAMIC),
-
     TAG(SKIN_TOKEN_SOUND_PITCH,           "Sp", "", SKIN_REFRESH_DYNAMIC),
     TAG(SKIN_TOKEN_SOUND_SPEED,           "Ss", "", SKIN_REFRESH_DYNAMIC),
 

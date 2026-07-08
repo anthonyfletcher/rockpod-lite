@@ -385,17 +385,21 @@ static int browser(void* param)
         break;
 
         case GO_TO_ALBUM_COVERS_TRACKS:
-            /* NOTE: no GO_TO_ROOT -> GO_TO_PICTUREFLOW translation here
-             * (an earlier version of this did that, to try to land back on
-             * Album covers after backing all the way out). tree.c's
-             * dirbrowse() returns GO_TO_ROOT for BOTH "backed out past
-             * dirlevel 0" and "pressed MENU" -- they're indistinguishable
-             * here, so redirecting either one to Album covers also hijacked
-             * the MENU button's normal "go to the root menu" behavior,
-             * trapping the user in a loop between Album covers and this
-             * browse with no way back to the actual main menu. Behaves like
-             * every other tag-tree browse now: GO_TO_ROOT really means root. */
             tc->dirlevel = last_ft_dirlevel;
+            /* Unlike the general tag-tree browse cases above, redirecting
+             * GO_TO_ROOT here is safe: this entry point is only ever reached
+             * from Album covers (never from the main Music menu), and
+             * tagtree.c's enter_album_tracks_directly() only ever goes one
+             * level deep from the root -- so there's no deeper history that
+             * a redirect could hijack or trap the user in, unlike an earlier
+             * version of this that tried the same translation for the
+             * general two-hop Album browse (GO_TO_ROOT there is ambiguous
+             * between "backed out" and "pressed MENU" *at any depth*, which
+             * did trap users). Requested explicitly: BACK from an album's
+             * track list should return straight to Album covers, not the
+             * main menu. */
+            if (ret_val == GO_TO_ROOT)
+                ret_val = GO_TO_PICTUREFLOW;
         break;
 #endif
     }
