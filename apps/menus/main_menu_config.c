@@ -19,9 +19,7 @@
  *
  ****************************************************************************/
 
-/* Formerly apps/plugins/main_menu_config.c -- ported to core so it's always
- * resident (no plugin-load flicker) and cooperates directly with root_menu.c's
- * tagnavi-driven entries instead of going through the plugin API boundary. */
+/* Formerly apps/plugins/main_menu_config.c -- ported to core 
 
 #include <stdio.h>
 #include "string-extra.h"

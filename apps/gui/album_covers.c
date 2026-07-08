@@ -13,13 +13,7 @@
 *
 * Original code: http://code.google.com/p/pictureflow/
 *
-* Formerly apps/plugins/pictureflow/pictureflow.c -- ported to core ("Album
-* covers") so it's themeable and always resident instead of a loaded plugin.
-* Ported for this fork's exclusive iPod Classic 6G/7G + iPod Video 5G/5.5G
-* targets specifically -- both share CONFIG_KEYPAD == IPOD_4G_PAD, no
-* touchscreen, and 16bpp color LCD, so per-target branches for every other
-* keypad/greyscale-LCD/touchscreen variant that the original plugin supported
-* have been trimmed rather than mechanically preserved as dead code.
+* Formerly apps/plugins/pictureflow/pictureflow.c -- ported to core 
 *
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -920,7 +914,12 @@ const struct custom_format format_transposed = {
 
 static const struct button_mapping* get_context_map(int context)
 {
-    context &= ~CONTEXT_LOCKED;
+    /* action_code_lookup() ORs in CONTEXT_REMOTE for any button with
+     * BUTTON_REMOTE bits set (true on this target, which supports an
+     * accessory/headphone remote) -- without masking it here too,
+     * pf_contexts[context & ~CONTEXT_PLUGIN] indexes ~2 billion entries
+     * past this 2-element array on a remote button press. */
+    context &= ~(CONTEXT_LOCKED | CONTEXT_REMOTE);
     return pf_contexts[context & ~CONTEXT_PLUGIN];
 }
 
@@ -1107,16 +1106,22 @@ static int get_tcs_search_res(int type, struct tagcache_search *tcs,
             break;
         }
 
-        *bufsz -= data_size;
-
         l = tcs->result_len;
 
-        if ( l > *bufsz )
+        /* Check before subtracting -- *bufsz is unsigned, so subtracting
+         * data_size (or l) once the real remaining space is smaller than
+         * that would wrap to a huge value instead of going negative,
+         * permanently defeating this check for the rest of the scan and
+         * letting strcpy()/writefn() below walk past the end of
+         * pf_idx.buf on any library large enough to fill it. */
+        if ((size_t)data_size > *bufsz || l > *bufsz - data_size)
         {
             /* not enough memory */
             ret = ERROR_BUFFER_FULL;
             break;
         }
+
+        *bufsz -= data_size;
 
         strcpy(*buf, tcs->result);
 
@@ -2306,8 +2311,22 @@ static int read_pfraw(char* filename, int prio)
         /* pf_cfg.cache_version = CACHE_UPDATE; -- don't invalidate on missing pfraw */
         return empty_slide_hid;
     }
-    else
-        read(fh, &bmph, sizeof(struct pfraw_header));
+
+    /* A short read (truncated/corrupted cache file, e.g. from a power-off
+     * mid-write) leaves bmph partially or fully uninitialized, and a
+     * width/height larger than anything save_pfraw() could have written
+     * (bounded by DISPLAY_WIDTH/DISPLAY_HEIGHT) means the file is corrupt
+     * either way -- trusting either lets the size calculation below and
+     * every later access via bm->width/height walk arbitrarily far past
+     * this allocation. Treat both as "no cached image" rather than
+     * propagating garbage dimensions. */
+    if (read(fh, &bmph, sizeof(struct pfraw_header)) != sizeof(struct pfraw_header) ||
+        bmph.width <= 0 || bmph.height <= 0 ||
+        bmph.width > DISPLAY_WIDTH || bmph.height > DISPLAY_HEIGHT)
+    {
+        close(fh);
+        return empty_slide_hid;
+    }
 
     int size =  sizeof(struct dim) +
                 sizeof( pix_t ) * bmph.width * bmph.height;
