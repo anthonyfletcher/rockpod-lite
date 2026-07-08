@@ -19,7 +19,7 @@
  *
  ****************************************************************************/
 
-/* Formerly apps/plugins/main_menu_config.c -- ported to core 
+/* Formerly apps/plugins/main_menu_config.c -- ported to core */
 
 #include <stdio.h>
 #include "string-extra.h"
