@@ -3693,12 +3693,26 @@ static int album_covers_loop(void)
          * that as covers scroll by, so without this the footer would just
          * show whatever (if anything) was current at the moment the screen
          * was entered, forever. Only fire once the scroll has settled on a
-         * new cover, not on every frame of the animation. */
+         * new cover, not on every frame of the animation.
+         *
+         * Must be wrapped in skin_render_inhibit_flush() exactly like the
+         * get_custom_action() call above -- without it, skin_update() pushes
+         * its own redraw straight to the display immediately, racing this
+         * loop's own lcd_update() a few lines down. That race is what was
+         * causing the glitching/flicker and the footer appearing to get
+         * wiped out: two out-of-sync flushes of the same screen region,
+         * each one partially overwriting the other's just-drawn content.
+         * Also, restore our own viewport afterward for the same reason the
+         * get_custom_action() call needs it restored -- skin_update()
+         * renders through the SBS's viewports internally. */
         if (pf_state == pf_idle && center_index != shown_index)
         {
             shown_index = center_index;
+            skin_render_inhibit_flush(true);
             FOR_NB_SCREENS(i)
                 skin_update(CUSTOM_STATUSBAR, i, SKIN_REFRESH_ALL);
+            skin_render_inhibit_flush(false);
+            lcd_set_viewport(&pf_vp);
         }
 
         if (aa_cache.inspected < pf_idx.album_ct)
