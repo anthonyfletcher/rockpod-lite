@@ -2066,68 +2066,69 @@ void tagtree_enter_album_tracks_on_next_load(const char *album,
 }
 
 /* Finds the 0-based row position of the album matching pending_album_name/
- * pending_albumartist_name within a plain, unfiltered tag_album grouping
- * search -- independent of tagtree's own paginated entry cache (which may
- * not have this specific row loaded yet), so this can run immediately after
- * jumping into the Album level, before any entries are actually fetched.
- * Relies on this search producing the same ordering retrieve_entries() would
- * for the same (unfiltered, root-level) tag_album search -- true as long as
- * tagnavi.config's root "Album" row has no added search clause, which is the
- * case for the shipped config (a plain "Album -> album -> title" chain).
+ * pending_albumartist_name within the Album level's *actual* row list --
+ * i.e. via retrieve_entries()/tagtree_get_entry(), the same lazily-paginated,
+ * post-qsort entry cache the real browse UI uses, rather than a second,
+ * independent tagcache_search.
+ *
+ * An earlier version of this ran its own plain, unfiltered tag_album search
+ * and counted raw tagcache_get_next() enumeration order as the position.
+ * That's a different order than what actually ends up at each row index:
+ * retrieve_entries() collects entries in raw tagcache order but then, for a
+ * root-level tag_album grouping, always re-sorts them alphabetically via
+ * qsort() (see its 'sort' handling) before they're addressable by position --
+ * and prepends c->special_entry_count synthetic rows ("[All Tracks]",
+ * "[Random]") ahead of the real, sorted ones. The old code accounted for
+ * neither, so the position it computed essentially never matched the row
+ * tagtree_enter() would actually land on. Reusing tagtree_get_entry() makes
+ * this consistent by construction instead of by (fragile) replication.
+ *
+ * Must be called with 'c' already entered into the Album level (i.e. right
+ * after the tag_album hop's own tagtree_enter()), and requires retrieve_entries()
+ * to run for that level, which is one reason this can't be called before
+ * that hop. c->special_entry_count is populated as a side effect and read
+ * back here to skip the synthetic rows.
  * Returns the position, or -1 if no match. */
-static int find_album_row_by_name(void)
+static int find_album_row_by_name(struct tree_context *c)
 {
-    struct tagcache_search search;
-    char buf[TAGCACHE_BUFSZ];
-    int position = -1;
-    int i = 0;
+    int total, i;
 
     if (pending_album_name[0] == '\0')
         return -1;
 
-    if (!tagcache_search(&search, tag_album))
+    total = retrieve_entries(c, 0, true);
+    if (total < 0)
         return -1;
 
-    /* retrieve_entries() (what tagtree_get_entry()'s lazy fetch actually
-     * uses to populate the Album table) always dedups via a uniqbuf -- this
-     * search must too, or its position numbering silently drifts from
-     * retrieve_entries()' the moment any duplicate album entry is skipped
-     * before the target row, landing this two-hop jump on the wrong album
-     * (or none) without any error. Safe to reuse retrieve_entries()' own
-     * uniqbuf: this search always runs to completion (and calls
-     * tagcache_search_finish()) before anything else touches it. */
-    tagcache_search_set_uniqbuf(&search, uniqbuf, UNIQBUF_SIZE);
-
-    while (tagcache_get_next(&search, buf, sizeof(buf)))
+    for (i = c->special_entry_count; i < total; i++)
     {
-        if (strcmp(search.result, pending_album_name) == 0)
+        struct tagentry *entry = tagtree_get_entry(c, i);
+        const char *name = entry->album_name ? entry->album_name : entry->name;
+        bool match;
+
+        if (!name || strcmp(name, pending_album_name) != 0)
+            continue;
+
+        match = true;
+        if (pending_albumartist_name[0] != '\0')
         {
-            bool match = true;
-            if (pending_albumartist_name[0] != '\0')
+            struct tagcache_search artist_search;
+            char artist_buf[MAX_PATH];
+            match = false;
+            if (tagcache_search(&artist_search, tag_albumartist))
             {
-                struct tagcache_search artist_search;
-                char artist_buf[MAX_PATH];
-                match = false;
-                if (tagcache_search(&artist_search, tag_albumartist))
-                {
-                    if (tagcache_retrieve(&artist_search, search.idx_id,
-                                          artist_search.type, artist_buf,
-                                          sizeof(artist_buf)))
-                        match = (strcmp(artist_buf,
-                                        pending_albumartist_name) == 0);
-                    tagcache_search_finish(&artist_search);
-                }
-            }
-            if (match)
-            {
-                position = i;
-                break;
+                if (tagcache_retrieve(&artist_search, entry->idx_id,
+                                      artist_search.type, artist_buf,
+                                      sizeof(artist_buf)))
+                    match = (strcmp(artist_buf,
+                                    pending_albumartist_name) == 0);
+                tagcache_search_finish(&artist_search);
             }
         }
-        i++;
+        if (match)
+            return i;
     }
-    tagcache_search_finish(&search);
-    return position;
+    return -1;
 }
 
 /* Finds the row in the currently-loaded root ("main") menu whose first tag
@@ -2247,12 +2248,12 @@ int tagtree_load(struct tree_context* c)
             /* If Album covers also armed a specific-album jump (only ever
              * paired with target_tag == tag_album), drill one level further
              * into that album's tracks now that its grouping table (csi) is
-             * set up -- find_album_row_by_name() searches independently of
-             * tagtree's own entry cache, so this doesn't need the listing
-             * to be loaded first. */
+             * set up -- find_album_row_by_name() populates and searches the
+             * real Album-level entry cache itself (via retrieve_entries()),
+             * so this doesn't need the listing to already be loaded. */
             if (pending_album_name[0] != '\0')
             {
-                int album_row = find_album_row_by_name();
+                int album_row = find_album_row_by_name(c);
                 pending_album_name[0] = '\0';
                 pending_albumartist_name[0] = '\0';
                 if (album_row >= 0)

@@ -391,7 +391,6 @@ static struct viewport pf_footer_vp;
 static bool pf_footer_valid;
 static int pf_name_rel_y, pf_name_font;
 static int pf_artist_rel_y, pf_artist_font;
-static pix_t pf_footer_fg, pf_footer_bg;
 static struct slide_data center_slide;
 static struct slide_data left_slides[MAX_SLIDES_COUNT];
 static struct slide_data right_slides[MAX_SLIDES_COUNT];
@@ -2802,18 +2801,21 @@ static void render_slide(struct slide_data *slide, const int alpha)
     const int half_height = pf_half_height;
     const int lower_half = pf_lower_half;
     const bool perspective = (zo != 0 || slide->angle != 0);
-    /* The original plugin offset these by pf_display_offs, a value that
-     * existed only to leave room below the real image for the reflection
-     * effect (now removed entirely, see B2). Algebraically,
-     * (sh - 1 - display_offs) and (sh - display_offs) always reduced to
-     * (half_height - 1) and half_height once display_offs = sh - half_height
-     * is substituted in -- sh cancels out, since without a reflection there
-     * is no reason to offset the split point at all. Using sh directly here
-     * (as if display_offs were 0) instead of dropping it from the formula
-     * entirely was the bug: it drew the image's bottom rows into the
-     * viewport's top half and left the bottom half never drawn. */
-    const int p_start_upper = (half_height - 1) * PFREAL_ONE;
-    const int p_start_lower = half_height * PFREAL_ONE;
+    /* sh (the decoded cover's own height, after FORMAT_KEEP_ASPECT scaling
+     * into the DISPLAY_WIDTH x DISPLAY_HEIGHT box) is rarely equal to
+     * pf_height -- e.g. square album art is width-limited by DISPLAY_WIDTH,
+     * so sh ends up well short of DISPLAY_HEIGHT, let alone this theme's own
+     * pf_height. vertical_offset centers whatever the real sh is within the
+     * viewport: positive when the image is shorter than the viewport (equal
+     * blank margin top and bottom), negative when it's taller (equal crop
+     * top and bottom). Without this, the split was implicitly anchored to
+     * the viewport's own half_height regardless of sh, which only matched
+     * the original plugin's fixed full-screen numbers by coincidence (see
+     * the removed pf_display_offs) -- any other sh left the image sitting
+     * top-anchored, with a blank gap only at the bottom. */
+    const int vertical_offset = (pf_height - sh) / 2;
+    const int p_start_upper = (half_height - 1 - vertical_offset) * PFREAL_ONE;
+    const int p_start_lower = (half_height - vertical_offset) * PFREAL_ONE;
     for (x = xi; x < w; x++) {
         int column = (unsigned)(xs - slide_left) >> PFREAL_SHIFT;
         if (column >= sw)
@@ -3397,8 +3399,9 @@ static void draw_footer_panel(void)
                 || global_settings.album_covers_show_album_name == ALBUM_AND_ARTIST_BOTTOM);
 
     lcd_set_viewport(&pf_footer_vp);
-    lcd_set_background(pf_footer_fg);
+    lcd_set_background(pf_fg_color);
     lcd_clear_viewport();
+    lcd_set_foreground(pf_bg_color);
 
     albumtxt = get_album_name_idx(center_index, &album_idx);
     if (global_settings.album_covers_show_year
@@ -3410,17 +3413,15 @@ static void draw_footer_panel(void)
     else
         snprintf(album_and_year, sizeof(album_and_year), "%s", albumtxt);
 
-    lcd_set_foreground(pf_footer_bg);
-
     static int prev_index = -1;
     bool changed = (center_index != prev_index);
     prev_index = center_index;
 
-    if (changed)
-        set_scroll_line(album_and_year, PF_SCROLL_ALBUM);
     if (pf_idx.album_index[center_index].seek != pf_idx.album_untagged_seek)
     {
         lcd_setfont(pf_name_font);
+        if (changed)
+            set_scroll_line(album_and_year, PF_SCROLL_ALBUM);
         lcd_putsxy(get_scroll_line_offset(PF_SCROLL_ALBUM), pf_name_rel_y,
                    album_and_year);
     }
@@ -3428,9 +3429,9 @@ static void draw_footer_panel(void)
     if (show_artist)
     {
         artisttxt = get_album_artist(center_index);
+        lcd_setfont(pf_artist_font);
         if (changed)
             set_scroll_line(artisttxt, PF_SCROLL_ARTIST);
-        lcd_setfont(pf_artist_font);
         lcd_putsxy(get_scroll_line_offset(PF_SCROLL_ARTIST), pf_artist_rel_y,
                    artisttxt);
     }
@@ -3488,11 +3489,24 @@ static bool init(void)
     pf_vp.x = 0;
     pf_vp.width = LCD_WIDTH;
 
-    /* Footer panel: rect/colours from Album_Covers_Panel, text position and
-     * font from Album_Covers_Name/Album_Covers_Artist. All three are
+    /* Footer panel: rect from Album_Covers_Panel, text position and font
+     * from Album_Covers_Name/Album_Covers_Artist. All three are
      * declaration-only (see the block comment by their #defines) -- Album
      * covers owns drawing this area completely, so there is nothing to %Vd()
-     * and nothing for the SBS to ever render here itself. */
+     * and nothing for the SBS to ever render here itself.
+     *
+     * Deliberately NOT reading fg_pattern/bg_pattern off these viewports for
+     * the panel's colours (tried first, reverted): a %Vl() viewport that's
+     * never rendered never gets its own %Vf/%Vb tokens executed, so its
+     * colours default to whatever viewport_set_defaults() copies from
+     * sb_skin_get_info_vp() -- the SBS's live info viewport, i.e. whatever
+     * colours it happens to hold at that instant, not a fixed theme value.
+     * That produced exactly the kind of non-deterministic result the
+     * scrollbar/header bug above did: readable one run, a solid unreadable
+     * block the next, depending on what was on screen right before Album
+     * covers opened. pf_fg_color/pf_bg_color (global_settings.fg_color/
+     * bg_color, already resolved for the rest of this screen) are the
+     * theme's actual, stable, explicitly-configured colours. */
     pf_footer_valid = false;
     {
         struct skin_viewport *svp = find_sbs_named_vp(ALBUM_COVERS_PANEL_VP_NAME);
@@ -3500,8 +3514,6 @@ static bool init(void)
         {
             pf_footer_vp = svp->vp;
             pf_footer_vp.buffer = &pf_framebuffer;
-            pf_footer_fg = (pix_t)svp->vp.fg_pattern;
-            pf_footer_bg = (pix_t)svp->vp.bg_pattern;
             pf_footer_valid = true;
         }
     }
