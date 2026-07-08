@@ -245,8 +245,8 @@
 #Draw rounded corners on the menus. Draw on foreground and background to prevent some minor clipping from the menu items.
 # %?St(scrollbar)<Off|Left|Right>
 #
-%Vl(Home_Corners,0,25,200,12,6)%VB%?St(scrollbar)<S%aRV|U%aRV|S%aRT>
-%Vl(Home_Corners,0,25,200,12,6)
+%Vl(Home_Corners,0,25,-,12,6)%VB%?St(scrollbar)<S%aRV|U%aRV|S%aRT>
+%Vl(Home_Corners,0,25,-,12,6)
 #
 #
 %Vl(Sub_Menu_Corners,0,52,-,12,6)%VB%?St(scrollbar)<S%aRV|U%aRV|S%aRT>

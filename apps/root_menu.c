@@ -775,6 +775,58 @@ static struct menu_table menu_table[] = {
 #define MAX_MENU_ITEMS (sizeof(menu_table) / sizeof(struct menu_table))
 static struct menu_item_ex *root_menu__[MAX_MENU_ITEMS];
 
+/* Files, Plugins, Shortcuts, Settings and System should always end up last
+ * in the main menu, in this fixed relative order, regardless of tagnavi
+ * ordering, saved customization, or default population order -- requested
+ * explicitly. Called as the final step of anything that (re)builds
+ * root_menu__[] (root_menu_set_default(), root_menu_load_from_cfg(), and
+ * root_menu_fixup_tagnavi_slots(), which appends newly-available tagnavi
+ * slots to the *tail* and would otherwise land them after these) rather
+ * than baking the order into menu_table[] itself, since menu_table[]'s own
+ * order is also what a fresh default configuration and the Customize Main
+ * Menu screen's "not yet enabled" section fall back to, and those still
+ * want tagnavi rows appearing before this fixed tail, not interleaved with
+ * it. Preserves the relative order of everything else. */
+static void root_menu_pin_trailing_items(void)
+{
+    static const struct menu_item_ex * const pinned[] = {
+        &file_browser, &rocks_browser, &shortcut_menu, &menu_, &system_menu_,
+    };
+    struct menu_item_ex *reordered[MAX_MENU_ITEMS];
+    unsigned count = MENU_GET_COUNT(root_menu_.flags);
+    unsigned out = 0;
+    unsigned i, p;
+
+    for (i = 0; i < count; i++)
+    {
+        bool is_pinned = false;
+        for (p = 0; p < ARRAYLEN(pinned); p++)
+        {
+            if (root_menu__[i] == pinned[p])
+            {
+                is_pinned = true;
+                break;
+            }
+        }
+        if (!is_pinned)
+            reordered[out++] = root_menu__[i];
+    }
+
+    for (p = 0; p < ARRAYLEN(pinned); p++)
+    {
+        for (i = 0; i < count; i++)
+        {
+            if (root_menu__[i] == pinned[p])
+            {
+                reordered[out++] = root_menu__[i];
+                break;
+            }
+        }
+    }
+
+    memcpy(root_menu__, reordered, out * sizeof(root_menu__[0]));
+}
+
 /* Of MAX_MENU_ITEMS, how many are actually usable right now -- hides any
  * trailing GO_TO_TAGNAVI_FIRST.. slots beyond tagtree's real row count (see
  * the comment on menu_table[] above) from both the Customize Main Menu
@@ -837,6 +889,8 @@ static void root_menu_fixup_tagnavi_slots(void)
     if (count != MENU_GET_COUNT(root_menu_.flags))
         root_menu_.flags = (root_menu_.flags & ~(MENU_COUNT_MASK << MENU_COUNT_SHIFT))
                             | MENU_ITEM_COUNT(count);
+
+    root_menu_pin_trailing_items();
 }
 #endif
 
@@ -888,6 +942,7 @@ void root_menu_load_from_cfg(void* setting, char *value)
     if (!main_menu_added)
         root_menu__[menu_item_count++] = (struct menu_item_ex *)&menu_;
     root_menu_.flags |= MENU_ITEM_COUNT(menu_item_count);
+    root_menu_pin_trailing_items();
     *(bool*)setting = true;
 }
 
@@ -926,6 +981,7 @@ void root_menu_set_default(void* setting, void* defaultval)
         root_menu__[i] = (struct menu_item_ex *)menu_table[i].item;
     }
     root_menu_.flags |= MENU_ITEM_COUNT(active_count);
+    root_menu_pin_trailing_items();
     *(bool*)setting = false;
 }
 

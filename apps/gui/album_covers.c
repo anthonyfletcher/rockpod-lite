@@ -2863,8 +2863,29 @@ static void return_to_idle_state(void)
     pf_state = pf_idle;
 }
 
+/* Set right before jumping to an album's track list (PF_SELECT below),
+ * consumed here the next time Album covers opens. Needed because Album
+ * covers doesn't resume an existing session when the user backs out of
+ * that track list -- root_menu.c's GO_TO_PREVIOUS handling re-enters via a
+ * fresh album_covers(NULL) call, same as any other new entry, and
+ * selected_file is NULL either way -- so without this, the branch below
+ * would use its normal "audio_status() ? now-playing : last_album"
+ * fresh-entry heuristic and land on whatever's currently playing instead
+ * of the cover the user just came from. That heuristic makes sense when
+ * actually entering fresh (from the main menu, a WPS shortcut, etc., where
+ * seeing "the current album" first is reasonable) but not when coming
+ * straight back from browsing this exact cover's own tracks. */
+static bool pf_resume_last_album = false;
+
 static void set_initial_slide(const char* selected_file)
 {
+    if (pf_resume_last_album)
+    {
+        pf_resume_last_album = false;
+        set_current_slide(pf_cfg.last_album);
+        return;
+    }
+
     if (selected_file)
         set_current_slide(retrieve_id3(&id3, selected_file) ?
                             id3_get_index(&id3) :
@@ -3340,6 +3361,22 @@ static int main_menu(void)
     }
 }
 
+/* Rockbox has no runtime font-weight variation -- a "bold" look requires an
+ * actually different, separately-loaded font file, which would mean either
+ * hardcoding a specific theme's font path (fragile: breaks for anyone not
+ * using that exact theme, the same class of problem as the removed skin
+ * viewport lookups) or depending on the active theme's own FONT_UI already
+ * happening to be a bold-weight file. Faux-bold by drawing the string
+ * twice, offset by one pixel, is the standard bitmap-font-UI workaround --
+ * thickens the strokes with zero font dependency, works with any theme's
+ * FONT_UI. Only used for the album name, to visually distinguish it from
+ * the artist name below it. */
+static void lcd_putsxy_bold(int x, int y, const char *str)
+{
+    lcd_putsxy(x, y, str);
+    lcd_putsxy(x + 1, y, str);
+}
+
 /* Restored to (almost) exactly how the original plugin's draw_album_text()
  * worked: drawn directly inside pf_vp -- the same viewport the coverflow
  * itself uses, not a separate panel -- overlaid near the top or bottom of
@@ -3349,7 +3386,7 @@ static int main_menu(void)
  * text_crossfade (removed, see B2) so this always uses center_index rather
  * than tracking a mid-scroll transition index; no show_statusbar variant
  * (the status bar is always theme-controlled now, never toggled off by
- * this screen). */
+ * this screen); album name is drawn bold (see lcd_putsxy_bold()). */
 static void draw_album_text(void)
 {
     char album_and_year[MAX_PATH];
@@ -3409,7 +3446,7 @@ static void draw_album_text(void)
     if (show_artist)
     {
         if (pf_idx.album_index[center_index].seek != pf_idx.album_untagged_seek)
-            lcd_putsxy(albumtxt_x, albumtxt_y, album_and_year);
+            lcd_putsxy_bold(albumtxt_x, albumtxt_y, album_and_year);
 
         artisttxt = get_album_artist(center_index);
         if (album_changed)
@@ -3418,7 +3455,7 @@ static void draw_album_text(void)
         lcd_putsxy(artisttxt_x, albumtxt_y + char_height * 3 / 4, artisttxt);
     }
     else
-        lcd_putsxy(albumtxt_x, albumtxt_y, album_and_year);
+        lcd_putsxy_bold(albumtxt_x, albumtxt_y, album_and_year);
 }
 
 static void error_wait(const char *message)
@@ -3461,8 +3498,18 @@ static bool init(void)
 
     pf_vp_y = pf_vp.y;
     pf_height = pf_vp.height;
-    /* Plain, even split around the viewport's own vertical center. */
-    pf_half_height = pf_height / 2;
+    /* Restored to the original plugin's exact formula: LCD_HEIGHT/2 (the
+     * *physical screen's* center, not the viewport's own) minus pf_vp_y,
+     * plus a fixed +8 bias. This only makes sense -- and only matches what
+     * "pf_height/2" would give anyway -- because pf_vp always extends all
+     * the way to the bottom of the screen (no theme-configurable
+     * shrinking any more, see the "Not theme-controlled" comment above),
+     * exactly the precondition the original relied on. The "+8" isn't
+     * centering at all: it deliberately shifts the split down, shrinking
+     * pf_lower_half, so render_slide() stops short of the bottom of the
+     * viewport and leaves clear room for draw_album_text()'s overlaid
+     * text instead of the cover art running underneath it. */
+    pf_half_height = LCD_HEIGHT / 2 - pf_vp_y + 8;
     pf_lower_half = pf_height - pf_half_height;
 
     pf_update_dynamic_colors();
@@ -3761,6 +3808,8 @@ static int album_covers_loop(void)
              * matching involved at all (the earlier, much more fragile
              * design that this replaced). */
             album_seek = pf_idx.album_index[center_index].seek;
+            pf_cfg.last_album = center_index;
+            pf_resume_last_album = true;
             tagtree_enter_album_tracks_on_next_load(album_seek, album);
             return GO_TO_ALBUM_COVERS_TRACKS;
         }
