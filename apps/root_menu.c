@@ -871,19 +871,26 @@ static unsigned root_menu_build_display_list(bool *inserted_at_front)
 {
     unsigned count = MENU_GET_COUNT(root_menu_.flags);
     unsigned i;
+    bool wps_present = false;
 
     *inserted_at_front = false;
     if (count > MAX_MENU_ITEMS)
         count = MAX_MENU_ITEMS;
 
+    /* Must finish copying every entry before returning -- an early return
+     * from inside this loop (as soon as wps_item was spotted) left every
+     * slot after it uninitialized/stale in root_menu_display__[] while
+     * still reporting the full count as valid, so do_menu() went on to
+     * dereference those bogus entries. wps_item is first in canonical
+     * order, so this used to bail out after copying just slot 0. */
     for (i = 0; i < count; i++)
     {
         root_menu_display__[i] = root_menu__[i];
         if (root_menu__[i] == &wps_item)
-            return count; /* already present, nothing to insert */
+            wps_present = true;
     }
 
-    if (!audio_status() || count >= MAX_MENU_ITEMS)
+    if (wps_present || !audio_status() || count >= MAX_MENU_ITEMS)
         return count;
 
     /* Insert at the front, matching Resume/Now Playing's canonical
