@@ -10,7 +10,6 @@
  */
 
 #ifdef HAVE_TAGCACHE
-pictureflow
 tagcache
 #endif
 

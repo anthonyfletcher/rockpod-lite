@@ -740,6 +740,12 @@ struct user_settings
     unsigned char icon_file[MAX_FILENAME+1];
     unsigned char viewers_icon_file[MAX_FILENAME+1];
     unsigned char font_file[MAX_FILENAME+1]; /* last font */
+    /* Optional bold companion to font_file -- empty ("") means none is
+     * configured, in which case anything that wants a bold look just
+     * falls back to FONT_UI (font_file) unchanged. Currently only read by
+     * apps/gui/album_covers.c, for the album name; not a general theme
+     * concept like font_file, just a per-feature opt-in. */
+    unsigned char bold_font_file[MAX_FILENAME+1];
     int glyphs_to_cache; /* default font allocation size in glyphs */
 #ifdef HAVE_REMOTE_LCD
     unsigned char remote_font_file[MAX_FILENAME+1]; /* last font */

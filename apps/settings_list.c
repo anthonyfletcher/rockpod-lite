@@ -2083,6 +2083,8 @@ const struct settings_list settings[] = {
 #endif /* CONFIG_TUNER */
     TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY, font_file, "font",
                      DEFAULT_FONTNAME, FONT_DIR "/", ".fnt"),
+    TEXT_SETTING(F_THEMESETTING, bold_font_file, "font bold",
+                     "", FONT_DIR "/", ".fnt"),
     INT_SETTING(0, glyphs_to_cache, LANG_GLYPHS, DEFAULT_GLYPHS,
                 "glyphs", UNIT_INT, MIN_GLYPHS, MAX_GLYPHS, 10,
                 NULL, NULL, NULL),

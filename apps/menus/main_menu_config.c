@@ -39,6 +39,7 @@
 #include "list.h"
 #include "root_menu.h"
 #include "exported_menus.h"
+#include "audio.h" /* audio_status() -- see item_is_locked() */
 #ifdef HAVE_TOUCHSCREEN
 #include "touchscreen.h"
 #endif
@@ -59,6 +60,21 @@ static int menu_item_count;
 #else
 #define MAX_ITEMS 16
 #endif
+
+/* Same class of bug as MAX_ITEMS above, same fix: a fixed 128-byte buffer
+ * for the "key, key, key, ..." string was sized back when this only ever
+ * held a handful of fixed entries, long before tagnavi slots existed. With
+ * MAX_ITEMS now up to 36, a fully-populated list (keys up to 11 chars,
+ * e.g. "pictureflow"/"system_menu"/"tagnavi19", plus ", ") can need over
+ * 400 bytes -- root_menu_write_to_cfg()'s own buf_len bookkeeping doesn't
+ * defend against running past the end of an undersized buffer (int
+ * buf_len going negative on overflow, then reinterpreted as a huge size_t
+ * by the next snprintf() call), so this was a real, silent stack buffer
+ * overflow whenever enough items were enabled at once -- not merely a
+ * truncated string. 13 bytes/item is the worst case above with a small
+ * safety margin. */
+#define CFG_STR_SIZE (MAX_ITEMS * 13)
+
 struct items
 {
     unsigned char *name;
@@ -98,8 +114,17 @@ static enum themable_icons menu_get_icon(int selected_item, void * data)
 
 /* 'dest' is the menu_items[] slot this name is being resolved for -- needed
  * because a MENU_DYNAMIC_DESC item's name doesn't exist as a static pointer
- * anywhere; it has to be rendered into a real buffer via list_get_name() now,
- * since that's the only time this code has a specific slot to render it into. */
+ * anywhere; some callbacks (see list_get_name's own declared return type)
+ * render into the buffer they're handed and return that same pointer back,
+ * but others -- e.g. root_menu.c's get_wps_item_name(), which just returns
+ * ID2P(LANG_NOW_PLAYING)/ID2P(LANG_RESUME_PLAYBACK) directly -- never touch
+ * the buffer at all and only communicate via the return value. Previously
+ * this discarded that return value and unconditionally used dest->dyn_name
+ * instead (matching only the first kind of callback), which for the WPS
+ * item meant reading back whatever dest->dyn_name happened to already
+ * contain -- all zero bytes the first time any given slot is used, i.e. an
+ * empty string. apps/menu.c's own get_menu_item_name() is the correct,
+ * established pattern to follow here (capture and use the return value). */
 static unsigned char *item_name(int n, struct items *dest)
 {
     const struct menu_item_ex *item = menu_table[n].item;
@@ -107,9 +132,8 @@ static unsigned char *item_name(int n, struct items *dest)
     if (item->flags & MENU_DYNAMIC_DESC)
     {
         const struct menu_get_name_and_icon *dyn = item->menu_get_name_and_icon;
-        dyn->list_get_name(0, dyn->list_get_name_data,
+        return (unsigned char *)dyn->list_get_name(0, dyn->list_get_name_data,
                            dest->dyn_name, sizeof(dest->dyn_name));
-        return (unsigned char *)dest->dyn_name;
     }
 
     return (item->flags & MENU_HAS_DESC) ?
@@ -121,7 +145,7 @@ static unsigned char *item_name(int n, struct items *dest)
 
 static void load_from_cfg(void)
 {
-    char config_str[128];
+    char config_str[CFG_STR_SIZE];
     char *token, *save;
     int done = 0;
     int i = 0;
@@ -172,7 +196,7 @@ static void load_from_cfg(void)
 
 static void save_to_cfg(void)
 {
-    char out[128];
+    char out[CFG_STR_SIZE];
     int i, j = 0;
 
     out[0] = '\0';
@@ -203,6 +227,27 @@ static void swap_items(int a, int b)
     menu_items[b].name = name;
     strcpy(menu_items[b].string, temp);
     menu_items[b].enabled = enabled;
+}
+
+/* Settings and Resume Playback/Now Playing are breaking changes to turn
+ * off by accident: disabling Settings leaves no easy way back into the
+ * menu that could re-enable it, and disabling the WPS item while
+ * something's actually playing leaves no menu-based way to reach playback
+ * controls at all. Requested explicitly to be un-toggleable while that
+ * risk actually applies -- Settings always, the WPS item only while
+ * audio_status() is true (nothing stops disabling it when nothing's
+ * playing, which is a legitimate, safe choice). This only blocks the
+ * toggle here, in the UI; root_menu.c's root_menu_build_display_list()
+ * separately guarantees the WPS item is still shown live in the actual
+ * main menu whenever something's playing, even if it was left disabled
+ * from an earlier moment when nothing was. */
+static bool item_is_locked(int n)
+{
+    if (strcmp(menu_items[n].string, "settings") == 0)
+        return true;
+    if (strcmp(menu_items[n].string, "wps") == 0)
+        return audio_status() != 0;
+    return false;
 }
 
 static int menu_speak_item(int selected_item, void *data)
@@ -264,6 +309,11 @@ int main_menu_config(void)
         switch (action)
         {
             case ACTION_STD_OK:
+                if (item_is_locked(cur_sel))
+                {
+                    splash(HZ, ID2P(LANG_FAILED));
+                    break;
+                }
                 menu_items[cur_sel].enabled = !menu_items[cur_sel].enabled;
                 gui_synclist_speak_item(&list);
                 changed = true;

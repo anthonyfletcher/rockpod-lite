@@ -364,8 +364,14 @@ static struct pf_config_t pf_cfg;
 
 static pix_t *buffer; /* for now it always points to the lcd framebuffer */
 static int pf_height;           /* viewport height (LCD_HEIGHT minus status bar) */
-static int pf_half_height;      /* pf_height / 2 */
-static int pf_lower_half;       /* pf_height - pf_half_height, rows below center */
+static int pf_half_height;      /* rows of drawable (post text-margin) height above center */
+static int pf_lower_half;       /* rows of drawable (post text-margin) height below center */
+static int pf_draw_y_shift;     /* rows skipped below pf_vp_y for a TOP text caption's margin */
+/* Album name font: global_settings.bold_font_file loaded via font_load(),
+ * or plain FONT_UI if none is configured (empty string) or loading it
+ * failed. Set once in init(), unloaded in cleanup() if it's a real loaded
+ * font (never unload FONT_UI itself -- this screen doesn't own that one). */
+static int pf_bold_font;
 static int pf_vp_y;             /* viewport y-offset (status bar height) */
 static struct viewport pf_vp;   /* PF rendering viewport (below status bar) */
 static struct frame_buffer_t pf_framebuffer; /* bypass backdrop in clear_viewport */
@@ -3285,6 +3291,9 @@ static void cleanup(void)
 
     /* Nothing to free: pf_idx.buf points into plugin_get_buffer()'s static
      * pluginbuf[] (see init()), not a buflib handle. */
+
+    if (pf_bold_font != FONT_UI)
+        font_unload(pf_bold_font);
 }
 
 enum {
@@ -3361,32 +3370,20 @@ static int main_menu(void)
     }
 }
 
-/* Rockbox has no runtime font-weight variation -- a "bold" look requires an
- * actually different, separately-loaded font file, which would mean either
- * hardcoding a specific theme's font path (fragile: breaks for anyone not
- * using that exact theme, the same class of problem as the removed skin
- * viewport lookups) or depending on the active theme's own FONT_UI already
- * happening to be a bold-weight file. Faux-bold by drawing the string
- * twice, offset by one pixel, is the standard bitmap-font-UI workaround --
- * thickens the strokes with zero font dependency, works with any theme's
- * FONT_UI. Only used for the album name, to visually distinguish it from
- * the artist name below it. */
-static void lcd_putsxy_bold(int x, int y, const char *str)
-{
-    lcd_putsxy(x, y, str);
-    lcd_putsxy(x + 1, y, str);
-}
-
 /* Restored to (almost) exactly how the original plugin's draw_album_text()
  * worked: drawn directly inside pf_vp -- the same viewport the coverflow
  * itself uses, not a separate panel -- overlaid near the top or bottom of
- * that same area, in FONT_UI, using pf_fg_color (dynamic_colors_resolve()
- * -derived, so the now-playing dynamic colour fade applies here too, same
- * as everywhere else in the UI). Differences from the original: no
- * text_crossfade (removed, see B2) so this always uses center_index rather
- * than tracking a mid-scroll transition index; no show_statusbar variant
- * (the status bar is always theme-controlled now, never toggled off by
- * this screen); album name is drawn bold (see lcd_putsxy_bold()). */
+ * that same area, using pf_fg_color (dynamic_colors_resolve()-derived, so
+ * the now-playing dynamic colour fade applies here too, same as everywhere
+ * else in the UI). Differences from the original: no text_crossfade
+ * (removed, see B2) so this always uses center_index rather than tracking
+ * a mid-scroll transition index; no show_statusbar variant (the status bar
+ * is always theme-controlled now, never toggled off by this screen); the
+ * album name uses pf_bold_font rather than always FONT_UI -- a genuinely
+ * separate, actually-bold font file if the theme configured one (see
+ * global_settings.bold_font_file's comment in settings.h), not faked. A
+ * faux-bold (double-drawn, offset by a pixel) treatment was tried here
+ * first and reverted -- didn't look right. */
 static void draw_album_text(void)
 {
     char album_and_year[MAX_PATH];
@@ -3418,6 +3415,14 @@ static void draw_album_text(void)
     static bool prev_show_year = false;
     bool album_changed = (center_index != prev_albumtxt_index
                          || global_settings.album_covers_show_year != prev_show_year);
+
+    /* Switched to pf_bold_font (plain FONT_UI, a no-op, if no bold font is
+     * configured -- see its declaration) *before* set_scroll_line() below:
+     * that measures the string's pixel width against whatever font is
+     * currently active, to center/scroll it, so it has to see the album
+     * name's *actual* rendering font, not FONT_UI, or a bold font with a
+     * different average glyph width would end up mis-centered. */
+    lcd_setfont(pf_bold_font);
     if (album_changed)
     {
         set_scroll_line(album_and_year, PF_SCROLL_ALBUM);
@@ -3446,7 +3451,11 @@ static void draw_album_text(void)
     if (show_artist)
     {
         if (pf_idx.album_index[center_index].seek != pf_idx.album_untagged_seek)
-            lcd_putsxy_bold(albumtxt_x, albumtxt_y, album_and_year);
+            lcd_putsxy(albumtxt_x, albumtxt_y, album_and_year);
+        /* Restored before the artist line: render_all_slides()/the FPS
+         * overlay/etc all assume pf_vp's font is FONT_UI, and the artist
+         * name itself is never bold. */
+        lcd_setfont(FONT_UI);
 
         artisttxt = get_album_artist(center_index);
         if (album_changed)
@@ -3455,7 +3464,10 @@ static void draw_album_text(void)
         lcd_putsxy(artisttxt_x, albumtxt_y + char_height * 3 / 4, artisttxt);
     }
     else
-        lcd_putsxy_bold(albumtxt_x, albumtxt_y, album_and_year);
+    {
+        lcd_putsxy(albumtxt_x, albumtxt_y, album_and_year);
+        lcd_setfont(FONT_UI);
+    }
 }
 
 static void error_wait(const char *message)
@@ -3498,19 +3510,60 @@ static bool init(void)
 
     pf_vp_y = pf_vp.y;
     pf_height = pf_vp.height;
-    /* Restored to the original plugin's exact formula: LCD_HEIGHT/2 (the
-     * *physical screen's* center, not the viewport's own) minus pf_vp_y,
-     * plus a fixed +8 bias. This only makes sense -- and only matches what
-     * "pf_height/2" would give anyway -- because pf_vp always extends all
-     * the way to the bottom of the screen (no theme-configurable
-     * shrinking any more, see the "Not theme-controlled" comment above),
-     * exactly the precondition the original relied on. The "+8" isn't
-     * centering at all: it deliberately shifts the split down, shrinking
-     * pf_lower_half, so render_slide() stops short of the bottom of the
-     * viewport and leaves clear room for draw_album_text()'s overlaid
-     * text instead of the cover art running underneath it. */
-    pf_half_height = LCD_HEIGHT / 2 - pf_vp_y + 8;
-    pf_lower_half = pf_height - pf_half_height;
+
+    /* Reserve real, empty vertical space for draw_album_text()'s overlay,
+     * rather than just biasing where the up/down split falls: since
+     * pf_lower_half is *defined* as pf_height - pf_half_height, upper and
+     * lower always summed to exactly pf_height no matter how the split was
+     * biased (a "+8"-style offset, tried first, only shifts which rows go
+     * above vs below center -- it never actually shrinks the total drawn
+     * area, so the art always ran the full height of the viewport
+     * regardless). Actually keeping clear of the text means genuinely
+     * reducing the drawable height by a margin sized to match
+     * draw_album_text()'s own geometry, and -- for a *top*-anchored
+     * caption -- also shifting the render origin down so the reserved
+     * strip is skipped rather than just repositioning within it.
+     *
+     * Margin sizes mirror draw_album_text()'s own Y math exactly:
+     * TOP captions span up to 1.75 * char_height (name+artist) or
+     * 1.5 * char_height (name only) from the top; BOTTOM captions start
+     * at (pf_height - 2.25 * char_height) regardless of whether the artist
+     * line is also shown (it's added below the album line, within the same
+     * reserved strip, not beyond it). 2 * char_height / 2.25 * char_height
+     * cover both variants of each with a little safety margin. */
+    {
+        int char_height = font_get(FONT_UI)->height;
+        int text_margin;
+        bool text_at_top;
+        int draw_height;
+
+        switch (global_settings.album_covers_show_album_name)
+        {
+            case ALBUM_NAME_HIDE:
+                text_margin = 0;
+                text_at_top = false;
+                break;
+            case ALBUM_NAME_TOP:
+            case ALBUM_AND_ARTIST_TOP:
+                text_margin = char_height * 2;
+                text_at_top = true;
+                break;
+            case ALBUM_NAME_BOTTOM:
+            case ALBUM_AND_ARTIST_BOTTOM:
+            default:
+                text_margin = char_height * 9 / 4;
+                text_at_top = false;
+                break;
+        }
+
+        draw_height = pf_height - text_margin;
+        if (draw_height < 0)
+            draw_height = 0;
+
+        pf_half_height = draw_height / 2;
+        pf_lower_half = draw_height - pf_half_height;
+        pf_draw_y_shift = text_at_top ? text_margin : 0;
+    }
 
     pf_update_dynamic_colors();
 
@@ -3545,6 +3598,22 @@ static bool init(void)
     pf_idx.buf_sz = buf_size;
 
     lcd_setfont(FONT_UI);
+
+    /* Optional bold album name font (see global_settings.bold_font_file's
+     * comment in settings.h) -- falls back to plain FONT_UI if the theme
+     * hasn't configured one, or if loading it fails for any reason. */
+    pf_bold_font = FONT_UI;
+    if (global_settings.bold_font_file[0])
+    {
+        char bold_font_path[MAX_PATH];
+        int loaded;
+
+        snprintf(bold_font_path, sizeof(bold_font_path), FONT_DIR "/%s.fnt",
+                 global_settings.bold_font_file);
+        loaded = font_load(bold_font_path);
+        if (loaded >= 0)
+            pf_bold_font = loaded;
+    }
 
     if (!dir_exists(CACHE_PREFIX))
     {
@@ -3641,7 +3710,9 @@ static bool init(void)
     }
 
     buffer = LCD_BUF;
-    buffer += pf_vp_y * BUFFER_WIDTH; /* offset below status bar */
+    buffer += (pf_vp_y + pf_draw_y_shift) * BUFFER_WIDTH; /* offset below
+        status bar, plus a TOP text caption's reserved margin, if any (see
+        pf_draw_y_shift's assignment above) */
 
     pf_state = pf_idle;
 

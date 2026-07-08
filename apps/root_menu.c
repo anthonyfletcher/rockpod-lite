@@ -775,56 +775,124 @@ static struct menu_table menu_table[] = {
 #define MAX_MENU_ITEMS (sizeof(menu_table) / sizeof(struct menu_table))
 static struct menu_item_ex *root_menu__[MAX_MENU_ITEMS];
 
-/* Files, Plugins, Shortcuts, Settings and System should always end up last
- * in the main menu, in this fixed relative order, regardless of tagnavi
- * ordering, saved customization, or default population order -- requested
- * explicitly. Called as the final step of anything that (re)builds
+/* Enforces a fixed canonical order on the main menu, requested explicitly:
+ * Resume/Now Playing, Music, Album covers, [tagnavi rows, in whatever order
+ * they're already in], Playlists, Files, Plugins, Shortcuts, Settings,
+ * System. Called as the final step of anything that (re)builds
  * root_menu__[] (root_menu_set_default(), root_menu_load_from_cfg(), and
  * root_menu_fixup_tagnavi_slots(), which appends newly-available tagnavi
- * slots to the *tail* and would otherwise land them after these) rather
- * than baking the order into menu_table[] itself, since menu_table[]'s own
- * order is also what a fresh default configuration and the Customize Main
- * Menu screen's "not yet enabled" section fall back to, and those still
- * want tagnavi rows appearing before this fixed tail, not interleaved with
- * it. Preserves the relative order of everything else. */
-static void root_menu_pin_trailing_items(void)
+ * slots to the *tail* and would otherwise land them after Playlists/Files/
+ * etc) rather than baking the order into menu_table[] itself: tagnavi
+ * slots must stay the *last* entries in menu_table[] for
+ * root_menu_active_count() to correctly trim unbacked ones from the end
+ * (see the comment on menu_table[] above), which rules out just declaring
+ * menu_table[] in the desired final order.
+ *
+ * Every item not named in before_tagnavi/after_tagnavi falls into the
+ * middle "tagnavi" group by construction (there's nothing else it could
+ * be), preserving whatever relative order it already had -- this doesn't
+ * hardcode "tagnavi0..19" by name, so it can't drift out of sync with
+ * however many rows actually exist. Missing items (e.g. HAVE_TAGCACHE off,
+ * or the user disabled something) are simply skipped, not left as gaps. */
+static void root_menu_apply_canonical_order(void)
 {
-    static const struct menu_item_ex * const pinned[] = {
-        &file_browser, &rocks_browser, &shortcut_menu, &menu_, &system_menu_,
+    static const struct menu_item_ex * const before_tagnavi[] = {
+        &wps_item,
+#ifdef HAVE_TAGCACHE
+        &db_browser, &pictureflow_item,
+#endif
+    };
+    static const struct menu_item_ex * const after_tagnavi[] = {
+        &playlists, &file_browser, &rocks_browser, &shortcut_menu,
+        &menu_, &system_menu_,
     };
     struct menu_item_ex *reordered[MAX_MENU_ITEMS];
     unsigned count = MENU_GET_COUNT(root_menu_.flags);
     unsigned out = 0;
-    unsigned i, p;
+    unsigned i, k;
 
-    for (i = 0; i < count; i++)
-    {
-        bool is_pinned = false;
-        for (p = 0; p < ARRAYLEN(pinned); p++)
-        {
-            if (root_menu__[i] == pinned[p])
-            {
-                is_pinned = true;
-                break;
-            }
-        }
-        if (!is_pinned)
-            reordered[out++] = root_menu__[i];
-    }
-
-    for (p = 0; p < ARRAYLEN(pinned); p++)
-    {
+    for (k = 0; k < ARRAYLEN(before_tagnavi); k++)
         for (i = 0; i < count; i++)
-        {
-            if (root_menu__[i] == pinned[p])
+            if (root_menu__[i] == before_tagnavi[k])
             {
                 reordered[out++] = root_menu__[i];
                 break;
             }
-        }
+
+    for (i = 0; i < count; i++)
+    {
+        bool matched = false;
+        for (k = 0; !matched && k < ARRAYLEN(before_tagnavi); k++)
+            matched = (root_menu__[i] == before_tagnavi[k]);
+        for (k = 0; !matched && k < ARRAYLEN(after_tagnavi); k++)
+            matched = (root_menu__[i] == after_tagnavi[k]);
+        if (!matched)
+            reordered[out++] = root_menu__[i];
     }
 
+    for (k = 0; k < ARRAYLEN(after_tagnavi); k++)
+        for (i = 0; i < count; i++)
+            if (root_menu__[i] == after_tagnavi[k])
+            {
+                reordered[out++] = root_menu__[i];
+                break;
+            }
+
     memcpy(root_menu__, reordered, out * sizeof(root_menu__[0]));
+}
+
+/* Display-only counterpart to root_menu__[] -- see
+ * root_menu_build_display_list()'s comment for why this has to be a
+ * separate array rather than a temporary edit of root_menu__[] itself. */
+static struct menu_item_ex *root_menu_display__[MAX_MENU_ITEMS];
+
+/* Resume Playback/Now Playing must stay reachable from the main menu
+ * while something is genuinely playing, even if the user toggled it off
+ * in Customize Main Menu at a moment nothing was playing (see
+ * main_menu_config.c's locking of that item while audio_status() is
+ * true, which stops it being toggled off *while* playing, but can't do
+ * anything about a user who disabled it earlier and then started
+ * playback some other way, e.g. resuming via a bookmark).
+ *
+ * Builds the list into root_menu_display__[], never root_menu__[] itself:
+ * whether something happens to be playing at the exact moment
+ * settings_save() fires must not affect what actually gets persisted (see
+ * root_menu_write_to_cfg(), which reads root_menu__[] directly), so this
+ * has to be entirely display-only, rebuilt fresh every time the root menu
+ * is about to be shown rather than baked into the persisted array even
+ * temporarily.
+ *
+ * *inserted_at_front is set if this actually added the item (it wasn't
+ * already present) -- the caller needs that to keep root_menu()'s own
+ * "selected" index (which indexes into the *persisted* root_menu__[]
+ * layout) correct against the now-possibly-shifted display list. Returns
+ * the resulting item count. */
+static unsigned root_menu_build_display_list(bool *inserted_at_front)
+{
+    unsigned count = MENU_GET_COUNT(root_menu_.flags);
+    unsigned i;
+
+    *inserted_at_front = false;
+    if (count > MAX_MENU_ITEMS)
+        count = MAX_MENU_ITEMS;
+
+    for (i = 0; i < count; i++)
+    {
+        root_menu_display__[i] = root_menu__[i];
+        if (root_menu__[i] == &wps_item)
+            return count; /* already present, nothing to insert */
+    }
+
+    if (!audio_status() || count >= MAX_MENU_ITEMS)
+        return count;
+
+    /* Insert at the front, matching Resume/Now Playing's canonical
+     * position (see root_menu_apply_canonical_order()). */
+    memmove(&root_menu_display__[1], &root_menu_display__[0],
+            count * sizeof(root_menu_display__[0]));
+    root_menu_display__[0] = (struct menu_item_ex *)&wps_item;
+    *inserted_at_front = true;
+    return count + 1;
 }
 
 /* Of MAX_MENU_ITEMS, how many are actually usable right now -- hides any
@@ -850,19 +918,31 @@ static int root_menu_active_count(void)
 /* settings_load() (via root_menu_set_default()/root_menu_load_from_cfg(),
  * both driven off the root_menu_customized CUSTOM_SETTING) runs before
  * tagtree_init() has parsed tagnavi.config, so root_menu_active_count()
- * would have seen zero real tagnavi rows at that point and every reserved
- * slot got silently omitted from root_menu__[] -- this would otherwise mean
- * a fresh install boots with no Album/Artist/etc shortcuts at all. Called
- * once from root_menu()'s first entry, well after tagtree is guaranteed
- * ready, this appends any now-available tagnavi slots that aren't already
- * present. No-op if they were already there (i.e. tagtree happened to be
- * ready by settings-load time after all). */
+ * would have seen zero real tagnavi rows at that point and any tagnavi
+ * item the user's *saved* configuration explicitly wanted got silently
+ * dropped by root_menu_load_from_cfg()'s own matching loop (it can only
+ * match against menu_table[] entries root_menu_active_count() already
+ * knows about). Called once from root_menu()'s first entry, well after
+ * tagtree is guaranteed ready, this re-adds any now-available tagnavi slot
+ * the saved config wanted but couldn't find yet. No-op if it was already
+ * there (i.e. tagtree happened to be ready by settings-load time after
+ * all).
+ *
+ * Skipped entirely on a still-default configuration: tagnavi rows start
+ * disabled by design now (see root_menu_set_default()), so there's nothing
+ * to "restore" for a user who never customized anything -- this isn't an
+ * init-order casualty to correct, it's the actual desired state. Only
+ * matters once root_menu_customized is true, i.e. there's a real saved
+ * preference this init-order race could have clipped. */
 static void root_menu_fixup_tagnavi_slots(void)
 {
     unsigned count = MENU_GET_COUNT(root_menu_.flags);
     int real = tagtree_get_main_menu_tag_row_count();
     int tagnavi_start = MAX_MENU_ITEMS - TAGNAVI_MAIN_MENU_SLOTS;
     int n;
+
+    if (!global_settings.root_menu_customized)
+        return;
 
     if (real > TAGNAVI_MAIN_MENU_SLOTS)
         real = TAGNAVI_MAIN_MENU_SLOTS;
@@ -890,7 +970,7 @@ static void root_menu_fixup_tagnavi_slots(void)
         root_menu_.flags = (root_menu_.flags & ~(MENU_COUNT_MASK << MENU_COUNT_SHIFT))
                             | MENU_ITEM_COUNT(count);
 
-    root_menu_pin_trailing_items();
+    root_menu_apply_canonical_order();
 }
 #endif
 
@@ -942,7 +1022,7 @@ void root_menu_load_from_cfg(void* setting, char *value)
     if (!main_menu_added)
         root_menu__[menu_item_count++] = (struct menu_item_ex *)&menu_;
     root_menu_.flags |= MENU_ITEM_COUNT(menu_item_count);
-    root_menu_pin_trailing_items();
+    root_menu_apply_canonical_order();
     *(bool*)setting = true;
 }
 
@@ -952,11 +1032,24 @@ char* root_menu_write_to_cfg(void* setting, char*buf, int buf_len)
     unsigned i, written, j;
     for (i = 0; i < MENU_GET_COUNT(root_menu_.flags); i++)
     {
+        /* Stop rather than let buf_len go negative: snprintf()'s return
+         * value is how much it *would* have written, uncapped by the
+         * buffer size, so on truncation this can exceed buf_len. Letting
+         * that make buf_len negative and feeding it back into the next
+         * snprintf() call (int -> size_t, wrapping around to a huge
+         * value) was a real out-of-bounds write once enough items were
+         * enabled to overrun the caller's buffer, not just a truncated
+         * string -- was masked before now only by callers happening to
+         * pass a buffer big enough that this never triggered. */
+        if (buf_len <= 0)
+            break;
         for (j=0; j<MAX_MENU_ITEMS; j++)
         {
             if (menu_table[j].item == root_menu__[i])
             {
                 written = snprintf(buf, buf_len, "%s, ", menu_table[j].string);
+                if ((int)written >= buf_len)
+                    written = buf_len - 1;
                 buf_len -= written;
                 buf += written;
                 break;
@@ -970,6 +1063,10 @@ void root_menu_set_default(void* setting, void* defaultval)
 {
     unsigned i;
     int active_count = root_menu_active_count();
+#ifdef HAVE_TAGCACHE
+    int tagnavi_start = MAX_MENU_ITEMS - TAGNAVI_MAIN_MENU_SLOTS;
+#endif
+    unsigned out = 0;
     (void)defaultval;
 
     root_menu_.flags = MENU_HAS_DESC | MT_MENU;
@@ -978,10 +1075,21 @@ void root_menu_set_default(void* setting, void* defaultval)
 
     for (i=0; i<(unsigned)active_count; i++)
     {
-        root_menu__[i] = (struct menu_item_ex *)menu_table[i].item;
+#ifdef HAVE_TAGCACHE
+        /* Tagnavi rows start disabled on a fresh/default configuration --
+         * opt in via Customize Main Menu, rather than every "main"
+         * tagnavi.config row automatically cluttering the menu on first
+         * boot. Requested explicitly. They're still counted by
+         * root_menu_active_count() (so main_menu_config.c's "not yet
+         * enabled" section can list them as available to turn on), just
+         * not included here. */
+        if ((int)i >= tagnavi_start)
+            continue;
+#endif
+        root_menu__[out++] = (struct menu_item_ex *)menu_table[i].item;
     }
-    root_menu_.flags |= MENU_ITEM_COUNT(active_count);
-    root_menu_pin_trailing_items();
+    root_menu_.flags |= MENU_ITEM_COUNT(out);
+    root_menu_apply_canonical_order();
     *(bool*)setting = false;
 }
 
@@ -1308,7 +1416,36 @@ void root_menu(void)
                  * button to be handled by HOST instead of rockbox */
                 ignore_back_button_stub(true);
 
-                next_screen = do_menu(&root_menu_, &selected, NULL, false);
+                {
+                    /* See root_menu_build_display_list()'s comment: this
+                     * is a display-only copy, built fresh every time,
+                     * that may insert Resume Playback/Now Playing even
+                     * though the user toggled it off -- root_menu__[]
+                     * itself (what actually gets persisted) is never
+                     * touched. 'selected' indexes into the persisted
+                     * layout, so it needs shifting to match whenever the
+                     * display list has the extra item inserted ahead of
+                     * it, and shifting back afterward for whatever else
+                     * consumes it (e.g. the next get_selection() call). */
+                    struct menu_item_ex display_menu = root_menu_;
+                    bool inserted;
+                    unsigned display_count =
+                        root_menu_build_display_list(&inserted);
+                    int display_selected = selected + (inserted ? 1 : 0);
+
+                    display_menu.submenus =
+                        (const struct menu_item_ex **)&root_menu_display__;
+                    display_menu.flags =
+                        (root_menu_.flags & ~(MENU_COUNT_MASK << MENU_COUNT_SHIFT))
+                        | MENU_ITEM_COUNT(display_count);
+
+                    next_screen = do_menu(&display_menu, &display_selected,
+                                          NULL, false);
+
+                    selected = display_selected - (inserted ? 1 : 0);
+                    if (selected < 0)
+                        selected = 0;
+                }
 
                 ignore_back_button_stub(false);
 

@@ -9,7 +9,6 @@ clock
 #endif
 
 #if defined(HAVE_TAGCACHE)
-pictureflow
 tagcache
 #endif
 
