@@ -31,9 +31,6 @@
 enum skinnable_screens {
     CUSTOM_STATUSBAR,
     WPS,
-#if CONFIG_TUNER
-    FM_SCREEN,
-#endif
 
     SKINNABLE_SCREENS_COUNT
 };

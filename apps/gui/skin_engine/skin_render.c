@@ -38,9 +38,6 @@
 #include "skin_parser.h"
 #include "tag_table.h"
 #include "skin_scan.h"
-#if CONFIG_TUNER
-#include "radio.h"
-#endif
 #include "viewport.h"
 #include "cuesheet.h"
 #include "language.h"
@@ -306,13 +303,6 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                 if (aa)
                 {    
                     int handle = playback_current_aa_hid(data->playback_aa_slot);
-#if CONFIG_TUNER
-                    if (in_radio_screen() || (get_radio_status() != FMRADIO_OFF))
-                    {
-                        struct dim dim = {aa->width, aa->height};
-                        handle = radio_get_art_hid(&dim);
-                    }
-#endif
                     aa->draw_handle = handle;
                 }
             }
@@ -1117,15 +1107,6 @@ void skin_render_playlistviewer(struct playlistviewer* viewer,
     bool needs_update;
     int cur_pos, start_item, max;
     int nb_lines = viewport_get_nb_lines(&skin_viewport->vp);
-#if CONFIG_TUNER
-    if (get_current_activity() == ACTIVITY_FM)
-    {
-        cur_pos = radio_current_preset();
-        start_item = cur_pos + viewer->start_offset;
-        max = start_item+radio_preset_count();
-    }
-    else
-#endif
     {
         struct wps_state *state = get_wps_state();
         struct cuesheet *cue = state->id3 ? state->id3->cuesheet : NULL;

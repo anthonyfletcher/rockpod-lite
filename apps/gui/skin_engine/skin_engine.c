@@ -31,9 +31,6 @@
 #include "wps.h"
 #include "file.h"
 #include "misc.h"
-#if CONFIG_TUNER
-#include "radio.h"
-#endif
 #include "gui/list.h"
 #include "skin_engine.h"
 #include "skin_buffer.h"
@@ -70,9 +67,6 @@ static const struct gui_skin_helper * const skin_helpers[SKINNABLE_SCREENS_COUNT
     &empty_skin_helper,
     [CUSTOM_STATUSBAR] = SKH(sb_process, sb_create_from_settings, true),
     [WPS] =  SKH(dummy_process, wps_default_skin, true),
-#if CONFIG_TUNER
-    [FM_SCREEN] = SKH(dummy_process, default_radio_skin, false),
-#endif
 };
 
 static struct gui_skin {
@@ -281,22 +275,6 @@ static char* get_skin_filename(char *buf, size_t buf_size,
                 ext = "wps";
             }
             break;
-#if CONFIG_TUNER
-        case FM_SCREEN:
-#if defined(HAVE_REMOTE_LCD) && NB_SCREENS > 1
-            if (screen == SCREEN_REMOTE)
-            {
-                setting = global_settings.rfms_file;
-                ext = "rfms";
-            }
-            else
-#endif
-            {
-                setting = global_settings.fms_file;
-                ext = "fms";
-            }
-            break;
-#endif
         default:
             return NULL;
     }

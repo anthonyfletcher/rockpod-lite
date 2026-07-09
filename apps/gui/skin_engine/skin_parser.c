@@ -68,11 +68,6 @@
 #include "settings_list.h"
 #include "rbpaths.h"
 #include "pathfuncs.h"
-#if CONFIG_TUNER
-#include "radio.h"
-#include "tuner.h"
-#endif
-
 #include "bmp.h"
 
 #ifdef HAVE_ALBUMART
@@ -1680,12 +1675,6 @@ static const struct touchaction touchactions[] = {
     {"listbookmarks", ACTION_WPS_LIST_BOOKMARKS },
     {"createbookmark", ACTION_WPS_CREATE_BOOKMARK },
 
-#if CONFIG_TUNER
-    /* FM screen actions */
-    /* Also allow browse, play, stop from WPS codes */
-    {"mode", ACTION_FM_MODE },          {"record", ACTION_FM_RECORD },
-    {"presets", ACTION_FM_PRESET},
-#endif
 };
 
 static int touchregion_setup_setting(struct skin_element *element, int param_no,
@@ -1917,16 +1906,8 @@ static bool check_feature_tag(const int type)
             return false;
 #endif
         case SKIN_TOKEN_HAVE_RECORDING:
-#ifdef HAVE_RECORDING
-            return true;
-#else
             return false;
-#endif
         case SKIN_TOKEN_HAVE_TUNER:
-#if CONFIG_TUNER
-            if (radio_hardware_present())
-                return true;
-#endif
             return false;
         case SKIN_TOKEN_HAVE_TOUCH:
 #ifdef HAVE_TOUCHSCREEN
@@ -1935,14 +1916,6 @@ static bool check_feature_tag(const int type)
             return false;
 #endif
 
-#if CONFIG_TUNER
-        case SKIN_TOKEN_HAVE_RDS:
-#ifdef HAVE_RDS_CAP
-            return true;
-#else
-            return false;
-#endif /* HAVE_RDS_CAP */
-#endif /* CONFIG_TUNER */
         default: /* not a tag we care about, just don't skip */
             return true;
     }

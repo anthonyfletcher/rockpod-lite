@@ -616,12 +616,7 @@ static long do_wps_exit(long action, bool bookmark)
     ab_reset_markers();
 
     gwps_leave_wps(true);
-#ifdef HAVE_RECORDING
-    if (action == ACTION_WPS_REC)
-        return GO_TO_RECSCREEN;
-#else
     (void)action;
-#endif
     if (global_settings.browse_current)
         return GO_TO_PREVIOUS_BROWSER;
     return GO_TO_PREVIOUS;
@@ -1126,11 +1121,6 @@ long gui_wps_show(void)
                 update = true;
                 ffwd_rew(button, false); /* hopefully fix the ffw/rwd bug */
                 break;
-#ifdef HAVE_RECORDING
-            case ACTION_WPS_REC:
-                exit = true;
-                break;
-#endif
             case ACTION_WPS_VIEW_PLAYLIST:
                 gwps_leave_wps(true);
                 return GO_TO_PLAYLIST_VIEWER;

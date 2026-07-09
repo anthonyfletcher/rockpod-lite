@@ -54,17 +54,8 @@
 #include "skin_engine.h"
 #include "statusbar-skinned.h"
 #include "root_menu.h"
-#ifdef HAVE_RECORDING
-#include "recording.h"
-#include "pcm_record.h"
-#endif
 #include "language.h"
 #include "usb.h"
-#if CONFIG_TUNER
-#include "radio.h"
-#include "tuner.h"
-#include "fixedpoint.h"
-#endif
 #include "list.h"
 #include "option_select.h"
 #include "wps.h"
@@ -423,124 +414,6 @@ const char *get_id3_token(struct wps_token *token, struct mp3entry *id3,
     return buf;
 }
 
-#if CONFIG_TUNER
-
-/* Formats the frequency (specified in Hz) in MHz,   */
-/* with one or two digits after the decimal point -- */
-/* depending on the frequency changing step.         */
-/* Returns buf                                       */
-static char *format_freq_MHz(int freq, int freq_step, char *buf, int buf_size)
-{
-    int decimals = (freq_step < 100000) + 1;
-    int scale = ipow(10, 6 - decimals);
-    int div = 1000000 / scale;
-    freq = freq / scale;
-    snprintf(buf, buf_size, "%d.%.*d", freq/div, decimals, freq%div);
-    return buf;
-}
-
-
-/* Tokens which are really only used by the radio screen go in here */
-const char *get_radio_token(struct wps_token *token, int preset_offset,
-                            char *buf, int buf_size, int limit, int *intval)
-{
-    const struct fm_region_data *region_data =
-            &(fm_region_data[global_settings.fm_region]);
-    (void)limit;
-    switch (token->type)
-    {
-        /* Radio/tuner tokens */
-        case SKIN_TOKEN_TUNER_TUNED:
-            if (tuner_get(RADIO_TUNED))
-                return "t";
-            return NULL;
-        case SKIN_TOKEN_TUNER_SCANMODE:
-            if (radio_get_mode() == RADIO_SCAN_MODE)
-                return "s";
-            return NULL;
-        case SKIN_TOKEN_TUNER_STEREO:
-            if (radio_is_stereo())
-                return "s";
-            return NULL;
-        case SKIN_TOKEN_TUNER_MINFREQ: /* changes based on "region" */
-            return format_freq_MHz(region_data->freq_min,
-                            region_data->freq_step, buf, buf_size);
-        case SKIN_TOKEN_TUNER_MAXFREQ: /* changes based on "region" */
-            return format_freq_MHz(region_data->freq_max,
-                            region_data->freq_step, buf, buf_size);
-        case SKIN_TOKEN_TUNER_CURFREQ:
-            return format_freq_MHz(radio_get_current_frequency(),
-                            region_data->freq_step, buf, buf_size);
-#ifdef HAVE_RADIO_RSSI
-        case SKIN_TOKEN_TUNER_RSSI:
-            itoa_buf(buf, buf_size,tuner_get(RADIO_RSSI));
-            if (intval)
-            {
-                int val = tuner_get(RADIO_RSSI);
-                int min = tuner_get(RADIO_RSSI_MIN);
-                int max = tuner_get(RADIO_RSSI_MAX);
-                if (limit == TOKEN_VALUE_ONLY)
-                {
-                    *intval = val;
-                }
-                else
-                {
-                    *intval = 1+(limit-1)*(val-min)/(max-1-min);
-                }
-            }
-            return buf;
-        case SKIN_TOKEN_TUNER_RSSI_MIN:
-            itoa_buf(buf, buf_size,tuner_get(RADIO_RSSI_MIN));
-            return buf;
-        case SKIN_TOKEN_TUNER_RSSI_MAX:
-            itoa_buf(buf, buf_size,tuner_get(RADIO_RSSI_MAX));
-            return buf;
-#endif
-        case SKIN_TOKEN_PRESET_NAME:
-        case SKIN_TOKEN_PRESET_FREQ:
-        case SKIN_TOKEN_PRESET_ID:
-        {
-            int preset_count = radio_preset_count();
-            int cur_preset = radio_current_preset();
-            if (preset_count == 0 || cur_preset < 0)
-                return NULL;
-            int preset = cur_preset + preset_offset;
-            /* make sure it's in the valid range */
-            preset %= preset_count;
-            if (preset < 0)
-                preset += preset_count;
-            if (token->type == SKIN_TOKEN_PRESET_NAME)
-                snprintf(buf, buf_size, "%s", radio_get_preset_name(preset));
-            else if (token->type == SKIN_TOKEN_PRESET_FREQ)
-                format_freq_MHz(radio_get_preset_freq(preset),
-                                region_data->freq_step, buf, buf_size);
-            else
-                itoa_buf(buf, buf_size, preset + 1);
-            return buf;
-        }
-        case SKIN_TOKEN_PRESET_COUNT:
-            itoa_buf(buf, buf_size, radio_preset_count());
-            if (intval)
-                *intval = radio_preset_count();
-            return buf;
-        case SKIN_TOKEN_HAVE_RDS:
-#ifdef HAVE_RDS_CAP
-            return "rds";
-        case SKIN_TOKEN_RDS_NAME:
-            tuner_get_rds_info(RADIO_RDS_NAME, buf, buf_size);
-            return buf;
-        case SKIN_TOKEN_RDS_TEXT:
-            tuner_get_rds_info(RADIO_RDS_TEXT, buf, buf_size);
-            return buf;
-#else
-            return NULL; /* end of the SKIN_TOKEN_HAVE_RDS case */
-#endif /* HAVE_RDS_CAP */
-        default:
-            return NULL;
-    }
-    return NULL;
-}
-#endif
 
 static struct mp3entry* get_mp3entry_from_offset(int offset,
                                    struct mp3entry **freeid3, char **filename)
@@ -660,11 +533,7 @@ static const char *try_id3_token(struct wps_token *token, int offset,
 
     if (freeid3)
         get_temp_mp3entry(freeid3);
-#if CONFIG_TUNER
-    return get_radio_token(token, offset, buf, buf_size, limit, intval);
-#else
     return NULL;
-#endif
 free_id3_outtext:
     if (freeid3)
         get_temp_mp3entry(freeid3);
@@ -1227,15 +1096,6 @@ const char *get_token_value(struct gui_wps *gwps,
             {
                 int handle = -1;
                 handle = playback_current_aa_hid(data->playback_aa_slot);
-#if CONFIG_TUNER
-                if (in_radio_screen() || (get_radio_status() != FMRADIO_OFF))
-                {
-                    struct skin_albumart *aa = SKINOFFSETTOPTR(get_skin_buffer(data), data->albumart);
-                    if (!aa) return NULL;
-                    struct dim dim = {aa->width, aa->height};
-                    handle = radio_get_art_hid(&dim);
-                }
-#endif
                 if (handle >= 0)
                     return "C";
             }
@@ -1571,202 +1431,10 @@ const char *get_token_value(struct gui_wps *gwps,
             goto gtv_ret_numeric_tag_info;
         }
         case SKIN_TOKEN_HAVE_TUNER:
-#if CONFIG_TUNER
-            if (radio_hardware_present())
-                return "r";
-#endif
             return NULL;
-        /* Recording tokens */
         case SKIN_TOKEN_HAVE_RECORDING:
-#ifdef HAVE_RECORDING
-            return "r";
-#else
-            return NULL;
-#endif
-
-#ifdef HAVE_RECORDING
-        case SKIN_TOKEN_IS_RECORDING:
-            if (audio_status() == AUDIO_STATUS_RECORD)
-                return "r";
-            return NULL;
-        case SKIN_TOKEN_REC_FREQ: /* order from REC_FREQ_CFG_VAL_LIST */
-        {
-            unsigned long samprk;
-            int rec_freq = global_settings.rec_frequency;
-
-#ifdef SIMULATOR
-            samprk = 44100;
-#else
-#if defined(HAVE_SPDIF_REC)
-            if (global_settings.rec_source == AUDIO_SRC_SPDIF)
-            {
-                /* Use rate in use, not current measured rate if it changed */
-                samprk = pcm_rec_sample_rate();
-                rec_freq = 0;
-                while (rec_freq < SAMPR_NUM_FREQ &&
-                       audio_master_sampr_list[rec_freq] != samprk)
-                {
-                    rec_freq++;
-                }
-            }
-            else
-#endif
-                samprk = rec_freq_sampr[rec_freq];
-#endif /* SIMULATOR */
-            switch (rec_freq)
-            {
-                REC_HAVE_96_(case REC_FREQ_96:
-                    numeric_ret = 1;
-                    break;)
-                REC_HAVE_88_(case REC_FREQ_88:
-                    numeric_ret = 2;
-                    break;)
-                REC_HAVE_64_(case REC_FREQ_64:
-                    numeric_ret = 3;
-                    break;)
-                REC_HAVE_48_(case REC_FREQ_48:
-                    numeric_ret = 4;
-                    break;)
-                REC_HAVE_44_(case REC_FREQ_44:
-                    numeric_ret = 5;
-                    break;)
-                REC_HAVE_32_(case REC_FREQ_32:
-                    numeric_ret = 6;
-                    break;)
-                REC_HAVE_24_(case REC_FREQ_24:
-                    numeric_ret = 7;
-                    break;)
-                REC_HAVE_22_(case REC_FREQ_22:
-                    numeric_ret = 8;
-                    break;)
-                REC_HAVE_16_(case REC_FREQ_16:
-                    numeric_ret = 9;
-                    break;)
-                REC_HAVE_12_(case REC_FREQ_12:
-                    numeric_ret = 10;
-                    break;)
-                REC_HAVE_11_(case REC_FREQ_11:
-                    numeric_ret = 11;
-                    break;)
-                REC_HAVE_8_(case REC_FREQ_8:
-                    numeric_ret = 12;
-                    break;)
-            }
-            snprintf(buf, buf_size, "%lu.%1lu", samprk/1000,samprk%1000);
-            numeric_buf = buf;
-            goto gtv_ret_numeric_tag_info;
-        }
-        case SKIN_TOKEN_REC_ENCODER:
-        {
-            int rec_format = global_settings.rec_format+1; /* WAV, AIFF, WV, MPEG */
-            if (intval)
-                *intval = rec_format;
-            switch (rec_format)
-            {
-                case REC_FORMAT_PCM_WAV:
-                    return "wav";
-                case REC_FORMAT_AIFF:
-                    return "aiff";
-                case REC_FORMAT_WAVPACK:
-                    return "wv";
-                case REC_FORMAT_MPA_L3:
-                    return "MP3";
-                default:
-                    return NULL;
-            }
-            break;
-        }
-        case SKIN_TOKEN_REC_BITRATE:
-            if (global_settings.rec_format == REC_FORMAT_MPA_L3)
-            {
-                #if 0 /* FIXME: I dont know if this is needed? */
-                switch (1<<global_settings.mp3_enc_config.bitrate)
-                {
-                    case MP3_BITR_CAP_8:
-                        numeric_ret = 1;
-                        break;
-                    case MP3_BITR_CAP_16:
-                        numeric_ret = 2;
-                        break;
-                    case MP3_BITR_CAP_24:
-                        numeric_ret = 3;
-                        break;
-                    case MP3_BITR_CAP_32:
-                        numeric_ret = 4;
-                        break;
-                    case MP3_BITR_CAP_40:
-                        numeric_ret = 5;
-                        break;
-                    case MP3_BITR_CAP_48:
-                        numeric_ret = 6;
-                        break;
-                    case MP3_BITR_CAP_56:
-                        numeric_ret = 7;
-                        break;
-                    case MP3_BITR_CAP_64:
-                        numeric_ret = 8;
-                        break;
-                    case MP3_BITR_CAP_80:
-                        numeric_ret = 9;
-                        break;
-                    case MP3_BITR_CAP_96:
-                        numeric_ret = 10;
-                        break;
-                    case MP3_BITR_CAP_112:
-                        numeric_ret = 11;
-                        break;
-                    case MP3_BITR_CAP_128:
-                        numeric_ret = 12;
-                        break;
-                    case MP3_BITR_CAP_144:
-                        numeric_ret = 13;
-                        break;
-                    case MP3_BITR_CAP_160:
-                        numeric_ret = 14;
-                        break;
-                    case MP3_BITR_CAP_192:
-                        numeric_ret = 15;
-                        break;
-                }
-                #endif
-                numeric_ret = global_settings.mp3_enc_config.bitrate+1;
-                snprintf(buf, buf_size, "%lu", global_settings.mp3_enc_config.bitrate+1);
-                numeric_buf = buf;
-                goto gtv_ret_numeric_tag_info;
-            }
-            else
-                return NULL; /* Fixme later */
-        case SKIN_TOKEN_REC_MONO:
-            if (!global_settings.rec_channels)
-                return "m";
             return NULL;
 
-        case SKIN_TOKEN_REC_SECONDS:
-        {
-            int time = (audio_recorded_time() / HZ) % 60;
-            numeric_ret = time;
-            snprintf(buf, buf_size, "%02d", numeric_ret);
-            numeric_buf = buf;
-            goto gtv_ret_numeric_tag_info;
-        }
-        case SKIN_TOKEN_REC_MINUTES:
-        {
-            int time = (audio_recorded_time() / HZ) / 60;
-            numeric_ret = time;
-            snprintf(buf, buf_size, "%02d", numeric_ret);
-            numeric_buf = buf;
-            goto gtv_ret_numeric_tag_info;
-        }
-        case SKIN_TOKEN_REC_HOURS:
-        {
-            int time = (audio_recorded_time() / HZ) / 3600;
-            numeric_ret = time;
-            snprintf(buf, buf_size, "%02d", numeric_ret);
-            numeric_buf = buf;
-            goto gtv_ret_numeric_tag_info;
-        }
-
-#endif /* HAVE_RECORDING */
 
         case SKIN_TOKEN_CURRENT_SCREEN:
         {

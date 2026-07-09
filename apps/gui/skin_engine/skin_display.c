@@ -60,10 +60,6 @@
 #include "playback.h"
 #include "backdrop.h"
 #include "viewport.h"
-#if CONFIG_TUNER
-#include "radio.h"
-#include "tuner.h"
-#endif
 #include "root_menu.h"
 
 #include "wps.h"
@@ -228,27 +224,6 @@ void draw_progressbar(struct gui_wps *gwps, struct skin_viewport* skin_viewport,
         length = count - 1;
         end = val;
     }
-#if CONFIG_TUNER
-    else if (in_radio_screen() || (get_radio_status() != FMRADIO_OFF))
-    {
-#ifdef HAVE_RADIO_RSSI
-        if (pb->type == SKIN_TOKEN_TUNER_RSSI_BAR)
-        {
-            int val = tuner_get(RADIO_RSSI);
-            int min = tuner_get(RADIO_RSSI_MIN);
-            int max = tuner_get(RADIO_RSSI_MAX);
-            end = val - min;
-            length = max - min;
-        }
-        else
-#endif
-        {
-            int min = fm_region_data[global_settings.fm_region].freq_min;
-            end = radio_get_current_frequency() - min;
-            length = fm_region_data[global_settings.fm_region].freq_max - min;
-        }
-    }
-#endif
     else if (id3 && id3->length)
     {
         length = id3->length;
@@ -359,12 +334,6 @@ void draw_progressbar(struct gui_wps *gwps, struct skin_viewport* skin_viewport,
                 cue_draw_markers(display, id3->cuesheet, id3->length,
                                  x, y+1, width, height-2);
         }
-#if 0 /* disable for now CONFIG_TUNER */
-        else if (in_radio_screen() || (get_radio_status() != FMRADIO_OFF))
-        {
-            presets_draw_markers(display, x, y, width, height);
-        }
-#endif
     }
 }
 

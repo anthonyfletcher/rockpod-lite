@@ -37,11 +37,6 @@
 #include "status.h" /* needed for battery_state global var */
 #include "action.h" /* for keys_locked */
 #include "statusbar.h"
-#ifdef HAVE_RECORDING
-#include "audio.h"
-#include "recording.h"
-#include "pcm_record.h"
-#endif
 #include "appevents.h"
 #include "timefuncs.h"
 
@@ -145,9 +140,6 @@ static void gui_statusbar_icon_lock_remote(struct screen * display);
 #endif
 #if (CONFIG_LED == LED_VIRTUAL) || defined(HAVE_REMOTE_LCD)
 static void gui_statusbar_led(struct screen * display);
-#endif
-#ifdef HAVE_RECORDING
-static void gui_statusbar_icon_recording_info(struct screen * display);
 #endif
 #if CONFIG_RTC
 static void gui_statusbar_time(struct screen * display, struct tm *time);
@@ -293,21 +285,9 @@ void gui_statusbar_draw(struct gui_statusbar * bar, bool force_redraw, struct vi
                                     STATUSBAR_Y_POS, STATUSBAR_PLUG_WIDTH,
                                     SB_ICON_HEIGHT);
 #endif /* CONFIG_CHARGING */
-#ifdef HAVE_RECORDING
-        /* turn off volume display in recording screen */
-        bool recscreen_on = in_recording_screen();
-        if (!recscreen_on)
-#endif
-            bar->redraw_volume = gui_statusbar_icon_volume(bar, bar->info.volume);
+        bar->redraw_volume = gui_statusbar_icon_volume(bar, bar->info.volume);
         gui_statusbar_icon_play_state(display, current_playmode() + Icon_Play);
 
-#ifdef HAVE_RECORDING
-        /* If in recording screen, replace repeat mode, volume
-           and shuffle icons with recording info */
-        if (recscreen_on)
-            gui_statusbar_icon_recording_info(display);
-        else
-#endif
         {
             gui_statusbar_icon_play_mode(display, bar->info.repeat);
 
@@ -603,122 +583,6 @@ static void gui_statusbar_time(struct screen * display, struct tm *time)
 }
 #endif
 
-#ifdef HAVE_RECORDING
-/**
- * Write a number to the display using bitmaps and return new position
- */
-static int write_bitmap_number(struct screen * display, int value,
-                               int x, int y)
-{
-    char buf[12], *ptr;
-    itoa_buf(buf, sizeof(buf), value);
-
-    for (ptr = buf; *ptr != '\0'; ptr++, x += BM_GLYPH_WIDTH)
-        display->mono_bitmap(bitmap_glyphs_4x8[*ptr - '0'], x, y,
-                             BM_GLYPH_WIDTH, SB_ICON_HEIGHT);
-    return x;
-}
-
-/**
- * Write format info bitmaps - right justified
- */
-static void gui_statusbar_write_format_info(struct screen * display)
-{
-    /* Can't fit info for sw codec targets in statusbar using FONT_SYSFIXED
-       so must use icons */
-    int rec_format = global_settings.rec_format;
-    unsigned bitrk = 0; /* compiler warns about unitialized use !! */
-    int xpos       = STATUSBAR_ENCODER_X_POS;
-    int width      = STATUSBAR_ENCODER_WIDTH;
-    const unsigned char *bm = bitmap_formats_18x8[rec_format];
-
-    if (rec_format == REC_FORMAT_MPA_L3)
-    {
-        /* Special handling for mp3 */
-        bitrk = global_settings.mp3_enc_config.bitrate;
-        bitrk = mp3_enc_bitr[bitrk];
-
-        width = BM_MPA_L3_M_WIDTH;
-
-        /* Slide 'M' to right if fewer than three digits used */
-        if (bitrk > 999)
-            bitrk = 999; /* neurotic safety check if corrupted */
-        else
-        {
-            if (bitrk < 100)
-                xpos += BM_GLYPH_WIDTH;
-            if (bitrk < 10)
-                xpos += BM_GLYPH_WIDTH;
-        }
-    }
-
-    /* Show bitmap - clipping right edge if needed */
-    display->mono_bitmap_part(bm, 0, 0, STATUSBAR_ENCODER_WIDTH,
-        xpos, STATUSBAR_Y_POS, width, SB_ICON_HEIGHT);
-
-    if (rec_format == REC_FORMAT_MPA_L3)
-    {
-        xpos += BM_MPA_L3_M_WIDTH; /* to right of 'M' */
-        write_bitmap_number(display, bitrk, xpos, STATUSBAR_Y_POS);
-    }
-}
-
-/**
- * Write sample rate using bitmaps - left justified
- */
-static void gui_statusbar_write_samplerate_info(struct screen * display)
-{
-    unsigned long samprk;
-    int xpos;
-
-#ifdef SIMULATOR
-    samprk = 44100;
-#else
-#ifdef HAVE_SPDIF_REC
-    if (global_settings.rec_source == AUDIO_SRC_SPDIF)
-        /* Use rate in use, not current measured rate if it changed */
-        samprk = pcm_rec_sample_rate();
-    else
-#endif
-        samprk = rec_freq_sampr[global_settings.rec_frequency];
-#endif /* SIMULATOR */
-
-    samprk /= 1000;
-    if (samprk > 99)
-        samprk = 99;  /* Limit to 3 glyphs */
-
-    xpos = write_bitmap_number(display, (unsigned)samprk,
-                               STATUSBAR_RECFREQ_X_POS, STATUSBAR_Y_POS);
-
-    /* write the 'k' */
-    display->mono_bitmap(bitmap_glyphs_4x8[Glyph_4x8_k], xpos,
-                         STATUSBAR_Y_POS, BM_GLYPH_WIDTH,
-                         SB_ICON_HEIGHT);
-}
-
-static void gui_statusbar_icon_recording_info(struct screen * display)
-{
-    /* Display Codec info in statusbar */
-    gui_statusbar_write_format_info(display);
-
-    /* Display Samplerate info in statusbar */
-    gui_statusbar_write_samplerate_info(display);
-
-    /* Display Channel status in status bar */
-    if(global_settings.rec_channels)
-    {
-        display->mono_bitmap(bitmap_icons_5x8[Icon_Mono],
-                             STATUSBAR_RECCHANNELS_X_POS , STATUSBAR_Y_POS,
-                             STATUSBAR_RECCHANNELS_WIDTH, SB_ICON_HEIGHT);
-    }
-    else
-    {
-        display->mono_bitmap(bitmap_icons_5x8[Icon_Stereo],
-                             STATUSBAR_RECCHANNELS_X_POS, STATUSBAR_Y_POS,
-                             STATUSBAR_RECCHANNELS_WIDTH, SB_ICON_HEIGHT);
-    }
-}
-#endif /* HAVE_RECORDING */
 
 void gui_syncstatusbar_init(struct gui_syncstatusbar * bars)
 {
