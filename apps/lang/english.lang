@@ -3622,15 +3622,15 @@
 </phrase>
 <phrase>
   id: LANG_TIME_MENU
-  desc: in the system sub menu
+  desc: Settings menu row and its own submenu title
   user: core
   <source>
     *: none
-    rtc: "Time & Date"
+    rtc: "Time & Date Settings"
   </source>
   <dest>
     *: none
-    rtc: "Time & Date"
+    rtc: "Time & Date Settings"
   </dest>
   <voice>
     *: none
