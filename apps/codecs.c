@@ -137,16 +137,6 @@ struct codec_api ci = {
     __cyg_profile_func_exit,
 #endif
 
-#ifdef HAVE_RECORDING
-    NULL, /* enc_pcmbuf_read */
-    NULL, /* enc_pcmbuf_advance */
-    NULL, /* enc_encbuf_get_buffer */
-    NULL, /* enc_encbuf_finish_buffer */
-    NULL, /* enc_stream_read */
-    NULL, /* enc_stream_lseek */
-    NULL, /* enc_stream_write */
-    round_value_to_list32,
-#endif /* HAVE_RECORDING */
 
     /* new stuff at the end, sort into place next time
        the API gets incompatible */
@@ -187,9 +177,6 @@ static int codec_load_ram(struct codec_api *api)
 
     if (hdr == NULL
         || (hdr->magic != CODEC_MAGIC
-#ifdef HAVE_RECORDING
-             && hdr->magic != CODEC_ENC_MAGIC
-#endif
             )
         || hdr->target_id != TARGET_ID
 #if (CONFIG_PLATFORM & PLATFORM_NATIVE)

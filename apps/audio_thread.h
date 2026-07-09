@@ -23,11 +23,6 @@
 #ifndef AUDIO_THREAD_H
 #define AUDIO_THREAD_H
 
-/* Define one constant that includes recording related functionality */
-#if defined(HAVE_RECORDING) && !defined(SIMULATOR)
-#define AUDIO_HAVE_RECORDING
-#endif
-
 enum
 {
     Q_NULL = 0,                 /* reserved */
@@ -68,18 +63,6 @@ enum
     /* -> codec */
     Q_CODEC_DO_CALLBACK,
 
-    /* -> recording */
-#ifdef HAVE_RECORDING
-    Q_AUDIO_INIT_RECORDING,
-    Q_AUDIO_CLOSE_RECORDING,
-    Q_AUDIO_RECORDING_OPTIONS,
-    Q_AUDIO_RECORD,
-    Q_AUDIO_RECORD_STOP,
-    Q_AUDIO_RECORD_PAUSE,
-    Q_AUDIO_RECORD_RESUME,
-    Q_AUDIO_RECORD_FLUSH,
-#endif
-
     /*- settings -*/
 
 #ifdef HAVE_DISK_STORAGE
@@ -98,9 +81,6 @@ void playback_init(void);
 unsigned int playback_status(void);
 
 void audio_playback_handler(struct queue_event *ev);
-#ifdef AUDIO_HAVE_RECORDING
-void audio_recording_handler(struct queue_event *ev);
-#endif
 
 /** --- audio_queue helpers --- **/
 void audio_queue_post(long id, intptr_t data);
