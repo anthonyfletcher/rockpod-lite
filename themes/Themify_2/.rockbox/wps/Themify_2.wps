@@ -90,9 +90,40 @@ uuuuuuu
 %Vl(Album_Widget,160,38,6,128,-)%dr(0,0,-,-)
 %Vl(Album_Widget,0,182,166,6,-)%VB%dr(0,0,-,-)
 %Vl(Album_Widget,0,188,166,33,-)%dr(0,0,-,-)
-# cutout the visible album art in the foreground layer
-%Vl(Album_Art,0,38,160,128,-)
+# Redraw the album/fallback art on the foreground layer too, identical to
+# the background layer's copy above -- previously this was just a bare
+# viewport declaration with nothing drawn, so on a track/screen change the
+# background layer's art appeared instantly while the foreground layer
+# caught up a frame later with nothing there yet, then repainted over it --
+# a brief but visible flash. Matches the same draw-on-both-layers pattern
+# already used for the corner/shadow rects above.
+%Vl(Album_Art,0,22,160,160,9)%Cl(0,0,160,160)%Cdvvvvvvv
+vvvvvvv
+vvvvvvv
+vvvvvvv
+vvvvvvv
+vvvvvvv
+vvvvvvv
+vvvvvvv
+%Vl(Album_Fallback_Art,0,22,160,42,9)
+uuuuuuu
+uuuuuuu
+%Vl(Album_Fallback_Art,0,64,160,100,9)
+abcdeuw
+fghijuw
+klmnopw
+uuqrstw
+%Vl(Album_Fallback_Art,0,164,160,18,9)
+uuuuuuu
 # draw the rounded edges
+# Background-layer copies added below: these had no %VB counterpart at
+# all, unlike the art itself and the shadow rects above -- so on a track
+# change the background layer's fresh art appeared instantly with no
+# corner glyphs yet, and the foreground layer then popped them in a frame
+# later, reading as a piece getting drawn over the top-right of the art.
+%Vl(Album_Widget,0,16,166,22,6)%VB%aRb
+%Vl(Album_Widget,0,166,166,22,6)%VB%aRc
+%Vl(Album_Widget,144,199,22,22,6)%VBd
 %Vl(Album_Widget,0,16,166,22,6)%aRb
 %Vl(Album_Widget,0,166,166,22,6)%aRc
 %Vl(Album_Widget,144,199,22,22,6)d
@@ -163,6 +194,22 @@ uuuuuuu
 #
 %Vl(Sub_Status_Backdrop_Long_Flush,183,14,71,29,7)#
 #
+# Background-layer copies of the hold icon and every status icon slot
+# below: none of these had a %VB counterpart, only their backdrop shape
+# did (see Sub_Status_Backdrop_* above) -- so the backdrop container
+# appeared instantly on a track change while the icons/glyphs inside it
+# (including the "hq audio" indicator) popped in a frame later on the
+# foreground layer, reading as something drawn over the top-right of the
+# screen right after the art itself changed.
+%Vl(Status_Bar_Short,273,14,10,29,6)%VB%Vs(invert)%aL%?mh<a|a>
+%Vl(Status_Bar_Long,254,14,10,29,6)%VB%Vs(invert)%aL%?mh<a|a>
+%Vl(Sub_Status_Bar_Short,252,22,14,13,8)%VB%?and(%if(%ps, =, 1),%or(%if(%mm, =, 1),%if(%mm, >, 1)),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<m>%?and(%if(%ps, =, 1),%or(%if(%mm, =, 1),%if(%mm, >, 1)),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<m>%?and(%if(%ps, !=, 1),%if(%mm, >, 1),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<n>%?and(%if(%ps, !=, 1),%if(%mm, =, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<p>
+%Vl(Sub_Status_Bar_Long,232,22,14,13,8)%VB%?and(%if(%ps, =, 1),%or(%if(%mm, =, 1),%if(%mm, >, 1)),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<m>%?and(%if(%ps, =, 1),%or(%if(%mm, =, 1),%if(%mm, >, 1)),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<m>%?and(%if(%ps, !=, 1),%if(%mm, >, 1),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<n>%?and(%if(%ps, !=, 1),%if(%mm, =, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<p>
+%Vl(Sub_Status_Bar_Short,231,22,14,13,8)%VB%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<n>%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<n>%?and(%or(%and(%if(%ps, !=, 1),%if(%mm, >, 1)),%and(%if(%ps, =, 1),%if(%mm, =, 1))),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<p>
+%Vl(Sub_Status_Bar_Long,211,22,14,13,8)%VB%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<n>%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<n>%?and(%or(%and(%if(%ps, !=, 1),%if(%mm, >, 1)),%and(%if(%ps, =, 1),%if(%mm, =, 1))),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<p>
+%Vl(Sub_Status_Bar_Short,210,22,14,14,8)%VB%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<p>
+%Vl(Sub_Status_Bar_Long,190,22,14,14,8)%VB%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<p>
+#
 %Vl(Status_Bar_Short,273,14,10,29,6)%Vs(invert)%aL%?mh<a|a>
 %Vl(Status_Bar_Long,254,14,10,29,6)%Vs(invert)%aL%?mh<a|a>
 #
@@ -203,14 +250,59 @@ uuuuuuu
 %?or(%if(%ft(themes/Themify_2.preferences,minimal player mode: ),=,on),%if(%ft(themes/Themify_2.preferences,minimal player mode:),=,on))<%?if(%mp,<=,3)<%?mv(1)<%Vd(Player_Volume_Short)|%Vd(Player_Status_Short)>|%Vd(Player_Status_Short)>|%?if(%pe,!=,1)<%?if(%mp,<=,3)<%?mv(1)<%Vd(Player_Volume_Long)|%Vd(Player_Status_Long)>|%Vd(Player_Status_Long)>|%?if(%mp,<=,3)<%?mv(1)<%Vd(Player_Volume_Short)|%Vd(Player_Status_Short)>|%Vd(Player_Status_Short)>>>
 #
 #- Shorter Dialog Positions -#
-# animate the fast forward and rewind icons, plus pause and play
-%Vl(Player_Status_Short,260,160,46,46,4)%?or(%if(%ft(themes/Themify_2.preferences,animations: ),=,off),%if(%ft(themes/Themify_2.preferences,animations:),=,off))<%?mp<|0|1|%t(0.1)æ|%t(0.1)õ;|>|%?mp<|%?pS(1)<0|%t(0.1)Ą;%t(0.1)ą;%t(0.1)Ć;%t(0.1)ć;%t(0.1)Ĉ;%t(0.1)ĉ;%t(0.1)Ċ;%t(0.1)ċ;%t(0.1)Č;%t(0.1)č;%t(0.1)Ď;%t(0.1)ď;%t(0.1)Đ;%t(0.1)đ;%t(0.1)Ē;%t(0.1)ē;%t(0.1)Ĕ;%t(0.1)ĕ;%t(0.1)Ė;%t(0.1)ė;%t(0.1)Ę;%t(0.1)ę;%t(0.1)Ě;%t(0.1)ě;%t(0.1)Ĝ;%t(0.1)ĝ;%t(0.1)Ğ;%t(0.1)ğ;%t(0.1)Ġ;%t(0.1)0>|1|%t(0.1)æ;%t(0.1)ç;%t(0.1)è;%t(0.1)é;%t(0.1)ê;%t(0.1)ë;%t(0.1)ì;%t(0.1)í;%t(0.1)î;%t(0.1)ï;%t(0.1)ð;%t(0.1)ñ;%t(0.1)ò;%t(0.1)ó;%t(0.1)ô;|%t(0.1)õ;%t(0.1)ö;%t(0.1)÷;%t(0.1)ø;%t(0.1)ù;%t(0.1)ú;%t(0.1)û;%t(0.1)ü;%t(0.1)ý;%t(0.1)þ;%t(0.1)ÿ;%t(0.1)Ā;%t(0.1)ā;%t(0.1)Ă;%t(0.1)ă;|>>
+# The spectrum lives in its own hideable viewport (Player_Spectrum_Short),
+# padded 8px inside the 46x46 box so bars stay within the round container
+# instead of drawing into its corners (inscribed-square side for a 46px
+# circle is ~32.5px, so 30x30 leaves a small safety margin). %V/%Vl are
+# structural tags -- the parser starts a brand-new viewport the instant it
+# sees one, even mid-line, so embedding one directly inside a %?mp<...>
+# conditional branch silently breaks the conditional's own parsing. %Vd
+# (plain show/hide, used everywhere else in this file for this exact kind
+# of toggle) has no such restriction, so the toggle goes through that
+# instead, against this separately-declared viewport.
+#
+# Player_Status_Short is declared (and so rendered) BEFORE Player_Spectrum_Short
+# deliberately: viewports render in file/tree order, and Player_Status_Short's
+# own region fully contains Player_Spectrum_Short's. Declaring the spectrum
+# viewport first (as an earlier version of this file did) meant Player_Status_
+# Short's own full-refresh clear ran *after* the spectrum had already drawn its
+# bars for that pass, wiping them out right before the frame reached the
+# screen -- track changes fire several full-redraw passes in quick succession
+# (title, art, colors...), so this showed up as the spectrum visibly clearing
+# and redrawing itself repeatedly right at track boundaries. Spectrum drawn
+# last means nothing later in the same pass can clear over it.
+# Spectrum only while actually playing -- restores the %mp branching the
+# original play/pause/ff/rw animation had, which an earlier unconditional
+# %Sb call dropped (that's why pause used to show the spectrum instead of
+# a pause icon). Static ff/rw glyphs here rather than the original's frame
+# animation, to keep this simple; can be re-animated later if wanted.
+#
+# %Sb (spectrum bars) also gated on %mv(1) (volume popup NOT active) here,
+# separately from the %?mp gating above: declaration order alone (Spectrum
+# before Volume, "later wins") only controls one-time full-refresh
+# ordering, but %Sb carries its own independent, much higher-frequency
+# SKIN_REFRESH_SPECTRUM refresh cycle. That cycle kept repainting the
+# spectrum's bars into this same region every animation tick regardless of
+# what else had drawn there since, so the volume popup -- refreshed far
+# less often (%pv is SKIN_REFRESH_DYNAMIC) -- won the ordering exactly once
+# and then got redrawn over within milliseconds. The %?mp branching above
+# doesn't help here because %Player_Status_Short stays "shown" (sticky,
+# same as everywhere else %Vd() is used in this file) even on a pass where
+# %mv(1) is true and it isn't the one being freshly %Vd()'d, so its nested
+# %Vd(Player_Spectrum_*) call -- and the spectrum's own refresh -- still
+# fires. Suppressing %Sb itself, rather than trying to out-order it, is the
+# only way to stop it drawing over the popup for as long as %mv(1) holds.
+%Vl(Player_Status_Short,260,160,46,46,4)%?mp<|%Vd(Player_Spectrum_Short)|1|æ|õ>
+%Vl(Player_Spectrum_Short,268,168,30,30,4)%?mv(1)<|%Sb(5,center)>
 # volume Slider, one character for the 91 positions of regular volume settings.
 %Vl(Player_Volume_Short,260,160,46,46,4)%?pv<4|5|6|7|8|9|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|À|Á|Â|Ã|Ä|Å|Ç|È|É|Ê|Ë|Ì|Í|Î|Ï|Ð|Ñ|Ò|Ó|Ô|Õ|Ö|×|Ø|Ù|Ú|Û|Ü|Ý|Þ|ß|à|á|â|ã|ä|ä|å>
 #
 #- Longer Dialog Positions -#
-# animate the fast forward and rewind icons, plus pause and play
-%Vl(Player_Status_Long,202,160,46,46,4)%?or(%if(%ft(themes/Themify_2.preferences,animations: ),=,off),%if(%ft(themes/Themify_2.preferences,animations:),=,off))<%?mp<|0|1|%t(0.1)æ|%t(0.1)õ;|>|%?mp<|%?pS(1)<0|%t(0.1)Ą;%t(0.1)ą;%t(0.1)Ć;%t(0.1)ć;%t(0.1)Ĉ;%t(0.1)ĉ;%t(0.1)Ċ;%t(0.1)ċ;%t(0.1)Č;%t(0.1)č;%t(0.1)Ď;%t(0.1)ď;%t(0.1)Đ;%t(0.1)đ;%t(0.1)Ē;%t(0.1)ē;%t(0.1)Ĕ;%t(0.1)ĕ;%t(0.1)Ė;%t(0.1)ė;%t(0.1)Ę;%t(0.1)ę;%t(0.1)Ě;%t(0.1)ě;%t(0.1)Ĝ;%t(0.1)ĝ;%t(0.1)Ğ;%t(0.1)ğ;%t(0.1)Ġ;%t(0.1)0>|1|%t(0.1)æ;%t(0.1)ç;%t(0.1)è;%t(0.1)é;%t(0.1)ê;%t(0.1)ë;%t(0.1)ì;%t(0.1)í;%t(0.1)î;%t(0.1)ï;%t(0.1)ð;%t(0.1)ñ;%t(0.1)ò;%t(0.1)ó;%t(0.1)ô;|%t(0.1)õ;%t(0.1)ö;%t(0.1)÷;%t(0.1)ø;%t(0.1)ù;%t(0.1)ú;%t(0.1)û;%t(0.1)ü;%t(0.1)ý;%t(0.1)þ;%t(0.1)ÿ;%t(0.1)Ā;%t(0.1)ā;%t(0.1)Ă;%t(0.1)ă;|>>
+# Same reasoning as Player_Status_Short/Player_Spectrum_Short above --
+# Status declared (and rendered) first, Spectrum last, and %Sb gated on
+# %mv(1) for the same reason (see the comment above).
+%Vl(Player_Status_Long,202,160,46,46,4)%?mp<|%Vd(Player_Spectrum_Long)|1|æ|õ>
+%Vl(Player_Spectrum_Long,210,168,30,30,4)%?mv(1)<|%Sb(5,center)>
 # volume Slider, one character for the 91 positions of regular volume settings.
 #
 %Vl(Player_Volume_Long,202,160,46,46,4)%?pv<4|5|6|7|8|9|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|À|Á|Â|Ã|Ä|Å|Ç|È|É|Ê|Ë|Ì|Í|Î|Ï|Ð|Ñ|Ò|Ó|Ô|Õ|Ö|×|Ø|Ù|Ú|Û|Ü|Ý|Þ|ß|à|á|â|ã|ä|ä|å>

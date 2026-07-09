@@ -44,6 +44,29 @@ int tagtree_add_to_playlist(const char* playlist, bool new_playlist);
 char *tagtree_get_title(struct tree_context* c);
 int tagtree_get_attr(struct tree_context* c);
 int tagtree_get_icon(struct tree_context* c);
+/* Arms a one-shot jump: the next time tagtree_load() sees a fresh root load
+ * (dirlevel 0, TABLE_ROOT), it enters the root menu's row whose first tag
+ * matches 'tag' (e.g. tag_album), looked up by tag identity rather than
+ * position so it's robust to tagnavi.config reordering. Used by
+ * root_menu.c's tagnavi-derived main-menu shortcuts. */
+void tagtree_enter_by_tag_on_next_load(int tag);
+/* Arms a direct jump: root -> straight into that specific album's own track
+ * list, identified by its tagcache seek (not name/position), skipping the
+ * intermediate "Album" grouping listing entirely. Used by
+ * apps/gui/album_covers.c so selecting a cover lands directly on that
+ * album's tracks in the core database browser, with a single BACK press
+ * exiting straight back out (no intermediate level to unwind through). */
+void tagtree_enter_album_tracks_on_next_load(long album_seek,
+                                             const char *album_title);
+/* Number of direct tag-browse ("->") rows in the root ("main") menu -- rows
+ * that load a nested sub-menu ("==>") or trigger an action (e.g. "~>"
+ * shuffle) don't count. Used by root_menu.c to know how many of its reserved
+ * GO_TO_TAGNAVI_FIRST..LAST slots are backed by a real row. */
+int tagtree_get_main_menu_tag_row_count(void);
+/* Returns the tag and raw (P2STR-resolvable) display name of the Nth (0-based)
+ * such row. Returns false if index is out of range. */
+bool tagtree_get_main_menu_tag_row(int index, int *out_tag,
+                                   const unsigned char **out_name);
 int tagtree_get_filename(struct tree_context* c, char *buf, int buflen);
 int tagtree_get_custom_action(struct tree_context* c);
 bool tagtree_get_subentry_filename(char *buf, size_t bufsize);

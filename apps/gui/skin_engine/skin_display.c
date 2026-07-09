@@ -49,6 +49,7 @@
 #include "buffering.h"
 
 #include "peakmeter.h"
+#include "spectrum_meter.h"
 /* Image stuff */
 #include "bmp.h"
 #ifdef HAVE_ALBUMART
@@ -743,17 +744,21 @@ int skin_wait_for_action(enum skinnable_screens skin, int context, int timeout)
         other hand we don't want to waste energy if it
         isn't displayed */
     bool pm=false;
+    bool sb=false;
     FOR_NB_SCREENS(i)
     {
        if(skin_get_gwps(skin, i)->data->peak_meter_enabled)
            pm = true;
+       if(skin_get_gwps(skin, i)->data->spectrum_enabled)
+           sb = true;
     }
 
     bool fading = dynamic_colors_fading();
     bool pending = dynamic_colors_pending();
 
-    if (pm || fading || pending) {
+    if (pm || sb || fading || pending) {
         long next_pm_refresh = current_tick;
+        long next_sb_refresh = current_tick;
         long next_fade_refresh = current_tick;
         long next_big_refresh = current_tick + timeout;
         button = BUTTON_NONE;
@@ -764,6 +769,8 @@ int skin_wait_for_action(enum skinnable_screens skin, int context, int timeout)
             }
             if (pm)
                 peak_meter_peek();
+            if (sb)
+                spectrum_meter_peek();
             sleep(0);   /* Sleep until end of current tick. */
 
             if (pm && TIME_AFTER(current_tick, next_pm_refresh)) {
@@ -773,6 +780,14 @@ int skin_wait_for_action(enum skinnable_screens skin, int context, int timeout)
                         skin_update(skin, i, SKIN_REFRESH_PEAK_METER);
                 }
                 next_pm_refresh += HZ / PEAK_METER_FPS;
+            }
+            if (sb && TIME_AFTER(current_tick, next_sb_refresh)) {
+                FOR_NB_SCREENS(i)
+                {
+                    if(skin_get_gwps(skin, i)->data->spectrum_enabled)
+                        skin_update(skin, i, SKIN_REFRESH_SPECTRUM);
+                }
+                next_sb_refresh += HZ / SPECTRUM_FPS;
             }
             if ((fading || pending) && TIME_AFTER(current_tick, next_fade_refresh)) {
                 unsigned int refresh = SKIN_REFRESH_ALL;

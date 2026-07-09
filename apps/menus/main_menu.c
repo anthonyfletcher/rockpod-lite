@@ -495,12 +495,6 @@ MAKE_MENU(info_menu, ID2P(LANG_SYSTEM), 0, Icon_System_menu,
 /*      INFO MENU                  */
 /***********************************/
 
-static int main_menu_config(void)
-{
-    plugin_load(PLUGIN_APPS_DIR "/main_menu_config.rock", NULL);
-    return 0;
-}
-
 MENUITEM_FUNCTION(main_menu_config_item, 0, ID2P(LANG_MAIN_MENU),
                   main_menu_config, NULL, Icon_Rockbox);
 
@@ -512,6 +506,9 @@ MAKE_MENU(main_menu_, ID2P(LANG_SETTINGS), NULL,
         &sound_settings,
         &playback_settings,
         &settings_menu_item, &theme_menu,
+#ifdef HAVE_TAGCACHE
+        &album_covers_menu,
+#endif
 #ifdef HAVE_RECORDING
         &recording_settings,
 #endif

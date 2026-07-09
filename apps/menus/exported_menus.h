@@ -43,13 +43,19 @@ extern const struct menu_item_ex
         audiohw_eq_tone_controls,   /* audiohw_eq_menu.c */
 #endif
         radio_settings_menu,        /* radio_menu.c     */
-        theme_menu;                 /* theme_menu.c     */
+        theme_menu                  /* theme_menu.c     */
+#ifdef HAVE_TAGCACHE
+        , album_covers_menu;        /* album_covers_menu.c */
+#else
+        ;
+#endif
 
 struct browse_folder_info {
     const char* dir;
     int show_options;
 };
 int browse_folder(void *param); /* in theme_menu.c as it is mostly used there */
+int main_menu_config(void); /* in main_menu_config.c */
 
 #endif /* ! PLUGIN */
 #endif /*_EXPORTED_MENUS_H */

@@ -476,6 +476,14 @@ void gui_synclist_set_icon_callback(struct gui_synclist * lists,
     lists->callback_get_item_icon = icon_callback;
 }
 
+#ifdef HAVE_ALBUMART
+void gui_synclist_set_albumart_callback(struct gui_synclist * lists,
+                                        list_get_albumart albumart_callback)
+{
+    lists->callback_get_item_albumart = albumart_callback;
+}
+#endif
+
 void gui_synclist_set_voice_callback(struct gui_synclist * lists,
                                      list_speak_item voice_callback)
 {

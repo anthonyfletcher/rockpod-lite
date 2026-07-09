@@ -204,6 +204,17 @@ static enum themable_icons tree_get_fileicon(int selected_item, void * data)
     }
 }
 
+#ifdef HAVE_ALBUMART
+static const struct bitmap *tree_get_albumart(int selected_item, void * data,
+                                              struct dim *size)
+{
+    (void)selected_item;
+    (void)data;
+    (void)size;
+    return NULL;
+}
+#endif /* HAVE_ALBUMART */
+
 static int tree_voice_cb(int selected_item, void * data)
 {
     struct tree_context * local_tc=(struct tree_context *)data;
@@ -521,6 +532,9 @@ static int update_dir(void)
     gui_synclist_set_nb_items(list, tc.filesindir);
     gui_synclist_set_icon_callback(list,
                             global_settings.show_icons?tree_get_fileicon:NULL);
+#ifdef HAVE_ALBUMART
+    gui_synclist_set_albumart_callback(list, tree_get_albumart);
+#endif
     gui_synclist_set_voice_callback(list, &tree_voice_cb);
 #ifdef HAVE_LCD_COLOR
     gui_synclist_set_color_callback(list, &tree_get_filecolor);

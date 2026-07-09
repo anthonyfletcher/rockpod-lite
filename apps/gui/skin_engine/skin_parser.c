@@ -568,6 +568,27 @@ static int parse_listitem(struct skin_element *element,
     return 0;
 }
 
+static int parse_spectrumbars(struct skin_element *element,
+                              struct wps_token *token,
+                              struct wps_data *wps_data)
+{
+    (void)wps_data;
+    struct spectrum_bars *sb = skin_buffer_alloc(sizeof(*sb));
+    if (!sb)
+        return -1;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, sb);
+    sb->bars = get_param(element, 0)->data.number;
+    if (sb->bars < 1)
+        sb->bars = 1;
+    else if (sb->bars > 8) /* SPECTRUM_MAX_BANDS, apps/recorder/spectrum_meter.h */
+        sb->bars = 8;
+    if (element->params_count > 1)
+        sb->center_aligned = strcasecmp(get_param_text(element, 1), "center") == 0;
+    else
+        sb->center_aligned = false;
+    return 0;
+}
+
 static int parse_listitemviewport(struct skin_element *element,
                                   struct wps_token *token,
                                   struct wps_data *wps_data)
@@ -2455,7 +2476,11 @@ static int skin_element_callback(struct skin_element* element, void* data)
                     break;
                 case SKIN_TOKEN_LIST_ITEM_TEXT:
                 case SKIN_TOKEN_LIST_ITEM_ICON:
+                case SKIN_TOKEN_LIST_ITEM_ALBUMART:
                     function = parse_listitem;
+                    break;
+                case SKIN_TOKEN_SPECTRUM_BARS:
+                    function = parse_spectrumbars;
                     break;
                 case SKIN_TOKEN_DISABLE_THEME:
                 case SKIN_TOKEN_ENABLE_THEME:

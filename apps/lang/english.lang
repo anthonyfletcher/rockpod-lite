@@ -2793,6 +2793,20 @@
   </voice>
 </phrase>
 <phrase>
+  id: LANG_ALBUM_COVERS_TRANSITION_SPEED
+  desc: in apps/menus/album_covers_menu.c
+  user: core
+  <source>
+    *: "Transition Speed"
+  </source>
+  <dest>
+    *: "Transition Speed"
+  </dest>
+  <voice>
+    *: ""
+  </voice>
+</phrase>
+<phrase>
   id: LANG_SCROLL_DELAY
   desc: Delay before scrolling
   user: core

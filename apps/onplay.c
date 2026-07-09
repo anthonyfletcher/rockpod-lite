@@ -56,6 +56,7 @@
 #include "playlist_catalog.h"
 #ifdef HAVE_TAGCACHE
 #include "tagtree.h"
+#include "gui/album_covers.h"
 #endif
 #include "cuesheet.h"
 #include "statusbar-skinned.h"
@@ -906,8 +907,31 @@ MENUITEM_FUNCTION_W_PARAM(track_info_item, 0, ID2P(LANG_MENU_SHOW_ID3_INFO),
                   onplay_load_plugin, (void *)"properties",
                   clipboard_callback, Icon_NOICON);
 #ifdef HAVE_TAGCACHE
+/* Album covers is core-linked, not a loadable plugin, so this can't go
+ * through onplay_load_plugin()/filetype_load_plugin() like its siblings --
+ * mirrors that function's structure (prepare_database_sel() to resolve
+ * selected_file.path when launched from a database browse context, the
+ * onplay_result side-channel since do_menu() ignores this function's own
+ * return value without MENU_FUNC_CHECK_RETVAL) with album_covers()'s
+ * GO_TO_* return values in place of filetype_load_plugin()'s PLUGIN_* ones. */
+static bool onplay_album_covers(void *param)
+{
+    (void)param;
+    if (!prepare_database_sel(NULL))
+        return false;
+
+    if (get_current_activity() == ACTIVITY_CONTEXTMENU)  /* get rid of parent activity */
+        pop_current_activity_without_refresh();          /* when called from ctxt menu */
+
+    int ret = album_covers(selected_file.path);
+    if (ret == GO_TO_ROOT)
+        onplay_result = ONPLAY_MAINMENU;
+    else if (ret == GO_TO_WPS)
+        onplay_result = ONPLAY_START_PLAY;
+    return false;
+}
 MENUITEM_FUNCTION_W_PARAM(pictureflow_item, 0, ID2P(LANG_ONPLAY_PICTUREFLOW),
-                  onplay_load_plugin, (void *)"pictureflow",
+                  onplay_album_covers, NULL,
                   clipboard_callback, Icon_NOICON);
 #endif
 static bool onplay_add_to_shortcuts(void)
@@ -1267,6 +1291,22 @@ static int hotkey_tree_run_plugin(void *param)
     return ONPLAY_RELOAD_DIR;
 }
 
+#ifdef HAVE_TAGCACHE
+/* Album covers equivalent of hotkey_tree_run_plugin() above -- see
+ * onplay_album_covers()'s comment for why this can't share that generic
+ * plugin-loading helper. */
+static int hotkey_album_covers(void *param)
+{
+    (void)param;
+    if (!prepare_database_sel(NULL))
+        return ONPLAY_RELOAD_DIR;
+    if (album_covers(selected_file.path) == GO_TO_WPS)
+        return ONPLAY_START_PLAY;
+
+    return ONPLAY_RELOAD_DIR;
+}
+#endif
+
 static int hotkey_wps_run_plugin(void)
 {
     open_plugin_run(ID2P(LANG_HOTKEY_WPS));
@@ -1343,7 +1383,7 @@ static const struct hotkey_assignment hotkey_items[] = {
 #ifdef HAVE_TAGCACHE
     { .action = HOTKEY_PICTUREFLOW,
       .lang_id = LANG_ONPLAY_PICTUREFLOW,
-      .func = HOTKEY_FUNC(hotkey_tree_run_plugin, (void *)"pictureflow"),
+      .func = HOTKEY_FUNC(hotkey_album_covers, NULL),
       .return_code = ONPLAY_FUNC_RETURN,
       .flags = HOTKEY_FLAG_TREE },
 #endif

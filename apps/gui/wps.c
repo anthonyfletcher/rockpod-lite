@@ -51,6 +51,9 @@
 #include "cuesheet.h"
 #include "ata_idle_notify.h"
 #include "root_menu.h"
+#ifdef HAVE_TAGCACHE
+#include "gui/album_covers.h"
+#endif
 #include "backdrop.h"
 #include "quickscreen.h"
 #include "shortcuts.h"
@@ -848,11 +851,18 @@ long gui_wps_show(void)
                     return GO_TO_DBBROWSER;
 #endif
                 }
+#ifdef HAVE_TAGCACHE
                 else if (sel_action == 2) /* coverflow */
                 {
+                    int ret;
                     theme_enabled = false;
                     gwps_leave_wps(false);
-                    filetype_load_plugin("pictureflow", NULL);
+                    ret = album_covers(NULL);
+                    if (ret == GO_TO_ALBUM_COVERS_TRACKS || ret == GO_TO_ROOT)
+                    {
+                        gwps_leave_wps(true);
+                        return ret;
+                    }
                     if (!(audio_status() & AUDIO_STATUS_PLAY))
                     {
                         gwps_leave_wps(true);
@@ -860,6 +870,7 @@ long gui_wps_show(void)
                     }
                     restore = true;
                 }
+#endif
                 else if (sel_action == 3) /* files */
                 {
                     gwps_leave_wps(true);
@@ -1049,21 +1060,29 @@ long gui_wps_show(void)
                 }
                 break;
 
-                /* iPod Classic 6G custom: open PictureFlow instead of stopping */
+                /* iPod Classic 6G custom: open Album covers instead of stopping */
             case ACTION_WPS_STOP:
+#ifdef HAVE_TAGCACHE
                 {
+                    int ret;
                     theme_enabled = false;
                     gwps_leave_wps(false);
-                    filetype_load_plugin("pictureflow", NULL);
+                    ret = album_covers(NULL);
+                    if (ret == GO_TO_ALBUM_COVERS_TRACKS || ret == GO_TO_ROOT)
+                    {
+                        gwps_leave_wps(true);
+                        return ret;
+                    }
                     if (!(audio_status() & AUDIO_STATUS_PLAY))
                     {
-                        /* audio stopped in PictureFlow; return to WPS
+                        /* audio stopped in Album covers; return to WPS
                            via wpsscrn() which handles playlist resume */
                         gwps_leave_wps(true);
                         return GO_TO_WPS;
                     }
                     restore = true;
                 }
+#endif
                 break;
 #if 0 /* original stop behavior */
             case ACTION_WPS_STOP:

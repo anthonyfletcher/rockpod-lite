@@ -42,12 +42,14 @@ extern "C"
 #define SKIN_REFRESH_PEAK_METER      (1u<<(SKIN_REFRESH_SHIFT+4))  /* line contains a peak meter */
 #define SKIN_REFRESH_STATUSBAR       (1u<<(SKIN_REFRESH_SHIFT+5))  /* refresh statusbar */
 #define SKIN_RTC_REFRESH             (1u<<(SKIN_REFRESH_SHIFT+6))  /* refresh rtc, convert at parse time */
+#define SKIN_REFRESH_SPECTRUM        (1u<<(SKIN_REFRESH_SHIFT+7))  /* line contains spectrum bars */
 #define SKIN_REFRESH_ALL             (0xffffu<<SKIN_REFRESH_SHIFT)   /* to refresh all line types */
 
 /* to refresh only those lines that change over time */
 #define SKIN_REFRESH_NON_STATIC (SKIN_REFRESH_DYNAMIC| \
                                  SKIN_REFRESH_PLAYER_PROGRESS| \
-                                 SKIN_REFRESH_PEAK_METER)
+                                 SKIN_REFRESH_PEAK_METER| \
+                                 SKIN_REFRESH_SPECTRUM)
 
 enum skin_token_type {
 
@@ -198,6 +200,8 @@ enum skin_token_type {
     SKIN_TOKEN_PEAKMETER_LEFTBAR,
     SKIN_TOKEN_PEAKMETER_RIGHT,
     SKIN_TOKEN_PEAKMETER_RIGHTBAR,
+    /* Spectrum bars */
+    SKIN_TOKEN_SPECTRUM_BARS,
 
     /* Current track */
     SKIN_TOKEN_TRACK_ELAPSED_PERCENT,
@@ -229,6 +233,7 @@ enum skin_token_type {
     SKIN_TOKEN_LIST_ITEM_COLUMN,
     SKIN_TOKEN_LIST_ITEM_NUMBER,
     SKIN_TOKEN_LIST_ITEM_ICON,
+    SKIN_TOKEN_LIST_ITEM_ALBUMART,
     SKIN_TOKEN_LIST_NEEDS_SCROLLBAR,
     SKIN_TOKEN_LIST_SCROLLBAR,
 

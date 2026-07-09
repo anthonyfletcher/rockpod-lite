@@ -123,6 +123,16 @@ enum themable_icons skinlist_get_item_icon(int offset, bool wrap)
     return current_list->callback_get_item_icon(item, current_list->data);
 }
 
+#ifdef HAVE_ALBUMART
+const struct bitmap* skinlist_get_item_albumart(int offset, bool wrap, struct dim *size)
+{
+    int item = offset_to_item(offset, wrap);
+    if (item < 0 || !current_list || current_list->callback_get_item_albumart == NULL)
+        return NULL;
+    return current_list->callback_get_item_albumart(item, current_list->data, size);
+}
+#endif
+
 static bool is_selected = false;
 bool skinlist_is_selected_item(void)
 {
