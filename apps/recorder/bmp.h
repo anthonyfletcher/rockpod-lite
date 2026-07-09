@@ -25,9 +25,6 @@
 #include "lcd.h"
 #include "inttypes.h"
 #include "resize.h"
-#ifdef HAVE_REMOTE_LCD
-#include "lcd-remote.h"
-#endif
 
 #define ARRAY_SIZE(array)    (int)(sizeof(array)/(sizeof(array[0])))
 
@@ -54,7 +51,7 @@ struct rowset {
     short rowstop;
 };
 
-#if (LCD_DEPTH > 1) || defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1)
+#if (LCD_DEPTH > 1)
 extern const unsigned char dither_table[16];
 #define DITHERY(y) (dither_table[(y) & 15] & 0xAA)
 #define DITHERX(x) (dither_table[(x) & 15])
@@ -78,9 +75,7 @@ static inline unsigned brightness(struct uint8_rgb color)
 #endif
 }
 
-#if ((LCD_DEPTH == 2) && (LCD_PIXELFORMAT == VERTICAL_INTERLEAVED)) \
- || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH == 2) \
-     && (LCD_REMOTE_PIXELFORMAT == VERTICAL_INTERLEAVED))
+#if ((LCD_DEPTH == 2) && (LCD_PIXELFORMAT == VERTICAL_INTERLEAVED))
 extern const unsigned short vi_pattern[4];
 #endif
 
@@ -88,7 +83,7 @@ extern const unsigned short vi_pattern[4];
 #define MONO_BM_HEIGHT(height) (((height) + 7) >> 3)
 
 /* Number of rows of datain a LCD native bitmap height pixels tall */
-#if LCD_DEPTH > 1 || (defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1)
+#if LCD_DEPTH > 1
 #if LCD_DEPTH == 1 || \
     (LCD_DEPTH == 2 && LCD_PIXELFORMAT == VERTICAL_INTERLEAVED)
 #define LCD_BM_HEIGHT(height) (((height) + 7) >> 3)
@@ -98,21 +93,7 @@ extern const unsigned short vi_pattern[4];
 #define LCD_BM_HEIGHT(height) (height)
 #endif
 
-/* Number of rows of data in a remote native bitmap height pixels tall. */
-#ifdef HAVE_REMOTE_LCD
-#if LCD_REMOTE_DEPTH == 1 || \
-    (LCD_REMOTE_DEPTH == 2 && LCD_REMOTE_PIXELFORMAT == VERTICAL_INTERLEAVED)
-#define LCD_REMOTE_BM_HEIGHT(height) (((height) + 7) >> 3)
-#elif LCD_REMOTE_DEPTH == 2 && LCD_REMOTE_PIXELFORMAT == VERTICAL_PACKING
-#define LCD_REMOTE_BM_HEIGHT(height) (((height) + 3) >> 2)
-#else
-#define LCD_REMOTE_BM_HEIGHT(height) (height)
-#endif
-#define NATIVE_BM_HEIGHT(height,remote) ((remote) ? \
-        LCD_REMOTE_BM_HEIGHT(height) : LCD_BM_HEIGHT(height))
-#else
 #define NATIVE_BM_HEIGHT(height,remote) LCD_BM_HEIGHT(height)
-#endif
 
 /* Convenience macro to calculate rows based on height, remote vs main LCD,
    and format
@@ -134,18 +115,7 @@ extern const unsigned short vi_pattern[4];
 #define LCD_BM_WIDTH(width) (width)
 #endif
 
-/* Number of data elements in a remote native bitmap width pixels wide */
-#ifdef HAVE_REMOTE_LCD
-#if LCD_REMOTE_DEPTH == 2 && LCD_REMOTE_PIXELFORMAT == HORIZONTAL_PACKING
-#define LCD_REMOTE_BM_WIDTH(width) (((width) + 3) >> 2)
-#else
-#define LCD_REMOTE_BM_WIDTH(width) (width)
-#endif
-#define NATIVE_BM_WIDTH(width,remote) ((remote) ? \
-    LCD_REMOTE_BM_WIDTH(width) : LCD_BM_WIDTH(width))
-#else
 #define NATIVE_BM_WIDTH(width,remote) LCD_BM_WIDTH(width)
-#endif
 
 /* Convenience macro to calculate elements based on height, remote vs native
    main LCD, and format
@@ -161,16 +131,10 @@ extern const unsigned short vi_pattern[4];
     MONO_BM_HEIGHT(height) * FB_DATA_SZ)
 
 /* Size in bytes of a native bitmap of dimensions width*height */
-#if LCD_DEPTH > 1 || (defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1)
-#if defined(HAVE_REMOTE_LCD) && FB_DATA_SZ != FB_RDATA_SZ
-#define NATIVE_BM_SIZE(width,height,format,remote) \
-    (((remote) ? FB_RDATA_SZ : FB_DATA_SZ) * BM_WIDTH(width,format,remote) \
-    * BM_HEIGHT(height,format,remote))
-#else
+#if LCD_DEPTH > 1
 #define NATIVE_BM_SIZE(width,height,format,remote) \
     (FB_DATA_SZ * BM_WIDTH(width,format,remote) * \
     BM_HEIGHT(height,format,remote))
-#endif
 
 /* Convenience macro to calculate size in bytes based on height, remote vs
    main LCD, and format
