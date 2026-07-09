@@ -53,12 +53,6 @@
 
 #include "tree.h"
 #include "tagtree.h"
-#if CONFIG_TUNER
-#include "radio.h"
-#endif
-#ifdef HAVE_RECORDING
-#include "recording.h"
-#endif
 #include "wps.h"
 #include "bookmark.h"
 #include "playlist.h"
@@ -93,17 +87,6 @@ static int last_screen = GO_TO_ROOT; /* unfortunatly needed so we can resume
 static int previous_music = GO_TO_WPS; /* Toggles behavior of the return-to
                                         * playback-button depending
                                         * on FM radio */
-
-#if (CONFIG_TUNER)
-static void rootmenu_start_playback_callback(unsigned short id, void *param)
-{
-    (void) id; (void) param;
-    /* Cancel FM radio selection as previous music. For cases where we start
-       playback without going to the WPS, such as playlist insert or
-       playlist catalog. */
-    previous_music = GO_TO_WPS;
-}
-#endif
 
 static char current_track_path[MAX_PATH];
 static void rootmenu_track_changed_callback(unsigned short id, void* param)
@@ -464,14 +447,6 @@ static int plugins_browser_removed(void* param)
     return GO_TO_ROOT;
 }
 
-#ifdef HAVE_RECORDING
-static int recscrn(void* param)
-{
-    (void)param;
-    recording_screen(false);
-    return GO_TO_ROOT;
-}
-#endif
 static int wpsscrn(void* param)
 {
     int ret_val = GO_TO_PREVIOUS;
@@ -534,15 +509,6 @@ static int wpsscrn(void* param)
 
     return ret_val;
 }
-#if CONFIG_TUNER
-static int radio(void* param)
-{
-    (void)param;
-    radio_screen();
-    return GO_TO_ROOT;
-}
-#endif
-
 static int miscscrn(void * param)
 {
     const struct menu_item_ex *menu = (const struct menu_item_ex*)param;
@@ -629,13 +595,6 @@ static const struct root_items items[] = {
     [GO_TO_MAINMENU] =      { miscscrn, (struct menu_item_ex*)&main_menu_,
                                                             &manage_settings },
 
-#ifdef HAVE_RECORDING
-    [GO_TO_RECSCREEN] =     {  recscrn, NULL, &recording_settings_menu },
-#endif
-
-#if CONFIG_TUNER
-    [GO_TO_FM] =            { radio, NULL, &radio_settings_menu },
-#endif
 
     [GO_TO_RECENTBMARKS] =  { load_bmarks, NULL, &bookmark_settings_menu },
     [GO_TO_BROWSEPLUGINS] = { plugins_browser_removed, NULL, NULL },
@@ -755,14 +714,6 @@ static char *get_wps_item_name(int selected_item, void * data,
 }
 MENUITEM_RETURNVALUE_DYNTEXT(wps_item, GO_TO_WPS, NULL, get_wps_item_name,
                                 NULL, NULL, Icon_Playback_menu);
-#ifdef HAVE_RECORDING
-MENUITEM_RETURNVALUE(rec, ID2P(LANG_RECORDING), GO_TO_RECSCREEN,
-                        NULL, Icon_Recording);
-#endif
-#if CONFIG_TUNER
-MENUITEM_RETURNVALUE(fm, ID2P(LANG_FM_RADIO), GO_TO_FM,
-                        item_callback, Icon_Radio_screen);
-#endif
 MENUITEM_RETURNVALUE(menu_, ID2P(LANG_SETTINGS), GO_TO_MAINMENU,
                         NULL, Icon_Submenu_Entered);
 MENUITEM_RETURNVALUE(bookmarks, ID2P(LANG_BOOKMARK_MENU_RECENT_BOOKMARKS),
@@ -1148,15 +1099,7 @@ static int item_callback(int action,
         case ACTION_TREE_STOP:
             return ACTION_REDRAW;
         case ACTION_REQUEST_MENUITEM:
-#if CONFIG_TUNER
-            if (this_item == &fm)
-            {
-                if (radio_hardware_present() == 0)
-                    return ACTION_EXIT_MENUITEM;
-            }
-            else
-#endif
-                if (this_item == &bookmarks)
+            if (this_item == &bookmarks)
             {
                 if (global_settings.usemrb == 0)
                     return ACTION_EXIT_MENUITEM;
@@ -1369,9 +1312,6 @@ static int root_menu_setup_screens(void)
             }
         }
     }
-#if CONFIG_TUNER
-    add_event(PLAYBACK_EVENT_START_PLAYBACK, rootmenu_start_playback_callback);
-#endif
     add_event(PLAYBACK_EVENT_TRACK_CHANGE, rootmenu_track_changed_callback);
 #ifdef HAVE_RTC_ALARM
     int alarm_wake_up_screen = 0;
@@ -1379,22 +1319,8 @@ static int root_menu_setup_screens(void)
     {
         rtc_enable_alarm(false);
 
-#if (defined(HAVE_RECORDING) || CONFIG_TUNER)
-        alarm_wake_up_screen = global_settings.alarm_wake_up_screen;
-#endif
         switch (alarm_wake_up_screen)
         {
-#if CONFIG_TUNER
-            case ALARM_START_FM:
-                new_screen = GO_TO_FM;
-                break;
-#endif
-#ifdef HAVE_RECORDING
-            case ALARM_START_REC:
-                recording_start_automatic = true;
-                new_screen = GO_TO_RECSCREEN;
-                break;
-#endif
             default:
                 new_screen = GO_TO_WPS;
                 break;
@@ -1513,13 +1439,6 @@ void root_menu(void)
                 previous_browser = next_screen;
                 goto load_next_screen;
                 break;
-#if CONFIG_TUNER
-            case GO_TO_WPS:
-            case GO_TO_FM:
-                previous_music = next_screen;
-                goto load_next_screen;
-                break;
-#endif /* With !CONFIG_TUNER previous_music is always GO_TO_WPS */
 
             case GO_TO_PREVIOUS:
             {

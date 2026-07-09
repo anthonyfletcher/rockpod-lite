@@ -55,12 +55,6 @@ enum {
 #endif
     GO_TO_WPS,
     GO_TO_MAINMENU,
-#ifdef HAVE_RECORDING
-    GO_TO_RECSCREEN,
-#endif
-#if CONFIG_TUNER
-    GO_TO_FM,
-#endif
     GO_TO_RECENTBMARKS,
     GO_TO_PLUGIN,
     /* Do Not add any items above here unless you want it to be able to 

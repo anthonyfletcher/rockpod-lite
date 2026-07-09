@@ -71,12 +71,6 @@
 #endif /* CONFIG_PLATFORM & PLATFORM_NATIVE */
 #include "power.h"
 
-#if ((CONFIG_PLATFORM & PLATFORM_NATIVE) || defined(SAMSUNG_YPR0) || defined(SAMSUNG_YPR1) \
-        || defined(SONY_NWZ_LINUX)) \
-    && CONFIG_TUNER != 0
-#include "tuner.h"
-#include "radio.h"
-#endif
 
 #include "scrollbar.h"
 #include "peakmeter.h"
@@ -2139,139 +2133,6 @@ static bool dbg_save_roms(void)
 }
 #endif /* CPU */
 
-#ifndef SIMULATOR
-#if CONFIG_TUNER
-
-#ifdef CONFIG_TUNER_MULTI
-static int tuner_type = 0;
-#define IF_TUNER_TYPE(type) if(tuner_type==type)
-#else
-#define IF_TUNER_TYPE(type)
-#endif
-
-static int radio_callback(int btn, struct gui_synclist *lists)
-{
-    (void)lists;
-    if (btn == ACTION_STD_CANCEL)
-        return btn;
-    simplelist_reset_lines();
-    simplelist_setline("HW detected: yes");
-
-#if (CONFIG_TUNER & LV24020LP)
-    simplelist_addline(
-                        "CTRL_STAT: %02X", lv24020lp_get(LV24020LP_CTRL_STAT) );
-    simplelist_addline(
-                        "RADIO_STAT: %02X", lv24020lp_get(LV24020LP_REG_STAT) );
-    simplelist_addline(
-                        "MSS_FM: %d kHz", lv24020lp_get(LV24020LP_MSS_FM) );
-    simplelist_addline(
-                        "MSS_IF: %d Hz", lv24020lp_get(LV24020LP_MSS_IF) );
-    simplelist_addline(
-                        "MSS_SD: %d Hz", lv24020lp_get(LV24020LP_MSS_SD) );
-    simplelist_addline(
-                        "if_set: %d Hz", lv24020lp_get(LV24020LP_IF_SET) );
-    simplelist_addline(
-                        "sd_set: %d Hz", lv24020lp_get(LV24020LP_SD_SET) );
-#endif /* LV24020LP */
-#if (CONFIG_TUNER & TEA5767)
-    struct tea5767_dbg_info nfo;
-    tea5767_dbg_info(&nfo);
-    simplelist_setline("Philips regs:");
-    simplelist_addline(
-             "   %s: %02X %02X %02X %02X %02X", "Read",
-             (unsigned)nfo.read_regs[0], (unsigned)nfo.read_regs[1],
-             (unsigned)nfo.read_regs[2], (unsigned)nfo.read_regs[3],
-             (unsigned)nfo.read_regs[4]);
-    simplelist_addline(
-             "   %s: %02X %02X %02X %02X %02X", "Write",
-             (unsigned)nfo.write_regs[0], (unsigned)nfo.write_regs[1],
-             (unsigned)nfo.write_regs[2], (unsigned)nfo.write_regs[3],
-             (unsigned)nfo.write_regs[4]);
-#endif /* TEA5767 */
-#if (CONFIG_TUNER & SI4700)
-    IF_TUNER_TYPE(SI4700)
-    {
-        struct si4700_dbg_info nfo;
-        si4700_dbg_info(&nfo);
-        simplelist_setline("SI4700 regs:");
-        for (int i = 0; i < 16; i += 4) {
-            simplelist_addline("%02X: %04X %04X %04X %04X",
-                i, nfo.regs[i], nfo.regs[i+1], nfo.regs[i+2], nfo.regs[i+3]);
-        }
-    }
-#endif /* SI4700 */
-#if (CONFIG_TUNER & RDA5802)
-    IF_TUNER_TYPE(RDA5802)
-    {
-        struct rda5802_dbg_info nfo;
-        rda5802_dbg_info(&nfo);
-        simplelist_setline("RDA5802 regs:");
-        for (int i = 0; i < 16; i += 4) {
-            simplelist_addline("%02X: %04X %04X %04X %04X",
-                i, nfo.regs[i], nfo.regs[i+1], nfo.regs[i+2], nfo.regs[i+3]);
-        }
-    }
-#endif /* RDA55802 */
-#if (CONFIG_TUNER & STFM1000)
-    IF_TUNER_TYPE(STFM1000)
-    {
-        struct stfm1000_dbg_info nfo;
-        stfm1000_dbg_info(&nfo);
-        simplelist_setline("STFM1000 regs:");
-        simplelist_addline("chipid: 0x%lx", nfo.chipid);
-    }
-#endif /* STFM1000 */
-#if (CONFIG_TUNER & TEA5760)
-    IF_TUNER_TYPE(TEA5760)
-    {
-        struct tea5760_dbg_info nfo;
-        tea5760_dbg_info(&nfo);
-        simplelist_setline("TEA5760 regs:");
-        for (int i = 0; i < 16; i += 4) {
-            simplelist_addline("%02X: %02X %02X %02X %02X",
-                i, nfo.read_regs[i], nfo.read_regs[i+1], nfo.read_regs[i+2], nfo.read_regs[i+3]);
-        }
-    }
-#endif /* TEA5760 */
-
-#ifdef HAVE_RDS_CAP
-    {
-        char buf[65*4];
-        uint16_t pi;
-        time_t seconds;
-
-        tuner_get_rds_info(RADIO_RDS_NAME, buf, sizeof (buf));
-        tuner_get_rds_info(RADIO_RDS_PROGRAM_INFO, &pi, sizeof (pi));
-        simplelist_addline("PI:%04X PS:'%-8s'", pi, buf);
-        tuner_get_rds_info(RADIO_RDS_TEXT, buf, sizeof (buf));
-        simplelist_addline("RT:%s", buf);
-        tuner_get_rds_info(RADIO_RDS_CURRENT_TIME, &seconds, sizeof (seconds));
-
-        struct tm* time = gmtime(&seconds);
-        simplelist_addline(
-            "CT:%4d-%02d-%02d %02d:%02d:%02d",
-            time->tm_year + 1900, time->tm_mon + 1, time->tm_mday,
-            time->tm_hour, time->tm_min, time->tm_sec);
-    }
-#endif /* HAVE_RDS_CAP */
-    return ACTION_REDRAW;
-}
-static bool dbg_fm_radio(void)
-{
-    struct simplelist_info info;
-#ifdef CONFIG_TUNER_MULTI
-    tuner_type = tuner_detect_type();
-#endif
-    info.scroll_all = true;
-    simplelist_info_init(&info, "FM Radio", 0, NULL);
-    simplelist_reset_lines();
-    simplelist_setline("HW detected: no");
-
-    info.action_callback = radio_hardware_present()?radio_callback : NULL;
-    return simplelist_show_list(&info);
-}
-#endif /* CONFIG_TUNER */
-#endif /* !SIMULATOR */
 
 #if !defined(APPLICATION)
 extern bool do_screendump_instead_of_usb;
@@ -2916,11 +2777,6 @@ static const struct {
 #endif /* PM_DEBUG */
 #ifdef BUFLIB_DEBUG_PRINT
         { "View buflib allocs", dbg_buflib_allocs },
-#endif
-#ifndef SIMULATOR
-#if CONFIG_TUNER
-        { "FM Radio", dbg_fm_radio },
-#endif
 #endif
 #if defined(HAVE_EEPROM) && !defined(HAVE_EEPROM_SETTINGS)
         { "Write back EEPROM", dbg_write_eeprom },
