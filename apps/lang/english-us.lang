@@ -1962,14 +1962,14 @@
     *: "Building database... %d found (OFF to return)"
     gigabeat*,iaudiom5,iaudiox5,mrobe100,samsungyh*: "Building database... %d found (LEFT to return)"
     gogearsa9200: "Building database... %d found (REW to return)"
-    ipod*,iriverh10,iriverh10_5gb,sansac200*,sansae200*,sansafuze*,vibe500: "Building database... %d found (PREV to return)"
+    ipod*,iriverh10,iriverh10_5gb,sansac200*,sansae200*,sansafuze*,vibe500: "Building database... %d found"
     iriverh100,iriverh120,iriverh300: "Building database... %d found (STOP to return)"
   </source>
   <dest>
     *: "Building database... %d found (OFF to return)"
     gigabeat*,iaudiom5,iaudiox5,mrobe100,samsungyh*: "Building database... %d found (LEFT to return)"
     gogearsa9200: "Building database... %d found (REW to return)"
-    ipod*,iriverh10,iriverh10_5gb,sansac200*,sansae200*,sansafuze*,vibe500: "Building database... %d found (PREV to return)"
+    ipod*,iriverh10,iriverh10_5gb,sansac200*,sansae200*,sansafuze*,vibe500: "Building database... %d found"
     iriverh100,iriverh120,iriverh300: "Building database... %d found (STOP to return)"
   </dest>
   <voice>
@@ -7108,7 +7108,7 @@
     gigabeatfx: "POWER to abort"
     gigabeats,sansafuzeplus: "BACK to abort"
     iaudiom5,iaudiox5: "Long PLAY to abort"
-    ipod*: "PLAY/PAUSE to abort"
+    ipod*: ""
     iriverh10,iriverh10_5gb,sansac200*,sansae200*,vibe500: "PREV to abort"
     iriverh100,iriverh120,iriverh300: "STOP to abort"
   </source>
@@ -7117,7 +7117,7 @@
     gigabeatfx: "POWER to abort"
     gigabeats,sansafuzeplus: "BACK to abort"
     iaudiom5,iaudiox5: "Long PLAY to abort"
-    ipod*: "PLAY/PAUSE to abort"
+    ipod*: ""
     iriverh10,iriverh10_5gb,sansac200*,sansae200*,vibe500: "PREV to abort"
     iriverh100,iriverh120,iriverh300: "STOP to abort"
   </dest>

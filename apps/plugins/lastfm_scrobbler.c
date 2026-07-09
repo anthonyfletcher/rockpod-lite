@@ -366,7 +366,7 @@ static void ask_enable_playbacklog(void)
 
 static int view_playback_log(void)
 {
-    const char* plugin = VIEWERS_DIR "/lastfm_scrobbler_viewer.rock";
+    const char* plugin = PLUGIN_DIR "/lastfm_scrobbler_viewer.rock";
     /*rb->splashf(100, "Opening %s", plugin);*/
     if (rb->file_exists(plugin))
     {

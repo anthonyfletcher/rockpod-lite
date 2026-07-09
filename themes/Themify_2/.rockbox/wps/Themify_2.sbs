@@ -169,7 +169,7 @@
 # Menu With Scrollbar
 #
 %Vl(Menu_With_Icons,0,0,302,30,6)%?Lc<%Vs(invert)A%aRB>
-%Vl(Menu_With_Icons,9,9,14,14,8)%?Lc<%Vs(invert)>%?if(%LT,=,%Sx(Sound Settings))<8>%?if(%LT,=,%Sx(Playback Settings))<3>%?if(%LT,=,%Sx(General Settings))<4>%?if(%LT,=,%Sx(Theme Settings))<i>%?if(%LT,=,%Sx(Recording Settings))<7>%?if(%LT,=,%Sx(Time & Date))<c>%?if(%LT,=,%Sx(Manage Settings))<4>%?if(%LT,=,%Sx(Album Cover Settings))<4>%?or(%if(%LT,=,%Sx(Main Menu)),%if(%LT,=,%Sx(Custom menu)))<x>%?if(%LT,=,%Sx(Search))<y>%?if(%LT,=,%Sx(Album Artist))<Í>%?or(%if(%LT,=,%Sx(Artist)),%if(%LT,=,%Sx(Composer)))<s>%?if(%LT,=,%Sx(Album))<Î>%?if(%LT,=,%Sx(Genre))<Ï>%?if(%LT,=,%Sx(Year))<Ð>%?if(%LT,=,%Sx(First Letter))<Ñ>%?if(%LT,=,%Sx(Tracks by))<b>%?if(%LT,=,%Sx(Shuffle Songs))<m>%?if(%LT,=,%Sx(User Rating))<Õ>%?if(%LT,=,%Sx(Recently Added))<Ò>%?if(%LT,=,%Sx(Playback History))<Ó>%?if(%LT,=,%Sx(Same as currently played track))<Ô>
+%Vl(Menu_With_Icons,9,9,14,14,8)%?Lc<%Vs(invert)>%?if(%LT,=,%Sx(Sound Settings))<8>%?if(%LT,=,%Sx(Playback Settings))<3>%?if(%LT,=,%Sx(General Settings))<4>%?if(%LT,=,%Sx(Theme Settings))<i>%?if(%LT,=,%Sx(Recording Settings))<7>%?if(%LT,=,%Sx(Time & Date))<c>%?if(%LT,=,%Sx(Manage Settings))<4>%?if(%LT,=,%Sx(Album Cover Settings))<4>%?or(%if(%LT,=,%Sx(Main Menu)),%if(%LT,=,%Sx(Custom menu)))<x>%?if(%LT,=,%Sx(Search))<y>%?if(%LT,=,%Sx(Album Artist))<Í>%?or(%if(%LT,=,%Sx(Artist)),%if(%LT,=,%Sx(Composer)))<s>%?if(%LT,=,%Sx(Album))<Î>%?if(%LT,=,%Sx(Genre))<Ï>%?if(%LT,=,%Sx(Year))<Ð>%?if(%LT,=,%Sx(First Letter))<Ñ>%?if(%LT,=,%Sx(Tracks by))<b>%?if(%LT,=,%Sx(Shuffle Songs))<m>%?if(%LT,=,%Sx(User Rating))<w>%?if(%LT,=,%Sx(Recently Added))<ã>%?if(%LT,=,%Sx(Playback History))<Ó>%?if(%LT,=,%Sx(Same as currently played track))<Ô>
 %Vl(Menu_With_Icons,29,4,265,22,-)%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT
 #
 # Home Menu with Scrollbar
@@ -178,7 +178,7 @@
 # original 8px right margin (182-29-145=8 -> 302-29-8=265).
 %Vl(Home_Menu_With_Icons,0,0,302,30,6)%?Lc<%Vs(invert)A%aRB>
 # icon display
-%Vl(Home_Menu_With_Icons,9,9,14,14,8)%?Lc<%Vs(invert)>%?if(%LT,=,%Sx(Album Artist))<Í|%?or(%if(%LT,=,%Sx(Artist)),%if(%LT,=,%Sx(Composer)))<s|%?if(%LT,=,%Sx(Album))<Î|%?if(%LT,=,%Sx(Genre))<Ï|%?if(%LT,=,%Sx(Year))<Ð|%?if(%LT,=,%Sx(First Letter))<Ñ|%?if(%LT,=,%Sx(Tracks by))<b|%?LI<1|2|3|4|5|6|7|8|5_|%?if(%LT,=,%Sx(Shortcuts))<z|6>|11|12|13|14|15|16|16|18|19|4_|7_|22|23|k_|%?if(%LT,=,%Sx(Resume Playback))<r|3>|26|27|9_|1_|30|31|32|0>>>>>>>>
+%Vl(Home_Menu_With_Icons,9,9,14,14,8)%?Lc<%Vs(invert)>%?if(%LT,=,%Sx(Album Artist))<Í|%?or(%if(%LT,=,%Sx(Artist)),%if(%LT,=,%Sx(Composer)))<s|%?if(%LT,=,%Sx(Album))<Î|%?if(%LT,=,%Sx(Genre))<Ï|%?if(%LT,=,%Sx(Year))<Ð|%?if(%LT,=,%Sx(First Letter))<Ñ|%?if(%LT,=,%Sx(Tracks by))<b|%?if(%LT,=,%Sx(Album covers))<Î|%?if(%LT,=,%Sx(Recently Added))<ã|%?if(%LT,=,%Sx(User Rating))<w|%?LI<1|2|3|4|5|6|7|8|5_|%?if(%LT,=,%Sx(Shortcuts))<z|6>|11|12|13|14|15|16|16|18|19|4_|7_|22|23|k_|%?if(%LT,=,%Sx(Resume Playback))<r|3>|26|27|9_|1_|30|31|32|0>>>>>>>>>>>
 #
 %Vl(Home_Menu_With_Icons,29,4,265,22,-)%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%?if(%LT,=,%Sx(Now Playing))<%Sx(Now Playing): %?it<%it|%fn>|%LT>
 #
@@ -208,7 +208,7 @@
 # No Scroll Menu
 #
 %Vl(No_Scroll_Menu_With_Icons,0,0,314,30,6)%?Lc<%Vs(invert)A%aRB>
-%Vl(No_Scroll_Menu_With_Icons,9,9,14,14,8)%?Lc<%Vs(invert)>%?if(%LT,=,%Sx(Sound Settings))<8>%?if(%LT,=,%Sx(Playback Settings))<3>%?if(%LT,=,%Sx(General Settings))<4>%?if(%LT,=,%Sx(Theme Settings))<i>%?if(%LT,=,%Sx(Recording Settings))<7>%?if(%LT,=,%Sx(Time & Date))<c>%?if(%LT,=,%Sx(Manage Settings))<4>%?if(%LT,=,%Sx(Album Cover Settings))<4>%?or(%if(%LT,=,%Sx(Main Menu)),%if(%LT,=,%Sx(Custom menu)))<x>%?if(%LT,=,%Sx(Search))<y>%?if(%LT,=,%Sx(Album Artist))<Í>%?or(%if(%LT,=,%Sx(Artist)),%if(%LT,=,%Sx(Composer)))<s>%?if(%LT,=,%Sx(Album))<Î>%?if(%LT,=,%Sx(Genre))<Ï>%?if(%LT,=,%Sx(Year))<Ð>%?if(%LT,=,%Sx(First Letter))<Ñ>%?if(%LT,=,%Sx(Tracks by))<b>%?if(%LT,=,%Sx(Shuffle Songs))<m>%?if(%LT,=,%Sx(User Rating))<Õ>%?if(%LT,=,%Sx(Recently Added))<Ò>%?if(%LT,=,%Sx(Playback History))<Ó>%?if(%LT,=,%Sx(Same as currently played track))<Ô>
+%Vl(No_Scroll_Menu_With_Icons,9,9,14,14,8)%?Lc<%Vs(invert)>%?if(%LT,=,%Sx(Sound Settings))<8>%?if(%LT,=,%Sx(Playback Settings))<3>%?if(%LT,=,%Sx(General Settings))<4>%?if(%LT,=,%Sx(Theme Settings))<i>%?if(%LT,=,%Sx(Recording Settings))<7>%?if(%LT,=,%Sx(Time & Date))<c>%?if(%LT,=,%Sx(Manage Settings))<4>%?if(%LT,=,%Sx(Album Cover Settings))<4>%?or(%if(%LT,=,%Sx(Main Menu)),%if(%LT,=,%Sx(Custom menu)))<x>%?if(%LT,=,%Sx(Search))<y>%?if(%LT,=,%Sx(Album Artist))<Í>%?or(%if(%LT,=,%Sx(Artist)),%if(%LT,=,%Sx(Composer)))<s>%?if(%LT,=,%Sx(Album))<Î>%?if(%LT,=,%Sx(Genre))<Ï>%?if(%LT,=,%Sx(Year))<Ð>%?if(%LT,=,%Sx(First Letter))<Ñ>%?if(%LT,=,%Sx(Tracks by))<b>%?if(%LT,=,%Sx(Shuffle Songs))<m>%?if(%LT,=,%Sx(User Rating))<w>%?if(%LT,=,%Sx(Recently Added))<ã>%?if(%LT,=,%Sx(Playback History))<Ó>%?if(%LT,=,%Sx(Same as currently played track))<Ô>
 %Vl(No_Scroll_Menu_With_Icons,27,4,277,22,-)%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT
 #
 #
@@ -217,7 +217,7 @@
 # keeping this row's original 7px right margin (194-30-157=7 -> 314-30-7=277).
 %Vl(No_Scroll_Home_Menu_With_Icons,0,0,314,30,6)%?Lc<%Vs(invert)A%aRB>
 # icon display
-%Vl(No_Scroll_Home_Menu_With_Icons,9,9,14,14,8)%?Lc<%Vs(invert)>%?if(%LT,=,%Sx(Album Artist))<Í|%?or(%if(%LT,=,%Sx(Artist)),%if(%LT,=,%Sx(Composer)))<s|%?if(%LT,=,%Sx(Album))<Î|%?if(%LT,=,%Sx(Genre))<Ï|%?if(%LT,=,%Sx(Year))<Ð|%?if(%LT,=,%Sx(First Letter))<Ñ|%?if(%LT,=,%Sx(Tracks by))<b|%?LI<1|2|3|4|5|6|7|8|5_|%?if(%LT,=,%Sx(Shortcuts))<z|6>|11|12|13|14|15|16|16|18|19|4_|7_|22|23|k_|%?if(%LT,=,%Sx(Resume Playback))<r|3>|26|27|9_|1_|30|31|32|0>>>>>>>>
+%Vl(No_Scroll_Home_Menu_With_Icons,9,9,14,14,8)%?Lc<%Vs(invert)>%?if(%LT,=,%Sx(Album Artist))<Í|%?or(%if(%LT,=,%Sx(Artist)),%if(%LT,=,%Sx(Composer)))<s|%?if(%LT,=,%Sx(Album))<Î|%?if(%LT,=,%Sx(Genre))<Ï|%?if(%LT,=,%Sx(Year))<Ð|%?if(%LT,=,%Sx(First Letter))<Ñ|%?if(%LT,=,%Sx(Tracks by))<b|%?if(%LT,=,%Sx(Album covers))<Î|%?if(%LT,=,%Sx(Recently Added))<ã|%?if(%LT,=,%Sx(User Rating))<w|%?LI<1|2|3|4|5|6|7|8|5_|%?if(%LT,=,%Sx(Shortcuts))<z|6>|11|12|13|14|15|16|16|18|19|4_|7_|22|23|k_|%?if(%LT,=,%Sx(Resume Playback))<r|3>|26|27|9_|1_|30|31|32|0>>>>>>>>>>>
 %Vl(No_Scroll_Home_Menu_With_Icons,30,4,277,22,-)%?Lc<%Vs(invert)%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT
 #
 #
@@ -393,7 +393,7 @@ uuuuu
 %Vl(USB_Screen,30,206,260,11,6)%VB%Vs(invert)ġĢĢĢĢĢĢĢĢĥģ
 %Vl(USB_Screen,30,177,260,40,-)
 #
-%Vl(USB_Screen,41,180,238,28,-)%VB%acEject before Disconnecting
+%Vl(USB_Screen,41,182,238,28,-)%VB%acEject before Disconnecting
 %Vl(USB_Screen,41,187,238,18,-)
 #
 %Vl(USB_Screen,85,27,150,150,9)%Vs(invert)%alÀÁÂÃ

@@ -135,7 +135,7 @@ static void tagcache_update_with_splash(void)
 
 static int dirs_to_scan(void)
 {
-    if(plugin_load(VIEWERS_DIR"/db_folder_select.rock", NULL) > PLUGIN_OK)
+    if(plugin_load(PLUGIN_DIR"/db_folder_select.rock", NULL) > PLUGIN_OK)
     {
         static const char *lines[] = {ID2P(LANG_TAGCACHE_BUSY),
                                       ID2P(LANG_TAGCACHE_FORCE_UPDATE)};
@@ -641,7 +641,7 @@ static int autoresume_nexttrack_callback(int action,
             break;
         case ACTION_EXIT_MENUITEM:
             if (global_settings.autoresume_automatic == AUTORESUME_NEXTTRACK_CUSTOM
-                && plugin_load(VIEWERS_DIR"/db_folder_select.rock",
+                && plugin_load(PLUGIN_DIR"/db_folder_select.rock",
                                str(LANG_AUTORESUME)) == PLUGIN_OK)
             {
                 global_settings.autoresume_automatic = oldval;

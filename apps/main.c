@@ -220,7 +220,7 @@ int main(void)
 #ifdef APPLICATION
                                 ROCKBOX_DIR
 #else
-                                PLUGIN_APPS_DIR
+                                PLUGIN_DIR
 #endif
                                     "/autostart.rock";
         if(file_exists(file)) /* no complaint if it doesn't exist */

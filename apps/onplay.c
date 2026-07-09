@@ -212,13 +212,13 @@ static int wps_view_cur_playlist(void)
 
 static void playing_time(void)
 {
-    plugin_load(PLUGIN_APPS_DIR"/playing_time.rock", NULL);
+    plugin_load(PLUGIN_DIR"/playing_time.rock", NULL);
 }
 
 #ifdef HAVE_ALBUMART
 static void view_album_art(void)
 {
-    plugin_load(VIEWERS_DIR"/imageviewer.rock", NULL);
+    plugin_load(PLUGIN_DIR"/imageviewer.rock", NULL);
 }
 #endif
 

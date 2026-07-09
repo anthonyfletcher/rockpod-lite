@@ -445,6 +445,27 @@ static int browser(void* param)
     return ret_val;
 }
 
+/* Replaces apps/menus/plugin_menu.c's old Games/Apps/Demos category
+ * picker: with plugins now flattened into a single directory (see
+ * apps/plugins/CATEGORIES and viewers.config, both emptied of their old
+ * subfolder-per-category entries), that picker's three sub-browses would
+ * each show a folder with nothing in it -- either everything or nothing,
+ * never a meaningful split. Browses PLUGIN_DIR directly, one flat list,
+ * matching how the file/database browsers already work. No activity
+ * push/pop here: load_screen() already pushes/pops ACTIVITY_PLUGINBROWSER
+ * for GO_TO_BROWSEPLUGINS specifically (see its switch above), same as
+ * the miscscrn()-dispatched screens this replaces. */
+static int plugins_browser(void* param)
+{
+    (void)param;
+    struct browse_context browse = {
+        .dirfilter = SHOW_PLUGINS,
+        .icon = Icon_NOICON,
+        .root = PLUGIN_DIR,
+    };
+    return rockbox_browse(&browse);
+}
+
 #ifdef HAVE_RECORDING
 static int recscrn(void* param)
 {
@@ -598,7 +619,6 @@ extern struct menu_item_ex
 #endif
         main_menu_,
         manage_settings,
-        plugin_menu,
         playlist_options,
         info_menu,
         system_menu;
@@ -620,7 +640,7 @@ static const struct root_items items[] = {
 #endif
 
     [GO_TO_RECENTBMARKS] =  { load_bmarks, NULL, &bookmark_settings_menu },
-    [GO_TO_BROWSEPLUGINS] = { miscscrn, &plugin_menu, NULL },
+    [GO_TO_BROWSEPLUGINS] = { plugins_browser, NULL, NULL },
     [GO_TO_PLAYLISTS_SCREEN] = { playlist_view_catalog, NULL,
                                                         &playlist_options },
     [GO_TO_PLAYLIST_VIEWER] = { playlist_view, NULL, &playlist_options },
@@ -660,7 +680,7 @@ MENUITEM_RETURNVALUE(file_browser, ID2P(LANG_DIR_BROWSER), GO_TO_FILEBROWSER,
 #ifdef HAVE_TAGCACHE
 MENUITEM_RETURNVALUE(db_browser, "Music", GO_TO_DBBROWSER,
                         NULL, Icon_Audio);
-MENUITEM_RETURNVALUE(pictureflow_item, "Album covers", GO_TO_PICTUREFLOW,
+MENUITEM_RETURNVALUE(pictureflow_item, ID2P(LANG_ALBUM_COVERS), GO_TO_PICTUREFLOW,
                         NULL, Icon_Rockbox);
 
 /* Dynamic-text menu items for the reserved GO_TO_TAGNAVI_FIRST.. slots: the

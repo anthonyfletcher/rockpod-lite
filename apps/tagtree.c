@@ -43,7 +43,6 @@
 #include "logf.h"
 #include "talk.h"
 #include "playlist.h"
-#include "keyboard.h"
 #include "gui/list.h"
 #include "core_alloc.h"
 #include "yesno.h"
@@ -2456,16 +2455,20 @@ int tagtree_enter(struct tree_context* c, bool is_visible)
                         }
                         else
                         {
-                            rc = kbd_input(searchstring, SEARCHSTR_SIZE, NULL);
-                            if (rc < 0 || !searchstring[0])
-                            {
-                                tagtree_exit(c, is_visible);
-                                tree_unlock_cache(c);
-                                core_unpin(tagtree_handle);
-                                return 0;
-                            }
-                            if (csi->clause[i][j]->numeric)
-                                csi->clause[i][j]->numeric_data = atoi(searchstring);
+                            /* No live substitution available (nothing is
+                             * currently playing, for a "same as currently
+                             * played track" style clause) -- show a message
+                             * and back out rather than prompting for typed
+                             * input, which used to be this entry point's
+                             * only other option (the on-screen keyboard,
+                             * previously also reachable directly via
+                             * tagnavi.config's "Search by..." menu, since
+                             * removed). */
+                            splash(HZ, ID2P(LANG_NOTHING_PLAYING));
+                            tagtree_exit(c, is_visible);
+                            tree_unlock_cache(c);
+                            core_unpin(tagtree_handle);
+                            return 0;
                         }
 
 

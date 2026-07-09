@@ -1,6 +1,9 @@
 /* plugins common to all models -- trimmed to keyremap and lastfm_scrobbler
- * plus four more that turned out to be load-bearing for other features,
+ * plus six more that turned out to be load-bearing for other features,
  * not just standalone utilities, so they're staying:
+ *   - playing_time.c: apps/onplay.c's "Playing Time" current-playlist menu
+ *     item plugin_load()s this directly; without it that item silently
+ *     fails to open.
  *   - db_folder_select.c: apps/menus/settings_menu.c's "Directories to
  *     Scan" database setting and the AUTORESUME_NEXTTRACK_CUSTOM folder
  *     picker both plugin_load() this directly; without it those two
@@ -10,8 +13,13 @@
  *     view.
  *   - properties.c: apps/onplay.c's properties_item/track_info_item menu
  *     entries and the HOTKEY_PROPERTIES hotkey all load this via
- *     viewers.config's "*,viewers/properties,-" mapping; without it,
- *     File Properties/Track Info silently fail to open.
+ *     viewers.config's "*,properties,-" mapping; without it, File
+ *     Properties/Track Info silently fail to open.
+ *   - lastfm_scrobbler_viewer.c: lastfm_scrobbler.c's own "View Playback
+ *     Log" feature (view_playback_log()) plugin_open()s this directly;
+ *     without it that one sub-feature silently fails (file_exists() guards
+ *     it, so it degrades gracefully rather than erroring, but it's still
+ *     genuinely load-bearing for that feature to work at all).
  *   - credits.c: apps/menus/main_menu.c's show_credits() does fall back
  *     to a plain info screen if this is missing, so it's not load-bearing
  *     the same way, but keeping it anyway.
@@ -24,9 +32,11 @@
  * file was being edited anyway. */
 #ifdef HAVE_TAGCACHE
 db_folder_select.c
+lastfm_scrobbler_viewer.c
 #endif
 credits.c
 keyremap.c
 lastfm_scrobbler.c
+playing_time.c
 properties.c
 view_text.c

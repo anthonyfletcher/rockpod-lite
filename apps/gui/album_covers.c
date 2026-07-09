@@ -43,6 +43,7 @@
 #include "settings.h"
 #include "lang.h"
 #include "splash.h"
+#include "bitmaps/no_album_cover.h" /* bm_no_album_cover -- see create_empty_slide() */
 #include "viewport.h"
 #include "misc.h"             /* default_event_handler, warn_on_pl_erase, fix_path_part */
 #include "onplay.h"           /* onplay_show_playlist_cat_menu/menu */
@@ -211,9 +212,12 @@ static void pf_update_dynamic_colors(void)
 #define EV_WAKEUP 1337
 
 #define EMPTY_SLIDE CACHE_PREFIX "/emptyslide.pfraw"
-/* "?" slide source bitmap -- still shipped from the plugin demos dir since
- * this is just a plain path macro (rbpaths.h), not a plugin-lifecycle API. */
-#define EMPTY_SLIDE_BMP PLUGIN_DEMOS_DIR "/pictureflow_emptyslide.bmp"
+/* "?" slide source bitmap: compiled in as bm_no_album_cover (apps/bitmaps/
+ * native/SOURCES) rather than read from a file -- see create_empty_slide().
+ * Used to live under the old pictureflow plugin's demos-category folder
+ * (PLUGIN_DEMOS_DIR), a path that no longer exists now that plugins are a
+ * flat list (see apps/plugins/CATEGORIES and viewers.config), and this was
+ * never really a plugin asset to begin with. */
 
 /* Ordered Bayer dithering for 24-bit to RGB565 conversion */
 static const unsigned char pf_dither_table[16] =
@@ -1921,7 +1925,7 @@ static bool incremental_albumart_cache(bool verbose)
     }
 
     if (!get_albumart_for_index_from_db(idx, aa_cache.file, sizeof(aa_cache.file)))
-        goto aa_failure; //strcpy(aa_cache.file, EMPTY_SLIDE_BMP);
+        goto aa_failure;
 
 
     aa_cache.input_bmp.data = aa_cache.buf;
@@ -2000,21 +2004,49 @@ static bool create_albumart_cache(void)
  */
 static int create_empty_slide(bool force)
 {
-    const unsigned int format = FORMAT_NATIVE|FORMAT_RESIZE|FORMAT_KEEP_ASPECT;
-
     if (!aa_cache.buf)
         return false;
 
     if ( force || ! file_exists( EMPTY_SLIDE ) )  {
-        aa_cache.input_bmp.width = DISPLAY_WIDTH;
-        aa_cache.input_bmp.height = DISPLAY_HEIGHT;
+        /* bm_no_album_cover is compiled in (apps/bitmaps/native/SOURCES),
+         * not read from a file -- this fork targets a single fixed LCD
+         * size, so DISPLAY_WIDTH/DISPLAY_HEIGHT are themselves build-time
+         * constants, and center-cropping (never scaling) is enough to fit
+         * whatever size the source .bmp happens to be. Target dimension is
+         * DISPLAY_WIDTH x DISPLAY_WIDTH (square), not DISPLAY_WIDTH x
+         * DISPLAY_HEIGHT: DISPLAY_WIDTH < DISPLAY_HEIGHT on this target
+         * (128 x 160), and real album art -- square, 1:1 -- always ends up
+         * constrained by the narrower dimension after
+         * FORMAT_KEEP_ASPECT's resize, i.e. 128x128, with the leftover
+         * vertical space reserved for the text caption. A square crop
+         * matches that, rather than stretching the placeholder to fill
+         * the taller box no real cover ever actually fills. If the source
+         * is smaller than that in some dimension, that dimension is used
+         * as-is (no letterboxing) -- render_slide()'s own vertical_offset
+         * centering already handles a slide shorter than the box, same as
+         * any real cover art would need. */
+        int src_w = BMPWIDTH_no_album_cover;
+        int src_h = BMPHEIGHT_no_album_cover;
+        int dst_w = MIN(src_w, DISPLAY_WIDTH);
+        int dst_h = MIN(src_h, DISPLAY_WIDTH);
+        int x_off = (src_w - dst_w) / 2;
+        int y_off = (src_h - dst_h) / 2;
+        pix_t *dst = (pix_t*)aa_cache.buf;
+        int y;
+
+        for (y = 0; y < dst_h; y++)
+        {
+            memcpy(dst + y * dst_w,
+                   no_album_cover + (y + y_off) * src_w + x_off,
+                   dst_w * sizeof(pix_t));
+        }
+
+        aa_cache.input_bmp.width = dst_w;
+        aa_cache.input_bmp.height = dst_h;
 #if LCD_DEPTH > 1
         aa_cache.input_bmp.format = FORMAT_NATIVE;
 #endif
         aa_cache.input_bmp.data = (char*)aa_cache.buf;
-
-        read_bmp_file(EMPTY_SLIDE_BMP, &aa_cache.input_bmp,
-                     aa_cache.buf_sz, format, &format_transposed);
 
         if (!save_pfraw(EMPTY_SLIDE, &aa_cache.input_bmp))
             return false;

@@ -23,7 +23,6 @@ menus/theme_menu.c
 #ifdef HAVE_TAGCACHE
 menus/album_covers_menu.c
 #endif
-menus/plugin_menu.c
 #if CONFIG_TUNER
 menus/radio_menu.c
 #endif

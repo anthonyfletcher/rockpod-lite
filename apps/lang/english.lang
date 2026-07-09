@@ -1185,6 +1185,34 @@
   </voice>
 </phrase>
 <phrase>
+  id: LANG_ALBUM_COVERS
+  desc: in the main menu
+  user: core
+  <source>
+    *: "Album covers"
+  </source>
+  <dest>
+    *: "Album covers"
+  </dest>
+  <voice>
+    *: "Album covers"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_ALBUM_COVER_SETTINGS
+  desc: in the main menu
+  user: core
+  <source>
+    *: "Album Cover Settings"
+  </source>
+  <dest>
+    *: "Album Cover Settings"
+  </dest>
+  <voice>
+    *: "Album Cover Settings"
+  </voice>
+</phrase>
+<phrase>
   id: LANG_PLAYBACK
   desc: in settings_menu()
   user: core
@@ -2077,14 +2105,14 @@
     *: "Building database... %d found (OFF to return)"
     gigabeat*,iaudiom5,iaudiox5,mrobe100,samsungyh*: "Building database... %d found (LEFT to return)"
     gogearsa9200: "Building database... %d found (REW to return)"
-    ipod*,iriverh10,iriverh10_5gb,sansac200*,sansae200*,sansafuze*,vibe500: "Building database... %d found (PREV to return)"
+    ipod*,iriverh10,iriverh10_5gb,sansac200*,sansae200*,sansafuze*,vibe500: "Building database... %d found"
     iriverh100,iriverh120,iriverh300: "Building database... %d found (STOP to return)"
   </source>
   <dest>
     *: "Building database... %d found (OFF to return)"
     gigabeat*,iaudiom5,iaudiox5,mrobe100,samsungyh*: "Building database... %d found (LEFT to return)"
     gogearsa9200: "Building database... %d found (REW to return)"
-    ipod*,iriverh10,iriverh10_5gb,sansac200*,sansae200*,sansafuze*,vibe500: "Building database... %d found (PREV to return)"
+    ipod*,iriverh10,iriverh10_5gb,sansac200*,sansae200*,sansafuze*,vibe500: "Building database... %d found"
     iriverh100,iriverh120,iriverh300: "Building database... %d found (STOP to return)"
   </dest>
   <voice>
@@ -7072,6 +7100,21 @@
   </voice>
 </phrase>
 <phrase>
+  id: LANG_NOTHING_PLAYING
+  desc: Message shown when a "same as currently played track" style tagtree
+        entry is used but nothing is currently playing
+  user: core
+  <source>
+    *: "Nothing playing"
+  </source>
+  <dest>
+    *: "Nothing playing"
+  </dest>
+  <voice>
+    *: "Nothing playing"
+  </voice>
+</phrase>
+<phrase>
   id: LANG_PLAYLIST_ACCESS_ERROR
   desc: Playlist error
   user: core
@@ -7293,7 +7336,7 @@
     gigabeatfx: "POWER to abort"
     gigabeats,sansafuzeplus: "BACK to abort"
     iaudiom5,iaudiox5: "Long PLAY to abort"
-    ipod*: "PLAY/PAUSE to abort"
+    ipod*: ""
     iriverh10,iriverh10_5gb,sansac200*,sansae200*,vibe500: "PREV to abort"
     iriverh100,iriverh120,iriverh300: "STOP to abort"
   </source>
@@ -7302,7 +7345,7 @@
     gigabeatfx: "POWER to abort"
     gigabeats,sansafuzeplus: "BACK to abort"
     iaudiom5,iaudiox5: "Long PLAY to abort"
-    ipod*: "PLAY/PAUSE to abort"
+    ipod*: ""
     iriverh10,iriverh10_5gb,sansac200*,sansae200*,vibe500: "PREV to abort"
     iriverh100,iriverh120,iriverh300: "STOP to abort"
   </dest>

@@ -116,16 +116,16 @@ MAKE_MENU(manage_settings, ID2P(LANG_MANAGE_MENU), NULL, Icon_Config,
 
 static int show_credits(void)
 {
-    if (plugin_load(VIEWERS_DIR "/credits.rock", NULL) != PLUGIN_OK)
+    if (plugin_load(PLUGIN_DIR "/credits.rock", NULL) != PLUGIN_OK)
         show_info();
     return 0;
 }
 
 static int show_legal(void)
 {
-    if (plugin_load(VIEWERS_DIR "/text_viewer.rock", ROCKBOX_DIR "/docs/COPYING.txt") != PLUGIN_OK)
+    if (plugin_load(PLUGIN_DIR "/text_viewer.rock", ROCKBOX_DIR "/docs/COPYING.txt") != PLUGIN_OK)
         show_info();
-    if (plugin_load(VIEWERS_DIR "/text_viewer.rock", ROCKBOX_DIR "/docs/LICENSES.txt") != PLUGIN_OK)
+    if (plugin_load(PLUGIN_DIR "/text_viewer.rock", ROCKBOX_DIR "/docs/LICENSES.txt") != PLUGIN_OK)
         show_info();
     return 0;
 }
