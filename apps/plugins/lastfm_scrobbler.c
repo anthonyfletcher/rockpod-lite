@@ -204,9 +204,7 @@ static int scrobbler_menu_action(int selection, bool has_log)
             rb->set_option(ID2P(LANG_TRACK_INFO), &gConfig.tracknfo, RB_INT,
                            tracknfo_option, 3, NULL);
             break;
-        case 5: /* sep */
-            break;
-        case 6: /* set defaults */
+        case 5: /* set defaults */
         {
             const struct text_message prompt = {
                 (const char*[]){ ID2P(LANG_AUDIOSCROBBLER),
@@ -218,9 +216,7 @@ static int scrobbler_menu_action(int selection, bool has_log)
             }
             break;
         }
-        case 7: /*sep*/
-            break;
-        case 8: /* Cancel */
+        case 6: /* Cancel */
             has_log = false;
             if (crc != rb->crc_32(&gConfig, sizeof(struct scrobbler_cfg), 0xFFFFFFFF))
             {
@@ -231,7 +227,7 @@ static int scrobbler_menu_action(int selection, bool has_log)
                 }
             }
             /* fallthrough */
-        case 9: /* Export & exit */
+        case 7: /* Export & exit */
         {
             res = configfile_save(CFG_FILE, config, gCfg_sz, CFG_VER);
             if (res >= 0)
@@ -292,9 +288,7 @@ static int scrobbler_menu(void)
                         ID2P(LANG_COMPRESSOR_THRESHOLD),
                         "Minimum elapsed",
                         ID2P(LANG_TRACK_INFO), //Skip tracks without metadata
-                        ID2P(VOICE_BLANK),
                         ID2P(LANG_REVERT_TO_DEFAULT_SETTINGS),
-                        ID2P(VOICE_BLANK),
                         ID2P(LANG_CANCEL_0),
                         ID2P(LANG_EXPORT));
 
@@ -320,7 +314,23 @@ static int scrobbler_menu(void)
         }
         selection=rb->do_menu(&settings_menu,&selection, NULL, false);
 
+        /* do_menu() undoes its own theme viewport override before
+         * returning, but scrobbler_menu_action() may pop up a
+         * set_option()/set_bool()/set_int() editor (or a yes/no prompt)
+         * next -- those plugin API calls always use a NULL parent
+         * viewport internally, so without re-enabling the override here
+         * they'd render full-screen instead of confined to the theme's
+         * sub-menu region like the rest of this screen. Paired with the
+         * matching undo() below so the viewport theme stack stays
+         * balanced across loop iterations. */
+        FOR_NB_SCREENS(i)
+            rb->viewportmanager_theme_enable(i, true, NULL);
+
         res = scrobbler_menu_action(selection, has_log);
+
+        FOR_NB_SCREENS(i)
+            rb->viewportmanager_theme_undo(i, false);
+
         if (res != SCROBBLER_MENU)
             return res;
 
@@ -967,24 +977,16 @@ enum plugin_status plugin_start(const void* parameter)
         configfile_save(CFG_FILE, config, gCfg_sz, CFG_VER);
         rb->splash(HZ, ID2P(LANG_REVERT_TO_DEFAULT_SETTINGS));
     }
-    else if (!parameter && rb->global_settings->playback_log
-             && rb->global_status->last_screen != GO_TO_PLUGIN)
-    {
-        if (rb->strcasestr(rb->tree_get_context()->currdir, PLUGIN_APPS_DIR) == NULL)
-        {
-            logf("Auto Export - Last screen: %d", rb->global_status->last_screen);
-            if (rb->file_exists(ROCKBOX_DIR "/playback.log")
-             || rb->file_exists(ROCKBOX_DIR "/playback_0001.log"))
-            {
-                return scrobbler_menu_action(9, true); /* export scrobbler file */
-            }
-            else
-            {
-                rb->splashf(HZ, "0 %s", rb->str(LANG_TRACKS));
-                return PLUGIN_OK;
-            }
-        }
-    }
+    /* There used to be an "auto export" branch here that skipped the menu
+     * and silently exported straight away whenever last_screen wasn't
+     * GO_TO_PLUGIN -- that made sense back when this plugin could only be
+     * reached via the file/plugin browser (GO_TO_PLUGIN) or some other
+     * incidental invocation. Now the only way in is the explicit Settings
+     * menu row (see apps/menus/main_menu.c's lastfm_scrobbler_item), which
+     * never sets last_screen to GO_TO_PLUGIN, so that branch always fired
+     * on every open after the first (once the config file existed and
+     * playback_log was enabled) and the menu became unreachable -- opening
+     * it just showed "Saved x tracks" and exited. Always show the menu now. */
 
     return scrobbler_menu();
 }

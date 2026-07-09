@@ -56,7 +56,7 @@ int rolo_load(const char* filename)
 {
     lcd_clear_display();
     lcd_puts(0, 0, "ROLO...");
-    lcd_puts(0, 1, "Loading");
+    lcd_puts(0, 2, "Loading");
     lcd_update();
 #ifdef HAVE_REMOTE_LCD
     lcd_remote_clear_display();

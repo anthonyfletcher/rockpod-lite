@@ -289,7 +289,7 @@ int main_menu_config(void)
         gui_synclist_set_voice_callback(&list, menu_speak_item);
     gui_synclist_set_icon_callback(&list, menu_get_icon);
     gui_synclist_set_nb_items(&list, menu_item_count);
-    gui_synclist_set_title(&list, str(LANG_MAIN_MENU), Icon_Rockbox);
+    gui_synclist_set_title(&list, str(LANG_MAIN_MENU_SETTINGS), Icon_Rockbox);
     gui_synclist_draw(&list);
     gui_synclist_speak_item(&list);
 
@@ -318,7 +318,7 @@ int main_menu_config(void)
                 break;
             case ACTION_STD_CONTEXT:
             {
-                MENUITEM_STRINGLIST(menu, ID2P(LANG_MAIN_MENU), NULL,
+                MENUITEM_STRINGLIST(menu, ID2P(LANG_MAIN_MENU_SETTINGS), NULL,
                                     ID2P(LANG_MOVE_ITEM_UP),
                                     ID2P(LANG_MOVE_ITEM_DOWN),
                                     ID2P(LANG_LOAD_DEFAULT_CONFIGURATION));
@@ -354,7 +354,7 @@ int main_menu_config(void)
                     default:
                         gui_synclist_speak_item(&list);
                 }
-                gui_synclist_set_title(&list, str(LANG_MAIN_MENU), Icon_Rockbox);
+                gui_synclist_set_title(&list, str(LANG_MAIN_MENU_SETTINGS), Icon_Rockbox);
                 break;
             }
             case ACTION_STD_CANCEL:

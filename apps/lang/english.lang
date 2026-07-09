@@ -332,7 +332,7 @@
   <source>
     *: "PLAY = Yes"
     cowond2*: "MENU, or top-right = Yes"
-    creativezen*,gigabeat*,iaudiom5,iaudiox5,ipod*,iriverh10,iriverh10_5gb,mrobe100,sansac200*,sansaclip*,sansaconnect,sansae200*,sansafuze*: "SELECT = Yes"
+    creativezen*,gigabeat*,iaudiom5,iaudiox5,ipod*,iriverh10,iriverh10_5gb,mrobe100,sansac200*,sansaclip*,sansaconnect,sansae200*,sansafuze*: "Yes (select)"
     iriverh100,iriverh120,iriverh300: "NAVI = Yes"
     mrobe500: "PLAY, POWER, or top-right = Yes"
     vibe500: "OK = Yes"
@@ -340,7 +340,7 @@
   <dest>
     *: "PLAY = Yes"
     cowond2*: "MENU, or top-right = Yes"
-    creativezen*,gigabeat*,iaudiom5,iaudiox5,ipod*,iriverh10,iriverh10_5gb,mrobe100,sansac200*,sansaclip*,sansaconnect,sansae200*,sansafuze*: "SELECT = Yes"
+    creativezen*,gigabeat*,iaudiom5,iaudiox5,ipod*,iriverh10,iriverh10_5gb,mrobe100,sansac200*,sansaclip*,sansaconnect,sansae200*,sansafuze*: "Yes (select)"
     iriverh100,iriverh120,iriverh300: "NAVI = Yes"
     mrobe500: "PLAY, POWER, or top-right = Yes"
     vibe500: "OK = Yes"
@@ -354,10 +354,10 @@
   desc: Generic string to use to cancel
   user: core
   <source>
-    *: "Any Other = No"
+    *: "No (any other key)"
   </source>
   <dest>
-    *: "Any Other = No"
+    *: "No (any other key)"
   </dest>
   <voice>
     *: ""
@@ -1799,16 +1799,16 @@
 </phrase>
 <phrase>
   id: LANG_AUDIOSCROBBLER
-  desc: "Last.fm Logger" in Plugin/apps/scrobbler
+  desc: Settings menu row and lastfm_scrobbler.rock's own menu title
   user: core
   <source>
-    *: "Last.fm Logger"
+    *: "Last.fm Settings"
   </source>
   <dest>
-    *: "Last.fm Logger"
+    *: "Last.fm Settings"
   </dest>
   <voice>
-    *: "Last.fm Logger"
+    *: "Last.fm Settings"
   </voice>
 </phrase>
 <phrase>
@@ -3511,6 +3511,23 @@
   </dest>
   <voice>
     *: "Main Menu"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_MAIN_MENU_SETTINGS
+  desc: Settings menu row and the Customize Main Menu screen's own title --
+        deliberately distinct from LANG_MAIN_MENU, which stays as-is for the
+        "start in: previous screen/main menu" choice setting, a different
+        context
+  user: core
+  <source>
+    *: "Main Menu Settings"
+  </source>
+  <dest>
+    *: "Main Menu Settings"
+  </dest>
+  <voice>
+    *: "Main Menu Settings"
   </voice>
 </phrase>
 <phrase>
