@@ -50,9 +50,6 @@
 #include "mv.h"
 #endif
 
-#if CONFIG_TUNER
-#include "radio.h"
-#endif
 #include "wps.h"
 
 static struct compare_data
@@ -377,16 +374,9 @@ int ft_load(struct tree_context* c, const char* tempdir)
             CHK_FT(SHOW_WPS,  FILE_ATTR_WPS)  ||
             CHK_FT(SHOW_FONT, FILE_ATTR_FONT) ||
             CHK_FT(SHOW_SBS,  FILE_ATTR_SBS)  ||
-#if CONFIG_TUNER
-            CHK_FT(SHOW_FMS, FILE_ATTR_FMS) ||
-            CHK_FT(SHOW_FMR, FILE_ATTR_FMR) ||
-#endif
 #ifdef HAVE_REMOTE_LCD
             CHK_FT(SHOW_RWPS, FILE_ATTR_RWPS) ||
             CHK_FT(SHOW_RSBS, FILE_ATTR_RSBS) ||
-#if CONFIG_TUNER
-            CHK_FT(SHOW_RFMS, FILE_ATTR_RFMS) ||
-#endif
 #endif
             CHK_FT(SHOW_M3U, FILE_ATTR_M3U) ||
             CHK_FT(SHOW_CFG, FILE_ATTR_CFG) ||
@@ -637,21 +627,6 @@ int ft_enter(struct tree_context* c)
                 }
                 break;
             }
-#if CONFIG_TUNER
-                /* fmr preset file */
-            case FILE_ATTR_FMR:
-                radio_load_presets(buf);
-                rc = GO_TO_FM;
-                break;
-            case FILE_ATTR_FMS:
-                ft_apply_skin_file(buf, global_settings.fms_file);
-                break;
-#ifdef HAVE_REMOTE_LCD
-            case FILE_ATTR_RFMS:
-                ft_apply_skin_file(buf, global_settings.rfms_file);
-                break;
-#endif
-#endif
             case FILE_ATTR_SBS:
                 ft_apply_skin_file(buf, global_settings.sbs_file);
                 break;

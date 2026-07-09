@@ -67,10 +67,6 @@
 
 #include "debug.h"
 
-#if CONFIG_TUNER
-#include "radio.h"
-#endif
-
 #ifdef IPOD_ACCESSORY_PROTOCOL
 #include "iap.h"
 #endif
@@ -80,9 +76,6 @@
 #endif
 #include "tree.h"
 #include "eeprom_settings.h"
-#if defined(HAVE_RECORDING) && !defined(__PCTOOL__)
-#include "recording.h"
-#endif
 #if !defined(__PCTOOL__)
 #include "bmp.h"
 #include "icons.h"
@@ -369,9 +362,6 @@ static bool clean_shutdown(enum shutdown_type sd_type,
 #endif
     {
         bool batt_safe = battery_level_safe();
-#if defined(HAVE_RECORDING)
-        int audio_stat = audio_status();
-#endif
 
         FOR_NB_SCREENS(i)
         {
@@ -414,15 +404,6 @@ static bool clean_shutdown(enum shutdown_type sd_type,
         if (batt_safe) /* do not save on critical battery */
 #endif
         {
-#if defined(HAVE_RECORDING)
-            if (audio_stat & AUDIO_STATUS_RECORD)
-            {
-                rec_command(RECORDING_CMD_STOP);
-                /* wait for stop to complete */
-                while (audio_status() & AUDIO_STATUS_RECORD)
-                    sleep(1);
-            }
-#endif
             bookmark_autobookmark(false);
 
             /* audio_stop_recording == audio_stop for HWCODEC */
@@ -430,10 +411,6 @@ static bool clean_shutdown(enum shutdown_type sd_type,
 
             if (callback != NULL)
                 callback(parameter);
-
-#if defined(HAVE_RECORDING)
-            audio_close_recording();
-#endif
 
             system_flush();
 #ifdef HAVE_EEPROM_SETTINGS
@@ -471,9 +448,6 @@ bool list_stop_handler(void)
 {
     bool ret = false;
 
-#if CONFIG_TUNER
-    radio_stop();
-#endif
 
     /* Stop the music if it is playing */
     if(audio_status())

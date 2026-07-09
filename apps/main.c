@@ -95,9 +95,6 @@
 #include "audio_thread.h"
 #include "playback.h"
 #include "tdspeed.h"
-#if defined(HAVE_RECORDING) && !defined(SIMULATOR)
-#include "pcm_record.h"
-#endif
 
 #ifdef BUTTON_REC
     #define SETTINGS_RESET BUTTON_REC
@@ -105,9 +102,6 @@
     #define SETTINGS_RESET BUTTON_A
 #endif
 
-#if CONFIG_TUNER
-#include "radio.h"
-#endif
 #if (CONFIG_STORAGE & STORAGE_MMC)
 #include "ata_mmc.h"
 #endif
@@ -393,9 +387,6 @@ static void init(void)
 #ifdef DEBUG
     debug_init();
 #endif
-#if CONFIG_TUNER
-    radio_init();
-#endif
     /* Keep the order of this 3 (viewportmanager handles statusbars)
      * Must be done before any code uses the multi-screen API */
     gui_syncstatusbar_init(&statusbars);
@@ -525,10 +516,6 @@ static void init(void)
 #if !defined(NEED_ATA_POWER_BATT_MEASURE) || \
     (CONFIG_CHARGING > CHARGING_MONITOR)
     powermgmt_init();
-#endif
-
-#if CONFIG_TUNER
-    radio_init();
 #endif
 
 #ifdef HAVE_HARDWARE_CLICK

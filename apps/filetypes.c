@@ -76,10 +76,6 @@ static const struct filetype_inbuilt inbuilt_filetypes[] = {
 #ifdef HAVE_REMOTE_LCD
     { "rwps", FILE_ATTR_RWPS },
 #endif
-#if CONFIG_TUNER
-    { "fmr",  FILE_ATTR_FMR },
-    { "fms",  FILE_ATTR_FMS },
-#endif
     { "log",  FILE_ATTR_LOG   },
     { "lng",  FILE_ATTR_LNG   },
     { "rock", FILE_ATTR_ROCK  },
@@ -92,9 +88,6 @@ static const struct filetype_inbuilt inbuilt_filetypes[] = {
     { "sbs",  FILE_ATTR_SBS   },
 #ifdef HAVE_REMOTE_LCD
     { "rsbs", FILE_ATTR_RSBS },
-#if CONFIG_TUNER
-    { "rfms", FILE_ATTR_RFMS },
-#endif
 #endif
 #ifdef BOOTFILE_EXT
     { BOOTFILE_EXT,  FILE_ATTR_MOD },
@@ -119,10 +112,6 @@ static const struct fileattr_icon_voice inbuilt_attr_icons_voices[] = {
 #ifdef HAVE_REMOTE_LCD
     {FILE_ATTR_RWPS,   Icon_Wps,       VOICE_EXT_RWPS },
 #endif
-#if CONFIG_TUNER
-    { FILE_ATTR_FMR,   Icon_Preset,    LANG_FMR },
-    { FILE_ATTR_FMS,   Icon_Wps,       VOICE_EXT_FMS },
-#endif
     { FILE_ATTR_LNG,   Icon_Language,  LANG_LANGUAGE },
     { FILE_ATTR_ROCK,  Icon_Plugin,    VOICE_EXT_ROCK },
     { FILE_ATTR_LUA,   Icon_Plugin,    VOICE_EXT_ROCK },
@@ -134,9 +123,6 @@ static const struct fileattr_icon_voice inbuilt_attr_icons_voices[] = {
     { FILE_ATTR_SBS,   Icon_Wps,       VOICE_EXT_SBS },
 #ifdef HAVE_REMOTE_LCD
     { FILE_ATTR_RSBS,  Icon_Wps,       VOICE_EXT_RSBS },
-#if CONFIG_TUNER
-    { FILE_ATTR_RFMS,  Icon_Wps,       VOICE_EXT_RFMS },
-#endif
 #endif
 #if defined(BOOTFILE_EXT) || defined(BOOTFILE_EXT2)
     { FILE_ATTR_MOD,   Icon_Firmware,  VOICE_EXT_AJZ },

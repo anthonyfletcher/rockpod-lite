@@ -56,9 +56,6 @@
 #include "pathfuncs.h"
 #include "filetree.h"
 #include "tagtree.h"
-#ifdef HAVE_RECORDING
-#include "recorder/recording.h"
-#endif
 #include "rtc.h"
 #include "dircache.h"
 #ifdef HAVE_TAGCACHE
@@ -823,10 +820,6 @@ static int dirbrowse(void)
                         return exit_to_new_screen(GO_TO_PLUGIN);
                     case GO_TO_WPS:
                         return exit_to_new_screen(GO_TO_WPS);
-#if CONFIG_TUNER
-                    case GO_TO_FM:
-                        return exit_to_new_screen(GO_TO_FM);
-#endif
                     case GO_TO_ROOT: exit_func = true; break;
                     default:
                         break;
@@ -869,10 +862,6 @@ static int dirbrowse(void)
                 return exit_to_new_screen(GO_TO_ROOT);
                 break;
 
-#ifdef HAVE_RECORDING
-            case ACTION_STD_REC:
-                return exit_to_new_screen(GO_TO_RECSCREEN);
-#endif
 
             case ACTION_TREE_WPS:
                 return exit_to_new_screen(GO_TO_PREVIOUS_MUSIC);

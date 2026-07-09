@@ -500,13 +500,6 @@ int do_menu(const struct menu_item_ex *start_menu, int *start_selected,
             redraw_lists = true;
         }
 #endif
-#ifdef HAVE_RECORDING
-        else if (action == ACTION_STD_REC)
-        {
-            ret = GO_TO_RECSCREEN;
-            done = true;
-        }
-#endif
         else if (action == ACTION_TREE_WPS)
         {
             ret = GO_TO_PREVIOUS_MUSIC;

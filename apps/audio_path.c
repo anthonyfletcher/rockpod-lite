@@ -31,9 +31,6 @@
 #endif
 #include "spdif.h"
 #endif
-#if CONFIG_TUNER
-#include "radio.h"
-#endif
 #if defined(IPOD_ACCESSORY_PROTOCOL) && defined(HAVE_LINE_REC)
 #include "iap.h"
 #endif
@@ -88,17 +85,6 @@ void audio_set_input_source(int source, unsigned flags)
         IF_SPDIF_POWER_(, global_settings.spdif_enable));
 #endif /* HAVE_SPDIF_OUT */
 
-    /** Tuner **/
-#if CONFIG_TUNER
-    /* Switch radio off or on per source and flags. */
-    if (source != AUDIO_SRC_FMRADIO)
-        radio_stop();
-    else if (flags & SRCF_FMRADIO_PAUSED)
-        radio_pause();
-    else
-        radio_start();
-#endif
-
 #if defined(IPOD_ACCESSORY_PROTOCOL) && defined(HAVE_LINE_REC)
     static bool last_rec_onoff = false;
     bool onoff = (source == AUDIO_SRC_LINEIN) ? true : false;
@@ -146,15 +132,6 @@ void audio_set_input_source(int source, unsigned flags)
 {
     (void)source;
     (void)flags;
-#if CONFIG_TUNER
-    /* Switch radio off or on per source and flags. */
-    if (source != AUDIO_SRC_FMRADIO)
-        radio_stop();
-    else if (flags & SRCF_FMRADIO_PAUSED)
-        radio_pause();
-    else
-        radio_start();
-#endif
 } /* audio_set_input_source */
 
 #ifdef HAVE_SPDIF_IN

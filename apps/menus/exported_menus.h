@@ -28,11 +28,6 @@
 extern const struct menu_item_ex 
         display_menu,               /* display_menu.c   */
         playback_settings,          /* playback_menu.c  */
-#ifdef HAVE_RECORDING
-        recording_settings,         /* recording_menu.c */
-        recording_settings_menu,
-        peak_meter_menu,            /* also used from within recording_menu */
-#endif
         sound_settings,             /* sound_menu.c     */
         settings_menu_item,         /* settings_menu.c  */
         bookmark_settings_menu,
@@ -42,7 +37,6 @@ extern const struct menu_item_ex
 #ifdef AUDIOHW_HAVE_EQ
         audiohw_eq_tone_controls,   /* audiohw_eq_menu.c */
 #endif
-        radio_settings_menu,        /* radio_menu.c     */
         theme_menu                  /* theme_menu.c     */
 #ifdef HAVE_TAGCACHE
         , album_covers_menu;        /* album_covers_menu.c */

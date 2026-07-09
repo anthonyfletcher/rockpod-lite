@@ -980,16 +980,6 @@ static bool set_backdrop(void)
 MENUITEM_FUNCTION(set_backdrop_item, 0, ID2P(LANG_SET_AS_BACKDROP),
                   set_backdrop, clipboard_callback, Icon_NOICON);
 #endif
-#ifdef HAVE_RECORDING
-static bool set_recdir(void)
-{
-    set_dir_helper(global_settings.rec_directory,
-                   sizeof(global_settings.rec_directory));
-    return false;
-}
-MENUITEM_FUNCTION(set_recdir_item, 0, ID2P(LANG_RECORDING_DIR),
-                  set_recdir, clipboard_callback, Icon_Recording);
-#endif
 static bool set_startdir(void)
 {
     set_dir_helper(global_settings.start_directory,
@@ -1030,9 +1020,6 @@ MAKE_ONPLAYMENU(set_as_dir_menu, ID2P(LANG_SET_AS),
                 &set_catalogdir_item,
 #ifdef HAVE_TAGCACHE
                 &set_databasedir_item,
-#endif
-#ifdef HAVE_RECORDING
-                &set_recdir_item,
 #endif
                 &set_startdir_item);
 
@@ -1098,9 +1085,6 @@ static int clipboard_callback(int action,
                         this_item == &set_catalogdir_item ||
 #ifdef HAVE_TAGCACHE
                         this_item == &set_databasedir_item ||
-#endif
-#ifdef HAVE_RECORDING
-                        this_item == &set_recdir_item ||
 #endif
                         this_item == &set_as_dir_menu
                         )

@@ -654,15 +654,6 @@ static const struct plugin_api rockbox_api = {
     pcm_play_lock,
     pcm_play_unlock,
     beep_play,
-#ifdef HAVE_RECORDING
-    &rec_freq_sampr[0],
-    pcm_init_recording,
-    pcm_close_recording,
-    pcm_record_data,
-    pcm_stop_recording,
-    pcm_calculate_rec_peaks,
-    audio_set_recording_gain,
-#endif /* HAVE_RECORDING */
 #if INPUT_SRC_CAPS != 0
     audio_set_output_source,
     audio_set_input_source,

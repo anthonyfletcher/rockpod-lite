@@ -66,9 +66,6 @@
 #include "settings_list.h"
 #include "filetypes.h"
 #include "option_select.h"
-#if CONFIG_TUNER
-#include "radio.h"
-#endif
 #include "wps.h"
 #include "skin_engine/skin_engine.h"
 #include "viewport.h"
@@ -98,9 +95,6 @@ static long lasttime = 0;
 
 #include "dsp_proc_settings.h"
 #include "playback.h"
-#ifdef HAVE_RECORDING
-#include "enc_config.h"
-#endif
 #include "pcm_sampr.h"
 
 #ifdef HAVE_REMOTE_LCD
@@ -615,12 +609,6 @@ static bool settings_write_config(const char* filename, int options)
                 if (!(setting->flags & F_THEMESETTING))
                     continue;
                 break;
-#ifdef HAVE_RECORDING
-            case SETTINGS_SAVE_RECPRESETS:
-                if (!(setting->flags & F_RECSETTING))
-                    continue;
-                break;
-#endif
             case SETTINGS_SAVE_EQPRESET:
                 if (!(setting->flags & F_EQSETTING))
                     continue;
@@ -747,12 +735,6 @@ bool settings_save_config(int options)
             folder = THEME_DIR;
             namebase = "theme";
             break;
-#ifdef HAVE_RECORDING
-        case SETTINGS_SAVE_RECPRESETS:
-            folder = RECPRESETS_DIR;
-            namebase = "recording";
-            break;
-#endif
         case SETTINGS_SAVE_EQPRESET:
             folder = EQS_DIR;
             namebase = "eq";
@@ -1133,10 +1115,6 @@ void settings_apply(bool read_disk)
     ibasso_set_governor(global_settings.governor);
 #endif
 
-    /* This should stay last */
-#if defined(HAVE_RECORDING)
-    enc_global_settings_apply();
-#endif
     /* already called with THEME_STATUSBAR in settings_apply_skins() */
     CHART(">viewportmanager_theme_changed");
     viewportmanager_theme_changed(THEME_UI_VIEWPORT|THEME_LANGUAGE|THEME_BUTTONBAR);
@@ -1177,9 +1155,6 @@ void settings_reset(void)
 {
     for(int i=0; i<nb_settings; i++)
         reset_setting(&settings[i], settings[i].setting);
-#if defined (HAVE_RECORDING)
-    enc_global_settings_reset();
-#endif
     FOR_NB_SCREENS(i)
     {
         if (screens[i].getuifont() > FONT_SYSFIXED)

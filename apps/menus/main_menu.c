@@ -34,9 +34,6 @@
 #include "exported_menus.h"
 #include "tree.h"
 #include "storage.h"
-#ifdef HAVE_RECORDING
-#include "recording.h"
-#endif
 #include "yesno.h"
 #include "keyboard.h"
 #include "screens.h"
@@ -159,10 +156,6 @@ enum infoscreenorder
 {
     INFO_BATTERY = 0,
     INFO_BUFFER,
-#ifdef HAVE_RECORDING
-    INFO_REC_DIR_TITLE,
-    INFO_REC_DIR,
-#endif
     INFO_ROOT_DIR_TITLE,
     INFO_ROOT_DIR,
     INFO_VERSION_TITLE,
@@ -274,16 +267,6 @@ static int info_speak_item(int selected_item, void * data)
             break;
 #endif
 
-#ifdef HAVE_RECORDING
-        case INFO_REC_DIR:
-            talk_id(LANG_REC_DIR, false);
-            if (global_settings.rec_directory[0])
-            {
-                talk_fullpath(global_settings.rec_directory, true);
-            }
-        case INFO_REC_DIR_TITLE:  /*fallthrough*/
-            break;
-#endif
         case INFO_ROOT_DIR:
             talk_id(LANG_DISPLAY_FULL_PATH, false);
             talk_fullpath(root_realpath(), true);
@@ -411,12 +394,6 @@ static int info_action_callback(int action, struct gui_synclist *lists)
     output_dyn_value(s1, sizeof(s1), kib, kibyte_units, 3, true);
     simplelist_addline("%s %s", str(LANG_BUFFER_STAT), s1);
 
-#ifdef HAVE_RECORDING
-/* INFO_REC_DIR_TITLE*/
-    simplelist_setline(str(LANG_REC_DIR));
-/* INFO_REC_DIR */
-    simplelist_setline(global_settings.rec_directory);
-#endif
 
 /* INFO_ROOT_DIR_TITLE */
     simplelist_setline(str(LANG_DISPLAY_FULL_PATH));
@@ -526,9 +503,6 @@ MAKE_MENU(main_menu_, ID2P(LANG_SETTINGS), NULL,
         &album_covers_menu,
 #endif
         &lastfm_scrobbler_item,
-#ifdef HAVE_RECORDING
-        &recording_settings,
-#endif
 #if CONFIG_RTC
         &timedate_item,
 #endif
