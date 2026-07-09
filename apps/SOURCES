@@ -23,9 +23,6 @@ menus/theme_menu.c
 #ifdef HAVE_TAGCACHE
 menus/album_covers_menu.c
 #endif
-#if CONFIG_TUNER
-menus/radio_menu.c
-#endif
 #ifdef HAVE_WM8978
 menus/audiohw_eq_menu.c
 #endif
@@ -37,9 +34,6 @@ menus/main_menu.c
 menus/main_menu_config.c
 menus/playback_menu.c
 menus/playlist_menu.c
-#ifdef HAVE_RECORDING
-menus/recording_menu.c
-#endif
 menus/settings_menu.c
 menus/sound_menu.c
 #if CONFIG_RTC
@@ -74,9 +68,6 @@ iap/iap-lingo1.c
 iap/iap-lingo2.c
 iap/iap-lingo3.c
 iap/iap-lingo4.c
-#if CONFIG_TUNER
-iap/iap-lingo7.c
-#endif
 #endif
 screen_access.c
 gui/icon.c
@@ -159,19 +150,6 @@ gui/skin_engine/skin_albumart_color.c
 #endif
 #endif
 
-#ifdef HAVE_RECORDING
-recorder/recording.c
-#endif
-
-#if CONFIG_TUNER
-radio/radio.c
-radio/presets.c
-radio/radio_skin.c
-#ifdef HAVE_ALBUMART
-radio/radioart.c
-#endif
-#endif
-
 #if INPUT_SRC_CAPS != 0
 audio_path.c
 #endif /* INPUT_SRC_CAPS != 0 */
@@ -182,10 +160,6 @@ playback.c
 codecs.c
 #ifndef HAVE_HARDWARE_BEEP
 beep.c
-#endif
-#ifdef HAVE_RECORDING
-enc_config.c
-recorder/pcm_record.c
 #endif
 #ifdef USB_ENABLE_HID
 usb_keymaps.c
