@@ -23,9 +23,6 @@
 #include <stdbool.h>
 #include "action.h"
 #include "font.h"
-#ifdef HAVE_REMOTE_LCD
-#include "lcd-remote.h"
-#endif
 #include "lang.h"
 #include "usb.h"
 #if defined(HAVE_USBSTACK)
@@ -44,10 +41,6 @@
 #include "icons.h"
 
 #include "bitmaps/usblogo.h"
-
-#ifdef HAVE_REMOTE_LCD
-#include "bitmaps/remote_usblogo.h"
-#endif
 
 #if (CONFIG_STORAGE & STORAGE_MMC)
 #include "ata_mmc.h"
@@ -134,14 +127,6 @@ static void usb_screen_fix_viewports(struct screen *screen,
     struct viewport *parent = &usb_screen_vps->parent;
     struct viewport *logo = &usb_screen_vps->logo;
 
-#ifdef HAVE_REMOTE_LCD
-    if (screen->screen_type == SCREEN_REMOTE)
-    {
-        logo_width = BMPWIDTH_remote_usblogo;
-        logo_height = BMPHEIGHT_remote_usblogo;
-    }
-    else
-#endif
     {
         logo_width = BMPWIDTH_usblogo;
         logo_height = BMPHEIGHT_usblogo;
@@ -207,9 +192,6 @@ static void usb_screens_draw(struct usb_screen_vps_t *usb_screen_vps_ar)
     struct viewport *last_vp;
     static const struct bitmap* logos[NB_SCREENS] = {
         &bm_usblogo,
-#ifdef HAVE_REMOTE_LCD
-        &bm_remote_usblogo,
-#endif
     };
 
     FOR_NB_SCREENS(i)

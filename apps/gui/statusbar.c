@@ -116,7 +116,7 @@
                                                 7*ICONS_SPACING
 #define STATUSBAR_LOCKR_WIDTH                   5
 
-#if (CONFIG_LED == LED_VIRTUAL) || defined(HAVE_REMOTE_LCD)
+#if (CONFIG_LED == LED_VIRTUAL)
 #define STATUSBAR_DISK_WIDTH                    12
 #define STATUSBAR_DISK_X_POS(statusbar_width)   statusbar_width - \
                                                 STATUSBAR_DISK_WIDTH
@@ -138,7 +138,7 @@ static void gui_statusbar_icon_lock(struct screen * display);
 #ifdef HAS_REMOTE_BUTTON_HOLD
 static void gui_statusbar_icon_lock_remote(struct screen * display);
 #endif
-#if (CONFIG_LED == LED_VIRTUAL) || defined(HAVE_REMOTE_LCD)
+#if (CONFIG_LED == LED_VIRTUAL)
 static void gui_statusbar_led(struct screen * display);
 #endif
 #if CONFIG_RTC
@@ -236,7 +236,7 @@ static struct screen * sb_fill_bar_info(struct gui_statusbar * bar)
 #if CONFIG_RTC
     bar->time = get_time();
 #endif /* CONFIG_RTC */
-#if (CONFIG_LED == LED_VIRTUAL) || defined(HAVE_REMOTE_LCD)
+#if (CONFIG_LED == LED_VIRTUAL)
     if(!display->has_disk_led)
         bar->info.led = led_read(HZ/2); /* delay should match polling interval */
 #endif
@@ -304,7 +304,7 @@ void gui_statusbar_draw(struct gui_statusbar * bar, bool force_redraw, struct vi
         gui_statusbar_time(display, bar->time);
         bar->last_tm_min = bar->time->tm_min;
 #endif /* CONFIG_RTC */
-#if (CONFIG_LED == LED_VIRTUAL) || defined(HAVE_REMOTE_LCD)
+#if (CONFIG_LED == LED_VIRTUAL)
         if(!display->has_disk_led && bar->info.led)
         {
             gui_statusbar_led(display);
@@ -536,7 +536,7 @@ static void gui_statusbar_icon_lock_remote(struct screen * display)
 }
 #endif
 
-#if (CONFIG_LED == LED_VIRTUAL) || defined(HAVE_REMOTE_LCD)
+#if (CONFIG_LED == LED_VIRTUAL)
 /*
  * no real LED: disk activity in status bar
  */
@@ -592,11 +592,3 @@ void gui_syncstatusbar_init(struct gui_syncstatusbar * bars)
 }
 
 
-#ifdef HAVE_REMOTE_LCD
-enum statusbar_values statusbar_position(int screen)
-{
-    if (screen == SCREEN_REMOTE)
-        return global_settings.remote_statusbar;
-    return global_settings.statusbar;
-}
-#endif

@@ -773,12 +773,7 @@ bool gui_synclist_do_button(struct gui_synclist * lists, int *actionptr)
  * and main screen doesn't have the same number of lines */
         case ACTION_LISTTREE_PGUP:
         {
-            int screen =
-#ifdef HAVE_REMOTE_LCD
-                get_action_statuscode(NULL)&ACTION_REMOTE ?
-                         SCREEN_REMOTE :
-#endif
-                                          SCREEN_MAIN;
+            int screen = SCREEN_MAIN;
             gui_synclist_select_previous_page(lists, screen, false);
             gui_synclist_draw(lists);
             yield();
@@ -788,12 +783,7 @@ bool gui_synclist_do_button(struct gui_synclist * lists, int *actionptr)
 
         case ACTION_LISTTREE_PGDOWN:
         {
-            int screen =
-#ifdef HAVE_REMOTE_LCD
-                get_action_statuscode(NULL)&ACTION_REMOTE ?
-                         SCREEN_REMOTE :
-#endif
-                                          SCREEN_MAIN;
+            int screen = SCREEN_MAIN;
             gui_synclist_select_next_page(lists, screen, false);
             gui_synclist_draw(lists);
             yield();

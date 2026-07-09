@@ -37,11 +37,7 @@
 #endif
 #include "debug.h"
 
-#ifdef HAVE_REMOTE_LCD
-#define MAX_LINES (LCD_SCROLLABLE_LINES + LCD_REMOTE_SCROLLABLE_LINES)
-#else
 #define MAX_LINES  LCD_SCROLLABLE_LINES
-#endif
 
 
 static void style_line(struct screen *display, int x, int y, struct line_desc *line);
@@ -102,18 +98,8 @@ static void scroller_main(struct scrollinfo *s)
     scroller(s, &screens[SCREEN_MAIN]);
 }
 
-#ifdef HAVE_REMOTE_LCD
-static void scroller_remote(struct scrollinfo *s)
-{
-    scroller(s, &screens[SCREEN_REMOTE]);
-}
-#endif
-
 static void (*scrollers[NB_SCREENS])(struct scrollinfo *s) = {
     scroller_main,
-#ifdef HAVE_REMOTE_LCD
-    scroller_remote,
-#endif
 };
 
 static void put_icon(struct screen *display, int x, int y,

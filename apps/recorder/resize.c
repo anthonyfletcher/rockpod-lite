@@ -44,9 +44,6 @@
 #endif
 #include "lcd.h"
 #include "file.h"
-#ifdef HAVE_REMOTE_LCD
-#include "lcd-remote.h"
-#endif
 #ifdef ROCKBOX_DEBUG_SCALERS
 #define SDEBUGF DEBUGF
 #else

@@ -101,11 +101,7 @@ struct gui_syncstatusbar
 
 extern void gui_syncstatusbar_init(struct gui_syncstatusbar * bars) INIT_ATTR;
 
-#if !defined(HAVE_REMOTE_LCD) || defined(__PCTOOL__)
 #include "settings.h"
 #define statusbar_position(a) ((enum statusbar_values)global_settings.statusbar)
-#else
-enum statusbar_values statusbar_position(int screen);
-#endif
 
 #endif /*_GUI_STATUSBAR_H_*/
