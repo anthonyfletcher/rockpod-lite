@@ -22,9 +22,6 @@
 #include <stdio.h>
 #include "config.h"
 #include <lcd.h>
-#ifdef HAVE_REMOTE_LCD
-#include <lcd-remote.h>
-#endif
 #include "scroll_engine.h"
 #include <font.h>
 #include <button.h>
@@ -163,8 +160,6 @@ struct screen screens[NB_SCREENS] =
         .getcharheight=screen_helper_getcharheight,
 #if (CONFIG_LED == LED_VIRTUAL)
         .has_disk_led=false,
-#elif defined(HAVE_REMOTE_LCD)
-        .has_disk_led=true,
 #endif
         .set_drawmode=&screen_helper_set_drawmode,
         .init_viewport=&lcd_init_viewport,

@@ -27,12 +27,7 @@
 #include "backdrop.h"
 #include "line.h"
 
-#if defined(HAVE_REMOTE_LCD) && !defined (ROCKBOX_HAS_LOGF)
-#define NB_SCREENS 2
-void screen_helper_remote_setfont(int font);
-#else
 #define NB_SCREENS 1
-#endif
 void screen_helper_setfont(int font);
 
 #define FOR_NB_SCREENS(i) for(int i = 0; i < NB_SCREENS; i++)
@@ -54,7 +49,7 @@ struct screen
     int (*getcharwidth)(void);
     int (*getcharheight)(void);
     bool is_color;
-#if (CONFIG_LED == LED_VIRTUAL) || defined(HAVE_REMOTE_LCD)
+#if (CONFIG_LED == LED_VIRTUAL)
     bool has_disk_led;
 #endif
     void (*set_drawmode)(int mode);

@@ -22,9 +22,6 @@
 #include <stdlib.h>
 #include "config.h"
 #include "lcd.h"
-#ifdef HAVE_REMOTE_LCD
-#include "lcd-remote.h"
-#endif
 #include "font.h"
 #include "viewport.h"
 #include "screen_access.h"
@@ -39,10 +36,6 @@
 #else
 #define FG_FALLBACK LCD_DEFAULT_FG
 #define BG_FALLBACK LCD_DEFAULT_BG
-#endif
-#ifdef HAVE_REMOTE_LCD
-#define REMOTE_FG_FALLBACK LCD_REMOTE_DEFAULT_FG
-#define REMOTE_BG_FALLBACK LCD_REMOTE_DEFAULT_BG
 #endif
 
 /* all below isn't needed for pc tools (i.e. checkwps/wps editor)
@@ -286,21 +279,9 @@ void viewport_set_fullscreen(struct viewport *vp,
     vp->font = screens[screen].getuifont();
     vp->drawmode = DRMODE_SOLID;
 #if LCD_DEPTH > 1
-#ifdef HAVE_REMOTE_LCD
-    /* We only need this test if there is a remote LCD */
-    if (screen == SCREEN_MAIN)
-#endif
     {
         vp->fg_pattern = FG_FALLBACK;
         vp->bg_pattern = BG_FALLBACK;
-    }
-#endif
-
-#if defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1
-    if (screen == SCREEN_REMOTE)
-    {
-        vp->fg_pattern = LCD_REMOTE_DEFAULT_FG;
-        vp->bg_pattern = LCD_REMOTE_DEFAULT_BG;
     }
 #endif
 }
