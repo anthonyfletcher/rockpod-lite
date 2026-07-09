@@ -393,7 +393,7 @@ uuuuu
 %Vl(USB_Screen,30,206,260,11,6)%VB%Vs(invert)ġĢĢĢĢĢĢĢĢĥģ
 %Vl(USB_Screen,30,177,260,40,-)
 #
-%Vl(USB_Screen,41,183,238,18,-)%VB%acEject before Disconnecting
+%Vl(USB_Screen,41,180,238,28,-)%VB%acEject before Disconnecting
 %Vl(USB_Screen,41,187,238,18,-)
 #
 %Vl(USB_Screen,85,27,150,150,9)%Vs(invert)%alÀÁÂÃ

@@ -148,8 +148,12 @@ static unsigned int pf_bg_g;   /* pf_bg_color & 0x7e0 */
 
 static void pf_update_dynamic_colors(void)
 {
-    pf_bg_color = (pix_t)dynamic_colors_resolve(global_settings.bg_color);
-    pf_fg_color = (pix_t)dynamic_colors_resolve(global_settings.fg_color);
+    /* Swapped relative to the rest of the UI's bg/fg convention, requested
+     * explicitly: this screen's background should match the status bar's
+     * (fg_color), with text/foreground drawn in what's normally the
+     * background colour. */
+    pf_bg_color = (pix_t)dynamic_colors_resolve(global_settings.fg_color);
+    pf_fg_color = (pix_t)dynamic_colors_resolve(global_settings.bg_color);
     pf_lss_color = (pix_t)dynamic_colors_resolve(global_settings.lss_color);
     pf_lse_color = (pix_t)dynamic_colors_resolve(global_settings.lse_color);
     pf_lst_color = (pix_t)dynamic_colors_resolve(global_settings.lst_color);
@@ -362,10 +366,12 @@ static int pf_half_height;      /* rows of drawable (post text-margin) height ab
 static int pf_lower_half;       /* rows of drawable (post text-margin) height below center */
 static int pf_draw_y_shift;     /* rows skipped below pf_vp_y for a TOP text caption's margin */
 /* Album name font: global_settings.bold_font_file loaded via font_load(),
- * or plain FONT_UI if none is configured (empty string) or loading it
- * failed. Set once in init(), unloaded in cleanup() if it's a real loaded
- * font (never unload FONT_UI itself -- this screen doesn't own that one). */
+ * or the real UI font (screens[SCREEN_MAIN].getuifont(), not the FONT_UI
+ * constant -- see init()'s comment) if none is configured (empty string)
+ * or loading it failed. Set once in init(), unloaded in cleanup() only if
+ * pf_bold_font_loaded is true (this screen doesn't own the UI font). */
 static int pf_bold_font;
+static bool pf_bold_font_loaded;
 static int pf_vp_y;             /* viewport y-offset (status bar height) */
 static struct viewport pf_vp;   /* PF rendering viewport (below status bar) */
 static struct frame_buffer_t pf_framebuffer; /* bypass backdrop in clear_viewport */
@@ -2796,7 +2802,7 @@ static void render_slide(struct slide_data *slide, const int alpha)
      * the original plugin's fixed full-screen numbers by coincidence (see
      * the removed pf_display_offs) -- any other sh left the image sitting
      * top-anchored, with a blank gap only at the bottom. */
-    const int vertical_offset = (pf_height - sh) / 2;
+    const int vertical_offset = ((half_height + lower_half) - sh) / 2;
     const int p_start_upper = (half_height - 1 - vertical_offset) * PFREAL_ONE;
     const int p_start_lower = (half_height - vertical_offset) * PFREAL_ONE;
     for (x = xi; x < w; x++) {
@@ -3311,7 +3317,7 @@ static void cleanup(void)
     /* Nothing to free: pf_idx.buf points into plugin_get_buffer()'s static
      * pluginbuf[] (see init()), not a buflib handle. */
 
-    if (pf_bold_font != FONT_UI)
+    if (pf_bold_font_loaded)
         font_unload(pf_bold_font);
 }
 
@@ -3472,9 +3478,10 @@ static void draw_album_text(void)
         if (pf_idx.album_index[center_index].seek != pf_idx.album_untagged_seek)
             lcd_putsxy(albumtxt_x, albumtxt_y, album_and_year);
         /* Restored before the artist line: render_all_slides()/the FPS
-         * overlay/etc all assume pf_vp's font is FONT_UI, and the artist
-         * name itself is never bold. */
-        lcd_setfont(FONT_UI);
+         * overlay/etc all assume pf_vp's font is the real UI font, and the
+         * artist name itself is never bold. screens[SCREEN_MAIN].getuifont(),
+         * not the FONT_UI constant -- see init()'s comment on pf_bold_font. */
+        lcd_setfont(screens[SCREEN_MAIN].getuifont());
 
         artisttxt = get_album_artist(center_index);
         if (album_changed)
@@ -3485,7 +3492,7 @@ static void draw_album_text(void)
     else
     {
         lcd_putsxy(albumtxt_x, albumtxt_y, album_and_year);
-        lcd_setfont(FONT_UI);
+        lcd_setfont(screens[SCREEN_MAIN].getuifont());
     }
 }
 
@@ -3551,7 +3558,7 @@ static bool init(void)
      * reserved strip, not beyond it). 2 * char_height / 2.25 * char_height
      * cover both variants of each with a little safety margin. */
     {
-        int char_height = font_get(FONT_UI)->height;
+        int char_height = font_get(screens[SCREEN_MAIN].getuifont())->height;
         int text_margin;
         bool text_at_top;
         int draw_height;
@@ -3616,12 +3623,21 @@ static bool init(void)
     pf_idx.buf = buf;
     pf_idx.buf_sz = buf_size;
 
-    lcd_setfont(FONT_UI);
+    lcd_setfont(screens[SCREEN_MAIN].getuifont());
 
     /* Optional bold album name font (see global_settings.bold_font_file's
-     * comment in settings.h) -- falls back to plain FONT_UI if the theme
-     * hasn't configured one, or if loading it fails for any reason. */
-    pf_bold_font = FONT_UI;
+     * comment in settings.h) -- falls back to the real UI font if the
+     * theme hasn't configured one, or if loading it fails for any reason.
+     * Deliberately screens[SCREEN_MAIN].getuifont() rather than the FONT_UI
+     * constant: FONT_UI resolves via font_get()'s fallback search, which
+     * walks slots downward from the top looking for anything loaded at
+     * all -- it does not consult the actually-configured UI font. Loading
+     * this bold font adds one more occupant to the shared font-slot pool,
+     * and if it (or any other theme font) lands in a higher slot than the
+     * real UI font, FONT_UI silently starts resolving to that other font
+     * instead (observed as the artist text rendering in an icon font). */
+    pf_bold_font = screens[SCREEN_MAIN].getuifont();
+    pf_bold_font_loaded = false;
     if (global_settings.bold_font_file[0])
     {
         char bold_font_path[MAX_PATH];
@@ -3631,7 +3647,10 @@ static bool init(void)
                  global_settings.bold_font_file);
         loaded = font_load(bold_font_path);
         if (loaded >= 0)
+        {
             pf_bold_font = loaded;
+            pf_bold_font_loaded = true;
+        }
     }
 
     if (!dir_exists(CACHE_PREFIX))

@@ -90,8 +90,31 @@ uuuuuuu
 %Vl(Album_Widget,160,38,6,128,-)%dr(0,0,-,-)
 %Vl(Album_Widget,0,182,166,6,-)%VB%dr(0,0,-,-)
 %Vl(Album_Widget,0,188,166,33,-)%dr(0,0,-,-)
-# cutout the visible album art in the foreground layer
-%Vl(Album_Art,0,38,160,128,-)
+# Redraw the album/fallback art on the foreground layer too, identical to
+# the background layer's copy above -- previously this was just a bare
+# viewport declaration with nothing drawn, so on a track/screen change the
+# background layer's art appeared instantly while the foreground layer
+# caught up a frame later with nothing there yet, then repainted over it --
+# a brief but visible flash. Matches the same draw-on-both-layers pattern
+# already used for the corner/shadow rects above.
+%Vl(Album_Art,0,22,160,160,9)%Cl(0,0,160,160)%Cdvvvvvvv
+vvvvvvv
+vvvvvvv
+vvvvvvv
+vvvvvvv
+vvvvvvv
+vvvvvvv
+vvvvvvv
+%Vl(Album_Fallback_Art,0,22,160,42,9)
+uuuuuuu
+uuuuuuu
+%Vl(Album_Fallback_Art,0,64,160,100,9)
+abcdeuw
+fghijuw
+klmnopw
+uuqrstw
+%Vl(Album_Fallback_Art,0,164,160,18,9)
+uuuuuuu
 # draw the rounded edges
 %Vl(Album_Widget,0,16,166,22,6)%aRb
 %Vl(Album_Widget,0,166,166,22,6)%aRc
