@@ -46,7 +46,7 @@ struct status_info {
 #ifdef HAS_REMOTE_BUTTON_HOLD
     bool keylockremote;
 #endif
-#if (CONFIG_LED == LED_VIRTUAL) || defined(HAVE_REMOTE_LCD)
+#if (CONFIG_LED == LED_VIRTUAL)
     bool led; /* disk LED simulation in the status bar */
 #endif
 

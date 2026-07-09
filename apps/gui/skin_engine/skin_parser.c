@@ -80,7 +80,7 @@
 #define WPS_ERROR_INVALID_PARAM         -1
 
 static char* skin_buffer = NULL;
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
 static char *backdrop_filename;
 #endif
 static struct skin_stats *_stats = NULL;
@@ -281,14 +281,6 @@ static int parse_statusbar_tags(struct skin_element* element,
         {
             viewport_set_fullscreen(&skin_default->vp, curr_screen);
         }
-#ifdef HAVE_REMOTE_LCD
-        /* This parser requires viewports which will use the settings font to
-         * have font == 1, but the above viewport_set() calls set font to
-         * the current real font id. So force 1 here it will be set correctly
-         * at the end
-         */
-        skin_default->vp.font = 1;
-#endif
     }
     return 0;
 }
@@ -615,7 +607,7 @@ static int parse_listitemviewport(struct skin_element *element,
     return 0;
 }
 
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
 static int parse_viewporttextstyle(struct skin_element *element,
                                    struct wps_token *token,
                                    struct wps_data *wps_data)
@@ -732,12 +724,6 @@ static int parse_viewportcolour(struct skin_element *element,
 
         switch (curr_screen)
         {
-#if defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1
-        case SCREEN_REMOTE:
-            fg_color = LCD_REMOTE_DEFAULT_FG;
-            bg_color = LCD_REMOTE_DEFAULT_BG;
-            break;
-#endif
         default:
 #if defined(HAVE_LCD_COLOR)
             fg_color = global_settings.fg_color;
@@ -756,7 +742,7 @@ static int parse_viewportcolour(struct skin_element *element,
             colour->colour = fg_color;
         else
             colour->colour = bg_color;
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
         colour->is_default = true;
 #endif
     }
@@ -765,7 +751,7 @@ static int parse_viewportcolour(struct skin_element *element,
         if (!parse_color(curr_screen, SKINOFFSETTOPTR(skin_buffer, param->data.text),
                     &colour->colour))
             return -1;
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
         colour->is_default = false;
 #endif
     }
@@ -2054,13 +2040,8 @@ static int load_skin_bmp(struct wps_data *wps_data, struct gui_img *img, char* b
     int handle;
     int bmpformat;
     ssize_t buf_reqd;
-#ifdef HAVE_REMOTE_LCD
-    if (curr_screen == SCREEN_REMOTE)
-        bmpformat = FORMAT_ANY|FORMAT_REMOTE;
-    else
-#endif
-        bmpformat = img->dither ? FORMAT_ANY|FORMAT_DITHER|FORMAT_TRANSPARENT :
-                                  FORMAT_ANY|FORMAT_TRANSPARENT;
+    bmpformat = img->dither ? FORMAT_ANY|FORMAT_DITHER|FORMAT_TRANSPARENT :
+                              FORMAT_ANY|FORMAT_TRANSPARENT;
 
     handle = core_load_bmp(img_path, bitmap, bmpformat, &buf_reqd, &buflib_ops);
     if (handle != CLB_ALOC_ERR)
@@ -2271,7 +2252,7 @@ static int convert_viewport(struct wps_data *data, struct skin_element* element)
 
     viewport_set_defaults(&skin_vp->vp, curr_screen);
 
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
     skin_vp->output_to_backdrop_buffer = false;
 #endif
 #ifdef HAVE_LCD_COLOR
@@ -2465,7 +2446,7 @@ static int skin_element_callback(struct skin_element* element, void* data)
                     sb_skin_has_title(curr_screen);
 #endif
                     break;
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
                 case SKIN_TOKEN_DRAWRECTANGLE:
                     function = parse_drawrectangle;
                     break;
