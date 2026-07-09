@@ -103,10 +103,6 @@ quickscreen
 histogram
 #endif
 
-#if defined(HAVE_REMOTE_LCD)
-remote
-remote_lcd_invert
-#endif
 
 #if defined(HAVE_REMOTE_LCD_TICKING)
 remote_ticking

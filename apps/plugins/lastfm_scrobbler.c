@@ -374,9 +374,6 @@ static void clear_display(void)
 {
     static struct gui_synclist lists = {0};
     rb->lcd_clear_display();
-#ifdef HAVE_REMOTE_LCD
-    rb->lcd_remote_clear_display();
-#endif
 
     if (!lists.title) /* initialize the list, only used to display the title..*/
     {

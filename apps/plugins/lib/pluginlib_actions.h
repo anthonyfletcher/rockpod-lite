@@ -54,9 +54,6 @@ enum {
     LAST_PLUGINLIB_ACTION
 };
 
-#if defined(HAVE_REMOTE_LCD)
-extern const struct button_mapping pla_remote_ctx[];
-#endif
 extern const struct button_mapping pla_main_ctx[];
 
 int pluginlib_getaction(int timeout,

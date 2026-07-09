@@ -84,43 +84,10 @@ void sw_poweroff_disable(void){}
 void sw_poweroff_restore(void){}
 #endif /* !HAVE_SW_POWEROFF */
 
-#ifdef HAVE_REMOTE_LCD
-/*  Force the backlight on */
-void remote_backlight_force_on(void)
-{
-    rb->remote_backlight_set_timeout(0);
-#if CONFIG_CHARGING
-    rb->remote_backlight_set_timeout_plugged(0);
-#endif /* CONFIG_CHARGING */
-}
-
-/* Turn off backlight timeout */
-void remote_backlight_ignore_timeout(void)
-{
-    if (rb->global_settings->remote_backlight_timeout > 0)
-        rb->remote_backlight_set_timeout(0);
-#if CONFIG_CHARGING
-    if (rb->global_settings->remote_backlight_timeout_plugged > 0)
-        rb->remote_backlight_set_timeout_plugged(0);
-#endif /* CONFIG_CHARGING */
-}
-
-/*  Reset backlight operation to its settings */
-void remote_backlight_use_settings(void)
-{
-    rb->remote_backlight_set_timeout(rb->global_settings->
-                                     remote_backlight_timeout);
-#if CONFIG_CHARGING
-    rb->remote_backlight_set_timeout_plugged(rb->global_settings-> 
-                                             remote_backlight_timeout_plugged);
-#endif /* CONFIG_CHARGING */
-}
-#else /* HAVE_REMOTE_LCD */
 /* DUMMY FUNCTIONS */
 void remote_backlight_force_on(void){}
 void remote_backlight_ignore_timeout(void){}
 void remote_backlight_use_settings(void){}
-#endif /* !HAVE_REMOTE_LCD */
 
 #ifdef HAVE_BUTTON_LIGHT
 /*  Force the buttonlight on */

@@ -132,9 +132,6 @@ int plugin_open(const char *plugin, const char *parameter);
 #include "albumart.h"
 #endif
 
-#ifdef HAVE_REMOTE_LCD
-#include "lcd-remote.h"
-#endif
 
 #include "yesno.h"
 
@@ -313,43 +310,6 @@ struct plugin_api {
                                unsigned flags);
     const char* (*get_codepage_name)(int cp);
 
-#ifdef HAVE_REMOTE_LCD
-    /* remote lcd */
-    void (*lcd_remote_set_contrast)(int x);
-    void (*lcd_remote_clear_display)(void);
-    void (*lcd_remote_puts)(int x, int y, const unsigned char *string);
-    bool (*lcd_remote_puts_scroll)(int x, int y, const unsigned char* string);
-    void (*lcd_remote_scroll_stop)(void);
-    void (*lcd_remote_set_drawmode)(int mode);
-    int  (*lcd_remote_get_drawmode)(void);
-    void (*lcd_remote_setfont)(int font);
-    int  (*lcd_remote_getstringsize)(const unsigned char *str, int *w, int *h);
-    void (*lcd_remote_drawpixel)(int x, int y);
-    void (*lcd_remote_drawline)(int x1, int y1, int x2, int y2);
-    void (*lcd_remote_hline)(int x1, int x2, int y);
-    void (*lcd_remote_vline)(int x, int y1, int y2);
-    void (*lcd_remote_drawrect)(int x, int y, int nx, int ny);
-    void (*lcd_remote_fillrect)(int x, int y, int nx, int ny);
-    void (*lcd_remote_mono_bitmap_part)(const unsigned char *src, int src_x,
-                                        int src_y, int stride, int x, int y,
-                                        int width, int height);
-    void (*lcd_remote_mono_bitmap)(const unsigned char *src, int x, int y,
-                                   int width, int height);
-    void (*lcd_remote_putsxy)(int x, int y, const unsigned char *string);
-    void (*lcd_remote_update)(void);
-    void (*lcd_remote_update_rect)(int x, int y, int width, int height);
-#if (LCD_REMOTE_DEPTH > 1)
-    void     (*lcd_remote_set_foreground)(unsigned foreground);
-    unsigned (*lcd_remote_get_foreground)(void);
-    void     (*lcd_remote_set_background)(unsigned background);
-    unsigned (*lcd_remote_get_background)(void);
-    void (*lcd_remote_bitmap_part)(const fb_remote_data *src,
-                                   int src_x, int src_y, int stride,
-                                   int x, int y, int width, int height);
-    void (*lcd_remote_bitmap)(const fb_remote_data *src, int x, int y,
-                              int width, int height);
-#endif
-#endif /* HAVE_REMOTE_LCD */
     struct screen* screens[NB_SCREENS];
 
     void (*viewport_set_defaults)(struct viewport *vp,
@@ -378,14 +338,6 @@ struct plugin_api {
     void (*backlight_set_timeout_plugged)(int index);
 #endif
 
-#ifdef HAVE_REMOTE_LCD
-    void (*remote_backlight_on)(void);
-    void (*remote_backlight_off)(void);
-    void (*remote_backlight_set_timeout)(int index);
-#if CONFIG_CHARGING
-    void (*remote_backlight_set_timeout_plugged)(int index);
-#endif
-#endif /* HAVE_REMOTE_LCD */
 #endif /* HAVE_BACKLIGHT */
 
     /* list */

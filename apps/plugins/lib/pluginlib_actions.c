@@ -24,48 +24,6 @@
 #include "action.h"
 #include "pluginlib_actions.h"
 
-#if defined(HAVE_REMOTE_LCD)
-/* remote directions */
-const struct button_mapping pla_remote_ctx[] =
-{
-#if (CONFIG_KEYPAD == IRIVER_H100_PAD) || \
-    (CONFIG_KEYPAD == IRIVER_H300_PAD)
-    { PLA_UP,                BUTTON_RC_BITRATE,                BUTTON_NONE},
-    { PLA_DOWN,              BUTTON_RC_SOURCE,                 BUTTON_NONE},
-    { PLA_LEFT,              BUTTON_RC_VOL_DOWN,               BUTTON_NONE},
-    { PLA_RIGHT,             BUTTON_RC_VOL_UP,                 BUTTON_NONE},
-    { PLA_UP_REPEAT,         BUTTON_RC_BITRATE|BUTTON_REPEAT,  BUTTON_NONE},
-    { PLA_DOWN_REPEAT,       BUTTON_RC_SOURCE|BUTTON_REPEAT,   BUTTON_NONE},
-    { PLA_LEFT_REPEAT,       BUTTON_RC_VOL_DOWN|BUTTON_REPEAT, BUTTON_NONE},
-    { PLA_RIGHT_REPEAT,      BUTTON_RC_VOL_UP|BUTTON_REPEAT,   BUTTON_NONE},
-#elif (CONFIG_KEYPAD == IAUDIO_X5M5_PAD) || \
-      (CONFIG_KEYPAD == IRIVER_H10_PAD) || \
-      (CONFIG_KEYPAD == GIGABEAT_PAD) || \
-      (CONFIG_KEYPAD == IAUDIO_M3_PAD) || \
-      (CONFIG_KEYPAD == GIGABEAT_S_PAD)
-    { PLA_UP,                BUTTON_RC_FF,                     BUTTON_NONE},
-    { PLA_DOWN,              BUTTON_RC_REW,                    BUTTON_NONE},
-    { PLA_LEFT,              BUTTON_RC_VOL_DOWN,               BUTTON_NONE},
-    { PLA_RIGHT,             BUTTON_RC_VOL_UP,                 BUTTON_NONE},
-    { PLA_UP_REPEAT,         BUTTON_RC_FF|BUTTON_REPEAT,       BUTTON_NONE},
-    { PLA_DOWN_REPEAT,       BUTTON_RC_REW|BUTTON_REPEAT,      BUTTON_NONE},
-    { PLA_LEFT_REPEAT,       BUTTON_RC_VOL_DOWN|BUTTON_REPEAT, BUTTON_NONE},
-    { PLA_RIGHT_REPEAT,      BUTTON_RC_VOL_UP|BUTTON_REPEAT,   BUTTON_NONE},
-#elif (CONFIG_REMOTE_KEYPAD == MROBE_REMOTE)
-    { PLA_UP,                BUTTON_RC_PLAY,                   BUTTON_NONE},
-    { PLA_DOWN,              BUTTON_RC_DOWN,                   BUTTON_NONE},
-    { PLA_LEFT,              BUTTON_RC_REW,                    BUTTON_NONE},
-    { PLA_RIGHT,             BUTTON_RC_FF,                     BUTTON_NONE},
-    { PLA_UP_REPEAT,         BUTTON_RC_PLAY|BUTTON_REPEAT,     BUTTON_NONE},
-    { PLA_DOWN_REPEAT,       BUTTON_RC_DOWN|BUTTON_REPEAT,     BUTTON_NONE},
-    { PLA_LEFT_REPEAT,       BUTTON_RC_REW|BUTTON_REPEAT,      BUTTON_NONE},
-    { PLA_RIGHT_REPEAT,      BUTTON_RC_FF|BUTTON_REPEAT,       BUTTON_NONE},
-#else
-    #error pluginlib_actions: No remote directions
-#endif
-    LAST_ITEM_IN_LIST__NEXTLIST(CONTEXT_PLUGIN),
-};
-#endif /* HAVE_REMOTE_LCD */
 
 /* these were taken from the bubbles plugin, so may need tweaking */
 const struct button_mapping pla_main_ctx[] =

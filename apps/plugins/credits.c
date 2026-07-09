@@ -21,14 +21,6 @@
 #include "plugin.h"
 #include "lib/helper.h"
 
-#ifdef HAVE_REMOTE_LCD
-#define REMOTE_WIDTH LCD_REMOTE_WIDTH
-#define REMOTE_HEIGHT LCD_REMOTE_HEIGHT
-#include "pluginbitmaps/remote_creditslogo.h"
-#define REMOTE_LOGO_WIDTH BMPWIDTH_remote_creditslogo
-#define REMOTE_LOGO_HEIGHT BMPHEIGHT_remote_creditslogo
-#define REMOTE_LOGO (const fb_remote_data*)remote_creditslogo
-#endif /* HAVE_REMOTE_LCD */
 
 #define LOGO (const fb_data*)creditslogo
 #include "pluginbitmaps/creditslogo.h"
@@ -337,19 +329,6 @@ int show_logo(void)
 #endif
     rb->lcd_setfont(FONT_UI);
     rb->lcd_update();
-#ifdef HAVE_REMOTE_LCD
-    rb->lcd_remote_clear_display();
-    rb->lcd_remote_bitmap(REMOTE_LOGO, 0, 10,
-                          REMOTE_LOGO_WIDTH, REMOTE_LOGO_HEIGHT);
-    rb->lcd_remote_setfont(FONT_SYSFIXED);
-    if (ver_w > LCD_REMOTE_WIDTH)
-        rb->lcd_remote_puts_scroll(0, (LCD_REMOTE_HEIGHT-font_h) / font_h, version);
-    else
-        rb->lcd_remote_putsxy((LCD_REMOTE_WIDTH/2) - (ver_w/2),
-                      LCD_REMOTE_HEIGHT-font_h, version);
-    rb->lcd_remote_setfont(FONT_UI);
-    rb->lcd_remote_update();
-#endif
 
     return 0;
 }
@@ -376,9 +355,6 @@ enum plugin_status plugin_start(const void* parameter)
         roll_credits();
     }
 
-#ifdef HAVE_REMOTE_LCD
-        rb->lcd_remote_scroll_stop();
-#endif
 
     /* Turn on backlight timeout (revert to settings) */
     backlight_use_settings();

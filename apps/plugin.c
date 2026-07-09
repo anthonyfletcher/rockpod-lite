@@ -270,37 +270,6 @@ static const struct plugin_api rockbox_api = {
     gui_scrollbar_draw,
     get_codepage_name,
 
-#ifdef HAVE_REMOTE_LCD
-    /* remote lcd */
-    lcd_remote_set_contrast,
-    lcd_remote_clear_display,
-    lcd_remote_puts,
-    lcd_remote_puts_scroll,
-    lcd_remote_scroll_stop,
-    lcd_remote_set_drawmode,
-    lcd_remote_get_drawmode,
-    lcd_remote_setfont,
-    lcd_remote_getstringsize,
-    lcd_remote_drawpixel,
-    lcd_remote_drawline,
-    lcd_remote_hline,
-    lcd_remote_vline,
-    lcd_remote_drawrect,
-    lcd_remote_fillrect,
-    lcd_remote_mono_bitmap_part,
-    lcd_remote_mono_bitmap,
-    lcd_remote_putsxy,
-    lcd_remote_update,
-    lcd_remote_update_rect,
-#if (LCD_REMOTE_DEPTH > 1)
-    lcd_remote_set_foreground,
-    lcd_remote_get_foreground,
-    lcd_remote_set_background,
-    lcd_remote_get_background,
-    lcd_remote_bitmap_part,
-    lcd_remote_bitmap,
-#endif
-#endif /* HAVE_REMOTE_LCD */
 #if NB_SCREENS == 2
     {&screens[SCREEN_MAIN], &screens[SCREEN_REMOTE]},
 #else
@@ -329,14 +298,6 @@ static const struct plugin_api rockbox_api = {
     backlight_set_timeout_plugged,
 #endif
 
-#ifdef HAVE_REMOTE_LCD
-    remote_backlight_on,
-    remote_backlight_off,
-    remote_backlight_set_timeout,
-#if CONFIG_CHARGING
-    remote_backlight_set_timeout_plugged,
-#endif
-#endif /* HAVE_REMOTE_LCD */
 #endif /* HAVE_BACKLIGHT */
 
     /* list */
@@ -978,11 +939,6 @@ int plugin_load(const char* plugin, const void* parameter)
     if (!theme_enabled)
         lcd_clear_display();
 
-#ifdef HAVE_REMOTE_LCD
-    lcd_remote_set_viewport(NULL);
-    lcd_remote_clear_display();
-    lcd_remote_update();
-#endif
     if (get_current_activity() == ACTIVITY_WPS)
         push_activity_without_refresh(ACTIVITY_PLUGIN);
     else
@@ -1050,20 +1006,7 @@ int plugin_load(const char* plugin, const void* parameter)
     lcd_set_drawmode(DRMODE_SOLID);
 #endif /* LCD_DEPTH */
 
-#ifdef HAVE_REMOTE_LCD
-    lcd_remote_set_viewport(NULL);
 
-#if LCD_REMOTE_DEPTH > 1
-    lcd_remote_set_drawinfo(DRMODE_SOLID, LCD_REMOTE_DEFAULT_FG,
-                            LCD_REMOTE_DEFAULT_BG);
-#else
-    lcd_remote_set_drawmode(DRMODE_SOLID);
-#endif
-#endif
-
-#ifdef HAVE_REMOTE_LCD
-    lcd_remote_clear_display();
-#endif
 
     if (!theme_enabled)
     {
