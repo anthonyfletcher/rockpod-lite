@@ -190,22 +190,8 @@ enum { AUTORESUME_NEXTTRACK_NEVER = 0, AUTORESUME_NEXTTRACK_ALWAYS,
 /* Alarm settings */
 #ifdef HAVE_RTC_ALARM
 enum {  ALARM_START_WPS = 0,
-#if CONFIG_TUNER
-        ALARM_START_FM,
-#endif
-#ifdef HAVE_RECORDING
-        ALARM_START_REC,
-#endif
         ALARM_START_COUNT
     };
-#if CONFIG_TUNER && defined(HAVE_RECORDING)
-#define ALARM_SETTING_TEXT "wps,fm,rec"
-#elif CONFIG_TUNER
-#define ALARM_SETTING_TEXT "wps,fm"
-#elif defined(HAVE_RECORDING)
-#define ALARM_SETTING_TEXT "wps,rec"
-#endif
-
 #endif /* HAVE_RTC_ALARM */
 
 /* Keyclick stuff */
@@ -278,9 +264,6 @@ enum {
     SETTINGS_SAVE_ALL,
     SETTINGS_SAVE_THEME,
     SETTINGS_SAVE_SOUND,
-#ifdef HAVE_RECORDING
-    SETTINGS_SAVE_RECPRESETS,
-#endif
     SETTINGS_SAVE_EQPRESET,
     SETTINGS_SAVE_RESUMEINFO,
 };
@@ -355,10 +338,6 @@ struct system_status
 #ifdef HAVE_DIRCACHE
     int dircache_size;      /* directory cache structure last size, 22 bits */
 #endif
-#if CONFIG_TUNER
-    int last_frequency;  /* Last frequency for resuming, in FREQ_STEP units,
-                            relative to MIN_FREQ */
-#endif
     signed char last_screen;
     int  viewer_icon_count;
     int last_volume_change; /* tick the last volume change happened. skins use this */
@@ -418,95 +397,6 @@ struct user_settings
     bool timestretch_enabled;
 #endif
 
-#ifdef HAVE_RECORDING
-    int rec_format;    /* record format index */
-    int rec_mono_mode; /* how to create mono: L, R, L+R */
-
-    /* Encoder Settings Start - keep these together */
-    struct mp3_enc_config     mp3_enc_config;
-#if 0 /* These currently contain no members but their places in line
-         should be held */
-    struct aiff_enc_config    aiff_enc_config;
-    struct wav_enc_config     wav_enc_config;
-    struct wavpack_enc_config wavpack_enc_config;
-#endif
-    /* Encoder Settings End */
-
-    int rec_source;    /* 0=mic, 1=line, 2=S/PDIF, 2 or 3=FM Radio */
-    int rec_frequency; /* 0 = 44.1kHz (depends on target)
-                          1 = 48kHz
-                          2 = 32kHz
-                          3 = 22.05kHz
-                          4 = 24kHz
-                          5 = 16kHz */
-    int rec_channels;  /* 0=Stereo, 1=Mono */
-
-    int rec_mic_gain;   /* depends on target */
-    int rec_left_gain;  /* depends on target */
-    int rec_right_gain; /* depends on target */
-    bool peak_meter_clipcounter; /* clipping count indicator */
-    bool rec_editable; /* true means that the bit reservoir is off */
-
-    /* note: timesplit setting is not saved */
-    int rec_timesplit;  /* IN MINUTES 0 = off */
-    int rec_sizesplit; /* 0 = off,
-                          1 = 5MB, 2 = 10MB, 3 = 15MB, 4 = 32MB
-                          5 = 64MB, 6 = 75MB, 7 = 100MB, 8 = 128MB
-                          9 = 256MB, 10= 512MB, 11= 650MB, 12= 700MB,
-                          13= 1GB, 14 = 1.5GB 15 = 1.75MB*/
-    int rec_split_type; /* split/stop */
-    int rec_split_method; /* time/filesize */
-
-    int rec_prerecord_time; /* In seconds, 0-30, 0 means OFF */
-    char rec_directory[MAX_PATHNAME+1];
-    int cliplight; /* 0 = off
-                      1 = main lcd
-                      2 = main and remote lcd
-                      3 = remote lcd */
-
-    int rec_start_thres_db;
-    int rec_start_thres_linear;
-    int rec_start_duration; /* index of trig_durations */
-    int rec_stop_thres_db;
-    int rec_stop_thres_linear;
-    int rec_stop_postrec;
-    int rec_stop_gap;       /* index of trig_durations */
-    int rec_trigger_mode;   /* see TRIG_MODE_XXX constants */
-    int rec_trigger_type;   /* what to do when trigger released */
-#ifdef HAVE_HISTOGRAM
-    int histogram_interval; /* recording peakmeter histogram */
-#endif
-
-#ifdef HAVE_AGC
-    int rec_agc_preset_mic; /* AGC mic preset modes:
-                             0 = Off
-                             1 = Safety (clip)
-                             2 = Live (slow)
-                             3 = DJ-Set (slow)
-                             4 = Medium
-                             5 = Voice (fast) */
-    int rec_agc_preset_line; /* AGC line-in preset modes:
-                              0 = Off
-                              1 = Safety (clip)
-                              2 = Live (slow)
-                              3 = DJ-Set (slow)
-                              4 = Medium
-                              5 = Voice (fast) */
-    int rec_agc_maxgain_mic;  /* AGC maximum mic gain */
-    int rec_agc_maxgain_line; /* AGC maximum line-in gain */
-    int rec_agc_cliptime;     /* 0.2, 0.4, 0.6, 0.8, 1s */
-#endif
-#endif /* HAVE_RECORDING */
-
-#if CONFIG_TUNER
-    int fm_region;
-    bool fm_force_mono;  /* Forces Mono mode if true */
-    unsigned char fmr_file[MAX_FILENAME+1]; /* last fmr preset */
-    unsigned char fms_file[MAX_FILENAME+1];  /* last fms */
-#ifdef HAVE_REMOTE_LCD
-    unsigned char rfms_file[MAX_FILENAME+1];  /* last remote-fms */
-#endif
-#endif /* CONFIG_TUNER */
 #if defined(HAVE_RDS_CAP) && defined(CONFIG_RTC)
     bool sync_rds_time; /* use RDS time to set the clock */
 #endif
@@ -558,10 +448,6 @@ struct user_settings
     int car_adapter_mode_delay; /* delay before resume,  in seconds*/
     int start_in_screen;
     int wps_select_action;
-#if defined(HAVE_RTC_ALARM) && \
-    (defined(HAVE_RECORDING) || CONFIG_TUNER)
-    int alarm_wake_up_screen;
-#endif
     int ff_rewind_min_step; /* FF/Rewind minimum step size */
     int ff_rewind_accel; /* FF/Rewind acceleration (in seconds per doubling) */
 
