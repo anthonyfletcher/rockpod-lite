@@ -83,13 +83,7 @@ static void wps_state_init(void);
 static void track_info_callback(unsigned short id, void *param);
 
 #define WPS_DEFAULTCFG WPS_DIR "/rockbox_default.wps"
-#ifdef HAVE_REMOTE_LCD
-#define RWPS_DEFAULTCFG WPS_DIR "/rockbox_default.rwps"
-#define DEFAULT_WPS(screen) ((screen) == SCREEN_MAIN ? \
-                            WPS_DEFAULTCFG:RWPS_DEFAULTCFG)
-#else
 #define DEFAULT_WPS(screen) (WPS_DEFAULTCFG)
-#endif
 
 char* wps_default_skin(enum screen_type screen)
 {
@@ -103,16 +97,6 @@ char* wps_default_skin(enum screen_type screen)
             "%al%pc/%pt%ar[%pp:%pe]\n"
             "%fbkBit %?fv<avg|> %?iv<%(id3v%iv%)|%(no id3%)>\n"
             "%pb\n%pm\n",
-#ifdef HAVE_REMOTE_LCD
-#if LCD_REMOTE_DEPTH > 1
-            "%X(d)\n"
-#endif
-            "%s%?ia<%ia|%?d(2)<%d(2)|%(root%)>>\n"
-            "%s%?it<%?in<%in. |>%it|%fn>\n"
-            "%al%pc/%pt%ar[%pp:%pe]\n"
-            "%fbkBit %?fv<avg|> %?iv<%(id3v%iv%)|%(no id3%)>\n"
-            "%pb\n",
-#endif
         };
     return skin_buf[screen];
 }
@@ -338,7 +322,7 @@ static bool ffwd_rew(int button, bool seek_from_end)
 
 static void gwps_caption_backlight(struct wps_state *state)
 {
-#if defined(HAVE_BACKLIGHT) || defined(HAVE_REMOTE_LCD)
+#if defined(HAVE_BACKLIGHT)
     if (state->id3)
     {
 #ifdef HAVE_BACKLIGHT
@@ -357,27 +341,10 @@ static void gwps_caption_backlight(struct wps_state *state)
                 backlight_on();
         }
 #endif
-#ifdef HAVE_REMOTE_LCD
-        if (global_settings.remote_caption_backlight)
-        {
-            /* turn on remote backlight n seconds before track ends, and turn it
-               off n seconds into the new track. n == remote_backlight_timeout,
-               or 5s */
-            int n = global_settings.remote_backlight_timeout * 1000;
-
-            if ( n < 1000 )
-                n = 5000; /* use 5s if backlight is always on or off */
-
-            if (((state->id3->elapsed < 1000) ||
-                 ((state->id3->length - state->id3->elapsed) < (unsigned)n)) &&
-                (state->paused == false))
-                remote_backlight_on();
-        }
-#endif
     }
 #else
     (void) state;
-#endif /* def HAVE_BACKLIGHT || def HAVE_REMOTE_LCD */
+#endif /* def HAVE_BACKLIGHT */
 }
 
 static void change_dir(int direction)

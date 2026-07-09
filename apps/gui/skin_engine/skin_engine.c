@@ -248,28 +248,12 @@ static char* get_skin_filename(char *buf, size_t buf_size,
     switch (skin)
     {
         case CUSTOM_STATUSBAR:
-#if defined(HAVE_REMOTE_LCD) && NB_SCREENS > 1
-            if (screen == SCREEN_REMOTE)
-            {
-                setting = global_settings.rsbs_file;
-                ext = "rsbs";
-            }
-            else
-#endif
             {
                 setting = global_settings.sbs_file;
                 ext = "sbs";
             }
             break;
         case WPS:
-#if defined(HAVE_REMOTE_LCD) && NB_SCREENS > 1
-            if (screen == SCREEN_REMOTE)
-            {
-                setting = global_settings.rwps_file;
-                ext = "rwps";
-            }
-            else
-#endif
             {
                 setting = global_settings.wps_file;
                 ext = "wps";

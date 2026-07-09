@@ -406,12 +406,6 @@ void list_draw(struct screen *display, struct gui_synclist *list)
             else
 #endif
             if (list->cursor_style == SYNCLIST_CURSOR_INVERT
-#ifdef HAVE_REMOTE_LCD
-                    /* the global_settings.cursor_style check is here to make
-                    * sure if they want the cursor instead of bar it will work
-                    */
-                    || (display->depth < 16 && list->cursor_style)
-#endif
             )
             {
                 /* Display inverted-line-style */

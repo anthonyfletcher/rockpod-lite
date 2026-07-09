@@ -195,7 +195,7 @@ struct skin_viewport {
     int16_t parsed_fontid;
     char hidden_flags;
     bool is_infovp;
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
     bool output_to_backdrop_buffer;
     bool fgbg_changed;
 #ifdef HAVE_LCD_COLOR
@@ -209,7 +209,7 @@ struct skin_viewport {
 };
 struct viewport_colour {
     unsigned colour;
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
     bool is_default; /* true if parsed from `-` (theme default) */
 #endif
 };

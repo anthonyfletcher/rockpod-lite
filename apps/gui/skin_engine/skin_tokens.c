@@ -1304,7 +1304,7 @@ const char *get_token_value(struct gui_wps *gwps,
                 return NULL;
 #endif
 
-#if (CONFIG_LED == LED_VIRTUAL) || defined(HAVE_REMOTE_LCD)
+#if (CONFIG_LED == LED_VIRTUAL)
         case SKIN_TOKEN_VLED_HDD:
             if(led_read(HZ/2))
                 return "h";

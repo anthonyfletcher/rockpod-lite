@@ -103,7 +103,7 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
 
     switch (token->type)
     {
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
         case SKIN_TOKEN_VIEWPORT_BGCOLOUR:
         case SKIN_TOKEN_VIEWPORT_FGCOLOUR:
         {
@@ -500,7 +500,7 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                             skin_viewport->hidden_flags |= VP_DRAW_WASHIDDEN;
                         else
                         {
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
                             if (skin_viewport->output_to_backdrop_buffer)
                             {
                                 skin_backdrop_set_buffer(data->backdrop_id, skin_viewport);
@@ -865,7 +865,7 @@ void skin_render_viewport(struct skin_element* viewport, struct gui_wps *gwps,
         info.no_line_break = false;
         info.line_scrolls = false;
         info.force_redraw = false;
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
         skin_viewport->fgbg_changed = false;
 #ifdef HAVE_LCD_COLOR
         if (info.line_desc.style&STYLE_GRADIENT)
@@ -886,7 +886,7 @@ void skin_render_viewport(struct skin_element* viewport, struct gui_wps *gwps,
             func = skin_render_line;
 
         needs_update = func(line, &info);
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
         if (skin_viewport->fgbg_changed)
         {
             /* if fg/bg changed due to a conditional tag the colors
@@ -1007,7 +1007,7 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
 #endif
 
         unsigned vp_refresh_mode = refresh_mode;
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1)
+#if (LCD_DEPTH > 1)
         if (skin_viewport->output_to_backdrop_buffer)
         {
             skin_backdrop_set_buffer(data->backdrop_id, skin_viewport);
@@ -1061,7 +1061,7 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
 
         refresh_mode = old_refresh_mode;
     }
-#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
     skin_backdrop_set_buffer(-1, skin_viewport);
     skin_backdrop_show(data->backdrop_id);
 #endif
