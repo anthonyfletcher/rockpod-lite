@@ -2907,13 +2907,22 @@ static void return_to_idle_state(void)
  * seeing "the current album" first is reasonable) but not when coming
  * straight back from browsing this exact cover's own tracks. */
 static bool pf_resume_last_album = false;
+/* The index to resume to, captured separately from pf_cfg.last_album:
+ * init() calls pf_config_load() (reloading pf_cfg from its on-disk file)
+ * before set_initial_slide() runs, which clobbers whatever was just
+ * assigned to pf_cfg.last_album in the PF_SELECT handler below with
+ * whatever index was last saved to disk -- silently resuming the wrong
+ * album (observed as always landing back on the first one). This is a
+ * purely transient, in-memory signal that must never round-trip through
+ * the persisted config. */
+static int pf_resume_album_index;
 
 static void set_initial_slide(const char* selected_file)
 {
     if (pf_resume_last_album)
     {
         pf_resume_last_album = false;
-        set_current_slide(pf_cfg.last_album);
+        set_current_slide(pf_resume_album_index);
         return;
     }
 
@@ -3803,9 +3812,15 @@ static int album_covers_loop(void)
             instant_update ? 0 : HZ/16, get_context_map);
         skin_render_inhibit_flush(false);
 
-        /* SBS rendering in get_custom_action resets the viewport to default.
-         * Restore ours so LCD API calls use the correct coordinates. */
+        /* SBS rendering in get_custom_action resets the viewport to default,
+         * and also leaves the global draw mode at whatever the skin's own
+         * text/menu elements last used (typically DRMODE_SOLID, an opaque
+         * background block) -- restore both, or draw_album_text()'s
+         * lcd_putsxy() below inherits that solid mode and paints an opaque
+         * block behind the album/artist text instead of drawing
+         * transparently over the coverflow's own background. */
         lcd_set_viewport(&pf_vp);
+        lcd_set_drawmode(DRMODE_FG);
 
         pf_update_dynamic_colors();
         update_scroll_lines();
@@ -3918,6 +3933,7 @@ static int album_covers_loop(void)
              * design that this replaced). */
             album_seek = pf_idx.album_index[center_index].seek;
             pf_cfg.last_album = center_index;
+            pf_resume_album_index = center_index;
             pf_resume_last_album = true;
             tagtree_enter_album_tracks_on_next_load(album_seek, album);
             return GO_TO_ALBUM_COVERS_TRACKS;

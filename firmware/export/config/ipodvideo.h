@@ -168,10 +168,13 @@
 #define CURRENT_RECORD     35  /* FIXME: this needs adjusting */
 #endif
 
-/* Define Apple remote tuner */
-#define CONFIG_TUNER IPOD_REMOTE_TUNER
-#define HAVE_RDS_CAP
-#define CONFIG_RDS RDS_CFG_PUSH
+/* Apple remote tuner accessory support -- disabled for this fork (matches
+ * ipod6g.h): not something this build targets, and leaving it enabled left
+ * a full FM radio UI surface (Radio Screen theme option, Radio Settings
+ * menu, main-menu FM item, alarm-wake-to-FM) reachable but pointless. */
+//#define CONFIG_TUNER IPOD_REMOTE_TUNER
+//#define HAVE_RDS_CAP
+//#define CONFIG_RDS RDS_CFG_PUSH
 
 /* Define this if you have a PortalPlayer PP5022 */
 #define CONFIG_CPU PP5022

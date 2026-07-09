@@ -386,6 +386,24 @@ static int browser(void* param)
 
         case GO_TO_ALBUM_COVERS_TRACKS:
             tc->dirlevel = last_ft_dirlevel;
+            /* enter_album_tracks_directly() left tc->currtable/currextra
+             * pointing at the album's flat track listing (TABLE_NAVIBROWSE,
+             * extra=1) -- unlike dirlevel, nothing here ever restored those.
+             * A later, unrelated GO_TO_DBBROWSER ("Music") entry doesn't
+             * reset currtable itself (it assumes whatever's left over from
+             * the last real Music session), so it silently inherited this
+             * album's stale view instead of the actual Music resume point --
+             * observed as: start playing a track from here, open the plain
+             * Music menu later, and it opens back into this exact album
+             * even though dirlevel claims to be at the top, so BACK skips
+             * straight past Artist/base-Music-menu to the main menu. Reset
+             * currtable to 0 (forces tagtree_load()'s fresh-root path) and
+             * clear the Music resume position so the next Music entry
+             * always starts at the base Music menu rather than in an
+             * inconsistent dirlevel/currtable state. */
+            tc->currtable = 0;
+            last_db_dirlevel = 0;
+            last_db_selection = 0;
             /* Unlike the general tag-tree browse cases above, redirecting
              * GO_TO_ROOT here is safe: this entry point is only ever reached
              * from Album covers (never from the main Music menu), and

@@ -1,15 +1,12 @@
-/* For all targets */
-shortcuts
+/* Both load-bearing (a real plugin_load() call site elsewhere in core,
+ * not just reachable through the generic Plugins browser):
+ *   - text_viewer: apps/menus/main_menu.c's show_legal() opens this to
+ *     display the GPL/licenses text.
+ *   - imageviewer: apps/onplay.c's view_album_art() opens this for
+ *     "View Album Art".
+ * shortcuts/clock/tagcache (the plugin, distinct from the core
+ * apps/shortcuts.c and apps/tagcache.c files of the same name) had no
+ * such call site anywhere -- only reachable through the generic Plugins
+ * browser, so removed along with the rest of that trim. */
 text_viewer
-
-/* For various targets... */
-
-#if CONFIG_RTC
-clock
-#endif
-
-#if defined(HAVE_TAGCACHE)
-tagcache
-#endif
-
 imageviewer

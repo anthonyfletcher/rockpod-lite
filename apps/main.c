@@ -242,18 +242,9 @@ int show_logo_boot( void ) INIT_ATTR;
 int show_logo_boot( void )
 {
     unsigned char version[32];
-    int font_h, ver_w;
-    snprintf(version, sizeof(version), "Ver. %s", rbversion);
-    ver_w = font_getstringsize(version, NULL, &font_h, FONT_SYSFIXED);
     lcd_clear_display();
-    lcd_setfont(FONT_SYSFIXED);
     lcd_bmp(&bm_rockpodlogo, (LCD_WIDTH - BMPWIDTH_rockpodlogo) / 2,
                              (LCD_HEIGHT - BMPHEIGHT_rockpodlogo) / 2);
-    if (ver_w > LCD_WIDTH)
-        lcd_putsxy(0, LCD_HEIGHT-font_h, rbversion);
-    else
-        lcd_putsxy((LCD_WIDTH/2) - (ver_w/2), LCD_HEIGHT-font_h, version);
-    lcd_setfont(FONT_UI);
     lcd_update();
 #ifdef SIMULATOR
     sleep(HZ); /* sim is too fast to see logo */

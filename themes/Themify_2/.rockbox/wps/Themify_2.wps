@@ -116,6 +116,14 @@ uuqrstw
 %Vl(Album_Fallback_Art,0,164,160,18,9)
 uuuuuuu
 # draw the rounded edges
+# Background-layer copies added below: these had no %VB counterpart at
+# all, unlike the art itself and the shadow rects above -- so on a track
+# change the background layer's fresh art appeared instantly with no
+# corner glyphs yet, and the foreground layer then popped them in a frame
+# later, reading as a piece getting drawn over the top-right of the art.
+%Vl(Album_Widget,0,16,166,22,6)%VB%aRb
+%Vl(Album_Widget,0,166,166,22,6)%VB%aRc
+%Vl(Album_Widget,144,199,22,22,6)%VBd
 %Vl(Album_Widget,0,16,166,22,6)%aRb
 %Vl(Album_Widget,0,166,166,22,6)%aRc
 %Vl(Album_Widget,144,199,22,22,6)d
@@ -185,6 +193,22 @@ uuuuuuu
 %aR%?or(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<À>%?and(%if(%ps, !=, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<Á>%?and(%if(%ps, =, 1),%if(%mm, =, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<Á>%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11),%if(%fc, !=, 13)))<Á>%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<Á>%?or(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<Â>
 #
 %Vl(Sub_Status_Backdrop_Long_Flush,183,14,71,29,7)#
+#
+# Background-layer copies of the hold icon and every status icon slot
+# below: none of these had a %VB counterpart, only their backdrop shape
+# did (see Sub_Status_Backdrop_* above) -- so the backdrop container
+# appeared instantly on a track change while the icons/glyphs inside it
+# (including the "hq audio" indicator) popped in a frame later on the
+# foreground layer, reading as something drawn over the top-right of the
+# screen right after the art itself changed.
+%Vl(Status_Bar_Short,273,14,10,29,6)%VB%Vs(invert)%aL%?mh<a|a>
+%Vl(Status_Bar_Long,254,14,10,29,6)%VB%Vs(invert)%aL%?mh<a|a>
+%Vl(Sub_Status_Bar_Short,252,22,14,13,8)%VB%?and(%if(%ps, =, 1),%or(%if(%mm, =, 1),%if(%mm, >, 1)),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<m>%?and(%if(%ps, =, 1),%or(%if(%mm, =, 1),%if(%mm, >, 1)),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<m>%?and(%if(%ps, !=, 1),%if(%mm, >, 1),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<n>%?and(%if(%ps, !=, 1),%if(%mm, =, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<p>
+%Vl(Sub_Status_Bar_Long,232,22,14,13,8)%VB%?and(%if(%ps, =, 1),%or(%if(%mm, =, 1),%if(%mm, >, 1)),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<m>%?and(%if(%ps, =, 1),%or(%if(%mm, =, 1),%if(%mm, >, 1)),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<m>%?and(%if(%ps, !=, 1),%if(%mm, >, 1),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<n>%?and(%if(%ps, !=, 1),%if(%mm, =, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<p>
+%Vl(Sub_Status_Bar_Short,231,22,14,13,8)%VB%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<n>%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<n>%?and(%or(%and(%if(%ps, !=, 1),%if(%mm, >, 1)),%and(%if(%ps, =, 1),%if(%mm, =, 1))),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<p>
+%Vl(Sub_Status_Bar_Long,211,22,14,13,8)%VB%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<n>%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<n>%?and(%or(%and(%if(%ps, !=, 1),%if(%mm, >, 1)),%and(%if(%ps, =, 1),%if(%mm, =, 1))),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<p>
+%Vl(Sub_Status_Bar_Short,210,22,14,14,8)%VB%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<p>
+%Vl(Sub_Status_Bar_Long,190,22,14,14,8)%VB%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<p>
 #
 %Vl(Status_Bar_Short,273,14,10,29,6)%Vs(invert)%aL%?mh<a|a>
 %Vl(Status_Bar_Long,254,14,10,29,6)%Vs(invert)%aL%?mh<a|a>
