@@ -1272,9 +1272,6 @@ const struct settings_list settings[] = {
     OFFON_SETTING(0, lineout_active, LANG_LINEOUT,
                   true, "lineout", lineout_set),
 #endif
-#if defined(HAVE_RDS_CAP) && defined(CONFIG_RTC)
-    OFFON_SETTING(0, sync_rds_time, LANG_FM_SYNC_RDS_TIME, false, "sync_rds_time", NULL),
-#endif
 
 #ifdef HAVE_REMOTE_LCD
     /* remote lcd */

@@ -98,9 +98,6 @@ multidrive_usb
 quickscreen
 #endif
 
-#if defined(HAVE_RDS_CAP)
-rds
-#endif
 
 #if defined(HAVE_HISTOGRAM)
 histogram

@@ -397,9 +397,6 @@ struct user_settings
     bool timestretch_enabled;
 #endif
 
-#if defined(HAVE_RDS_CAP) && defined(CONFIG_RTC)
-    bool sync_rds_time; /* use RDS time to set the clock */
-#endif
 
     /* misc options */
 #ifndef HAVE_WHEEL_ACCELERATION
