@@ -42,9 +42,6 @@
 #include "open_plugin.h"
 #include "misc.h"
 #include "playback.h"
-#ifdef HAVE_REMOTE_LCD
-#include "lcd-remote.h"
-#endif
 #include "list.h"
 #include "rbunicode.h"
 #include "peakmeter.h"
@@ -380,13 +377,6 @@ static const char graphic_numeric[] = "graphic,numeric";
   #define DEFAULT_VIEWERS_ICONSET ""
 #endif
 
-#ifdef HAVE_REMOTE_LCD
-#if LCD_REMOTE_HEIGHT <= 64
-  #define DEFAULT_REMOTE_FONTNAME "08-Rockfont"
-#else
-  #define DEFAULT_REMOTE_FONTNAME "-"
-#endif
-#endif /* HAVE_REMOTE_LCD */
 
 #define DEFAULT_THEME_FOREGROUND LCD_RGBPACK(0xce, 0xcf, 0xce)
 #define DEFAULT_THEME_BACKGROUND LCD_RGBPACK(0x00, 0x00, 0x00)
@@ -1159,12 +1149,6 @@ const struct settings_list settings[] = {
                   LANG_STATUS_BAR, STATUSBAR_TOP, "statusbar","off,top,bottom",
                   NULL, 3, ID2P(LANG_OFF), ID2P(LANG_STATUSBAR_TOP),
                   ID2P(LANG_STATUSBAR_BOTTOM)),
-#ifdef HAVE_REMOTE_LCD
-    CHOICE_SETTING(F_THEMESETTING|F_TEMPVAR|F_NEEDAPPLY, remote_statusbar,
-                  LANG_REMOTE_STATUSBAR, STATUSBAR_TOP, "remote statusbar","off,top,bottom",
-                  NULL, 3, ID2P(LANG_OFF), ID2P(LANG_STATUSBAR_TOP),
-                  ID2P(LANG_STATUSBAR_BOTTOM)),
-#endif
     CHOICE_SETTING(F_THEMESETTING|F_TEMPVAR, scrollbar,
                   LANG_SCROLL_BAR, SCROLLBAR_DEFAULT, "scrollbar","off,left,right",
                   NULL, 3, ID2P(LANG_OFF), ID2P(LANG_LEFT), ID2P(LANG_RIGHT)),
@@ -1273,44 +1257,11 @@ const struct settings_list settings[] = {
                   true, "lineout", lineout_set),
 #endif
 
-#ifdef HAVE_REMOTE_LCD
-    /* remote lcd */
-    INT_SETTING(0, remote_contrast, LANG_CONTRAST,
-                DEFAULT_REMOTE_CONTRAST_SETTING, "remote contrast", UNIT_INT,
-                MIN_REMOTE_CONTRAST_SETTING, MAX_REMOTE_CONTRAST_SETTING, 1,
-                NULL, NULL, lcd_remote_set_contrast),
-    BOOL_SETTING(0, remote_invert, LANG_INVERT, false ,"remote invert", off_on,
-                 LANG_INVERT_LCD_INVERSE, LANG_NORMAL,
-                 lcd_remote_set_invert_display),
-    OFFON_SETTING(0,remote_flip_display, LANG_FLIP_DISPLAY,
-                  false,"remote flip display", NULL),
-    TABLE_SETTING_LIST(F_ALLOW_ARBITRARY_VALS, remote_backlight_timeout,
-                  LANG_BACKLIGHT, 5,
-                  "remote backlight timeout", off_on, UNIT_SEC,
-                  formatter_time_unit_0_is_always, getlang_time_unit_0_is_always,
-                  remote_backlight_set_timeout, 23, timeout_sec_common),
-#if CONFIG_CHARGING
-    TABLE_SETTING_LIST(F_ALLOW_ARBITRARY_VALS, remote_backlight_timeout_plugged,
-                  LANG_BACKLIGHT_ON_WHEN_CHARGING, 10,
-                  "remote backlight timeout plugged", off_on, UNIT_SEC,
-                  formatter_time_unit_0_is_always, getlang_time_unit_0_is_always,
-                  remote_backlight_set_timeout_plugged, 23, timeout_sec_common),
-#endif
-#ifdef HAVE_REMOTE_LCD_TICKING
-    OFFON_SETTING(0, remote_reduce_ticking, LANG_REDUCE_TICKING,
-                  false,"remote reduce ticking", NULL),
-#endif
-#endif
 
 #ifdef HAVE_BACKLIGHT
     OFFON_SETTING(0, bl_filter_first_keypress,
                   LANG_BACKLIGHT_FILTER_FIRST_KEYPRESS, false,
                   "backlight filters first keypress", NULL),
-#ifdef HAVE_REMOTE_LCD
-    OFFON_SETTING(0, remote_bl_filter_first_keypress,
-                  LANG_BACKLIGHT_FILTER_FIRST_KEYPRESS, false,
-                  "backlight filters first remote keypress", NULL),
-#endif
 #endif /* HAVE_BACKLIGHT */
 
 /** End of old RTC config block **/
@@ -1337,10 +1288,6 @@ const struct settings_list settings[] = {
                 LANG_BACKLIGHT_SELECTIVE,
                 0, "Selective Backlight Actions", UNIT_INT,
                 0, 2048,2, NULL, NULL, NULL),
-#ifdef HAVE_REMOTE_LCD
-    OFFON_SETTING(0, remote_caption_backlight, LANG_CAPTION_BACKLIGHT,
-                  false, "remote caption backlight", NULL),
-#endif
 #ifdef HAVE_BACKLIGHT_BRIGHTNESS
     INT_SETTING(F_NO_WRAP, brightness, LANG_BRIGHTNESS,
                 DEFAULT_BRIGHTNESS_SETTING, "brightness",UNIT_INT,
@@ -1373,21 +1320,6 @@ const struct settings_list settings[] = {
                 getlang_time_unit_0_is_off, lcd_scroll_delay),
     INT_SETTING(0, bidir_limit, LANG_BIDIR_SCROLL, 50, "bidir limit",
                 UNIT_PERCENT, 0, 200, 25, NULL, NULL, lcd_bidir_scroll),
-#ifdef HAVE_REMOTE_LCD
-    INT_SETTING(0, remote_scroll_speed, LANG_SCROLL_SPEED, 9,
-                "remote scroll speed", UNIT_INT, 0,17, 1,
-                NULL, NULL, lcd_remote_scroll_speed),
-    INT_SETTING(0, remote_scroll_step, LANG_SCROLL_STEP, 6,
-                "remote scroll step", UNIT_PIXEL, 1, LCD_REMOTE_WIDTH, 1, NULL,
-                NULL, lcd_remote_scroll_step),
-    INT_SETTING(F_TIME_SETTING, remote_scroll_delay, LANG_SCROLL_DELAY, 1000,
-                "remote scroll delay", UNIT_MS, 0, 3000, 100,
-                formatter_time_unit_0_is_off, getlang_time_unit_0_is_off,
-                lcd_remote_scroll_delay),
-    INT_SETTING(0, remote_bidir_limit, LANG_BIDIR_SCROLL, 50,
-                "remote bidir limit", UNIT_PERCENT, 0, 200, 25, NULL, NULL,
-                lcd_remote_bidir_scroll),
-#endif
     OFFON_SETTING(0, offset_out_of_view, LANG_SCREEN_SCROLL_VIEW,
                   false, "Screen Scrolls Out Of View", NULL),
     OFFON_SETTING(0, disable_mainmenu_scrolling, LANG_DISABLE_MAINMENU_SCROLLING,
@@ -1891,15 +1823,6 @@ const struct settings_list settings[] = {
         INT(1),"agc cliptime", {.cfg_vals = "0.2 s,0.4 s,0.6 s,0.8 s,1 s"}},
 #endif
 
-#ifdef HAVE_REMOTE_LCD
-#ifdef HAS_REMOTE_BUTTON_HOLD
-    CHOICE_SETTING(0, remote_backlight_on_button_hold,
-                   LANG_BACKLIGHT_ON_BUTTON_HOLD, 0,
-                   "remote backlight on button hold",
-                   "normal,off,on", remote_backlight_set_on_button_hold, 3,
-                   ID2P(LANG_NORMAL), ID2P(LANG_OFF), ID2P(LANG_ON)),
-#endif
-#endif
 #ifdef HAVE_HEADPHONE_DETECTION
     CHOICE_SETTING(0, unplug_mode, LANG_HEADPHONE_UNPLUG, 0,
                    "pause on headphone unplug", "off,pause,pause and resume",
@@ -1919,20 +1842,10 @@ const struct settings_list settings[] = {
     INT_SETTING(0, glyphs_to_cache, LANG_GLYPHS, DEFAULT_GLYPHS,
                 "glyphs", UNIT_INT, MIN_GLYPHS, MAX_GLYPHS, 10,
                 NULL, NULL, NULL),
-#ifdef HAVE_REMOTE_LCD
-    TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY, remote_font_file, "remote font",
-                     DEFAULT_REMOTE_FONTNAME, FONT_DIR "/", ".fnt"),
-#endif
     TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY,wps_file, "wps",
                      DEFAULT_WPSNAME, WPS_DIR "/", ".wps"),
     TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY,sbs_file, "sbs",
                      DEFAULT_SBSNAME, SBS_DIR "/", ".sbs"),
-#ifdef HAVE_REMOTE_LCD
-    TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY,rwps_file,"rwps",
-                     DEFAULT_WPSNAME, WPS_DIR "/", ".rwps"),
-    TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY,rsbs_file, "rsbs",
-                     DEFAULT_SBSNAME, SBS_DIR "/", ".rsbs"),
-#endif
     TEXT_SETTING(0,lang_file,"lang","",LANG_DIR "/",".lng"),
 #if LCD_DEPTH > 1
     TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY,backdrop_file,"backdrop",
@@ -1988,13 +1901,6 @@ const struct settings_list settings[] = {
     TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY, viewers_icon_file, "viewers iconset",
                      DEFAULT_VIEWERS_ICONSET,
                      ICON_DIR "/", ".bmp"),
-#ifdef HAVE_REMOTE_LCD
-    TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY, remote_icon_file, "remote iconset", "-",
-                     ICON_DIR "/", ".bmp"),
-    TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY, remote_viewers_icon_file,
-                     "remote viewers iconset", "-",
-                     ICON_DIR "/", ".bmp"),
-#endif /* HAVE_REMOTE_LCD */
 #ifdef HAVE_LCD_COLOR
     TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY, colors_file, "filetype colours", "-",
                      THEME_DIR "/", ".colours"),
@@ -2197,9 +2103,6 @@ const struct settings_list settings[] = {
 
     /* Customizable list */
     VIEWPORT_SETTING(ui_vp_config, "ui viewport"),
-#ifdef HAVE_REMOTE_LCD
-    VIEWPORT_SETTING(remote_ui_vp_config, "remote ui viewport"),
-#endif
 
 #ifdef HAVE_MORSE_INPUT
     OFFON_SETTING(0, morse_input, LANG_MORSE_INPUT, false, "morse input", NULL),

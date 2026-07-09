@@ -457,10 +457,6 @@ struct user_settings
 
     unsigned char wps_file[MAX_FILENAME+1];  /* last wps */
     unsigned char sbs_file[MAX_FILENAME+1];  /* last statusbar skin */
-#ifdef HAVE_REMOTE_LCD
-    unsigned char rwps_file[MAX_FILENAME+1];  /* last remote-wps */
-    unsigned char rsbs_file[MAX_FILENAME+1];  /* last remote statusbar skin */
-#endif
     unsigned char lang_file[MAX_FILENAME+1]; /* last language */
     unsigned char playlist_catalog_dir[MAX_PATHNAME+1];
     int skip_length; /* skip length */
@@ -470,9 +466,6 @@ struct user_settings
     int battery_display; /* how battery is displayed: 0=graphic, 1=percent */
     bool show_icons;   /* 0=hide 1=show */
     int statusbar;    /* STATUSBAR_* enum values */
-#ifdef HAVE_REMOTE_LCD
-    int remote_statusbar;
-#endif
 
     int scrollbar;    /* SCROLLBAR_* enum values */
     int scrollbar_width;
@@ -630,9 +623,6 @@ struct user_settings
      * concept like font_file, just a per-feature opt-in. */
     unsigned char bold_font_file[MAX_FILENAME+1];
     int glyphs_to_cache; /* default font allocation size in glyphs */
-#ifdef HAVE_REMOTE_LCD
-    unsigned char remote_font_file[MAX_FILENAME+1]; /* last font */
-#endif
     unsigned char kbd_file[MAX_FILENAME+1];  /* last keyboard */
     int  backlight_timeout;  /* backlight off timeout:  -1=never,
                                 0=always, or time in seconds */
@@ -668,31 +658,6 @@ struct user_settings
     int brightness;
 #endif
 
-#ifdef HAVE_REMOTE_LCD
-    /* remote lcd */
-    int  remote_contrast;          /* lcd contrast:       0-63 0=low 63=high */
-    int  remote_backlight_timeout; /* backlight off timeout:  -1=never,
-                                      0=always, or time in seconds */
-    int  remote_backlight_timeout_plugged;
-    int  remote_scroll_speed;      /* long texts scrolling speed: 1-30 */
-    int  remote_scroll_delay;      /* delay (in 1/10s) before starting scroll */
-    int  remote_scroll_step;       /* pixels to advance per update */
-    int  remote_bidir_limit;       /* bidir scroll length limit */
-    bool remote_invert;            /* invert display */
-    bool remote_flip_display;      /* turn display (and button layout) by 180 degrees */
-    bool remote_caption_backlight; /* turn on backlight at end and start of track */
-    bool remote_bl_filter_first_keypress; /* filter first remote keypress when remote dark? */
-    unsigned char remote_icon_file[MAX_FILENAME+1];
-    unsigned char remote_viewers_icon_file[MAX_FILENAME+1];
-#ifdef HAS_REMOTE_BUTTON_HOLD
-    int remote_backlight_on_button_hold; /* what to do with remote backlight when hold
-                                            switch is on */
-#endif
-#ifdef HAVE_REMOTE_LCD_TICKING
-    bool remote_reduce_ticking; /* 0=normal operation,
-                                   1=EMI reduce on with cost more CPU. */
-#endif
-#endif /* HAVE_REMOTE_LCD */
 
 #ifdef HAVE_BUTTON_LIGHT
     int buttonlight_timeout;
@@ -744,9 +709,6 @@ struct user_settings
 #endif
 
     unsigned char ui_vp_config[64]; /* viewport string for the lists */
-#ifdef HAVE_REMOTE_LCD
-    unsigned char remote_ui_vp_config[64]; /* viewport string for the remote lists */
-#endif
 
     struct compressor_settings compressor_settings;
 
