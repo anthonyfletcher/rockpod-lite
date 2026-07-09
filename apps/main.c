@@ -106,10 +106,6 @@
 #include "ata_mmc.h"
 #endif
 
-#ifdef HAVE_REMOTE_LCD
-#include "lcd-remote.h"
-#endif
-
 #if CONFIG_USBOTG == USBOTG_ISP1362
 #include "isp1362.h"
 #endif
@@ -362,9 +358,6 @@ static void init(void)
 #endif
     enable_irq();
     lcd_init();
-#ifdef HAVE_REMOTE_LCD
-    lcd_remote_init();
-#endif
     FOR_NB_SCREENS(i)
         global_status.font_id[i] = FONT_SYSFIXED;
     font_init();
@@ -471,9 +464,6 @@ static void init(void)
 
     unicode_init();
     lcd_init();
-#ifdef HAVE_REMOTE_LCD
-    lcd_remote_init();
-#endif
     FOR_NB_SCREENS(i)
         global_status.font_id[i] = FONT_SYSFIXED;
     font_init();

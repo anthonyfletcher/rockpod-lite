@@ -33,9 +33,6 @@
 #include "peakmeter.h"
 #include "talk.h"
 #include "lcd.h"
-#ifdef HAVE_REMOTE_LCD
-#include "lcd-remote.h"
-#endif
 #ifdef HAVE_BACKLIGHT
 #include "mask_select.h"
 #include "splash.h"
@@ -78,10 +75,6 @@ static int filterfirstkeypress_callback(int action,
     {
         case ACTION_EXIT_MENUITEM:
             set_backlight_filter_keypress(global_settings.bl_filter_first_keypress);
-#ifdef HAVE_REMOTE_LCD
-            set_remote_backlight_filter_keypress(
-                                global_settings.remote_bl_filter_first_keypress);
-#endif /* HAVE_REMOTE_LCD */
             selectivebacklight_callback(action,this_item, this_list);/*uses Filter First KP*/
             break;
     }
@@ -131,10 +124,6 @@ static int flipdisplay_callback(int action,
             button_set_flip(global_settings.flip_display);
             lcd_set_flip(global_settings.flip_display);
             lcd_update();
-#ifdef HAVE_REMOTE_LCD
-            lcd_remote_set_flip(global_settings.remote_flip_display);
-            lcd_remote_update();
-#endif
             break;
     }
     return action;
@@ -228,79 +217,6 @@ MAKE_MENU(lcd_settings,ID2P(LANG_LCD_MENU),
 /***********************************/
 
 
-/********************************/
-/* Remote LCD settings menu     */
-#ifdef HAVE_REMOTE_LCD
-MENUITEM_SETTING(remote_backlight_timeout,
-                    &global_settings.remote_backlight_timeout, NULL);
-
-#if CONFIG_CHARGING
-MENUITEM_SETTING(remote_backlight_timeout_plugged,
-                    &global_settings.remote_backlight_timeout_plugged, NULL);
-#endif
-
-#ifdef HAS_REMOTE_BUTTON_HOLD
-MENUITEM_SETTING(remote_backlight_on_button_hold,
-                    &global_settings.remote_backlight_on_button_hold, NULL);
-#endif
-
-MENUITEM_SETTING(remote_caption_backlight,
-                    &global_settings.remote_caption_backlight, NULL);
-MENUITEM_SETTING(remote_bl_filter_first_keypress,
-                    &global_settings.remote_bl_filter_first_keypress,
-                    filterfirstkeypress_callback);
-MENUITEM_SETTING(remote_contrast,
-                    &global_settings.remote_contrast, NULL);
-MENUITEM_SETTING(remote_invert,
-                    &global_settings.remote_invert, NULL);
-
-#ifdef HAVE_LCD_FLIP
-MENUITEM_SETTING(remote_flip_display,
-                    &global_settings.remote_flip_display, flipdisplay_callback);
-#endif
-
-#ifdef HAVE_REMOTE_LCD_TICKING
-static int ticking_callback(int action,
-                            const struct menu_item_ex *this_item,
-                            struct gui_synclist *this_list)
-{
-    (void)this_item;
-    (void)this_list;
-    switch (action)
-    {
-        case ACTION_EXIT_MENUITEM:
-            lcd_remote_emireduce(global_settings.remote_reduce_ticking);
-            break;
-    }
-    return action;
-}
-MENUITEM_SETTING(remote_reduce_ticking,
-                    &global_settings.remote_reduce_ticking, ticking_callback);
-#endif
-
-MAKE_MENU(lcd_remote_settings, ID2P(LANG_LCD_REMOTE_MENU),
-            NULL, Icon_Remote_Display_menu,
-            &remote_backlight_timeout,
-#if CONFIG_CHARGING
-            &remote_backlight_timeout_plugged,
-#endif
-#ifdef HAS_REMOTE_BUTTON_HOLD
-            &remote_backlight_on_button_hold,
-#endif
-            &remote_caption_backlight, &remote_bl_filter_first_keypress,
-            &remote_contrast, &remote_invert
-
-#ifdef HAVE_LCD_FLIP
-            ,&remote_flip_display
-#endif
-#ifdef HAVE_REMOTE_LCD_TICKING
-            ,&remote_reduce_ticking
-#endif
-         );
-
-#endif /* HAVE_REMOTE_LCD */
-/* Remote LCD settings menu     */
-/********************************/
 
 /***********************************/
 /*    SCROLL MENU                  */
@@ -310,18 +226,6 @@ MENUITEM_SETTING(scroll_delay, &global_settings.scroll_delay, NULL);
 MENUITEM_SETTING_W_TEXT(scroll_step, &global_settings.scroll_step,
                         ID2P(LANG_SCROLL_STEP_EXAMPLE), NULL);
 MENUITEM_SETTING(bidir_limit, &global_settings.bidir_limit, NULL);
-#ifdef HAVE_REMOTE_LCD
-MENUITEM_SETTING_W_TEXT(remote_scroll_speed, &global_settings.remote_scroll_speed,
-                         ID2P(LANG_SCROLL), NULL);
-MENUITEM_SETTING(remote_scroll_delay, &global_settings.remote_scroll_delay, NULL);
-MENUITEM_SETTING_W_TEXT(remote_scroll_step, &global_settings.remote_scroll_step,
-                        ID2P(LANG_SCROLL_STEP_EXAMPLE), NULL);
-MENUITEM_SETTING(remote_bidir_limit, &global_settings.remote_bidir_limit, NULL);
-
-MAKE_MENU(remote_scroll_sets, ID2P(LANG_REMOTE_SCROLL_SETS), 0, Icon_NOICON,
-          &remote_scroll_speed, &remote_scroll_delay,
-          &remote_scroll_step, &remote_bidir_limit);
-#endif /* HAVE_REMOTE_LCD */
 
 /* list acceleration */
 #ifndef HAVE_WHEEL_ACCELERATION
@@ -340,9 +244,6 @@ MAKE_MENU(scroll_settings_menu, ID2P(LANG_SCROLL_MENU), 0, Icon_NOICON,
           &scroll_speed, &scroll_delay,
           &scroll_step,
           &bidir_limit,
-#ifdef HAVE_REMOTE_LCD
-          &remote_scroll_sets,
-#endif
           &offset_out_of_view,
           &disable_mainmenu_scrolling,
           &screen_scroll_step,
@@ -605,9 +506,6 @@ MENUITEM_SETTING(codepage_setting, &global_settings.default_codepage, codepage_c
 MAKE_MENU(display_menu, ID2P(LANG_DISPLAY),
             NULL, Icon_Display_menu,
             &lcd_settings,
-#ifdef HAVE_REMOTE_LCD
-            &lcd_remote_settings,
-#endif
             &scroll_settings_menu,
             &peak_meter_menu,
             &codepage_setting,

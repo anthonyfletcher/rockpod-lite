@@ -97,10 +97,6 @@ static long lasttime = 0;
 #include "playback.h"
 #include "pcm_sampr.h"
 
-#ifdef HAVE_REMOTE_LCD
-#include "lcd-remote.h"
-#endif
-
 #if defined(DX50) || defined(DX90)
 #include "governor-ibasso.h"
 #include "usb-ibasso.h"
@@ -866,29 +862,6 @@ void settings_apply(bool read_disk)
     lcd_set_contrast(global_settings.contrast);
 #endif
     lcd_scroll_speed(global_settings.scroll_speed);
-#ifdef HAVE_REMOTE_LCD
-    lcd_remote_set_contrast(global_settings.remote_contrast);
-    lcd_remote_set_invert_display(global_settings.remote_invert);
-
-#ifdef HAVE_LCD_FLIP
-    lcd_remote_set_flip(global_settings.remote_flip_display);
-#endif
-
-    lcd_remote_scroll_speed(global_settings.remote_scroll_speed);
-    lcd_remote_scroll_step(global_settings.remote_scroll_step);
-    lcd_remote_scroll_delay(global_settings.remote_scroll_delay);
-    lcd_remote_bidir_scroll(global_settings.remote_bidir_limit);
-#ifdef HAVE_REMOTE_LCD_TICKING
-    lcd_remote_emireduce(global_settings.remote_reduce_ticking);
-#endif
-    remote_backlight_set_timeout(global_settings.remote_backlight_timeout);
-#if CONFIG_CHARGING
-    remote_backlight_set_timeout_plugged(global_settings.remote_backlight_timeout_plugged);
-#endif
-#ifdef HAS_REMOTE_BUTTON_HOLD
-    remote_backlight_set_on_button_hold(global_settings.remote_backlight_on_button_hold);
-#endif
-#endif /* HAVE_REMOTE_LCD */
 #ifdef HAVE_BACKLIGHT_BRIGHTNESS
     backlight_set_brightness(global_settings.brightness);
 #endif
@@ -961,24 +934,6 @@ void settings_apply(bool read_disk)
                 screens[SCREEN_MAIN].setfont(rc);
             }
         }
-#ifdef HAVE_REMOTE_LCD
-        if ( global_settings.remote_font_file[0]
-            && global_settings.remote_font_file[0] != '-') {
-            int font_ui = screens[SCREEN_REMOTE].getuifont();
-            snprintf(buf, sizeof buf, FONT_DIR "/%s.fnt",
-                     global_settings.remote_font_file);
-            if (!font_filename_matches_loaded_id(font_ui, buf))
-            {
-                CHART2(">font_load_remoteui ", global_settings.remote_font_file);
-                if (font_ui >= 0)
-                    font_unload(font_ui);
-                rc = font_load(buf);
-                CHART2("<font_load_remoteui ", global_settings.remote_font_file);
-                screens[SCREEN_REMOTE].setuifont(rc);
-                screens[SCREEN_REMOTE].setfont(rc);
-            }
-        }
-#endif
         if ( global_settings.kbd_file[0]
              && global_settings.kbd_file[0] != '-') {
             snprintf(buf, sizeof buf, ROCKBOX_DIR "/%s.kbd",
@@ -1067,9 +1022,6 @@ void settings_apply(bool read_disk)
     set_selective_backlight_actions(global_settings.bl_selective_actions,
                                     global_settings.bl_selective_actions_mask,
                                     global_settings.bl_filter_first_keypress);
-#ifdef HAVE_REMOTE_LCD
-    set_remote_backlight_filter_keypress(global_settings.remote_bl_filter_first_keypress);
-#endif
     backlight_set_on_button_hold(global_settings.backlight_on_button_hold);
 
 #ifdef HAVE_LCD_SLEEP_SETTING

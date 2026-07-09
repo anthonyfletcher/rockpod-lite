@@ -38,9 +38,6 @@
 #include "pathfuncs.h"
 #include "lang.h"
 #include "dir.h"
-#ifdef HAVE_REMOTE_LCD
-#include "lcd-remote.h"
-#endif
 #include "action.h"
 #include "timefuncs.h"
 #include "screens.h"
@@ -1738,7 +1735,7 @@ bool parse_color(enum screen_type screen, char *text, int *value)
     }
 #endif
 
-#if LCD_DEPTH == 2 || (defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH == 2)
+#if LCD_DEPTH == 2
     if (screens[screen].depth == 2)
     {
         if (text[1] != '\0' || !is0123(*text))

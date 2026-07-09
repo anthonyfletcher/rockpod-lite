@@ -49,9 +49,6 @@
 #ifdef HAVE_TAGCACHE
 #include "tagcache.h"
 #endif
-#ifdef HAVE_REMOTE_LCD
-#include "lcd-remote.h"
-#endif
 #include "crc32.h"
 #include "logf.h"
 #if (CONFIG_PLATFORM & PLATFORM_NATIVE)
@@ -439,7 +436,7 @@ static bool dbg_buffering_thread(void)
             screens[i].putsf(0, line++, fmt_used, "alloc", audio_filebufused(),
                             (long) filebuflen);
 
-#if LCD_HEIGHT > 80 || (defined(HAVE_REMOTE_LCD) && LCD_REMOTE_HEIGHT > 80)
+#if LCD_HEIGHT > 80
             if (screens[i].lcdheight > 80)
             {
                 gui_scrollbar_draw(&screens[i],0, line*SYSFONT_HEIGHT, screens[i].lcdwidth, 6,
@@ -458,7 +455,7 @@ static bool dbg_buffering_thread(void)
             screens[i].putsf(0, line++, fmt_used, "usefl", (long)(d.useful_data),
                                                        (long)filebuflen);
 
-#if LCD_HEIGHT > 80 || (defined(HAVE_REMOTE_LCD) && LCD_REMOTE_HEIGHT > 80)
+#if LCD_HEIGHT > 80
             if (screens[i].lcdheight > 80)
             {
                 gui_scrollbar_draw(&screens[i],0, line*SYSFONT_HEIGHT, screens[i].lcdwidth, 6,

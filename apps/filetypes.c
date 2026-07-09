@@ -73,9 +73,6 @@ static const struct filetype_inbuilt inbuilt_filetypes[] = {
     { "m3u8", FILE_ATTR_M3U },
     { "cfg",  FILE_ATTR_CFG },
     { "wps",  FILE_ATTR_WPS },
-#ifdef HAVE_REMOTE_LCD
-    { "rwps", FILE_ATTR_RWPS },
-#endif
     { "log",  FILE_ATTR_LOG   },
     { "lng",  FILE_ATTR_LNG   },
     { "rock", FILE_ATTR_ROCK  },
@@ -86,9 +83,6 @@ static const struct filetype_inbuilt inbuilt_filetypes[] = {
     { "bmark",FILE_ATTR_BMARK },
     { "cue",  FILE_ATTR_CUE   },
     { "sbs",  FILE_ATTR_SBS   },
-#ifdef HAVE_REMOTE_LCD
-    { "rsbs", FILE_ATTR_RSBS },
-#endif
 #ifdef BOOTFILE_EXT
     { BOOTFILE_EXT,  FILE_ATTR_MOD },
 #endif
@@ -109,9 +103,6 @@ static const struct fileattr_icon_voice inbuilt_attr_icons_voices[] = {
     { FILE_ATTR_M3U,   Icon_Playlist,  LANG_PLAYLIST },
     { FILE_ATTR_CFG,   Icon_Config,    VOICE_EXT_CFG },
     { FILE_ATTR_WPS,   Icon_Wps,       VOICE_EXT_WPS },
-#ifdef HAVE_REMOTE_LCD
-    {FILE_ATTR_RWPS,   Icon_Wps,       VOICE_EXT_RWPS },
-#endif
     { FILE_ATTR_LNG,   Icon_Language,  LANG_LANGUAGE },
     { FILE_ATTR_ROCK,  Icon_Plugin,    VOICE_EXT_ROCK },
     { FILE_ATTR_LUA,   Icon_Plugin,    VOICE_EXT_ROCK },
@@ -121,9 +112,6 @@ static const struct fileattr_icon_voice inbuilt_attr_icons_voices[] = {
     { FILE_ATTR_BMARK, Icon_Bookmark,  VOICE_EXT_BMARK },
     { FILE_ATTR_CUE,   Icon_Bookmark,  VOICE_EXT_CUESHEET },
     { FILE_ATTR_SBS,   Icon_Wps,       VOICE_EXT_SBS },
-#ifdef HAVE_REMOTE_LCD
-    { FILE_ATTR_RSBS,  Icon_Wps,       VOICE_EXT_RSBS },
-#endif
 #if defined(BOOTFILE_EXT) || defined(BOOTFILE_EXT2)
     { FILE_ATTR_MOD,   Icon_Firmware,  VOICE_EXT_AJZ },
 #endif
