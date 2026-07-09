@@ -22,9 +22,6 @@
 #include "kernel.h"
 #include "system.h"
 #include "tuner.h"
-#if CONFIG_TUNER
-#include "ipod_remote_tuner.h"
-#endif
 
 /*
  * This macro is meant to be used inside an IAP mode message handler.
@@ -627,16 +624,6 @@ void iap_handlepkt_mode0(const unsigned int len, const unsigned char *buf)
             }
             /* Bit 6: USB Host Control */
             /* Bit 7: RF Tuner lingo */
-#if CONFIG_TUNER
-            if (lingoes & (1 << 7))
-            {
-                /* ipod fm radio remote sends this: */
-                /* FF 55 0E 00 13 00 00 00 8D 00 00 00 0E 00 00 00 03 */
-                /* 0x0000008D = 00000000 00000000 00000000 00011101   */
-                /* 1<<7                                               */
-                radio_present = 1;
-            }
-#endif
             /* Bit 8: Accessory Equalizer Lingo */
             /* Bit 9: Reserved */
             /* Bit 10: Digial Audio Lingo */

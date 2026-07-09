@@ -176,46 +176,7 @@ static const struct button_mapping button_context_keyboard[]  = {
     LAST_ITEM_IN_LIST
 }; /* button_context_keyboard */
 
-#ifdef HAVE_RECORDING
-const struct button_mapping button_context_recscreen[]  = {
 
-    { ACTION_REC_NEWFILE,        BUTTON_SELECT|BUTTON_REL,        BUTTON_SELECT },
-    { ACTION_STD_MENU,           BUTTON_SELECT|BUTTON_REPEAT,     BUTTON_SELECT },
-    { ACTION_REC_PAUSE,          BUTTON_PLAY|BUTTON_REL,            BUTTON_PLAY },
-    { ACTION_STD_CANCEL,         BUTTON_PLAY|BUTTON_REPEAT,         BUTTON_NONE },
-    { ACTION_STD_CANCEL,         BUTTON_MENU,                       BUTTON_NONE },
-    { ACTION_STD_NEXT,           BUTTON_SCROLL_FWD,                 BUTTON_NONE },
-    { ACTION_STD_NEXT,           BUTTON_SCROLL_FWD|BUTTON_REPEAT,   BUTTON_NONE },
-    { ACTION_STD_PREV,           BUTTON_SCROLL_BACK,                BUTTON_NONE },
-    { ACTION_STD_PREV,           BUTTON_SCROLL_BACK|BUTTON_REPEAT,  BUTTON_NONE },
-    { ACTION_SETTINGS_INC,       BUTTON_RIGHT,                      BUTTON_NONE },
-    { ACTION_SETTINGS_INCREPEAT, BUTTON_RIGHT|BUTTON_REPEAT,        BUTTON_NONE },
-    { ACTION_SETTINGS_DEC,       BUTTON_LEFT,                       BUTTON_NONE },
-    { ACTION_SETTINGS_DECREPEAT, BUTTON_LEFT|BUTTON_REPEAT,         BUTTON_NONE },
-
-    LAST_ITEM_IN_LIST
-}; /* button_context_recscreen */
-#endif
-
-/** FM Radio Screen **/
- #if CONFIG_TUNER
- static const struct button_mapping button_context_radio[]  = {
-     { ACTION_FM_MENU,           BUTTON_SELECT | BUTTON_REPEAT,   BUTTON_NONE },
-     { ACTION_FM_STOP,           BUTTON_PLAY | BUTTON_REPEAT,     BUTTON_PLAY },
-     { ACTION_FM_MODE,           BUTTON_SELECT,                   BUTTON_NONE },
-     { ACTION_FM_EXIT,           BUTTON_MENU | BUTTON_REL,        BUTTON_MENU },
-     { ACTION_FM_PLAY,           BUTTON_PLAY | BUTTON_REL,        BUTTON_PLAY },
-     { ACTION_SETTINGS_INC,      BUTTON_SCROLL_FWD,               BUTTON_NONE },
-     { ACTION_SETTINGS_INCREPEAT,BUTTON_SCROLL_FWD|BUTTON_REPEAT, BUTTON_NONE },
-     { ACTION_SETTINGS_DEC,      BUTTON_SCROLL_BACK,              BUTTON_NONE },
-     { ACTION_SETTINGS_DECREPEAT,BUTTON_SCROLL_BACK|BUTTON_REPEAT,BUTTON_NONE },
-     { ACTION_STD_NEXT,          BUTTON_RIGHT,                    BUTTON_NONE },
-     { ACTION_STD_NEXTREPEAT,    BUTTON_RIGHT|BUTTON_REPEAT,      BUTTON_NONE },
-     { ACTION_STD_PREV,          BUTTON_LEFT,                     BUTTON_NONE },
-     { ACTION_STD_PREVREPEAT,    BUTTON_LEFT|BUTTON_REPEAT,       BUTTON_NONE },
-     LAST_ITEM_IN_LIST__NEXTLIST(CONTEXT_SETTINGS)
- }; /* button_context_radio */
- #endif
 
 #ifdef USB_ENABLE_HID
 static const struct button_mapping button_context_usb_hid[] = {
@@ -376,27 +337,6 @@ static const struct button_mapping remote_button_context_quickscreen[]  = {
     LAST_ITEM_IN_LIST__NEXTLIST(CONTEXT_STD)
 }; /* button_context_quickscreen */
 
-#if CONFIG_TUNER
- static const struct button_mapping remote_button_context_radio[]  = {
-     { ACTION_FM_MENU,           BUTTON_RC_SELECT | BUTTON_REPEAT,   BUTTON_NONE },
-     { ACTION_FM_STOP,           BUTTON_RC_PLAY | BUTTON_REPEAT,     BUTTON_NONE },
-     { ACTION_FM_MODE,           BUTTON_RC_SELECT,                   BUTTON_NONE },
-     { ACTION_FM_EXIT,           BUTTON_RC_MENU | BUTTON_REL,        BUTTON_RC_MENU },
-
-     { ACTION_FM_PLAY,           BUTTON_RC_PLAY | BUTTON_REL,        BUTTON_RC_PLAY },
-     { ACTION_SETTINGS_INC,      BUTTON_RC_UP,               BUTTON_NONE },
-     { ACTION_SETTINGS_INCREPEAT,BUTTON_RC_UP|BUTTON_REPEAT, BUTTON_NONE },
-     { ACTION_SETTINGS_DEC,      BUTTON_RC_DOWN,              BUTTON_NONE },
-     { ACTION_SETTINGS_DECREPEAT,BUTTON_RC_DOWN|BUTTON_REPEAT,BUTTON_NONE },
-
-     { ACTION_STD_NEXT,          BUTTON_RC_RIGHT|BUTTON_REL,         BUTTON_RC_RIGHT },
-     { ACTION_STD_NEXTREPEAT,    BUTTON_RC_RIGHT|BUTTON_REPEAT,      BUTTON_NONE },
-     { ACTION_STD_PREV,          BUTTON_RC_LEFT|BUTTON_REL,          BUTTON_RC_LEFT },
-     { ACTION_STD_PREVREPEAT,    BUTTON_RC_LEFT|BUTTON_REPEAT,       BUTTON_NONE },
-
-     LAST_ITEM_IN_LIST
- }; /* remote_button_context_radio */
-#endif
 
 static const struct button_mapping remote_button_context_yesno[]  = {
     { ACTION_YESNO_ACCEPT,          BUTTON_RC_SELECT,                  BUTTON_NONE },
@@ -419,10 +359,6 @@ static const struct button_mapping* get_context_mapping_remote( int context )
         case CONTEXT_QUICKSCREEN:
             return remote_button_context_quickscreen;
 
-#if CONFIG_TUNER
-        case CONTEXT_FM:
-            return remote_button_context_radio;
-#endif
         case CONTEXT_YESNOSCREEN:
             return remote_button_context_yesno;
         default:
@@ -474,14 +410,6 @@ const struct button_mapping* get_context_mapping(int context)
         case CONTEXT_KEYBOARD:
         case CONTEXT_MORSE_INPUT:
             return button_context_keyboard;
-#ifdef HAVE_RECORDING
-        case CONTEXT_RECSCREEN:
-            return button_context_recscreen;
-#endif
-#if CONFIG_TUNER
-         case CONTEXT_FM:
-             return button_context_radio;
-#endif
 #ifdef USB_ENABLE_HID
         case CONTEXT_USB_HID:
             return button_context_usb_hid;

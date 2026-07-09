@@ -99,9 +99,6 @@ int plugin_open(const char *plugin, const char *parameter);
 #include "codecs.h"
 #include "playback.h"
 #include "codec_thread.h"
-#ifdef HAVE_RECORDING
-#include "recording.h"
-#endif
 #include "settings.h"
 #include "timer.h"
 #include "playlist.h"
@@ -754,17 +751,6 @@ struct plugin_api {
     void (*pcm_play_unlock)(void);
     void (*beep_play)(unsigned int frequency, unsigned int duration,
                       unsigned int amplitude);
-#ifdef HAVE_RECORDING
-    const unsigned long *rec_freq_sampr;
-    void (*pcm_init_recording)(void);
-    void (*pcm_close_recording)(void);
-    void (*pcm_record_data)(pcm_rec_callback_type more_ready,
-                            pcm_status_callback_type status_cb,
-                            void *start, size_t size);
-    void (*pcm_stop_recording)(void);
-    void (*pcm_calculate_rec_peaks)(int *left, int *right);
-    void (*audio_set_recording_gain)(int left, int right, int type);
-#endif /* HAVE_RECORDING */
 #if INPUT_SRC_CAPS != 0
     void (*audio_set_output_source)(int monitor);
     void (*audio_set_input_source)(int source, unsigned flags);

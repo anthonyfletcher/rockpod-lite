@@ -442,10 +442,6 @@ const char *get_cuesheetid3_token(struct wps_token *token, struct mp3entry *id3,
                                   int offset_tracks, char *buf, int buf_size);
 const char *get_id3_token(struct wps_token *token, struct mp3entry *id3,
                           char *filename, char *buf, int buf_size, int limit, int *intval);
-#if CONFIG_TUNER
-const char *get_radio_token(struct wps_token *token, int preset_offset,
-                            char *buf, int buf_size, int limit, int *intval);
-#endif
 
 enum skin_find_what {
     SKIN_FIND_VP = 0,

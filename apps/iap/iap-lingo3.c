@@ -41,9 +41,6 @@
 #ifdef USB_ENABLE_AUDIO
 bool usb_audio_get_active(void);
 #endif
-#if CONFIG_TUNER
-#include "ipod_remote_tuner.h"
-#endif
 
 /*
  * This macro is meant to be used inside an IAP mode message handler.

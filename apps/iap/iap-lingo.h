@@ -24,6 +24,3 @@ void iap_handlepkt_mode1(const unsigned int len, const unsigned char *buf);
 void iap_handlepkt_mode2(const unsigned int len, const unsigned char *buf);
 void iap_handlepkt_mode3(const unsigned int len, const unsigned char *buf);
 void iap_handlepkt_mode4(const unsigned int len, const unsigned char *buf);
-#if CONFIG_TUNER
-void iap_handlepkt_mode7(const unsigned int len, const unsigned char *buf);
-#endif

@@ -48,9 +48,6 @@
 #endif
 
 #include "tuner.h"
-#if CONFIG_TUNER
-#include "ipod_remote_tuner.h"
-#endif
 
 /* Transport abstraction — defaults to serial UART, can be overridden for USB HID */
 static void iap_serial_tx(const unsigned char *buf, int len)
@@ -182,11 +179,7 @@ unsigned char lingo_versions[32][2] = {
     {1, 12},    /* Extended Interface lingo, 0x04 */
     {1, 1},     /* RF/BT Transmitter lingo, 0x05 */
     {0, 0},     /* USB Host lingo, 0x06, disabled */
-#if CONFIG_TUNER
-    {1, 0},     /* RF Receiver lingo, 0x07 */
-#else
     {0, 0},     /* RF Receiver lingo, 0x07 disabled */
-#endif
     {0, 0},     /* Accessory Equalizer lingo, 0x08, disabled */
     {0, 0},     /* Reserved, 0x09 */
     {1, 0},     /* Digital Audio lingo, 0x0A */
@@ -1125,19 +1118,9 @@ void iap_periodic(void)
 			if (play_status != 1) {
 			/* Not Playing */
 			   audio_pause();
-#if CONFIG_TUNER
-               if (radio_present==1) {
-                  tuner_set(RADIO_MUTE,1);
-			   }
-#endif
 			} else {
 			/* Playing */
 			   audio_resume();
-#if CONFIG_TUNER
-			   if (radio_present==1) {
-                   tuner_set(RADIO_MUTE,0);
-               }
-#endif
 			}
         }
     }
@@ -1430,9 +1413,6 @@ void iap_handlepkt(void)
         case 3: iap_handlepkt_mode3(length, iap_rxstart+2); break;
         case 4: iap_handlepkt_mode4(length, iap_rxstart+2); break;
         case 5: iap_handlepkt_mode5(length, iap_rxstart+2); break;
-#if CONFIG_TUNER
-        case 7: iap_handlepkt_mode7(length, iap_rxstart+2); break;
-#endif
         case 10: iap_handlepkt_mode10(length, iap_rxstart+2); break;
         }
     }

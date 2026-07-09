@@ -98,25 +98,8 @@ multidrive_usb
 quickscreen
 #endif
 
-#if CONFIG_TUNER != 0
-radio
-#ifdef HAVE_REMOTE_LCD
-radio_remote
-#endif
-#endif
-
 #if defined(HAVE_RDS_CAP)
 rds
-#endif
-
-#if defined(HAVE_RECORDING)
-recording
-#if defined(HAVE_LINE_IN)
-recording_linein
-#endif
-#if defined(HAVE_MIC_IN)
-recording_mic
-#endif
 #endif
 
 #if defined(HAVE_HISTOGRAM)
