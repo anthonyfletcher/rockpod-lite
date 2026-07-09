@@ -712,19 +712,6 @@ MAKE_MENU(voice_settings_menu, ID2P(LANG_VOICE), 0, Icon_Voice,
 /*    VOICE MENU                   */
 /***********************************/
 
-/*    WPS_CONTEXT_PLUGIN           */
-/***********************************/
-static void wps_plugin_cb(void)
-{
-    open_plugin_browse(ID2P(LANG_OPEN_PLUGIN_SET_WPS_CONTEXT_PLUGIN));
-}
-MENUITEM_FUNCTION(wps_set_context_plugin, 0,
-                  ID2P(LANG_OPEN_PLUGIN_SET_WPS_CONTEXT_PLUGIN),
-                  wps_plugin_cb, NULL, Icon_Plugin);
-
-/*    WPS_CONTEXT_PLUGIN           */
-/***********************************/
-
 /***********************************/
 /*    WPS Settings MENU            */
 
@@ -740,7 +727,6 @@ MAKE_MENU(wps_settings, ID2P(LANG_WPS), 0, Icon_Playback_menu
 #ifdef HAVE_HOTKEY
             ,&hotkey_wps_item
 #endif
-            ,&wps_set_context_plugin
             );
 
 /*    WPS Settings MENU            */

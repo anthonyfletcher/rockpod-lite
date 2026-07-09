@@ -1,6 +1,6 @@
-/* plugins common to all models -- trimmed to keyremap and lastfm_scrobbler
- * plus six more that turned out to be load-bearing for other features,
- * not just standalone utilities, so they're staying:
+/* plugins common to all models -- trimmed to lastfm_scrobbler plus five
+ * more that turned out to be load-bearing for other features, not just
+ * standalone utilities, so they're staying:
  *   - playing_time.c: apps/onplay.c's "Playing Time" current-playlist menu
  *     item plugin_load()s this directly; without it that item silently
  *     fails to open.
@@ -15,27 +15,27 @@
  *     entries and the HOTKEY_PROPERTIES hotkey all load this via
  *     viewers.config's "*,properties,-" mapping; without it, File
  *     Properties/Track Info silently fail to open.
- *   - lastfm_scrobbler_viewer.c: lastfm_scrobbler.c's own "View Playback
- *     Log" feature (view_playback_log()) plugin_open()s this directly;
- *     without it that one sub-feature silently fails (file_exists() guards
- *     it, so it degrades gracefully rather than erroring, but it's still
- *     genuinely load-bearing for that feature to work at all).
  *   - credits.c: apps/menus/main_menu.c's show_credits() does fall back
  *     to a plain info screen if this is missing, so it's not load-bearing
  *     the same way, but keeping it anyway.
+ * lastfm_scrobbler_viewer.c (lastfm_scrobbler's "View Playback Log"
+ * companion) removed entirely -- buggy, not worth keeping; the menu item
+ * and view_playback_log() that called it are gone from lastfm_scrobbler.c
+ * too, not just this listing.
  * Everything else previously here (games, demos, emulators, remaining
  * viewers/utilities only ever reachable through the generic Plugins
  * browser) has been removed. main_menu_config.c and pictureflow.c
  * specifically: both superseded by core ports (apps/menus/
  * main_menu_config.c, apps/gui/album_covers.c) earlier this fork -- not
  * part of this trim, just finally deleted as dead weight now that this
- * file was being edited anyway. */
+ * file was being edited anyway.
+ * keyremap.c removed too: it was only ever reachable through the generic
+ * Plugins browser, same as the games/demos/emulators above -- no core
+ * call site ever plugin_load()ed it directly. */
 #ifdef HAVE_TAGCACHE
 db_folder_select.c
-lastfm_scrobbler_viewer.c
 #endif
 credits.c
-keyremap.c
 lastfm_scrobbler.c
 playing_time.c
 properties.c

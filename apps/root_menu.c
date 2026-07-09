@@ -445,25 +445,23 @@ static int browser(void* param)
     return ret_val;
 }
 
-/* Replaces apps/menus/plugin_menu.c's old Games/Apps/Demos category
- * picker: with plugins now flattened into a single directory (see
- * apps/plugins/CATEGORIES and viewers.config, both emptied of their old
- * subfolder-per-category entries), that picker's three sub-browses would
- * each show a folder with nothing in it -- either everything or nothing,
- * never a meaningful split. Browses PLUGIN_DIR directly, one flat list,
- * matching how the file/database browsers already work. No activity
- * push/pop here: load_screen() already pushes/pops ACTIVITY_PLUGINBROWSER
- * for GO_TO_BROWSEPLUGINS specifically (see its switch above), same as
- * the miscscrn()-dispatched screens this replaces. */
-static int plugins_browser(void* param)
+/* The generic Plugins browser (apps/menus/plugin_menu.c's old Games/Apps/
+ * Demos picker, and this screen's own later flat-PLUGIN_DIR replacement)
+ * has been removed entirely: lastfm_scrobbler is the only plugin meant to
+ * be user-reachable now (see apps/menus/main_menu.c's lastfm_scrobbler_item),
+ * everything else is invoked directly by whatever core feature needs it.
+ * GO_TO_BROWSEPLUGINS itself can't be removed from the enum/items[] table
+ * without risk, though: a device with an existing saved config could still
+ * have global_status.last_screen (or, with "start in: previous screen",
+ * global_settings.start_in_screen) pointing at this slot from before this
+ * change, and an unlisted items[] entry silently zero-initializes to a
+ * NULL function pointer -- load_screen() would call through it and crash.
+ * This stub exists purely so that stale reference redirects safely to the
+ * root menu instead. */
+static int plugins_browser_removed(void* param)
 {
     (void)param;
-    struct browse_context browse = {
-        .dirfilter = SHOW_PLUGINS,
-        .icon = Icon_NOICON,
-        .root = PLUGIN_DIR,
-    };
-    return rockbox_browse(&browse);
+    return GO_TO_ROOT;
 }
 
 #ifdef HAVE_RECORDING
@@ -640,7 +638,7 @@ static const struct root_items items[] = {
 #endif
 
     [GO_TO_RECENTBMARKS] =  { load_bmarks, NULL, &bookmark_settings_menu },
-    [GO_TO_BROWSEPLUGINS] = { plugins_browser, NULL, NULL },
+    [GO_TO_BROWSEPLUGINS] = { plugins_browser_removed, NULL, NULL },
     [GO_TO_PLAYLISTS_SCREEN] = { playlist_view_catalog, NULL,
                                                         &playlist_options },
     [GO_TO_PLAYLIST_VIEWER] = { playlist_view, NULL, &playlist_options },
@@ -747,9 +745,6 @@ TAGNAVI_DECL(18)
 TAGNAVI_DECL(19)
 #undef TAGNAVI_DECL
 #endif
-MENUITEM_RETURNVALUE(rocks_browser, ID2P(LANG_PLUGINS), GO_TO_BROWSEPLUGINS,
-                        NULL, Icon_Plugin);
-
 static char *get_wps_item_name(int selected_item, void * data,
                                char *buffer, size_t buffer_len)
 {
@@ -790,7 +785,6 @@ static struct menu_table menu_table[] = {
     { "files", &file_browser },
     { "wps", &wps_item },
     { "playlists", &playlists },
-    { "plugins", &rocks_browser },
     { "shortcuts", &shortcut_menu },
     { "settings", &menu_ },
     { "system_menu", &system_menu_ },
@@ -841,7 +835,7 @@ static void root_menu_apply_canonical_order(void)
 #endif
     };
     static const struct menu_item_ex * const after_tagnavi[] = {
-        &playlists, &file_browser, &rocks_browser, &shortcut_menu,
+        &playlists, &file_browser, &shortcut_menu,
         &menu_, &system_menu_,
     };
     struct menu_item_ex *reordered[MAX_MENU_ITEMS];

@@ -118,7 +118,6 @@ Example
 
 /****************** prototypes / globals ******************/
 enum plugin_status plugin_start(const void* parameter); /* entry */
-static int view_playback_log(void);
 static int sbl_export(void);
 
 struct scrobbler_entry
@@ -207,24 +206,7 @@ static int scrobbler_menu_action(int selection, bool has_log)
             break;
         case 5: /* sep */
             break;
-        case 6: /* view playback log */
-            if (crc != rb->crc_32(&gConfig, sizeof(struct scrobbler_cfg), 0xFFFFFFFF))
-            {
-                /* there are changes to save */
-                if (!rb->yesno_pop(ID2P(LANG_SAVE_CHANGES)))
-                {
-                    return view_playback_log();
-                }
-            }
-            res = configfile_save(CFG_FILE, config, gCfg_sz, CFG_VER);
-            if (res >= 0)
-            {
-                crc = rb->crc_32(&gConfig, sizeof(struct scrobbler_cfg), 0xFFFFFFFF);
-                logf("SCROBBLER: cfg saved %s %d bytes", CFG_FILE, gCfg_sz);
-            }
-            return view_playback_log();
-            break;
-        case 7: /* set defaults */
+        case 6: /* set defaults */
         {
             const struct text_message prompt = {
                 (const char*[]){ ID2P(LANG_AUDIOSCROBBLER),
@@ -236,9 +218,9 @@ static int scrobbler_menu_action(int selection, bool has_log)
             }
             break;
         }
-        case 8: /*sep*/
+        case 7: /*sep*/
             break;
-        case 9: /* Cancel */
+        case 8: /* Cancel */
             has_log = false;
             if (crc != rb->crc_32(&gConfig, sizeof(struct scrobbler_cfg), 0xFFFFFFFF))
             {
@@ -249,7 +231,7 @@ static int scrobbler_menu_action(int selection, bool has_log)
                 }
             }
             /* fallthrough */
-        case 10: /* Export & exit */
+        case 9: /* Export & exit */
         {
             res = configfile_save(CFG_FILE, config, gCfg_sz, CFG_VER);
             if (res >= 0)
@@ -282,16 +264,18 @@ static int scrobbler_menu_action(int selection, bool has_log)
     return SCROBBLER_MENU;
 }
 
-static int scrobbler_menu(bool resume)
+static int scrobbler_menu(void)
 {
-    int selection = resume ? 5 : 0; /* if resume we are returning from log view */
+    int selection = 0;
 
-    struct viewport parentvp[NB_SCREENS];
-    FOR_NB_SCREENS(l)
-    {
-        rb->viewport_set_defaults(&parentvp[l], l);
-        rb->viewport_set_fullscreen(&parentvp[l], l);
-    }
+    /* Used to force a full-screen viewport and hide_theme=true below --
+     * this plugin is now reached directly from Settings (see
+     * apps/menus/settings_menu.c's lastfm_scrobbler_item), so it should
+     * look like the rest of the themed UI, not a bare, unskinned plugin
+     * screen: no status bar, and submenus drawing outside the theme's own
+     * sub-menu region, both traced to that forced full-screen/hide_theme
+     * combination. NULL parent + hide_theme=false below matches how core
+     * menus (e.g. root_menu.c's miscscrn()) call do_menu(). */
 
     #define MENUITEM_STRINGLIST_CUSTOM(name, str, callback, ... )           \
         static const char *name##_[] = {__VA_ARGS__};                       \
@@ -309,7 +293,6 @@ static int scrobbler_menu(bool resume)
                         "Minimum elapsed",
                         ID2P(LANG_TRACK_INFO), //Skip tracks without metadata
                         ID2P(VOICE_BLANK),
-                        ID2P(LANG_VIEWLOG),
                         ID2P(LANG_REVERT_TO_DEFAULT_SETTINGS),
                         ID2P(VOICE_BLANK),
                         ID2P(LANG_CANCEL_0),
@@ -335,7 +318,7 @@ static int scrobbler_menu(bool resume)
         {
             settings_menu.flags = flags|MENU_ITEM_COUNT(items);
         }
-        selection=rb->do_menu(&settings_menu,&selection, parentvp, true);
+        selection=rb->do_menu(&settings_menu,&selection, NULL, false);
 
         res = scrobbler_menu_action(selection, has_log);
         if (res != SCROBBLER_MENU)
@@ -362,17 +345,6 @@ static void ask_enable_playbacklog(void)
         rb->settings_save();
         rb->sleep(HZ * 2);
     }
-}
-
-static int view_playback_log(void)
-{
-    const char* plugin = PLUGIN_DIR "/lastfm_scrobbler_viewer.rock";
-    /*rb->splashf(100, "Opening %s", plugin);*/
-    if (rb->file_exists(plugin))
-    {
-        return rb->plugin_open(plugin, "-scrobbler_view_pbl");
-    }
-    return PLUGIN_ERROR;
 }
 
 static inline bool do_timed_yield(void)
@@ -973,17 +945,14 @@ entry_error:
 
 enum plugin_status plugin_start(const void* parameter)
 {
-    bool resume;
-    const char * param_str = (const char*) parameter;
-    resume = (parameter && param_str[0] == '-'
-             && rb->strcasecmp(param_str, "-resume") == 0);
-
-    logf("Resume %s", resume ? "YES" : "NO");
-
+    /* "-resume" used to mean "returning from lastfm_scrobbler_viewer.rock's
+     * playback log view" -- that plugin is gone now (see
+     * view_playback_log(), removed along with it), so nothing ever passes
+     * this parameter to this plugin anymore. */
     if (!parameter)
         clear_display();
 
-    if (!resume && !rb->global_settings->playback_log)
+    if (!rb->global_settings->playback_log)
         ask_enable_playbacklog();
 
     /* now go ahead and have fun! */
@@ -1007,7 +976,7 @@ enum plugin_status plugin_start(const void* parameter)
             if (rb->file_exists(ROCKBOX_DIR "/playback.log")
              || rb->file_exists(ROCKBOX_DIR "/playback_0001.log"))
             {
-                return scrobbler_menu_action(10, true); /* export scrobbler file */
+                return scrobbler_menu_action(9, true); /* export scrobbler file */
             }
             else
             {
@@ -1017,5 +986,5 @@ enum plugin_status plugin_start(const void* parameter)
         }
     }
 
-    return scrobbler_menu(resume);
+    return scrobbler_menu();
 }

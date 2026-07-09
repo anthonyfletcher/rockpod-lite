@@ -1981,7 +1981,12 @@ const struct settings_list settings[] = {
                       ID2P(LANG_SET_BOOL_YES),
                       ID2P(LANG_IN_SUBMENU)),
 
-    CHOICE_SETTING(0, browser_default, LANG_DEFAULT_BROWSER, 0,
+    CHOICE_SETTING(0, browser_default, LANG_DEFAULT_BROWSER,
+#ifdef HAVE_TAGCACHE
+                      1,
+#else
+                      0,
+#endif
                       "default browser",
 #ifdef HAVE_TAGCACHE
                       "files,database,playlists",
@@ -1996,7 +2001,7 @@ const struct settings_list settings[] = {
 #endif
                       ,ID2P(LANG_DIR_BROWSER),
 #ifdef HAVE_TAGCACHE
-                      ID2P(LANG_TAGCACHE),
+                      ID2P(LANG_MUSIC_BROWSER),
 #endif
                       ID2P(LANG_PLAYLISTS)),
 

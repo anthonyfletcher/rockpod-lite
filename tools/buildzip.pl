@@ -576,7 +576,6 @@ sub buildzip {
     glob_unlink("$temp_dir/rocks/*.lua"); # Clean up unwanted *.lua files (e.g. actions.lua, buttons.lua)
 
     copy("$ROOT/apps/tagnavi.config", "$temp_dir/");
-    copy("$ROOT/apps/plugins/disktidy.config", "$temp_dir/rocks/apps/");
 
     if(-e "$temp_dir/rocks/viewers/open_plugins.rock") {
         my $cwd = getcwd();
