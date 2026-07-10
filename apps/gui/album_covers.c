@@ -3818,7 +3818,6 @@ static int album_covers_loop(void)
 {
     int ret;
     int button;
-    bool instant_update;
 
     while (true) {
         /* Get input first. The SBS renders during get_custom_action() and
@@ -3827,11 +3826,34 @@ static int album_covers_loop(void)
          * push that content to the display -- our own lcd_update() after
          * rendering will push both the SBS status bar and our content
          * atomically, avoiding one-frame flicker of theme artifacts. */
-        instant_update = (pf_state == pf_scrolling);
+
+        /* Idle-frame-rate backoff. This loop fully re-renders the coverflow
+         * and flushes the shared framebuffer (status bar included) on every
+         * wake-up, so individual frames can't be skipped -- the SBS stamps
+         * overlapping viewports into our area and relies on our lcd_update()
+         * to reach the LCD. What we can do is wake up less often when nothing
+         * is changing, which avoids the expensive per-frame redraw (a full
+         * viewport clear + recomposite of every slide) while the screen sits
+         * idle. Only back off when it is genuinely static: not animating a
+         * scroll, no caption text scrolling, cover cache fully built, no
+         * dynamic-colour fade in progress, and playback stopped (while
+         * playing, the status bar's time updates every second and a track
+         * change can start a colour fade, both of which want the normal
+         * rate). A button press interrupts the wait immediately, so
+         * responsiveness is unaffected. */
+        bool caption_scrolling = scroll_lines[PF_SCROLL_TRACK].step
+                              || scroll_lines[PF_SCROLL_ALBUM].step
+                              || scroll_lines[PF_SCROLL_ARTIST].step;
+        bool quiescent = pf_state != pf_scrolling
+                      && !caption_scrolling
+                      && aa_cache.inspected >= pf_idx.album_ct
+                      && !dynamic_colors_fading()
+                      && !(audio_status() & AUDIO_STATUS_PLAY);
+        int timeout = (pf_state == pf_scrolling) ? 0
+                    : (quiescent ? HZ/2 : HZ/16);
 
         skin_render_inhibit_flush(true);
-        button = get_custom_action(CONTEXT_PLUGIN,
-            instant_update ? 0 : HZ/16, get_context_map);
+        button = get_custom_action(CONTEXT_PLUGIN, timeout, get_context_map);
         skin_render_inhibit_flush(false);
 
         /* SBS rendering in get_custom_action resets the viewport to default,
