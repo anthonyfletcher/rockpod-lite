@@ -44,6 +44,7 @@
 #include "viewport.h"
 #include "splash.h"
 #include "yesno.h"
+#include "skin_engine/skin_engine.h" /* skin_render_inhibit_flush */
 
 #define KBD_MARGIN 6
 #define KBD_MAX_LEN 512      /* absolute cap on editable characters */
@@ -342,7 +343,12 @@ int kbd_input(char* text, int buflen, ucschar_t *kbd)
     {
         kbd_draw(display, &vp, &st);
 
+        /* Inhibit the SBS's own flush during input so the theme's status-bar
+         * skin doesn't overdraw the editor between keystrokes (flicker) --
+         * same pattern as the list and album-covers screens. */
+        skin_render_inhibit_flush(true);
         int action = get_action(CONTEXT_KEYBOARD, TIMEOUT_BLOCK);
+        skin_render_inhibit_flush(false);
         switch (action)
         {
             case ACTION_KBD_DOWN:      /* wheel forward -> advance character */

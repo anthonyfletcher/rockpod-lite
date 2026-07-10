@@ -32,6 +32,7 @@
 #include "splash.h"
 #include "backlight.h"
 #include "statusbar-skinned.h"
+#include "skin_engine/skin_engine.h" /* skin_render_inhibit_flush */
 
 /* Non-touchscreen message box geometry: a centred box inset from the display
  * edges, with inner padding between the border and its contents. */
@@ -316,7 +317,14 @@ enum yesno_res gui_syncyesno_run_w_tmo(int ticks, enum yesno_res tmo_default_res
             talk_text_message(main_message, false);
         }
         backlight_on = is_backlight_on(false);
+        /* Inhibit the SBS's own flush during input: Themify_2's status-bar
+         * skin re-renders on GUI_EVENT_ACTIONUPDATE (fired inside get_action)
+         * and draws into the content area, which would otherwise overdraw
+         * this box between redraws (flicker). Same pattern as the list and
+         * album-covers screens. */
+        skin_render_inhibit_flush(true);
         action = get_action(CONTEXT_YESNOSCREEN, HZ / 2); /* for statubar and tmo */
+        skin_render_inhibit_flush(false);
         switch (action)
         {
             case ACTION_YESNO_ACCEPT:
