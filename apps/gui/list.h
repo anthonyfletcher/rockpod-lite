@@ -201,11 +201,6 @@ struct gui_synclist
 #endif
     struct viewport *parent[NB_SCREENS];
 
-#ifdef HAVE_TOUCHSCREEN
-    int y_pos; /* absolute Y coordinate, used for smooth scrolling */
-    int scroll_base_y; /* used for swipe scrolling */
-    int scroll_mode; /* see apps/gui/bitmap/list.c */
-#endif
 };
 
 
@@ -273,12 +268,6 @@ void skinlist_get_scrollbar(int* nb_item, int* first_shown, int* last_shown);
 int skinlist_get_line_count(enum screen_type screen, struct gui_synclist *list);
 #endif /* !PLUGIN) */
 
-#if  defined(HAVE_TOUCHSCREEN)
-/* this needs to be fixed if we ever get more than 1 touchscreen on a target */
-extern unsigned gui_synclist_do_touchscreen(struct gui_synclist * gui_list);
-/* only for private use in gui/list.c */
-extern void _gui_synclist_stop_kinetic_scrolling(struct gui_synclist * gui_list);
-#endif
 
 /* If the list has a pending postponed scheduled announcement, that
    may become due before the next get_action tmieout. This function

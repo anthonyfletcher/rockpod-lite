@@ -324,22 +324,6 @@ static const struct plugin_api rockbox_api = {
     /* action handling */
     get_custom_action,
     get_action,
-#ifdef HAVE_TOUCHSCREEN
-    action_get_touchscreen_press,
-    action_get_touchscreen_press_in_vp,
-    action_get_touch_event,
-    action_gesture_reset,
-    action_gesture_get_event_in_vp,
-    action_gesture_get_event,
-    action_gesture_is_valid,
-    action_gesture_is_pressed,
-    gesture_reset,
-    gesture_process,
-    gesture_get_event_in_vp,
-    gesture_vel_reset,
-    gesture_vel_process,
-    gesture_vel_get,
-#endif
     action_userabort,
     core_set_keyremap,
 
@@ -359,10 +343,6 @@ static const struct plugin_api rockbox_api = {
 #ifdef HAVE_SW_POWEROFF
     button_set_sw_poweroff_state,
     button_get_sw_poweroff_state,
-#endif
-#ifdef HAVE_TOUCHSCREEN
-    touchscreen_set_mode,
-    touchscreen_get_mode,
 #endif
 
 #ifdef HAVE_BUTTON_LIGHT
@@ -949,9 +929,6 @@ int plugin_load(const char* plugin, const void* parameter)
         FOR_NB_SCREENS(i)
             viewportmanager_theme_enable(i, false, NULL);
 
-#ifdef HAVE_TOUCHSCREEN
-    touchscreen_set_mode(TOUCHSCREEN_BUTTON);
-#endif
 
     /* allow voice to back off if the plugin needs lots of memory */
     if (!global_settings.talk_menu)
@@ -985,9 +962,6 @@ int plugin_load(const char* plugin, const void* parameter)
     talk_buffer_set_policy(TALK_BUFFER_DEFAULT);
 
     /* Go back to the global setting in case the plugin changed it */
-#ifdef HAVE_TOUCHSCREEN
-    touchscreen_set_mode(global_settings.touch_mode);
-#endif
     /* restore default vp */
     lcd_set_viewport(NULL);
     screen_helper_setfont(FONT_UI);

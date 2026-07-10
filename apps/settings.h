@@ -470,9 +470,6 @@ struct user_settings
     int scrollbar;    /* SCROLLBAR_* enum values */
     int scrollbar_width;
 
-#ifdef HAVE_TOUCHSCREEN
-    int list_line_padding;
-#endif
 #if LCD_DEPTH > 1
     int list_separator_height; /* -1=auto (== 1 currently), 0=disabled, X=height in pixels */
     int list_separator_color;
@@ -681,10 +678,6 @@ struct user_settings
 #endif /* HAVE_SPEAKER */
     bool prevent_skip;
 
-#ifdef HAVE_TOUCHSCREEN
-    int touch_mode;
-    struct touchscreen_parameter ts_calibration_data;
-#endif
 
 #ifdef HAVE_PITCHCONTROL
     /* pitch screen settings */

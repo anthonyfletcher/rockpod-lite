@@ -40,10 +40,6 @@
 #include "settings.h"
 #include "misc.h"
 
-#ifdef HAVE_TOUCHSCREEN
-#include "statusbar-skinned.h"
-#include "viewport.h"
-#endif
 
 #ifdef HAVE_BACKLIGHT
 #include "backlight.h"
@@ -100,12 +96,6 @@ typedef struct
     int     key_remap;
 #endif
 
-#ifdef HAVE_TOUCHSCREEN
-    int ts_data;
-    long ts_start_tick;
-    struct touchevent touchevent;
-    struct gesture gesture;
-#endif
 } action_last_t;
 
 /* holds the action state between calls to get_action \ get_action_custom) */
@@ -124,10 +114,6 @@ static action_last_t action_last =
     .key_remap = 0,
 #endif
 
-#ifdef HAVE_TOUCHSCREEN
-    .ts_data = 0,
-    .ts_start_tick = 0,
-#endif
 
 #ifdef HAVE_BACKLIGHT
     .backlight_mask = SEL_ACTION_NONE,
@@ -431,66 +417,9 @@ static inline void update_screen_has_lock(action_last_t *last, action_cur_t *cur
 */
 static inline bool get_action_touchscreen(action_last_t *last, action_cur_t *cur)
 {
-#if !defined(HAVE_TOUCHSCREEN)
     (void) last;
     (void) cur;
     return false;
-#else
-    if (has_flag(cur->button, BUTTON_TOUCHSCREEN))
-    {
-        intptr_t data = button_get_data();
-        long now = current_tick;
-
-        if (has_flag(last->button, BUTTON_TOUCHSCREEN) &&
-            !has_flag(last->button, BUTTON_REL))
-        {
-            /* Only update the coordinates if this is not a release event.
-             * For release events, we reuse the previous event coordinates. */
-            if (!has_flag(cur->button, BUTTON_REL))
-                last->ts_data = data;
-
-            /* Historical baggage... may be unnecessary. */
-            if (has_flag(cur->button, BUTTON_REPEAT))
-                last->repeated = true;
-        }
-        else
-        {
-            /* Ignore isolated release events. No good can come of this. */
-            if (has_flag(cur->button, BUTTON_REL))
-                return false;
-
-            last->ts_data = data;
-            last->ts_start_tick = now;
-        }
-
-        last->button = cur->button;
-        last->tick = now;
-        cur->action = ACTION_TOUCHSCREEN;
-
-        /* Update touchevent data */
-        if (has_flag(last->button, BUTTON_REL))
-            last->touchevent.type = TOUCHEVENT_RELEASE;
-        else if (has_flag(last->button, BUTTON_REPEAT))
-            last->touchevent.type = TOUCHEVENT_CONTACT;
-        else
-            last->touchevent.type = TOUCHEVENT_PRESS;
-
-        last->touchevent.x = (last->ts_data >> 16) & 0xffff;
-        last->touchevent.y = last->ts_data & 0xffff;
-        last->touchevent.tick = last->tick;
-
-        /* Update gesture state */
-        gesture_process(&last->gesture, &last->touchevent);
-
-        return true;
-    }
-    else
-    {
-        last->touchevent.type = TOUCHEVENT_NONE;
-    }
-
-    return false;
-#endif
 }
 
 /******************************************************************************
@@ -762,7 +691,7 @@ static inline void do_key_lock(bool lock)
     action_last.keys_locked = lock;
     action_last.button = BUTTON_NONE;
     button_clear_queue();
-#if defined(HAVE_TOUCHPAD) || defined(HAVE_TOUCHSCREEN)
+#if defined(HAVE_TOUCHPAD)
  /* disable touch device on keylock if std behavior or selected disable touch */
     if (!has_flag(action_last.softlock_mask, SEL_ACTION_ENABLED) ||
          has_flag(action_last.softlock_mask, SEL_ACTION_NOTOUCH))
@@ -799,7 +728,7 @@ static inline int do_auto_softlock(action_last_t *last, action_cur_t *cur)
     {
         do_key_lock(true);
 
-#if defined(HAVE_TOUCHPAD) || defined(HAVE_TOUCHSCREEN)
+#if defined(HAVE_TOUCHPAD)
         /* if the touchpad is supposed to be off and the current buttonpress
          * is from the touchpad, nullify both button and action. */
         if (!has_flag(action_last.softlock_mask, SEL_ACTION_ENABLED) ||
@@ -807,16 +736,6 @@ static inline int do_auto_softlock(action_last_t *last, action_cur_t *cur)
         {
 #if defined(HAVE_TOUCHPAD)
             cur->button = touchpad_filter(cur->button);
-#endif
-#if defined(HAVE_TOUCHSCREEN)
-            const int touch_fakebuttons =
-                BUTTON_TOPLEFT    | BUTTON_TOPMIDDLE    | BUTTON_TOPRIGHT    |
-                BUTTON_MIDLEFT    | BUTTON_CENTER       | BUTTON_MIDRIGHT    |
-                BUTTON_BOTTOMLEFT | BUTTON_BOTTOMMIDDLE | BUTTON_BOTTOMRIGHT;
-            if (has_flag(cur->button, BUTTON_TOUCHSCREEN))
-                cur->button = BUTTON_NONE;
-            else
-                cur->button &= ~touch_fakebuttons;
 #endif
             if (cur->button == BUTTON_NONE)
             {
@@ -1157,103 +1076,6 @@ static int get_action_worker(action_last_t *last, action_cur_t *cur)
 * EXPORTED ACTION FUNCTIONS ***************************************************
 *******************************************************************************
 */
-#ifdef HAVE_TOUCHSCREEN
-int action_get_touch_event(struct touchevent *ev)
-{
-    if (ev)
-        *ev = action_last.touchevent;
-
-    return action_last.touchevent.type;
-}
-
-void action_gesture_reset(void)
-{
-    gesture_reset(&action_last.gesture);
-}
-
-bool action_gesture_get_event_in_vp(struct gesture_event *gevt,
-                                    const struct viewport *vp)
-{
-    return gesture_get_event_in_vp(&action_last.gesture, gevt, vp);
-}
-
-bool action_gesture_is_valid(void)
-{
-    return gesture_is_valid(&action_last.gesture);
-}
-
-bool action_gesture_is_pressed(void)
-{
-    return gesture_is_pressed(&action_last.gesture);
-}
-
-/* return BUTTON_NONE               on error
- *        BUTTON_REPEAT             if repeated press
- *        BUTTON_REPEAT|BUTTON_REL  if release after repeated press
- *        BUTTON_REL                if it's a short press = release after press
- *        BUTTON_TOUCHSCREEN        if press
- * DEPRECATED, do not use it anymore.
- */
-int action_get_touchscreen_press(short *x, short *y)
-{
-    /* historical default value */
-    const long long_press_time = 30 * HZ / 100;
-
-    int ret;
-    struct touchevent ev;
-    switch (action_get_touch_event(&ev))
-    {
-    case TOUCHEVENT_PRESS:
-    case TOUCHEVENT_CONTACT:
-        if (TIME_AFTER(ev.tick, action_last.ts_start_tick + long_press_time))
-            ret = BUTTON_REPEAT;
-        else
-            ret = BUTTON_TOUCHSCREEN;
-        break;
-
-    case TOUCHEVENT_RELEASE:
-        if (TIME_AFTER(ev.tick, action_last.ts_start_tick + long_press_time))
-            ret = BUTTON_REPEAT|BUTTON_REL;
-        else
-            ret = BUTTON_REL;
-        break;
-
-    default:
-        ret = BUTTON_NONE;
-        break;
-    }
-
-    if (ret != BUTTON_NONE) {
-        *x = ev.x;
-        *y = ev.y;
-    }
-
-    return ret;
-}
-
-/* DEPRECATED, do not use it anymore. */
-int action_get_touchscreen_press_in_vp(short *x1, short *y1, struct viewport *vp)
-{
-    short x, y;
-    int ret;
-
-    ret = action_get_touchscreen_press(&x, &y);
-
-    if (ret != BUTTON_NONE && viewport_point_within_vp(vp, x, y))
-    {
-        *x1 = x - vp->x;
-        *y1 = y - vp->y;
-        return ret;
-    }
-
-    if (has_flag(ret, BUTTON_TOUCHSCREEN))
-    {
-        return ACTION_UNKNOWN;
-    }
-
-    return BUTTON_NONE;
-}
-#endif
 
 bool action_userabort(int timeout)
 {
@@ -1281,12 +1103,6 @@ int get_action(int context, int timeout)
 
     int action = get_action_worker(&action_last, &current);
 
-#ifdef HAVE_TOUCHSCREEN
-    if (action == ACTION_TOUCHSCREEN)
-    {
-        action = sb_touch_to_button(context);
-    }
-#endif
 
     action = do_backlight(&action_last, &current, action);
 

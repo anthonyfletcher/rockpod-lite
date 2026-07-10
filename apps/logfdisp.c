@@ -184,25 +184,6 @@ bool logfdisplay(void)
             case ACTION_STD_OK:
                 user_index = 0;
                 break;
-#ifdef HAVE_TOUCHSCREEN
-            case ACTION_TOUCHSCREEN:
-            {
-                short x, y;
-                static int prev_y;
-                
-                action = action_get_touchscreen_press(&x, &y);
-                
-                if(action & BUTTON_REL)
-                    prev_y = 0;
-                else
-                {
-                    if(prev_y != 0)
-                        user_index += (prev_y - y) / delta_y;
-                    
-                    prev_y = y;
-                }
-            }
-#endif
             default:
                 break;
         }

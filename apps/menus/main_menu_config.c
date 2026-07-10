@@ -38,9 +38,6 @@
 #include "root_menu.h"
 #include "exported_menus.h"
 #include "audio.h" /* audio_status() -- see item_is_locked() */
-#ifdef HAVE_TOUCHSCREEN
-#include "touchscreen.h"
-#endif
 
 static struct menu_table *menu_table;
 static int menu_item_count;
@@ -293,9 +290,6 @@ int main_menu_config(void)
     gui_synclist_draw(&list);
     gui_synclist_speak_item(&list);
 
-#ifdef HAVE_TOUCHSCREEN
-    touchscreen_set_mode(global_settings.touch_mode);
-#endif
 
     while (!done)
     {

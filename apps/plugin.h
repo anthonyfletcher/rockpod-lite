@@ -379,26 +379,6 @@ struct plugin_api {
     int (*get_custom_action)(int context,int timeout,
                           const struct button_mapping* (*get_context_map)(int));
     int (*get_action)(int context, int timeout);
-#ifdef HAVE_TOUCHSCREEN
-    int (*action_get_touchscreen_press)(short *x, short *y);
-    int (*action_get_touchscreen_press_in_vp)(short *x1, short *y1, struct viewport *vp);
-    int (*action_get_touch_event)(struct touchevent *ev);
-    void (*action_gesture_reset)(void);
-    bool (*action_gesture_get_event_in_vp)(struct gesture_event *gevt,
-                                           const struct viewport *vp);
-    bool (*action_gesture_get_event)(struct gesture_event *gevt);
-    bool (*action_gesture_is_valid)(void);
-    bool (*action_gesture_is_pressed)(void);
-    void (*gesture_reset)(struct gesture *g);
-    void (*gesture_process)(struct gesture *g, const struct touchevent *ev);
-    bool (*gesture_get_event_in_vp)(struct gesture *g,
-                                    struct gesture_event *gevt,
-                                    const struct viewport *vp);
-    void (*gesture_vel_reset)(struct gesture_vel *gv);
-    void (*gesture_vel_process)(struct gesture_vel *gv,
-                                const struct touchevent *ev);
-    bool (*gesture_vel_get)(struct gesture_vel *gv, int *xvel, int *yvel);
-#endif
     bool (*action_userabort)(int timeout);
     int (*core_set_keyremap)(struct button_mapping* core_keymap, int count);
 
@@ -418,10 +398,6 @@ struct plugin_api {
 #ifdef HAVE_SW_POWEROFF
     void (*button_set_sw_poweroff_state)(bool enable);
     bool (*button_get_sw_poweroff_state)(void);
-#endif
-#ifdef HAVE_TOUCHSCREEN
-    void (*touchscreen_set_mode)(enum touchscreen_mode);
-    enum touchscreen_mode (*touchscreen_get_mode)(void);
 #endif
 #ifdef HAVE_BUTTON_LIGHT
     void (*buttonlight_set_timeout)(int value);

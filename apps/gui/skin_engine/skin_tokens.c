@@ -1283,10 +1283,6 @@ const char *get_token_value(struct gui_wps *gwps,
 #endif
 
         case SKIN_TOKEN_MAIN_HOLD:
-#ifdef HAVE_TOUCHSCREEN
-            if (data->touchscreen_locked)
-                return "t";
-#endif
 #ifdef HAS_BUTTON_HOLD
             if (button_hold())
 #else
@@ -1312,26 +1308,9 @@ const char *get_token_value(struct gui_wps *gwps,
             return NULL;
         case SKIN_TOKEN_LASTTOUCH:
             {
-#ifdef HAVE_TOUCHSCREEN
-            long last_touch = touchscreen_last_touch();
-            char *skin_base = get_skin_buffer(data);
-            struct touchregion_lastpress *data = SKINOFFSETTOPTR(skin_base, token->value.data);
-            if (!data) return NULL;
-            struct touchregion *region = SKINOFFSETTOPTR(skin_base, data->region);
-            if (region)
-                last_touch = region->last_press;
-
-            if (last_touch != -1 &&
-                TIME_BEFORE(current_tick, data->timeout + last_touch))
-                return "t";
-#endif
             }
             return NULL;
         case SKIN_TOKEN_HAVE_TOUCH:
-#ifdef HAVE_TOUCHSCREEN
-            if (touchscreen_get_mode() == TOUCHSCREEN_POINT)
-                return "t";
-#endif
             return NULL;
 
 #ifdef HAVE_QUICKSCREEN

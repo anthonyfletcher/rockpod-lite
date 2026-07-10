@@ -214,45 +214,6 @@ struct viewport_colour {
 #endif
 };
 
-#ifdef HAVE_TOUCHSCREEN
-struct touchregion {
-    OFFSETTYPE(char*) label;            /* label to identify this region */
-    OFFSETTYPE(struct skin_viewport*) wvp;/* The viewport this region is in */
-    int16_t x;             /* x-pos */
-    int16_t y;             /* y-pos */
-    int16_t width;         /* width */
-    int16_t height;        /* height */
-    int16_t wpad;          /* padding to width */
-    int16_t hpad;          /* padding to height */
-    bool reverse_bar;        /* if true 0% is the left or top */
-    bool allow_while_locked;
-    bool user_region;        /* if true this is a user-defined region */
-    enum {
-        PRESS,               /* quick press only */
-        LONG_PRESS,          /* Long press without repeat */
-        REPEAT,              /* long press allowing repeats */
-    } press_length;
-    int action;              /* action this button will return */
-
-    union {                  /* Extra data, action dependant */
-        struct touchsetting {
-            const struct settings_list *setting; /* setting being controlled */
-            union {         /* Value to set the setting to for ACTION_SETTING_SET */
-                int number;
-                OFFSETTYPE(char*) text;
-            } value;
-        } setting_data;
-        int   value;
-    };
-    long last_press;        /* last tick this was pressed */
-    OFFSETTYPE(struct progressbar*) bar;
-};
-
-struct touchregion_lastpress {
-    OFFSETTYPE(struct touchregion *) region;
-    long timeout;
-};
-#endif
 
 struct playlistviewer {
     bool show_icons;
@@ -380,11 +341,6 @@ struct wps_data
     bool use_extra_framebuffer;
 #endif
 
-#ifdef HAVE_TOUCHSCREEN
-    bool touchscreen_locked;
-    OFFSETTYPE(struct skin_token_list *) touchregions;
-    struct gesture gesture;
-#endif
 #ifdef HAVE_ALBUMART
     OFFSETTYPE(struct skin_albumart *) albumart;
     int    playback_aa_slot;
@@ -447,9 +403,6 @@ enum skin_find_what {
     SKIN_FIND_VP = 0,
     SKIN_FIND_UIVP,
     SKIN_FIND_IMAGE,
-#ifdef HAVE_TOUCHSCREEN
-    SKIN_FIND_TOUCHREGION,
-#endif
 #ifdef HAVE_SKIN_VARIABLES
     SKIN_VARIABLE,
 #endif

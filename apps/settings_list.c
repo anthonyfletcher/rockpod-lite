@@ -50,10 +50,6 @@
 #include "iap.h"
 #endif
 #include "statusbar.h"
-#ifdef HAVE_TOUCHSCREEN
-#include "touchscreen.h"
-#include "ctype.h" /* For isspace() */
-#endif
 #ifdef HAVE_HOTKEY
 #include "onplay.h"
 #include "misc.h" /* current activity */
@@ -83,17 +79,6 @@
 #endif
 #define NODEFAULT INT(0)
 
-#ifdef HAVE_TOUCHSCREEN
-#if defined(APPLICATION) \
- || defined(ONDA_VX747)  \
- || defined(ONDA_VX767)  \
- || defined(ONDA_VX747P) \
- || defined(ONDA_VX777)
-#define DEFAULT_TOUCHSCREEN_MODE TOUCHSCREEN_POINT
-#else
-#define DEFAULT_TOUCHSCREEN_MODE TOUCHSCREEN_BUTTON
-#endif
-#endif /* HAVE_TOUCHSCREEN */
 
 /* in all the following macros the args are:
     - flags: bitwise | or the F_ bits in settings_list.h
@@ -439,12 +424,7 @@ static const char graphic_numeric[] = "graphic,numeric";
 # define MAX_FILES_IN_DIR_STEP      50
 #endif
 
-#ifdef HAVE_TOUCHSCREEN
-/* on touchscreen, it makes more sense to put the scrollbar on the right */
-# define SCROLLBAR_DEFAULT SCROLLBAR_RIGHT
-#else
 # define SCROLLBAR_DEFAULT SCROLLBAR_LEFT
-#endif
 
 #ifndef __PCTOOL__
 
@@ -789,48 +769,6 @@ static void qs_set_default(void* var, void* defaultval)
 }
 #endif
 
-#ifdef HAVE_TOUCHSCREEN
-static void tsc_load_from_cfg(void* setting, char*value)
-{
-    struct touchscreen_parameter *var = (struct touchscreen_parameter*) setting;
-
-    /* Replacement for sscanf(value, "%d ..., &var->A, ...); */
-    int vals[7], count = 0;
-    while(*value != 0 && count < 7)
-    {
-        if(isspace(*value))
-            value++;
-        else
-        {
-            vals[count++] = atoi(value);
-            while(!isspace(*value))
-                value++;
-        }
-    }
-    var->A = vals[0];
-    var->B = vals[1];
-    var->C = vals[2];
-    var->D = vals[3];
-    var->E = vals[4];
-    var->F = vals[5];
-    var->divider = vals[6];
-}
-
-static char* tsc_write_to_cfg(void* setting, char*buf, int buf_len)
-{
-    const struct touchscreen_parameter *var = (const struct touchscreen_parameter*) setting;
-    snprintf(buf, buf_len, "%d %d %d %d %d %d %d", var->A, var->B, var->C, var->D, var->E, var->F, var->divider);
-    return buf;
-}
-static bool tsc_is_changed(void* setting, void* defaultval)
-{
-    return memcmp(setting, defaultval, sizeof(struct touchscreen_parameter)) != 0;
-}
-static void tsc_set_default(void* setting, void* defaultval)
-{
-    memcpy(setting, defaultval, sizeof(struct touchscreen_parameter));
-}
-#endif
 #ifdef HAVE_HOTKEY
 static void hotkey_callback(int var)
 {
@@ -1155,12 +1093,6 @@ const struct settings_list settings[] = {
     INT_SETTING(F_THEMESETTING, scrollbar_width, LANG_SCROLLBAR_WIDTH, 6,
                 "scrollbar width",UNIT_INT, 3, MAX(LCD_WIDTH/10,25), 1,
                 NULL, NULL, NULL),
-#ifdef HAVE_TOUCHSCREEN
-    TABLE_SETTING(F_ALLOW_ARBITRARY_VALS, list_line_padding, LANG_LIST_LINE_PADDING,
-                  -1, "list padding", "auto,off", UNIT_PIXEL, list_pad_formatter,
-                  list_pad_getlang, NULL, 16,
-                  -1,0,2,4,6,8,10,12,16,20,24,28,32,38,44,50),
-#endif
 #if LCD_DEPTH > 1
     TABLE_SETTING(F_ALLOW_ARBITRARY_VALS, list_separator_height, LANG_LIST_SEPARATOR,
                   0, "list separator height", "auto,off", UNIT_PIXEL,
@@ -2052,15 +1984,6 @@ const struct settings_list settings[] = {
                    "on,off", audio_enable_speaker, 2, ID2P(LANG_OFF), ID2P(LANG_ON)),
 #endif /* HAVE_HEADPHONE_DETECTION */
 #endif /* HAVE_SPEAKER */
-#ifdef HAVE_TOUCHSCREEN
-    CHOICE_SETTING(0, touch_mode, LANG_TOUCHSCREEN_MODE, DEFAULT_TOUCHSCREEN_MODE,
-                   "touchscreen mode", "point,grid", NULL, 2,
-                   ID2P(LANG_TOUCHSCREEN_POINT), ID2P(LANG_TOUCHSCREEN_GRID)),
-    CUSTOM_SETTING(0, ts_calibration_data, -1,
-                    &default_calibration_parameters, "touchscreen calibration",
-                    tsc_load_from_cfg, tsc_write_to_cfg,
-                    tsc_is_changed, tsc_set_default),
-#endif
     OFFON_SETTING(0, prevent_skip, LANG_PREVENT_SKIPPING, false, "prevent track skip", NULL),
     OFFON_SETTING(0, rewind_across_tracks, LANG_REWIND_ACROSS_TRACKS, false, "rewind across tracks", NULL),
 #ifdef HAVE_PITCHCONTROL

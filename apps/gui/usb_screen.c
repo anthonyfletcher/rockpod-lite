@@ -240,13 +240,6 @@ void gui_usb_screen_run(bool early_usb, intptr_t seqnum)
 #endif
 
     struct usb_screen_vps_t usb_screen_vps_ar[NB_SCREENS];
-#if defined HAVE_TOUCHSCREEN
-    enum touchscreen_mode old_mode = touchscreen_get_mode();
-
-    /* TODO: Paint buttons on screens OR switch to point mode and use
-     * touchscreen as a touchpad to move the host's mouse cursor */
-    touchscreen_set_mode(TOUCHSCREEN_BUTTON);
-#endif
 
     push_current_activity(ACTIVITY_USBSCREEN);
 
@@ -312,9 +305,6 @@ void gui_usb_screen_run(bool early_usb, intptr_t seqnum)
     }
 #endif
 
-#ifdef HAVE_TOUCHSCREEN
-    touchscreen_set_mode(old_mode);
-#endif
 
     if(!early_usb)
     {

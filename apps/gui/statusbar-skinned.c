@@ -40,10 +40,6 @@
 #include "icons.h"
 #include "option_select.h"
 #include "string-extra.h"
-#ifdef HAVE_TOUCHSCREEN
-#include "sound.h"
-#include "misc.h"
-#endif
 #include "skin_engine/skin_albumart_color.h"
 
 /* initial setup of wps_data  */
@@ -338,36 +334,3 @@ void sb_skin_init(void)
     }
 }
 
-#ifdef HAVE_TOUCHSCREEN
-static bool bypass_sb_touchregions = true;
-void sb_bypass_touchregions(bool enable)
-{
-    bypass_sb_touchregions = enable;
-}
-
-int sb_touch_to_button(int context)
-{
-    static int last_context = -1;
-    int button, offset;
-    if (bypass_sb_touchregions)
-        return ACTION_TOUCHSCREEN;
-
-    struct gui_wps *gwps = skin_get_gwps(CUSTOM_STATUSBAR, SCREEN_MAIN);
-    if (last_context != context)
-        skin_disarm_touchregions(gwps);
-    last_context = context;
-
-    button = skin_get_touchaction(gwps, &offset);
-    switch (button)
-    {
-#ifdef HAVE_VOLUME_IN_LIST
-        case ACTION_WPS_VOLUP:
-            return ACTION_LIST_VOLUP;
-        case ACTION_WPS_VOLDOWN:
-            return ACTION_LIST_VOLDOWN;
-#endif
-        /* TODO */
-    }
-    return button;
-}
-#endif

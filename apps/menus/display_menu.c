@@ -37,9 +37,6 @@
 #include "mask_select.h"
 #include "splash.h"
 #endif
-#ifdef HAVE_TOUCHSCREEN
-#include "screens.h"
-#endif
 #include "viewport.h"
 #include "statusbar.h" /* statusbar_vals enum*/
 #include "rbunicode.h"
@@ -439,45 +436,6 @@ MAKE_MENU(peak_meter_menu, ID2P(LANG_PM_MENU), NULL, Icon_NOICON,
 /***********************************/
 
 
-#ifdef HAVE_TOUCHSCREEN
-static int touch_mode_callback(int action,
-                               const struct menu_item_ex *this_item,
-                               struct gui_synclist *this_list)
-{
-    (void)this_item;
-    (void)this_list;
-    switch (action)
-    {
-        case ACTION_EXIT_MENUITEM: /* on exit */
-            touchscreen_set_mode(global_settings.touch_mode);
-            break;
-    }
-    return action;
-}
-
-static int line_padding_callback(int action,
-                                 const struct menu_item_ex *this_item,
-                                 struct gui_synclist *this_list)
-{
-    (void)this_item;
-    (void)this_list;
-    if (action == ACTION_EXIT_MENUITEM)
-        viewportmanager_theme_changed(THEME_LISTS);
-    return action;
-}
-
-MENUITEM_SETTING(touch_mode, &global_settings.touch_mode, touch_mode_callback);
-
-MENUITEM_FUNCTION(touchscreen_menu_calibrate, 0,
-	              ID2P(LANG_TOUCHSCREEN_CALIBRATE), calibrate, NULL, Icon_NOICON);
-MENUITEM_FUNCTION(touchscreen_menu_reset_calibration, 0,
-	              ID2P(LANG_TOUCHSCREEN_RESET_CALIBRATION),
-	              reset_mapping, NULL, Icon_NOICON);
-MENUITEM_SETTING(list_line_padding, &global_settings.list_line_padding, line_padding_callback);
-
-MAKE_MENU(touchscreen_menu, ID2P(LANG_TOUCHSCREEN_SETTINGS), NULL, Icon_NOICON, &list_line_padding, &touch_mode,
-            &touchscreen_menu_calibrate, &touchscreen_menu_reset_calibration);
-#endif
 
 static int codepage_callback(int action,
                              const struct menu_item_ex *this_item,
@@ -509,7 +467,4 @@ MAKE_MENU(display_menu, ID2P(LANG_DISPLAY),
             &scroll_settings_menu,
             &peak_meter_menu,
             &codepage_setting,
-#ifdef HAVE_TOUCHSCREEN
-            &touchscreen_menu,
-#endif
             );

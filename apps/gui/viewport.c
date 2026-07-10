@@ -164,9 +164,6 @@ static void toggle_theme(enum screen_type screen, bool force)
     send_event(GUI_EVENT_THEME_CHANGED, NULL);
     FOR_NB_SCREENS(i)
         was_enabled[i] = is_theme_enabled(i);
-#ifdef HAVE_TOUCHSCREEN
-    sb_bypass_touchregions(!is_theme_enabled(SCREEN_MAIN));
-#endif
     after_boot[screen] = true;
 }
 
@@ -245,16 +242,6 @@ void viewportmanager_theme_changed(const int which)
     send_event(GUI_EVENT_THEME_CHANGED, NULL);
 }
 
-#ifdef HAVE_TOUCHSCREEN
-/* check if a point (x and y coordinates) are within a viewport */
-bool viewport_point_within_vp(const struct viewport *vp,
-                               const int x, const int y)
-{
-    bool is_x = (x >= vp->x && x < (vp->x + vp->width));
-    bool is_y = (y >= vp->y && y < (vp->y + vp->height));
-    return (is_x && is_y);
-}
-#endif /* HAVE_TOUCHSCREEN */
 
 static void set_default_align_flags(struct viewport *vp)
 {

@@ -296,20 +296,6 @@ enum {
     ACTION_KBD_MORSE_INPUT,
     ACTION_KBD_MORSE_SELECT,
 
-#ifdef HAVE_TOUCHSCREEN
-    /* the following are helper actions for touchscreen targets,
-     * These are for actions which are not doable or required if buttons are
-     * being used, but are nice additions if the touchscreen is used */
-    ACTION_TOUCH_SHUFFLE,
-    ACTION_TOUCH_REPMODE,
-    ACTION_TOUCH_MUTE,
-    ACTION_TOUCH_SCROLLBAR,
-    ACTION_TOUCH_SCROLLBAR_SET,
-    ACTION_TOUCH_SCROLLBAR_END,
-    ACTION_TOUCH_VOLUME,
-    ACTION_TOUCH_SOFTLOCK,
-    ACTION_TOUCH_SETTING,
-#endif
 
     /* USB HID codes */
     ACTION_USB_HID_FIRST, /* Place holder */
@@ -418,26 +404,6 @@ int get_action_statuscode(int *button);
    BUTTON_NONE or flagged with SYS_EVENT */
 intptr_t get_action_data(void);
 
-#ifdef HAVE_TOUCHSCREEN
-/* Return a touch event and screen coordinates of the touch. */
-int action_get_touch_event(struct touchevent *ev);
-
-/* Action system gesture recognition */
-void action_gesture_reset(void);
-bool action_gesture_get_event_in_vp(struct gesture_event *gevt,
-                                    const struct viewport *vp);
-bool action_gesture_is_valid(void);
-bool action_gesture_is_pressed(void);
-
-static inline bool action_gesture_get_event(struct gesture_event *gevt)
-{
-    return action_gesture_get_event_in_vp(gevt, NULL);
-}
-
-/* DEPRECATED, do not use these anymore */
-int action_get_touchscreen_press(short *x, short *y);
-int action_get_touchscreen_press_in_vp(short *x1, short *y1, struct viewport *vp);
-#endif
 
 /*******************************************************
 * action_wait_for_release will not allow

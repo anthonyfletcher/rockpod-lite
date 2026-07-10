@@ -53,10 +53,6 @@ bool browse_id3(struct mp3entry *id3, int playlist_display_index, int playlist_a
                 int (*view_text)(const char *title, const char *text));
 int  view_runtime(void);
 
-#ifdef HAVE_TOUCHSCREEN
-int calibrate(void);
-int reset_mapping(void);
-#endif
 
 #endif
 

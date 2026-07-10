@@ -153,36 +153,6 @@ void wps_do_action(enum wps_do_action_type action, bool updatewps)
         update_non_static();
 }
 
-#ifdef HAVE_TOUCHSCREEN
-static int skintouch_to_wps(void)
-{
-    int offset = 0;
-    struct gui_wps *gwps = skin_get_gwps(WPS, SCREEN_MAIN);
-    int button = skin_get_touchaction(gwps, &offset);
-    switch (button)
-    {
-        case ACTION_STD_PREV:
-            return ACTION_WPS_SKIPPREV;
-        case ACTION_STD_PREVREPEAT:
-            return ACTION_WPS_SEEKBACK;
-        case ACTION_STD_NEXT:
-            return ACTION_WPS_SKIPNEXT;
-        case ACTION_STD_NEXTREPEAT:
-            return ACTION_WPS_SEEKFWD;
-        case ACTION_STD_MENU:
-            return ACTION_WPS_MENU;
-        case ACTION_STD_CONTEXT:
-            return ACTION_WPS_CONTEXT;
-        case ACTION_STD_QUICKSCREEN:
-            return ACTION_WPS_QUICKSCREEN;
-#ifdef HAVE_HOTKEY
-        case ACTION_STD_HOTKEY:
-            return ACTION_WPS_HOTKEY;
-#endif
-    }
-    return button;
-}
-#endif /* HAVE_TOUCHSCREEN */
 
 static bool ffwd_rew(int button, bool seek_from_end)
 {
@@ -307,10 +277,6 @@ static bool ffwd_rew(int button, bool seek_from_end)
         if (!exit)
         {
             button = get_action(CONTEXT_WPS|ALLOW_SOFTLOCK,TIMEOUT_BLOCK);
-#ifdef HAVE_TOUCHSCREEN
-            if (button == ACTION_TOUCHSCREEN)
-                button = skintouch_to_wps();
-#endif
             if (button != ACTION_WPS_SEEKFWD
                 && button != ACTION_WPS_SEEKBACK
                 && button != 0 && !IS_SYSEVENT(button))
@@ -509,9 +475,6 @@ static void gwps_leave_wps(bool theme_enabled)
 #endif
     /* unhandle statusbar update delay */
     sb_skin_set_update_delay(DEFAULT_UPDATE_DELAY);
-#ifdef HAVE_TOUCHSCREEN
-    touchscreen_set_mode(global_settings.touch_mode);
-#endif
 }
 
 static void restore_theme(void)
@@ -562,12 +525,6 @@ static void gwps_enter_wps(bool theme_enabled)
         skin_update(WPS, i, SKIN_REFRESH_ALL);
 
     }
-#ifdef HAVE_TOUCHSCREEN
-    gwps = skin_get_gwps(WPS, SCREEN_MAIN);
-    skin_disarm_touchregions(gwps);
-    if (gwps->data->touchregions < 0)
-        touchscreen_set_mode(TOUCHSCREEN_BUTTON);
-#endif
     /* force statusbar/skin update since we just cleared the whole screen */
     send_event(GUI_EVENT_ACTIONUPDATE, (void*)1);
 }
@@ -746,10 +703,6 @@ long gui_wps_show(void)
            playlist or if using the sleep timer. */
         if (!(audio_status() & AUDIO_STATUS_PLAY))
             exit = true;
-#ifdef HAVE_TOUCHSCREEN
-        if (button == ACTION_TOUCHSCREEN)
-            button = skintouch_to_wps();
-#endif
         button = do_party_mode(button); /* block select actions in party mode */
 
         button = action_wpsab_single(button); /* iPods/X5/M5 */

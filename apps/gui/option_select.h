@@ -34,7 +34,7 @@ bool option_screen(const struct settings_list *setting,
                    struct viewport parent[NB_SCREENS],
                    bool use_temp_var, const unsigned char* option_title);
 
-#if defined(HAVE_QUICKSCREEN) || defined(HAVE_TOUCHSCREEN)
+#if defined(HAVE_QUICKSCREEN)
 void option_select_next_val(const struct settings_list *setting,
                             bool previous, bool apply);
 #endif
@@ -47,8 +47,5 @@ void option_talk_value(const struct settings_list *setting, int value, bool enqu
 int option_value_as_int(const struct settings_list *setting);
 
 int get_setting_info_for_bar(const struct settings_list *setting, int offset, int *count, int *val);
-#ifdef HAVE_TOUCHSCREEN
-void update_setting_value_from_touch(const struct settings_list *setting, int offset, int selection);
-#endif
 
 #endif /* _GUI_OPTION_SELECT_H_ */

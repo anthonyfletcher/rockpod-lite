@@ -214,7 +214,7 @@ static int option_talk(int selected_item, void * data)
     return 0;
 }
 
-#if defined(HAVE_QUICKSCREEN) || defined(HAVE_TOUCHSCREEN)
+#if defined(HAVE_QUICKSCREEN)
    /* only the quickscreen and recording trigger needs this */
 void option_select_next_val(const struct settings_list *setting,
                             bool previous, bool apply)
@@ -632,21 +632,3 @@ int get_setting_info_for_bar(const struct settings_list *setting, int offset, in
     return true;
 }
 
-#ifdef HAVE_TOUCHSCREEN
-void update_setting_value_from_touch(const struct settings_list *setting, int offset, int selection)
-{
-    int new_val = selection_to_val(setting, selection);
-    int var_type = setting->flags&F_T_MASK;
-
-    if (var_type == F_T_INT || var_type == F_T_UINT)
-    {
-        if (!(setting->flags&F_EQSETTING) || offset > 2)
-            offset = 0;
-        ((int*)setting->setting)[offset] = new_val;
-    }
-    else if (var_type == F_T_BOOL)
-    {
-        *(bool*)setting->setting = new_val ? true : false;
-    }
-}
-#endif
