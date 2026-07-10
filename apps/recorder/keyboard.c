@@ -46,7 +46,8 @@
 #include "yesno.h"
 #include "skin_engine/skin_engine.h" /* skin_render_inhibit_flush */
 
-#define KBD_MARGIN 6
+#define KBD_MARGIN 12        /* horizontal gap from the display edge to the box */
+#define KBD_PAD    10        /* inner padding inside the box */
 #define KBD_MAX_LEN 512      /* absolute cap on editable characters */
 #define KBD_CHARSET_MAX 64
 
@@ -229,22 +230,40 @@ static void draw_hint_button(struct screen *display, int x, int y,
 static void kbd_draw(struct screen *display, struct viewport *vp,
                      struct kbd_edit *s)
 {
-    display->set_viewport(vp);
+    int sw = display->getwidth();
+    int sh = display->getheight();
+
+    /* Box spans the display width minus a horizontal margin; height fits the
+     * content (edit line + button row) and is centred vertically, matching the
+     * yes/no dialog. Inherits the theme's colours/font from vp. */
+    struct viewport box = *vp;
+    box.x = KBD_MARGIN;
+    box.width = sw - 2 * KBD_MARGIN;
+    box.y = 0;
+    box.height = sh;
+    struct viewport *last_vp = display->set_viewport(&box);
+    int ch_h = display->getcharheight();
+
+    int bh = ch_h + 2 * 5;                  /* button height */
+    int gap = ch_h / 2;                     /* gap between edit line and buttons */
+    int box_h = ch_h + gap + bh + 2 * KBD_PAD;
+    if (box_h > sh - 2 * KBD_MARGIN)
+        box_h = sh - 2 * KBD_MARGIN;
+    box.y = (sh - box_h) / 2;
+    box.height = box_h;
+    display->set_viewport(&box);
 
     /* clear and frame the dialog like a window */
     display->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
-    display->fillrect(0, 0, vp->width, vp->height);
+    display->fillrect(0, 0, box.width, box.height);
     display->set_drawmode(DRMODE_SOLID);
-    display->drawrect(0, 0, vp->width, vp->height);
-
-    int ch_h = display->getcharheight();
-    int line_y = (vp->height - ch_h) / 2;   /* edit line vertically centred */
+    display->drawrect(0, 0, box.width, box.height);
 
     /* --- edit line in a clipped sub-viewport so long text can scroll --- */
-    struct viewport tvp = *vp;
-    tvp.x += KBD_MARGIN;
-    tvp.width -= 2 * KBD_MARGIN;
-    tvp.y += line_y;
+    struct viewport tvp = box;
+    tvp.x += KBD_PAD;
+    tvp.width -= 2 * KBD_PAD;
+    tvp.y += KBD_PAD;
     tvp.height = ch_h;
     display->set_viewport(&tvp);
 
@@ -281,21 +300,21 @@ static void kbd_draw(struct screen *display, struct viewport *vp,
     }
 
     /* --- bottom Cancel / OK buttons (triggered by MENU / SELECT) --- */
-    display->set_viewport(vp);
+    display->set_viewport(&box);
     display->set_drawmode(DRMODE_SOLID);
 
-    int bh = ch_h + 6;
-    int by = vp->height - bh - KBD_MARGIN;
-    int bw = (vp->width - 3 * KBD_MARGIN) / 2;
+    int by = box.height - bh - KBD_PAD;
+    int bw = (box.width - 3 * KBD_PAD) / 2;
     if (bw > 0)
     {
-        draw_hint_button(display, KBD_MARGIN, by, bw, bh, str(LANG_KBD_CANCEL));
-        draw_hint_button(display, KBD_MARGIN * 2 + bw, by, bw, bh,
+        draw_hint_button(display, KBD_PAD, by, bw, bh, str(LANG_KBD_CANCEL));
+        draw_hint_button(display, KBD_PAD * 2 + bw, by, bw, bh,
                          str(LANG_KBD_OK));
     }
 
     display->set_drawmode(DRMODE_SOLID);
     display->update_viewport();
+    display->set_viewport(last_vp);
 }
 
 int kbd_input(char* text, int buflen, ucschar_t *kbd)

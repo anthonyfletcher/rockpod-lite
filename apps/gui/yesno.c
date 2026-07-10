@@ -34,10 +34,11 @@
 #include "statusbar-skinned.h"
 #include "skin_engine/skin_engine.h" /* skin_render_inhibit_flush */
 
-/* Non-touchscreen message box geometry: a centred box inset from the display
- * edges, with inner padding between the border and its contents. */
-#define YN_MARGIN 30   /* gap from the display edge to the box */
-#define YN_PAD    12   /* inner padding inside the box */
+/* Message box geometry: full display width minus a horizontal margin, height
+ * fitted to the content and centred vertically, with inner padding between the
+ * border and its contents. */
+#define YN_MARGIN 12   /* horizontal gap from the display edge to the box */
+#define YN_PAD    10   /* inner padding inside the box */
 
 struct gui_yesno
 {
@@ -145,7 +146,7 @@ static void gui_yesno_draw_buttons(struct gui_yesno *yn, struct viewport *box)
             tm_rem = 0;
         int cx = (yn->tmo_default_res == YESNO_YES) ? x : x + bw + gap;
         display->set_drawmode(DRMODE_SOLID);
-        display->putsxyf(cx + pad_x, y - h - 2, "(%d)", tm_rem);
+        display->putsxyf(cx + pad_x, y + bh + 2, "(%d)", tm_rem);
     }
 }
 
@@ -158,19 +159,33 @@ static void gui_yesno_draw(struct gui_yesno * yn)
     struct screen * display=yn->display;
     struct viewport *vp = &yn->vp;
     const struct text_message *main_message = yn->main_message;
+    int sw = display->getwidth();
+    int sh = display->getheight();
+    bool has_tmo = (yn->tmo_default_res == YESNO_YES ||
+                    yn->tmo_default_res == YESNO_NO);
 
-    /* Centred message box, inset YN_MARGIN from the display edges, inheriting
-     * the theme's colours/font from the content viewport. Only the box region
-     * is drawn (and flushed), leaving the rest of the screen untouched -- this
-     * avoids repainting the whole content area (and fighting the theme's
-     * status-bar/backdrop redraw) on every loop pass. */
+    /* Box spans the display width minus a horizontal margin; height fits the
+     * content and is centred vertically. Inherits the theme's colours/font
+     * from the content viewport, and only the box region is drawn/flushed so
+     * the rest of the screen is left untouched. */
     struct viewport box = *vp;
     box.x = YN_MARGIN;
-    box.y = YN_MARGIN;
-    box.width  = display->getwidth()  - 2 * YN_MARGIN;
-    box.height = display->getheight() - 2 * YN_MARGIN;
+    box.width = sw - 2 * YN_MARGIN;
+    box.y = 0;              /* provisional: set the font before sizing */
+    box.height = sh;
     struct viewport *last_vp = display->set_viewport_ex(&box, VP_FLAG_VP_SET_CLEAN);
     int ch = display->getcharheight();
+
+    int btn_h = ch + 2 * 5;                 /* button height (matches buttons) */
+    int gap   = ch / 2;                     /* gap between message and buttons */
+    int nlines = main_message->nb_lines;
+    int content_h = nlines * ch + gap + btn_h + (has_tmo ? ch : 0);
+    int box_h = content_h + 2 * YN_PAD;
+    if (box_h > sh - 2 * YN_MARGIN)
+        box_h = sh - 2 * YN_MARGIN;         /* clamp to the display */
+    box.y = (sh - box_h) / 2;
+    box.height = box_h;
+    display->set_viewport(&box);            /* re-set with the final geometry */
 
     /* opaque background + border */
     display->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
@@ -178,15 +193,12 @@ static void gui_yesno_draw(struct gui_yesno * yn)
     display->set_drawmode(DRMODE_SOLID);
     display->drawrect(0, 0, box.width, box.height);
 
-    /* message: inner area padded by YN_PAD, leaving room for the button row */
+    /* message: inner area padded by YN_PAD, above the button row */
     struct viewport txt = box;
-    int btn_area = ch + 2 * 5 + YN_PAD + 4;   /* button height + spacing */
     txt.x += YN_PAD;
     txt.y += YN_PAD;
     txt.width  -= 2 * YN_PAD;
-    txt.height -= 2 * YN_PAD + btn_area;
-    if (txt.height < ch)
-        txt.height = ch;
+    txt.height  = (nlines > 0 ? nlines : 1) * ch;
     display->set_viewport(&txt);
     put_message(display, main_message, 0, viewport_get_nb_lines(&txt));
 

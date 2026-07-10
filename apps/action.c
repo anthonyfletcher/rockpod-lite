@@ -39,6 +39,7 @@
 #include "splash.h"
 #include "settings.h"
 #include "misc.h"
+#include "gui/skin_engine/skin_engine.h" /* skin_render_inhibit_flush */
 
 
 #ifdef HAVE_BACKLIGHT
@@ -1079,7 +1080,14 @@ static int get_action_worker(action_last_t *last, action_cur_t *cur)
 
 bool action_userabort(int timeout)
 {
+    /* This is the "poll for cancel during a long operation" call, used while a
+     * progress splash is on screen (database build, file ops, playlist build,
+     * ...). get_custom_action fires GUI_EVENT_ACTIONUPDATE, which re-renders
+     * and flushes the status-bar skin over the splash -> flicker. Inhibit the
+     * flush across the poll so the splash keeps the screen. */
+    skin_render_inhibit_flush(true);
     int  action = get_custom_action(CONTEXT_STD, timeout, NULL);
+    skin_render_inhibit_flush(false);
     bool ret    = (action == ACTION_STD_CANCEL);
     if (!ret)
     {

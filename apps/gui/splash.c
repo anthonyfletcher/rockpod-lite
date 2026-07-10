@@ -40,7 +40,7 @@ static long progress_next_tick, talked_tick;
 
 #define MAXLINES  (LCD_HEIGHT/6)
 #define MAXBUFFER 512
-#define RECT_SPACING 6      /* inner padding between the box border and content */
+#define RECT_SPACING 10     /* inner padding between the box border and content */
 #define PROGRESS_SPACING 4  /* extra gap between the text and the progress bar */
 #define SPLASH_MEMORY_INTERVAL (HZ)
 
