@@ -1260,7 +1260,7 @@ const struct settings_list settings[] = {
 
 #ifdef HAVE_BACKLIGHT
     OFFON_SETTING(0, bl_filter_first_keypress,
-                  LANG_BACKLIGHT_FILTER_FIRST_KEYPRESS, false,
+                  LANG_BACKLIGHT_FILTER_FIRST_KEYPRESS, true,
                   "backlight filters first keypress", NULL),
 #endif /* HAVE_BACKLIGHT */
 
