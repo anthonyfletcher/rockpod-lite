@@ -289,6 +289,7 @@ struct slide_data {
     PFreal cx;
     PFreal cy;
     PFreal distance;
+    int cached_slot; /* last cache slot this slide resolved to (see surface()) */
 };
 
 struct slide_cache {
@@ -2552,20 +2553,40 @@ static inline struct dim *get_slide(const int hid)
 
 
 /**
- Return the requested surface
+ Return the requested surface for the given slide.
+
+ The cache is a linked-list-in-array, so locating a slide_index is an O(n)
+ walk of the used list. render_slide() calls this for every visible slide,
+ every frame, and a slide normally stays in the same cache slot across frames.
+ slide->cached_slot memoizes the slot found last time: a slot's index is unique
+ within the used list, so if cache[slot].index still equals slide_index (and the
+ slot holds a real handle) it is guaranteed to be the same slot, and we can skip
+ the scan. This check reproduces the scan's result exactly on a hit and simply
+ falls back to the full scan on a miss (evicted/reused/not-yet-resolved slot),
+ so no explicit invalidation is needed. The bitmap data is always fetched fresh
+ via get_slide() because buflib may relocate it between frames.
 */
-static inline struct dim *surface(const int slide_index)
+static inline struct dim *surface(struct slide_data *slide)
 {
+    const int slide_index = slide->slide_index;
     if (slide_index < 0)
         return 0;
     if (slide_index >= number_of_slides)
         return 0;
+
+    int slot = slide->cached_slot;
+    if ((unsigned)slot < SLIDE_CACHE_SIZE &&
+        pf_sldcache.cache[slot].index == slide_index &&
+        pf_sldcache.cache[slot].hid != 0)
+        return get_slide(pf_sldcache.cache[slot].hid);
+
     int i;
     if ((i = pf_sldcache.used ) != -1)
     {
         int j = 0;
         do {
             if (pf_sldcache.cache[i].index == slide_index) {
+                slide->cached_slot = i;
                 return get_slide(pf_sldcache.cache[i].hid);
             }
             i = pf_sldcache.cache[i].next;
@@ -2745,7 +2766,7 @@ static void pf_clear_display(void)
 
 static void render_slide(struct slide_data *slide, const int alpha)
 {
-    struct dim *bmp = surface(slide->slide_index);
+    struct dim *bmp = surface(slide);
     if (!bmp) {
         return;
     }
