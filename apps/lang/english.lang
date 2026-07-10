@@ -11305,12 +11305,10 @@
   desc: in keyboard
   user: core
   <source>
-    *: none
-    touchscreen: "OK"
+    *: "OK"
   </source>
   <dest>
-    *: none
-    touchscreen: "OK"
+    *: "OK"
   </dest>
   <voice>
     *: none
@@ -11339,12 +11337,10 @@
   desc: in keyboard
   user: core
   <source>
-    *: none
-    touchscreen: "Cancel"
+    *: "Cancel"
   </source>
   <dest>
-    *: none
-    touchscreen: "Cancel"
+    *: "Cancel"
   </dest>
   <voice>
     *: none
@@ -17228,5 +17224,35 @@
   </dest>
   <voice>
     *: "Nothing playing"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_KBD_CLICKWHEEL_CHARSET
+  desc: Ordered set of characters the click-wheel text editor cycles through
+        with the wheel (must start with a space). Translations may override
+        this with their own characters / order. Not spoken.
+  user: core
+  <source>
+    *: " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.'&"
+  </source>
+  <dest>
+    *: " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.'&"
+  </dest>
+  <voice>
+    *: ""
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_KBD_DISCARD
+  desc: Prompt shown when cancelling the text editor after changes were made
+  user: core
+  <source>
+    *: "Discard changes?"
+  </source>
+  <dest>
+    *: "Discard changes?"
+  </dest>
+  <voice>
+    *: "Discard changes?"
   </voice>
 </phrase>
