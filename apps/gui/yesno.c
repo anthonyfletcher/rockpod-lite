@@ -33,6 +33,11 @@
 #include "backlight.h"
 #include "statusbar-skinned.h"
 
+/* Non-touchscreen message box geometry: a centred box inset from the display
+ * edges, with inner padding between the border and its contents. */
+#define YN_MARGIN 30   /* gap from the display edge to the box */
+#define YN_PAD    12   /* inner padding inside the box */
+
 struct gui_yesno
 {
     struct viewport vp;
@@ -73,7 +78,6 @@ static int put_message(struct screen *display,
     return i;
 }
 
-#ifndef HAVE_TOUCHSCREEN
 /* Draw one Yes/No button. The highlighted button is filled with inverse
  * text; the other is drawn as a plain outline. */
 static void gui_yesno_draw_button(struct screen *display, int x, int y,
@@ -102,12 +106,11 @@ static void gui_yesno_draw_button(struct screen *display, int x, int y,
     display->set_drawmode(DRMODE_SOLID); /* restore for later drawing */
 }
 
-/* Draw the Yes/No buttons side by side near the bottom of the dialog, with
- * the currently selected one highlighted. */
-static void gui_yesno_draw_buttons(struct gui_yesno *yn)
+/* Draw the Yes/No buttons side by side near the bottom of the box, with the
+ * currently selected one highlighted. Coordinates are relative to box. */
+static void gui_yesno_draw_buttons(struct gui_yesno *yn, struct viewport *box)
 {
     struct screen *display = yn->display;
-    struct viewport *vp = &yn->vp;
     const char *yes = str(LANG_SET_BOOL_YES);
     const char *no  = str(LANG_SET_BOOL_NO);
     int w_yes, w_no, h;
@@ -115,16 +118,16 @@ static void gui_yesno_draw_buttons(struct gui_yesno *yn)
     display->getstringsize(yes, &w_yes, &h);
     display->getstringsize(no,  &w_no,  NULL);
 
-    const int pad_x = 8;   /* horizontal padding inside each button */
-    const int pad_y = 3;   /* vertical padding inside each button */
-    const int gap   = 12;  /* gap between the two buttons */
+    const int pad_x = 12;  /* horizontal padding inside each button */
+    const int pad_y = 5;   /* vertical padding inside each button */
+    const int gap   = 18;  /* gap between the two buttons */
 
     int bw = MAX(w_yes, w_no) + pad_x * 2;
     int bh = h + pad_y * 2;
-    int x  = (vp->width - (bw * 2 + gap)) / 2;
+    int x  = (box->width - (bw * 2 + gap)) / 2;
     if (x < 0)
         x = 0;
-    int y = vp->height - bh - h;   /* leave a line's height below the row */
+    int y = box->height - bh - YN_PAD;   /* YN_PAD gap below the button row */
     if (y < 0)
         y = 0;
 
@@ -141,10 +144,9 @@ static void gui_yesno_draw_buttons(struct gui_yesno *yn)
             tm_rem = 0;
         int cx = (yn->tmo_default_res == YESNO_YES) ? x : x + bw + gap;
         display->set_drawmode(DRMODE_SOLID);
-        display->putsxyf(cx + pad_x, y + bh + 1, "(%d)", tm_rem);
+        display->putsxyf(cx + pad_x, y - h - 2, "(%d)", tm_rem);
     }
 }
-#endif /* !HAVE_TOUCHSCREEN */
 
 /*
  * Draws the yesno
@@ -154,79 +156,42 @@ static void gui_yesno_draw(struct gui_yesno * yn)
 {
     struct screen * display=yn->display;
     struct viewport *vp = &yn->vp;
-    int vp_lines = yn->vp_lines;
-    enum yesno_res def_res = yn->tmo_default_res;
     const struct text_message *main_message = yn->main_message;
-    int line_shift = 0;
-    struct viewport *last_vp = display->set_viewport_ex(vp, VP_FLAG_VP_SET_CLEAN);
 
-    /* do our own clear to avoid stopping scrolling */
-    int oldmode = vp->drawmode;
-    vp->drawmode ^= DRMODE_INVERSEVID;
-    vp->drawmode |= DRMODE_SOLID;
-    display->fillrect(0, 0, vp->width, vp->height);
-    vp->drawmode = oldmode;
+    /* Centred message box, inset YN_MARGIN from the display edges, inheriting
+     * the theme's colours/font from the content viewport. Only the box region
+     * is drawn (and flushed), leaving the rest of the screen untouched -- this
+     * avoids repainting the whole content area (and fighting the theme's
+     * status-bar/backdrop redraw) on every loop pass. */
+    struct viewport box = *vp;
+    box.x = YN_MARGIN;
+    box.y = YN_MARGIN;
+    box.width  = display->getwidth()  - 2 * YN_MARGIN;
+    box.height = display->getheight() - 2 * YN_MARGIN;
+    struct viewport *last_vp = display->set_viewport_ex(&box, VP_FLAG_VP_SET_CLEAN);
+    int ch = display->getcharheight();
 
-    if(main_message->nb_lines + 3 < vp_lines)
-        line_shift = 1;
-
-    put_message(display, main_message, line_shift, vp_lines);
-
-#ifdef HAVE_TOUCHSCREEN
-    if (display->screen_type == SCREEN_MAIN)
-    {
-        int w,h,tmo_w;
-        int tm_rem = 0;
-        const char *btn_fmt;
-        int rect_w = vp->width/2, rect_h = vp->height/2;
-        int old_pattern = vp->fg_pattern;
-        vp->fg_pattern = LCD_RGBPACK(0,255,0);
-        display->drawrect(0, rect_h, rect_w, rect_h);
-        display->getstringsize(str(LANG_SET_BOOL_YES), &w, &h);
-
-        if (def_res == YESNO_YES)
-        {
-            display->getstringsize(" (00)", &tmo_w, NULL);
-            tm_rem = ((yn->end_tick - current_tick) / 100);
-            btn_fmt = "%s (%02d)";
-        }
-        else
-        {
-            btn_fmt = "%s\0%d";
-            tmo_w = 0;
-        }
-
-        display->putsxyf((rect_w-(w+tmo_w))/2, rect_h+(rect_h-h)/2,
-                         btn_fmt, str(LANG_SET_BOOL_YES), tm_rem);
-
-        vp->fg_pattern = LCD_RGBPACK(255,0,0);
-        display->drawrect(rect_w, rect_h, rect_w, rect_h);
-        display->getstringsize(str(LANG_SET_BOOL_NO), &w, &h);
-
-        if (def_res == YESNO_NO)
-        {
-            display->getstringsize(" (00)", &tmo_w, NULL);
-            tm_rem = ((yn->end_tick - current_tick) / 100);
-            btn_fmt = "%s (%02d)";
-        }
-        else
-        {
-            btn_fmt = "%s\0%d";
-            tmo_w = 0;
-        }
-
-        display->putsxyf(rect_w + (rect_w-(w+tmo_w))/2, rect_h+(rect_h-h)/2,
-                         btn_fmt, str(LANG_SET_BOOL_NO), tm_rem);
-
-        vp->fg_pattern = old_pattern;
-    }
-#else
-    (void)def_res;
-    /* frame the dialog like a window, then draw the Yes/No buttons */
+    /* opaque background + border */
+    display->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
+    display->fillrect(0, 0, box.width, box.height);
     display->set_drawmode(DRMODE_SOLID);
-    display->drawrect(0, 0, vp->width, vp->height);
-    gui_yesno_draw_buttons(yn);
-#endif
+    display->drawrect(0, 0, box.width, box.height);
+
+    /* message: inner area padded by YN_PAD, leaving room for the button row */
+    struct viewport txt = box;
+    int btn_area = ch + 2 * 5 + YN_PAD + 4;   /* button height + spacing */
+    txt.x += YN_PAD;
+    txt.y += YN_PAD;
+    txt.width  -= 2 * YN_PAD;
+    txt.height -= 2 * YN_PAD + btn_area;
+    if (txt.height < ch)
+        txt.height = ch;
+    display->set_viewport(&txt);
+    put_message(display, main_message, 0, viewport_get_nb_lines(&txt));
+
+    display->set_viewport(&box);
+    gui_yesno_draw_buttons(yn, &box);
+
     display->update_viewport();
     display->set_viewport(last_vp);
 }
@@ -311,13 +276,6 @@ enum yesno_res gui_syncyesno_run_w_tmo(int ticks, enum yesno_res tmo_default_res
         yn[i].vp_lines = viewport_get_nb_lines(&(yn[i].vp));
     }
 
-#ifdef HAVE_TOUCHSCREEN
-    /* switch to point mode because that's more intuitive */
-    enum touchscreen_mode old_mode = touchscreen_get_mode();
-    touchscreen_set_mode(TOUCHSCREEN_POINT);
-    action_gesture_reset();
-#endif
-
     /* make sure to eat any extranous keypresses */
     action_wait_for_release();
 
@@ -326,11 +284,30 @@ enum yesno_res gui_syncyesno_run_w_tmo(int ticks, enum yesno_res tmo_default_res
     /*add_event_ex(GUI_EVENT_NEED_UI_UPDATE, false, gui_yesno_ui_update, &yn[0]);*/
     /* probably no longer needed --Bilgus 2023*/
 
+    bool needs_redraw = true;
+    long last_tmo_sec = -1;
     while (result==YESNO_NONE)
     {
+        /* Only redraw when something actually changed -- redrawing every idle
+         * pass repaints the box and fights the theme's status-bar/backdrop
+         * redraw, which shows up as flicker. The timeout countdown (when there
+         * is one) still refreshes once a second. */
+        if (tmo_default_res != YESNO_TMO)
+        {
+            long sec = (end_tick - current_tick) / HZ;
+            if (sec != last_tmo_sec)
+            {
+                last_tmo_sec = sec;
+                needs_redraw = true;
+            }
+        }
 
-        FOR_NB_SCREENS(i)
-            gui_yesno_draw(&yn[i]);
+        if (needs_redraw)
+        {
+            FOR_NB_SCREENS(i)
+                gui_yesno_draw(&yn[i]);
+            needs_redraw = false;
+        }
 
         /* Repeat the question every 5secs (more or less) */
         if (talk_menu && TIME_AFTER(current_tick, talked_tick))
@@ -342,42 +319,25 @@ enum yesno_res gui_syncyesno_run_w_tmo(int ticks, enum yesno_res tmo_default_res
         action = get_action(CONTEXT_YESNOSCREEN, HZ / 2); /* for statubar and tmo */
         switch (action)
         {
-#ifdef HAVE_TOUCHSCREEN
-            case ACTION_TOUCHSCREEN:
-            {
-                struct gesture_event gevent;
-                if (action_gesture_get_event_in_vp(&gevent, &yn[0].vp) &&
-                    gevent.id == GESTURE_TAP)
-                {
-                    if (gevent.y > yn[0].vp.height/2)
-                    {
-                        if (gevent.x <= yn[0].vp.width/2)
-                            result = YESNO_YES;
-                        else
-                            result = YESNO_NO;
-                    }
-                }
-            } break;
-#endif
             case ACTION_YESNO_ACCEPT:
                 result = selection; /* confirm the highlighted button */
                 break;
-#ifndef HAVE_TOUCHSCREEN
             case ACTION_STD_PREV: /* scroll back / left -> Yes (left button) */
                 selection = YESNO_YES;
                 FOR_NB_SCREENS(i)
                     yn[i].selection = selection;
+                needs_redraw = true;
                 continue;
             case ACTION_STD_NEXT: /* scroll fwd / right -> No (right button) */
                 selection = YESNO_NO;
                 FOR_NB_SCREENS(i)
                     yn[i].selection = selection;
+                needs_redraw = true;
                 continue;
             case ACTION_STD_CANCEL:
             case ACTION_STD_MENU:
                 result = YESNO_NO; /* back / cancel */
                 break;
-#endif
             case ACTION_NONE:
                 if(tmo_default_res != YESNO_TMO && TIME_AFTER(current_tick, end_tick))
                 {
@@ -385,21 +345,19 @@ enum yesno_res gui_syncyesno_run_w_tmo(int ticks, enum yesno_res tmo_default_res
                     result = tmo_default_res;
                     goto exit;
                 }
-            /*fall-through*/
+                continue;
             case ACTION_UNKNOWN:
+                continue;
             case ACTION_REDRAW:
+                needs_redraw = true; /* theme/UI wants a refresh */
                 continue;
             default:
                 if(default_event_handler(action) == SYS_USB_CONNECTED) {
                     result = YESNO_USB;
                     goto exit;
                 }
-#ifdef HAVE_TOUCHSCREEN
-                if (!IS_SYSEVENT(action)) /* ignore SYS events that can happen */
-                    result = YESNO_NO;
-#endif
-                /* non-touchscreen: ignore unmapped buttons; the choice is
-                 * explicit via the highlighted Yes/No buttons */
+                /* ignore unmapped buttons; the choice is explicit via the
+                 * highlighted Yes/No buttons */
         }
 
         if (!backlight_on)
@@ -440,9 +398,6 @@ exit:
         viewportmanager_theme_undo(i, false);
     }
 
-#ifdef HAVE_TOUCHSCREEN
-    touchscreen_set_mode(old_mode);
-#endif
     return result;
 }
 
