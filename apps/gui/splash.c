@@ -40,7 +40,8 @@ static long progress_next_tick, talked_tick;
 
 #define MAXLINES  (LCD_HEIGHT/6)
 #define MAXBUFFER 512
-#define RECT_SPACING 3
+#define RECT_SPACING 6      /* inner padding between the box border and content */
+#define PROGRESS_SPACING 4  /* extra gap between the text and the progress bar */
 #define SPLASH_MEMORY_INTERVAL (HZ)
 
 static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
@@ -80,7 +81,9 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
     size_t len, next_len;
     const char matchstr[] = "\r\n\f\v\t ";
     font_getstringsize(" ", &space_w, &chr_h, fontnum);
-    y = chr_h + (addl_lines * chr_h);
+    /* Reserve a line for each additional element (e.g. the progress bar),
+     * plus an explicit gap so the bar isn't drawn hard against the text. */
+    y = chr_h + (addl_lines * chr_h) + (addl_lines ? PROGRESS_SPACING : 0);
 
     vsnprintf(splash_buf, sizeof(splash_buf), fmt, ap);
     va_end(ap);
