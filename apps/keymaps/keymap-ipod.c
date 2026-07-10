@@ -114,7 +114,12 @@ static const struct button_mapping button_context_settings[]  = {
 
 static const struct button_mapping button_context_yesno[]  = {
     { ACTION_YESNO_ACCEPT,          BUTTON_SELECT,                  BUTTON_NONE },
-    { ACTION_STD_CANCEL,          BUTTON_PLAY,                  BUTTON_NONE },
+    /* Left/Right move the highlight between the Yes/No buttons (overriding
+     * the standard cancel/ok); the scroll wheel does the same via the
+     * CONTEXT_STD fallback (SCROLL_BACK/FWD -> STD_PREV/NEXT). */
+    { ACTION_STD_PREV,              BUTTON_LEFT,                    BUTTON_NONE },
+    { ACTION_STD_NEXT,              BUTTON_RIGHT,                   BUTTON_NONE },
+    { ACTION_STD_CANCEL,            BUTTON_PLAY,                    BUTTON_NONE },
     LAST_ITEM_IN_LIST__NEXTLIST(CONTEXT_STD)
 }; /* button_context_yesno */
 

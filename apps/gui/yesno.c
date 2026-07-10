@@ -39,6 +39,7 @@ struct gui_yesno
     const struct text_message * main_message;
     struct screen * display;
     int vp_lines;
+    enum yesno_res selection; /* highlighted button, non-touchscreen */
     /* timeout data */
     long end_tick;
     enum yesno_res tmo_default_res;
@@ -72,6 +73,79 @@ static int put_message(struct screen *display,
     return i;
 }
 
+#ifndef HAVE_TOUCHSCREEN
+/* Draw one Yes/No button. The highlighted button is filled with inverse
+ * text; the other is drawn as a plain outline. */
+static void gui_yesno_draw_button(struct screen *display, int x, int y,
+                                  int w, int h, const char *label,
+                                  int label_w, int label_h, bool selected)
+{
+    int tx = x + (w - label_w) / 2;
+    int ty = y + (h - label_h) / 2;
+
+    /* mirror the list's selector rendering: fill with foreground and draw
+     * inverted text for the selected button, plain outline for the other */
+    if (selected)
+    {
+        display->set_drawmode(DRMODE_FG);
+        display->fillrect(x, y, w, h);
+        display->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
+        display->putsxy(tx, ty, label);
+    }
+    else
+    {
+        display->set_drawmode(DRMODE_SOLID);
+        display->drawrect(x, y, w, h);
+        display->set_drawmode(DRMODE_FG);
+        display->putsxy(tx, ty, label);
+    }
+    display->set_drawmode(DRMODE_SOLID); /* restore for later drawing */
+}
+
+/* Draw the Yes/No buttons side by side near the bottom of the dialog, with
+ * the currently selected one highlighted. */
+static void gui_yesno_draw_buttons(struct gui_yesno *yn)
+{
+    struct screen *display = yn->display;
+    struct viewport *vp = &yn->vp;
+    const char *yes = str(LANG_SET_BOOL_YES);
+    const char *no  = str(LANG_SET_BOOL_NO);
+    int w_yes, w_no, h;
+
+    display->getstringsize(yes, &w_yes, &h);
+    display->getstringsize(no,  &w_no,  NULL);
+
+    const int pad_x = 8;   /* horizontal padding inside each button */
+    const int pad_y = 3;   /* vertical padding inside each button */
+    const int gap   = 12;  /* gap between the two buttons */
+
+    int bw = MAX(w_yes, w_no) + pad_x * 2;
+    int bh = h + pad_y * 2;
+    int x  = (vp->width - (bw * 2 + gap)) / 2;
+    if (x < 0)
+        x = 0;
+    int y = vp->height - bh - h;   /* leave a line's height below the row */
+    if (y < 0)
+        y = 0;
+
+    gui_yesno_draw_button(display, x, y, bw, bh, yes, w_yes, h,
+                          yn->selection == YESNO_YES);
+    gui_yesno_draw_button(display, x + bw + gap, y, bw, bh, no, w_no, h,
+                          yn->selection == YESNO_NO);
+
+    /* countdown next to the timeout default button, if there is one */
+    if (yn->tmo_default_res == YESNO_YES || yn->tmo_default_res == YESNO_NO)
+    {
+        int tm_rem = (yn->end_tick - current_tick) / HZ;
+        if (tm_rem < 0)
+            tm_rem = 0;
+        int cx = (yn->tmo_default_res == YESNO_YES) ? x : x + bw + gap;
+        display->set_drawmode(DRMODE_SOLID);
+        display->putsxyf(cx + pad_x, y + bh + 1, "(%d)", tm_rem);
+    }
+}
+#endif /* !HAVE_TOUCHSCREEN */
+
 /*
  * Draws the yesno
  *  - yn : the yesno structure
@@ -96,7 +170,7 @@ static void gui_yesno_draw(struct gui_yesno * yn)
     if(main_message->nb_lines + 3 < vp_lines)
         line_shift = 1;
 
-    line_shift += put_message(display, main_message, line_shift, vp_lines);
+    put_message(display, main_message, line_shift, vp_lines);
 
 #ifdef HAVE_TOUCHSCREEN
     if (display->screen_type == SCREEN_MAIN)
@@ -147,25 +221,11 @@ static void gui_yesno_draw(struct gui_yesno * yn)
         vp->fg_pattern = old_pattern;
     }
 #else
-    /* Space remaining for yes / no text ? */
-    if(line_shift + 2 <= vp_lines)
-    {
-        if(line_shift + 3 <= vp_lines)
-            line_shift++;
-        display->puts(0, line_shift, str(LANG_CONFIRM_WITH_BUTTON));
-        display->puts(0, line_shift+1, str(LANG_CANCEL_WITH_ANY));
-
-        if (def_res == YESNO_YES || def_res == YESNO_NO)
-        {
-            int tm_rem = ((yn->end_tick - current_tick) / 100);
-            if (def_res == YESNO_YES)
-                display->putsf(0, line_shift, "%s (%02d)",
-                               str(LANG_CONFIRM_WITH_BUTTON), tm_rem);
-            else
-                display->putsf(0, line_shift+1, "%s (%02d)",
-                               str(LANG_CANCEL_WITH_ANY), tm_rem);
-        }
-    }
+    (void)def_res;
+    /* frame the dialog like a window, then draw the Yes/No buttons */
+    display->set_drawmode(DRMODE_SOLID);
+    display->drawrect(0, 0, vp->width, vp->height);
+    gui_yesno_draw_buttons(yn);
 #endif
     display->update_viewport();
     display->set_viewport(last_vp);
@@ -227,6 +287,7 @@ enum yesno_res gui_syncyesno_run_w_tmo(int ticks, enum yesno_res tmo_default_res
     bool backlight_on;
     bool talk_menu = global_settings.talk_menu;
     int result = YESNO_NONE;
+    enum yesno_res selection = YESNO_YES; /* default highlighted button */
     struct gui_yesno yn[NB_SCREENS];
     long talked_tick = current_tick - 1;
     long end_tick = current_tick + ticks;
@@ -240,6 +301,7 @@ enum yesno_res gui_syncyesno_run_w_tmo(int ticks, enum yesno_res tmo_default_res
     {
         yn[i].end_tick = end_tick;
         yn[i].tmo_default_res = tmo_default_res;
+        yn[i].selection = selection;
         yn[i].main_message=main_message;
         yn[i].display=&screens[i];
         screens[i].scroll_stop();
@@ -298,8 +360,24 @@ enum yesno_res gui_syncyesno_run_w_tmo(int ticks, enum yesno_res tmo_default_res
             } break;
 #endif
             case ACTION_YESNO_ACCEPT:
-                result = YESNO_YES;
+                result = selection; /* confirm the highlighted button */
                 break;
+#ifndef HAVE_TOUCHSCREEN
+            case ACTION_STD_PREV: /* scroll back / left -> Yes (left button) */
+                selection = YESNO_YES;
+                FOR_NB_SCREENS(i)
+                    yn[i].selection = selection;
+                continue;
+            case ACTION_STD_NEXT: /* scroll fwd / right -> No (right button) */
+                selection = YESNO_NO;
+                FOR_NB_SCREENS(i)
+                    yn[i].selection = selection;
+                continue;
+            case ACTION_STD_CANCEL:
+            case ACTION_STD_MENU:
+                result = YESNO_NO; /* back / cancel */
+                break;
+#endif
             case ACTION_NONE:
                 if(tmo_default_res != YESNO_TMO && TIME_AFTER(current_tick, end_tick))
                 {
@@ -316,8 +394,12 @@ enum yesno_res gui_syncyesno_run_w_tmo(int ticks, enum yesno_res tmo_default_res
                     result = YESNO_USB;
                     goto exit;
                 }
+#ifdef HAVE_TOUCHSCREEN
                 if (!IS_SYSEVENT(action)) /* ignore SYS events that can happen */
                     result = YESNO_NO;
+#endif
+                /* non-touchscreen: ignore unmapped buttons; the choice is
+                 * explicit via the highlighted Yes/No buttons */
         }
 
         if (!backlight_on)
