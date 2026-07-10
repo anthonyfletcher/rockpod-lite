@@ -5,6 +5,7 @@ Rockpod Lite is a trimmed-down version with the following key changes:
 - Database renamed to Music and views able to be promoted to the main menu for quick access
 - Simplified Picture Flow (renamed to Album Covers) for a more modern look, embedded into the core UI
 - Main menu settings embedded into the core UI and now skinned
+- Last.fm scrobbler embedded into the settings menu and now skinned
 - Slightly modified Themify 2 embedded as the default theme
 - Spectrum visualizer added to UI
 - Improved album art cache usage when playing through the same albums
