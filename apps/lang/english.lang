@@ -1185,51 +1185,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_ALBUM_COVERS
-  desc: in the main menu
-  user: core
-  <source>
-    *: "Album covers"
-  </source>
-  <dest>
-    *: "Album covers"
-  </dest>
-  <voice>
-    *: "Album covers"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_ALBUM_COVER_SETTINGS
-  desc: in the main menu
-  user: core
-  <source>
-    *: "Album Cover Settings"
-  </source>
-  <dest>
-    *: "Album Cover Settings"
-  </dest>
-  <voice>
-    *: "Album Cover Settings"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_MUSIC_BROWSER
-  desc: "default browser" choice option, and the root menu's database
-        browser item -- deliberately distinct from LANG_TAGCACHE
-        ("Database"), which stays as-is for the Database *settings*
-        sub-menu (rebuild/initialize/etc.), a different context
-  user: core
-  <source>
-    *: "Music"
-  </source>
-  <dest>
-    *: "Music"
-  </dest>
-  <voice>
-    *: "Music"
-  </voice>
-</phrase>
-<phrase>
   id: LANG_PLAYBACK
   desc: in settings_menu()
   user: core
@@ -2838,20 +2793,6 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_ALBUM_COVERS_TRANSITION_SPEED
-  desc: in apps/menus/album_covers_menu.c
-  user: core
-  <source>
-    *: "Transition Speed"
-  </source>
-  <dest>
-    *: "Transition Speed"
-  </dest>
-  <voice>
-    *: ""
-  </voice>
-</phrase>
-<phrase>
   id: LANG_SCROLL_DELAY
   desc: Delay before scrolling
   user: core
@@ -3511,23 +3452,6 @@
   </dest>
   <voice>
     *: "Main Menu"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_MAIN_MENU_SETTINGS
-  desc: Settings menu row and the Customize Main Menu screen's own title --
-        deliberately distinct from LANG_MAIN_MENU, which stays as-is for the
-        "start in: previous screen/main menu" choice setting, a different
-        context
-  user: core
-  <source>
-    *: "Main Menu Settings"
-  </source>
-  <dest>
-    *: "Main Menu Settings"
-  </dest>
-  <voice>
-    *: "Main Menu Settings"
   </voice>
 </phrase>
 <phrase>
@@ -7131,21 +7055,6 @@
   </dest>
   <voice>
     *: "Nothing to resume"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_NOTHING_PLAYING
-  desc: Message shown when a "same as currently played track" style tagtree
-        entry is used but nothing is currently playing
-  user: core
-  <source>
-    *: "Nothing playing"
-  </source>
-  <dest>
-    *: "Nothing playing"
-  </dest>
-  <voice>
-    *: "Nothing playing"
   </voice>
 </phrase>
 <phrase>
@@ -17228,5 +17137,96 @@
   <voice>
     *: none
     lcd_color: "Dynamic Colors"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_ALBUM_COVERS
+  desc: in the main menu
+  user: core
+  <source>
+    *: "Album covers"
+  </source>
+  <dest>
+    *: "Album covers"
+  </dest>
+  <voice>
+    *: "Album covers"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_ALBUM_COVER_SETTINGS
+  desc: in the main menu
+  user: core
+  <source>
+    *: "Album Cover Settings"
+  </source>
+  <dest>
+    *: "Album Cover Settings"
+  </dest>
+  <voice>
+    *: "Album Cover Settings"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_MUSIC_BROWSER
+  desc: "default browser" choice option, and the root menu's database
+        browser item -- deliberately distinct from LANG_TAGCACHE
+        ("Database"), which stays as-is for the Database *settings*
+        sub-menu (rebuild/initialize/etc.), a different context
+  user: core
+  <source>
+    *: "Music"
+  </source>
+  <dest>
+    *: "Music"
+  </dest>
+  <voice>
+    *: "Music"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_ALBUM_COVERS_TRANSITION_SPEED
+  desc: in apps/menus/album_covers_menu.c
+  user: core
+  <source>
+    *: "Transition Speed"
+  </source>
+  <dest>
+    *: "Transition Speed"
+  </dest>
+  <voice>
+    *: ""
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_MAIN_MENU_SETTINGS
+  desc: Settings menu row and the Customize Main Menu screen's own title --
+        deliberately distinct from LANG_MAIN_MENU, which stays as-is for the
+        "start in: previous screen/main menu" choice setting, a different
+        context
+  user: core
+  <source>
+    *: "Main Menu Settings"
+  </source>
+  <dest>
+    *: "Main Menu Settings"
+  </dest>
+  <voice>
+    *: "Main Menu Settings"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_NOTHING_PLAYING
+  desc: Message shown when a "same as currently played track" style tagtree
+        entry is used but nothing is currently playing
+  user: core
+  <source>
+    *: "Nothing playing"
+  </source>
+  <dest>
+    *: "Nothing playing"
+  </dest>
+  <voice>
+    *: "Nothing playing"
   </voice>
 </phrase>
