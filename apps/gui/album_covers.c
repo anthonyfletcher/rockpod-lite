@@ -763,24 +763,6 @@ static inline PFreal fdiv(PFreal num, PFreal den)
 
 #define MULUQ(a, b) ((a) * (b))
 
-#if 0
-#define fmul(a,b) ( ((a)*(b)) >> PFREAL_SHIFT )
-#define fdiv(n,m) ( ((n)<< PFREAL_SHIFT ) / m )
-
-#define fconv(a, q1, q2) (((q2)>(q1)) ? (a)<<((q2)-(q1)) : (a)>>((q1)-(q2)))
-#define tofloat(a, q) ( (float)(a) / (float)(1<<(q)) )
-
-static inline PFreal fmul(PFreal a, PFreal b)
-{
-    return (a*b) >> PFREAL_SHIFT;
-}
-
-static inline PFreal fdiv(PFreal n, PFreal m)
-{
-    return (n<<(PFREAL_SHIFT))/m;
-}
-#endif
-
 /* warning: regenerate the table if IANGLE_MAX and PFREAL_SHIFT are changed! */
 static const short sin_tab[] = {
         0,   100,   200,   297,   392,   483,   569,   650,
@@ -808,17 +790,6 @@ static inline PFreal fsin(int iangle)
 static inline PFreal fcos(int iangle)
 {
     return fsin(iangle + (IANGLE_MAX >> 2));
-}
-
-/* scales the 8bit subpixel value to native lcd format, indicated by bits */
-static inline unsigned scale_subpixel_lcd(unsigned val, unsigned bits)
-{
-    (void) bits;
-#if LCD_PIXELFORMAT != RGB888
-    val = val * ((1 << bits) - 1);
-    val = ((val >> 8) + val + 128) >> 8;
-#endif
-    return val;
 }
 
 static void output_row_8_transposed(uint32_t row, void * row_in,
@@ -3218,39 +3189,37 @@ static void update_scroll_animation(void)
     int i;
 
     /* deaccelerate when approaching the target */
-    if (true) {
-        const int max = 2 * 65536;
+    const int max = 2 * 65536;
 
-        int fi = slide_frame;
-        fi -= (target << 16);
-        if (fi < 0)
-            fi = -fi;
-        fi = fmin(fi, max);
+    int fi = slide_frame;
+    fi -= (target << 16);
+    if (fi < 0)
+        fi = -fi;
+    fi = fmin(fi, max);
 
-        int ia = IANGLE_MAX * (fi - max / 2) / (max * 2);
-        int accel = 16384 * (PFREAL_ONE + fsin(ia)) / PFREAL_ONE;
-        speed = 512 * global_settings.album_covers_transition_speed / 100
-              + accel * global_settings.album_covers_scroll_speed / 100;
+    int ia = IANGLE_MAX * (fi - max / 2) / (max * 2);
+    int accel = 16384 * (PFREAL_ONE + fsin(ia)) / PFREAL_ONE;
+    speed = 512 * global_settings.album_covers_transition_speed / 100
+          + accel * global_settings.album_covers_scroll_speed / 100;
 
-        /* This advances slide_frame by a fixed amount per loop iteration,
-         * not per unit of wall-clock time (the original plugin's own
-         * update_scroll_animation() worked exactly the same way, so this
-         * isn't a regression) -- meaning the same logical animation plays
-         * out in fewer, larger jumps whenever the loop itself runs slower,
-         * which is exactly what happens now that playback stays active
-         * and competes with this screen for CPU time (see
-         * plugin_get_buffer()'s comment in init()). A true fix would make
-         * this frame-rate independent (scale by measured elapsed ticks
-         * rather than a flat per-iteration constant); this is the cheaper,
-         * targeted version of that: a flat multiplier specifically while
-         * something is actually competing for the CPU, rather than always.
-         * The 3/2 factor is a guess, not a measurement -- there's no way
-         * to test actual frame timing from here, so treat this as a
-         * starting point to tune against how it actually feels on
-         * hardware, not a calibrated value. */
-        if (audio_status() & AUDIO_STATUS_PLAY)
-            speed = speed * 3 / 2;
-    }
+    /* This advances slide_frame by a fixed amount per loop iteration,
+     * not per unit of wall-clock time (the original plugin's own
+     * update_scroll_animation() worked exactly the same way, so this
+     * isn't a regression) -- meaning the same logical animation plays
+     * out in fewer, larger jumps whenever the loop itself runs slower,
+     * which is exactly what happens now that playback stays active
+     * and competes with this screen for CPU time (see
+     * plugin_get_buffer()'s comment in init()). A true fix would make
+     * this frame-rate independent (scale by measured elapsed ticks
+     * rather than a flat per-iteration constant); this is the cheaper,
+     * targeted version of that: a flat multiplier specifically while
+     * something is actually competing for the CPU, rather than always.
+     * The 3/2 factor is a guess, not a measurement -- there's no way
+     * to test actual frame timing from here, so treat this as a
+     * starting point to tune against how it actually feels on
+     * hardware, not a calibrated value. */
+    if (audio_status() & AUDIO_STATUS_PLAY)
+        speed = speed * 3 / 2;
 
     slide_frame += speed * step;
 
