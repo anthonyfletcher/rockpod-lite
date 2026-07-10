@@ -397,13 +397,16 @@ int kbd_input(char* text, int buflen, ucschar_t *kbd)
     }
 
 accept:
-    /* trim trailing spaces, then re-encode to UTF-8 into the caller buffer */
+    /* trim leading and trailing spaces, then re-encode into the caller buffer */
     while (st.len > 0 && st.text[st.len - 1] == ' ')
         st.len--;
+    int trim_start = 0;
+    while (trim_start < st.len && st.text[trim_start] == ' ')
+        trim_start++;
     {
         unsigned char *out = (unsigned char *)text;
         unsigned char *end = out + buflen - 1;
-        for (int i = 0; i < st.len; i++)
+        for (int i = trim_start; i < st.len; i++)
         {
             unsigned char tmp[8];
             unsigned char *e = utf8encode(st.text[i], tmp);
