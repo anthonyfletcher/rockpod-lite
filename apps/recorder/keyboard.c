@@ -55,6 +55,10 @@
 #define WHEEL_FAST   (HZ/15)
 #define WHEEL_VFAST  (HZ/40)
 
+/* minimum interval between held backspace/delete repeats (slows down the
+ * firmware's fast button auto-repeat so deletion isn't too quick) */
+#define KBD_DEL_REPEAT (HZ/5)
+
 struct kbd_edit {
     ucschar_t text[KBD_MAX_LEN];
     int len;
@@ -341,6 +345,7 @@ int kbd_input(char* text, int buflen, ucschar_t *kbd)
     struct viewport vp;
     bool dirty = false;
     int ret = 0;
+    long last_del_tick = 0;   /* throttles held backspace/delete */
 
     build_charset();
 
@@ -424,18 +429,22 @@ int kbd_input(char* text, int buflen, ucschar_t *kbd)
                         dirty = true;
                 }
                 break;
-            case ACTION_KBD_BACKSPACE: /* hold left -> backspace */
-                if (!st.on_buttons)
+            case ACTION_KBD_BACKSPACE: /* hold left -> backspace (throttled) */
+                if (!st.on_buttons &&
+                    current_tick - last_del_tick >= KBD_DEL_REPEAT)
                 {
                     do_backspace(&st);
                     dirty = true;
+                    last_del_tick = current_tick;
                 }
                 break;
-            case ACTION_KBD_DELETE:    /* hold right -> delete under caret */
-                if (!st.on_buttons)
+            case ACTION_KBD_DELETE:    /* hold right -> delete under caret (throttled) */
+                if (!st.on_buttons &&
+                    current_tick - last_del_tick >= KBD_DEL_REPEAT)
                 {
                     do_delete(&st);
                     dirty = true;
+                    last_del_tick = current_tick;
                 }
                 break;
             case ACTION_KBD_DONE:      /* PLAY: move focus down to the buttons */
