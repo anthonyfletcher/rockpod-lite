@@ -62,6 +62,8 @@ struct kbd_edit {
     int max_len;
     int scroll;          /* horizontal pixel scroll to keep the caret visible */
     long last_wheel_tick;
+    bool on_buttons;     /* focus is on the Cancel/OK button row, not the input */
+    bool btn_ok;         /* on the button row, OK is selected (else Cancel) */
 };
 
 /* Not reentrant (there is only ever one text-input screen at a time); kept
@@ -215,16 +217,30 @@ static void draw_char(struct screen *display, int x, int y, ucschar_t ch)
     display->putsxy(x, y, (char *)tmp);
 }
 
-/* Draw a static (non-selectable) labelled button outline. */
+/* Draw a labelled button; when selected it is filled with inverse text
+ * (focus is on the button row), otherwise a plain outline. */
 static void draw_hint_button(struct screen *display, int x, int y,
-                             int w, int h, const char *label)
+                             int w, int h, const char *label, bool selected)
 {
     int lw, lh;
     display->getstringsize(label, &lw, &lh);
+    int tx = x + (w - lw) / 2;
+    int ty = y + (h - lh) / 2;
+    if (selected)
+    {
+        display->set_drawmode(DRMODE_FG);
+        display->fillrect(x, y, w, h);
+        display->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
+        display->putsxy(tx, ty, label);
+    }
+    else
+    {
+        display->set_drawmode(DRMODE_SOLID);
+        display->drawrect(x, y, w, h);
+        display->set_drawmode(DRMODE_FG);
+        display->putsxy(tx, ty, label);
+    }
     display->set_drawmode(DRMODE_SOLID);
-    display->drawrect(x, y, w, h);
-    display->set_drawmode(DRMODE_FG);
-    display->putsxy(x + (w - lw) / 2, y + (h - lh) / 2, label);
 }
 
 static void kbd_draw(struct screen *display, struct viewport *vp,
@@ -307,9 +323,10 @@ static void kbd_draw(struct screen *display, struct viewport *vp,
     int bw = (box.width - 3 * KBD_PAD) / 2;
     if (bw > 0)
     {
-        draw_hint_button(display, KBD_PAD, by, bw, bh, str(LANG_KBD_CANCEL));
+        draw_hint_button(display, KBD_PAD, by, bw, bh, str(LANG_KBD_CANCEL),
+                         s->on_buttons && !s->btn_ok);
         draw_hint_button(display, KBD_PAD * 2 + bw, by, bw, bh,
-                         str(LANG_KBD_OK));
+                         str(LANG_KBD_OK), s->on_buttons && s->btn_ok);
     }
 
     display->set_drawmode(DRMODE_SOLID);
@@ -353,6 +370,8 @@ int kbd_input(char* text, int buflen, ucschar_t *kbd)
     st.caret = st.len - 1;
     st.scroll = 0;
     st.last_wheel_tick = current_tick;
+    st.on_buttons = false;   /* focus starts on the input line */
+    st.btn_ok = true;
     ensure_nonempty(&st);
 
     action_wait_for_release();
@@ -370,47 +389,73 @@ int kbd_input(char* text, int buflen, ucschar_t *kbd)
         skin_render_inhibit_flush(false);
         switch (action)
         {
-            case ACTION_KBD_DOWN:      /* wheel forward -> advance character */
-                wheel_step(&st, +1);
-                dirty = true;
-                break;
-            case ACTION_KBD_UP:        /* wheel back -> reverse character */
-                wheel_step(&st, -1);
-                dirty = true;
-                break;
-            case ACTION_KBD_LEFT:      /* tap left -> caret left */
-                caret_left(&st);
-                break;
-            case ACTION_KBD_RIGHT:     /* tap right -> caret right (may append) */
-            {
-                int before = st.len;
-                caret_right(&st);
-                if (st.len != before)
+            case ACTION_KBD_DOWN:      /* wheel forward */
+                if (st.on_buttons)
+                    st.btn_ok = !st.btn_ok;         /* toggle OK/Cancel */
+                else
+                {
+                    wheel_step(&st, +1);            /* advance character */
                     dirty = true;
+                }
                 break;
-            }
+            case ACTION_KBD_UP:        /* wheel back */
+                if (st.on_buttons)
+                    st.btn_ok = !st.btn_ok;
+                else
+                {
+                    wheel_step(&st, -1);           /* reverse character */
+                    dirty = true;
+                }
+                break;
+            case ACTION_KBD_LEFT:      /* tap left */
+                if (st.on_buttons)
+                    st.btn_ok = false;             /* Cancel (left button) */
+                else
+                    caret_left(&st);
+                break;
+            case ACTION_KBD_RIGHT:     /* tap right */
+                if (st.on_buttons)
+                    st.btn_ok = true;              /* OK (right button) */
+                else
+                {
+                    int before = st.len;
+                    caret_right(&st);              /* may append a space */
+                    if (st.len != before)
+                        dirty = true;
+                }
+                break;
             case ACTION_KBD_BACKSPACE: /* hold left -> backspace */
-                do_backspace(&st);
-                dirty = true;
+                if (!st.on_buttons)
+                {
+                    do_backspace(&st);
+                    dirty = true;
+                }
                 break;
             case ACTION_KBD_DELETE:    /* hold right -> delete under caret */
-                do_delete(&st);
-                dirty = true;
-                break;
-            case ACTION_KBD_SELECT:    /* accept */
-            case ACTION_KBD_DONE:
-                goto accept;
-            case ACTION_KBD_ABORT:     /* cancel (prompt if changed) */
-                if (dirty)
+                if (!st.on_buttons)
                 {
-                    static const unsigned char *lines[1];
-                    lines[0] = (const unsigned char *)ID2P(LANG_KBD_DISCARD);
-                    struct text_message message = { (const char **)lines, 1 };
-                    if (gui_syncyesno_run(&message, NULL, NULL) != YESNO_YES)
-                        break;   /* keep editing */
+                    do_delete(&st);
+                    dirty = true;
                 }
-                ret = -1;
-                goto done;
+                break;
+            case ACTION_KBD_DONE:      /* PLAY: move focus down to the buttons */
+                if (!st.on_buttons)
+                {
+                    st.on_buttons = true;
+                    st.btn_ok = true;              /* start on OK */
+                }
+                break;
+            case ACTION_KBD_SELECT:    /* accept, or confirm the chosen button */
+                if (st.on_buttons && !st.btn_ok)
+                    goto cancel;                   /* Cancel button */
+                goto accept;                       /* OK / input shortcut */
+            case ACTION_KBD_ABORT:     /* MENU: up to the input, or cancel */
+                if (st.on_buttons)
+                {
+                    st.on_buttons = false;         /* back up to the input */
+                    break;
+                }
+                goto cancel;
             default:
                 if (default_event_handler(action) == SYS_USB_CONNECTED)
                 {
@@ -419,6 +464,22 @@ int kbd_input(char* text, int buflen, ucschar_t *kbd)
                 }
                 break;
         }
+        continue;
+
+    cancel:
+        if (dirty)
+        {
+            static const unsigned char *lines[1];
+            lines[0] = (const unsigned char *)ID2P(LANG_KBD_DISCARD);
+            struct text_message message = { (const char **)lines, 1 };
+            if (gui_syncyesno_run(&message, NULL, NULL) != YESNO_YES)
+            {
+                st.on_buttons = false;   /* keep editing, back to the input */
+                continue;
+            }
+        }
+        ret = -1;
+        goto done;
     }
 
 accept:
