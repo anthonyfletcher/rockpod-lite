@@ -270,11 +270,7 @@ static const struct plugin_api rockbox_api = {
     gui_scrollbar_draw,
     get_codepage_name,
 
-#if NB_SCREENS == 2
-    {&screens[SCREEN_MAIN], &screens[SCREEN_REMOTE]},
-#else
     {&screens[SCREEN_MAIN]},
-#endif
 
     viewport_set_defaults,
     viewportmanager_theme_enable,

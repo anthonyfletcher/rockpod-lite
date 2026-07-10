@@ -1296,13 +1296,6 @@ const char *get_token_value(struct gui_wps *gwps,
             else
                 return NULL;
 
-#ifdef HAS_REMOTE_BUTTON_HOLD
-        case SKIN_TOKEN_REMOTE_HOLD:
-            if (remote_button_hold())
-                return "r";
-            else
-                return NULL;
-#endif
 
 #if (CONFIG_LED == LED_VIRTUAL)
         case SKIN_TOKEN_VLED_HDD:

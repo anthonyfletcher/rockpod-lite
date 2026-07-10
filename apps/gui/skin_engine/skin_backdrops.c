@@ -297,13 +297,6 @@ void skin_backdrop_load_setting(void)
             else
                 backdrops[i].name[2] = '\0';
         }
-#if NB_SCREENS > 1
-        else if (backdrops[i].name[0] == '-')
-        {
-            backdrops[i].name[2] = '\0';
-            return;
-        }
-#endif
     }
 }
 #elif defined(__PCTOOL__)

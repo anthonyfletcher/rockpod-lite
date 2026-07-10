@@ -445,23 +445,7 @@ static void ft_load_font(char *file)
 {
     int current_font_id;
     enum screen_type screen = SCREEN_MAIN;
-#if NB_SCREENS > 1
-    MENUITEM_STRINGLIST(menu, ID2P(LANG_CUSTOM_FONT), NULL,
-                        ID2P(LANG_MAIN_SCREEN), ID2P(LANG_REMOTE_SCREEN))
-    switch (do_menu(&menu, NULL, NULL, false))
-    {
-        case 0: /* main lcd */
-            screen = SCREEN_MAIN;
-            set_file(file, (char *)global_settings.font_file);
-            break;
-        case 1: /* remote */
-            screen = SCREEN_REMOTE;
-            set_file(file, (char *)global_settings.remote_font_file);
-            break;
-    }
-#else
     set_file(file, (char *)global_settings.font_file);
-#endif
     splash(0, ID2P(LANG_WAIT));
     current_font_id = screens[screen].getuifont();
     if (current_font_id >= 0)

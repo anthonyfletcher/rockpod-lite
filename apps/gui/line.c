@@ -352,7 +352,7 @@ static void style_line(struct screen *display,
         case STYLE_NONE:
             break;
     }
-#if (LCD_DEPTH > 1 || (defined(LCD_REMOTE_DEPTH) && LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
     /* prepare fg and bg colors for text drawing, be careful to not
      * override any previously set colors unless mandated by the style */
     if (display->depth > 1)
@@ -374,7 +374,7 @@ void vput_line(struct screen *display,
               int x, int y, struct line_desc *line,
               const char *fmt, va_list ap)
 {
-#if (LCD_DEPTH > 1 || (defined(LCD_REMOTE_DEPTH) && LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
     /* push and pop fg and bg colors as to not compromise unrelated lines */
     unsigned fg = 0, bg = 0; /* shut up gcc */
     if (display->depth > 1 && line->style > STYLE_INVERT)
@@ -385,7 +385,7 @@ void vput_line(struct screen *display,
 #endif
     style_line(display, x, y, line);
     print_line(display, x, y, line, fmt, ap);
-#if (LCD_DEPTH > 1 || (defined(LCD_REMOTE_DEPTH) && LCD_REMOTE_DEPTH > 1))
+#if (LCD_DEPTH > 1)
     if (display->depth > 1 && line->style > STYLE_INVERT)
     {
          display->set_drawinfo(DRMODE_SOLID, fg, bg);

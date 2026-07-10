@@ -322,10 +322,6 @@ bool dbg_skin_engine(void)
     simplelist_info_init(&info, "Skin engine usage", 0, NULL);
     simplelist_reset_lines();
     FOR_NB_SCREENS(j) {
-#if NB_SCREENS > 1
-        simplelist_addline("%s display:",
-                           j == 0 ? "Main" : "Remote");
-#endif
         for (i = 0; i < skin_get_num_skins(); i++) {
             struct skin_stats *stats = skin_get_stats(i, j);
             if (stats->buflib_handles)

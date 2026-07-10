@@ -43,9 +43,6 @@ struct status_info {
     bool battery_state;
     bool shuffle;
     bool keylock;
-#ifdef HAS_REMOTE_BUTTON_HOLD
-    bool keylockremote;
-#endif
 #if (CONFIG_LED == LED_VIRTUAL)
     bool led; /* disk LED simulation in the status bar */
 #endif

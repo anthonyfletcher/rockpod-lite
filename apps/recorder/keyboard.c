@@ -295,10 +295,6 @@ int load_kbd(unsigned char* filename)
     FOR_NB_SCREENS(l)
     {
         struct keyboard_parameters *pm = &kbd_param[l];
-#if NB_SCREENS > 1
-        if (l > 0)
-            memcpy(pm->kbd_buf, kbd_param[0].kbd_buf, i*sizeof(ucschar_t));
-#endif
         /* initialize parameters */
         pm->x = pm->y = pm->page = 0;
         pm->default_lines = 0;
@@ -575,11 +571,7 @@ int kbd_input(char* text, int buflen, ucschar_t *kbd)
            action occurred - pointers save a lot of space over array notation
            when accessing the same array element countless times */
         int button;
-#if NB_SCREENS > 1
-        int button_screen;
-#else
         const int button_screen = 0;
-#endif
         struct keyboard_parameters *pm;
 
         state.len_utf8 = utf8length(state.text);
@@ -609,9 +601,6 @@ int kbd_input(char* text, int buflen, ucschar_t *kbd)
                 state.morse_mode? CONTEXT_MORSE_INPUT:
 #endif
                             CONTEXT_KEYBOARD, HZ/2);
-#if NB_SCREENS > 1
-        button_screen = (get_action_statuscode(NULL) & ACTION_REMOTE) ? 1 : 0;
-#endif
         pm = &param[button_screen];
 #ifdef HAVE_TOUCHSCREEN
         if (button == ACTION_TOUCHSCREEN)

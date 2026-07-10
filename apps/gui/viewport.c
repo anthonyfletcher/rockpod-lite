@@ -154,7 +154,7 @@ static void toggle_theme(enum screen_type screen, bool force)
     }
     else
     {
-#if LCD_DEPTH > 1 || (defined(LCD_REMOTE_DEPTH) && LCD_REMOTE_DEPTH > 1)
+#if LCD_DEPTH > 1
         screens[screen].backdrop_show(NULL);
 #endif
         screens[screen].scroll_stop();

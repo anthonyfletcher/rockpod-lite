@@ -135,9 +135,6 @@ static void gui_statusbar_icon_play_state(struct screen * display, int state);
 static void gui_statusbar_icon_play_mode(struct screen * display, int mode);
 static void gui_statusbar_icon_shuffle(struct screen * display);
 static void gui_statusbar_icon_lock(struct screen * display);
-#ifdef HAS_REMOTE_BUTTON_HOLD
-static void gui_statusbar_icon_lock_remote(struct screen * display);
-#endif
 #if (CONFIG_LED == LED_VIRTUAL)
 static void gui_statusbar_led(struct screen * display);
 #endif
@@ -228,9 +225,6 @@ static struct screen * sb_fill_bar_info(struct gui_statusbar * bar)
 #else
     bar->info.keylock = is_keys_locked();
 #endif /* HAS_BUTTON_HOLD */
-#ifdef HAS_REMOTE_BUTTON_HOLD
-    bar->info.keylockremote = remote_button_hold();
-#endif
     bar->info.repeat = global_settings.repeat_mode;
     bar->info.playmode = current_playmode();
 #if CONFIG_RTC
@@ -296,10 +290,6 @@ void gui_statusbar_draw(struct gui_statusbar * bar, bool force_redraw, struct vi
         }
         if (bar->info.keylock)
             gui_statusbar_icon_lock(display);
-#ifdef HAS_REMOTE_BUTTON_HOLD
-        if (bar->info.keylockremote)
-            gui_statusbar_icon_lock_remote(display);
-#endif
 #if CONFIG_RTC
         gui_statusbar_time(display, bar->time);
         bar->last_tm_min = bar->time->tm_min;
@@ -524,17 +514,6 @@ static void gui_statusbar_icon_lock(struct screen * display)
                          STATUSBAR_LOCKM_WIDTH, SB_ICON_HEIGHT);
 }
 
-#ifdef HAS_REMOTE_BUTTON_HOLD
-/*
- * Print remote lock when remote hold is enabled
- */
-static void gui_statusbar_icon_lock_remote(struct screen * display)
-{
-    display->mono_bitmap(bitmap_icons_5x8[Icon_Lock_Remote],
-                         STATUSBAR_LOCKR_X_POS, STATUSBAR_Y_POS,
-                         STATUSBAR_LOCKR_WIDTH, SB_ICON_HEIGHT);
-}
-#endif
 
 #if (CONFIG_LED == LED_VIRTUAL)
 /*

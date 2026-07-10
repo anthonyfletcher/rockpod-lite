@@ -104,9 +104,6 @@ histogram
 #endif
 
 
-#if defined(HAVE_REMOTE_LCD_TICKING)
-remote_ticking
-#endif
 
 #if CONFIG_RTC
 rtc
@@ -209,9 +206,6 @@ disk_storage
 sd_storage
 #endif
 
-#if defined(HAS_REMOTE_BUTTON_HOLD)
-remote_button_hold
-#endif
 
 #if defined(HAVE_LCD_FLIP)
 lcd_flip
