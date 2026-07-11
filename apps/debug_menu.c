@@ -1968,32 +1968,7 @@ static bool dbg_tagcache_info(void)
 }
 #endif
 
-#if defined CPU_COLDFIRE
-static bool dbg_save_roms(void)
-{
-    int fd;
-    int oldmode = system_memory_guard(MEMGUARD_NONE);
-
-#if defined(IRIVER_H100_SERIES)
-    fd = creat("/internal_rom_000000-1FFFFF.bin", 0666);
-#elif defined(IRIVER_H300_SERIES)
-    fd = creat("/internal_rom_000000-3FFFFF.bin", 0666);
-#elif defined(IAUDIO_X5) || defined(IAUDIO_M5) || defined(IAUDIO_M3)
-    fd = creat("/internal_rom_000000-3FFFFF.bin", 0666);
-#elif defined(MPIO_HD200) || defined(MPIO_HD300)
-    fd = creat("/internal_rom_000000-1FFFFF.bin", 0666);
-#endif
-    if(fd >= 0)
-    {
-        write(fd, (void *)0, FLASH_SIZE);
-        close(fd);
-    }
-    system_memory_guard(oldmode);
-
-
-    return false;
-}
-#elif defined(CPU_PP) && !(CONFIG_STORAGE & STORAGE_SD)
+#if defined(CPU_PP) && !(CONFIG_STORAGE & STORAGE_SD)
 static bool dbg_save_roms(void)
 {
     int fd = creat("/internal_rom_000000-0FFFFF.bin", 0666);
@@ -2002,75 +1977,6 @@ static bool dbg_save_roms(void)
         write(fd, (void *)0x20000000, FLASH_SIZE);
         close(fd);
     }
-
-    return false;
-}
-#elif CONFIG_CPU == AS3525v2 || CONFIG_CPU == AS3525
-static bool dbg_save_roms(void)
-{
-    int fd = creat("/rom.bin", 0666);
-    if(fd >= 0)
-    {
-        write(fd, (void *)0x80000000, 0x20000);
-        close(fd);
-    }
-
-    return false;
-}
-#elif CONFIG_CPU == IMX31L
-bool __dbg_dvfs_dptc(void);
-static bool dbg_save_roms(void)
-{
-    int fd = creat("/flash_rom_A0000000-A01FFFFF.bin", 0666);
-    if (fd >= 0)
-    {
-        write(fd, (void*)0xa0000000, FLASH_SIZE);
-        close(fd);
-    }
-
-    return false;
-}
-#elif defined(CPU_TCC780X)
-static bool dbg_save_roms(void)
-{
-    int fd = creat("/eeprom_E0000000-E0001FFF.bin", 0666);
-    if (fd >= 0)
-    {
-        write(fd, (void*)0xe0000000, 0x2000);
-        close(fd);
-    }
-
-    return false;
-}
-#elif CONFIG_CPU == RK27XX
-static bool dbg_save_roms(void)
-{
-    char buf[0x200];
-
-    int fd = creat("/rom.bin", 0666);
-    if(fd < 0)
-        return false;
-
-    for(int addr = 0; addr < 0x2000; addr += sizeof(buf))
-    {
-        int old_irq = disable_irq_save();
-
-        /* map rom at 0 */
-        SCU_REMAP = 0;
-        commit_discard_idcache();
-
-        /* copy rom */
-        memcpy((void *)buf, (void *)addr, sizeof(buf));
-
-        /* map iram back at 0 */
-        SCU_REMAP = 0xdeadbeef;
-        commit_discard_idcache();
-
-        restore_irq(old_irq);
-
-        write(fd, (void *)buf, sizeof(buf));
-    }
-    close(fd);
 
     return false;
 }
@@ -2610,16 +2516,10 @@ static const struct {
     unsigned char *desc; /* string or ID */
     bool (*function) (void); /* return true if USB was connected */
 } menuitems[] = {
-#if defined(CPU_COLDFIRE) || \
-    (defined(CPU_PP) && !(CONFIG_STORAGE & STORAGE_SD)) || \
-    CONFIG_CPU == IMX31L || defined(CPU_TCC780X) || CONFIG_CPU == AS3525v2 || \
-    CONFIG_CPU == AS3525 || CONFIG_CPU == RK27XX
+#if defined(CPU_PP) && !(CONFIG_STORAGE & STORAGE_SD)
         { "Dump ROM contents", dbg_save_roms },
 #endif
-#if defined(CPU_COLDFIRE) || defined(CPU_PP) \
-    || CONFIG_CPU == S3C2440 || CONFIG_CPU == IMX31L || CONFIG_CPU == AS3525 \
-    || CONFIG_CPU == DM320 || defined(CPU_S5L87XX) || CONFIG_CPU == AS3525v2 \
-    || CONFIG_CPU == RK27XX || CONFIG_CPU == JZ4760B
+#if defined(CPU_PP) || defined(CPU_S5L87XX)
         { "View I/O ports", dbg_ports },
 #endif
 #if (CONFIG_RTC == RTC_PCF50605) && (CONFIG_PLATFORM & PLATFORM_NATIVE)
@@ -2630,9 +2530,6 @@ static const struct {
 #endif
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
         { "CPU frequency", dbg_cpufreq },
-#endif
-#if CONFIG_CPU == IMX31L
-        { "DVFS/DPTC", __dbg_dvfs_dptc },
 #endif
 #if defined(IRIVER_H100_SERIES) && !defined(SIMULATOR)
         { "S/PDIF analyzer", dbg_spdif },

@@ -945,7 +945,7 @@ const struct settings_list settings[] = {
                 set_poweroff_timeout),
     INT_SETTING(F_BANFROMQS, max_files_in_playlist,
                 LANG_MAX_FILES_IN_PLAYLIST,
-#if CONFIG_CPU == PP5002 || CONFIG_CPU == PP5020 || CONFIG_CPU == PP5022
+#if CONFIG_CPU == PP5022
                   /** Slow CPU benefits greatly from building smaller playlists
                   On the iPod Mini 2nd gen, creating a playlist of 2000 entries takes around 10 seconds */
                   2000,
@@ -1868,10 +1868,7 @@ const struct settings_list settings[] = {
 #endif
         ),
 #endif
-#if defined(BUTTON_REC) || \
-    (CONFIG_KEYPAD == GIGABEAT_PAD) || \
-    (CONFIG_KEYPAD == IPOD_4G_PAD) || \
-    (CONFIG_KEYPAD == IRIVER_H10_PAD)
+#if (CONFIG_KEYPAD == IPOD_4G_PAD)
     OFFON_SETTING(0, clear_settings_on_hold, LANG_CLEAR_SETTINGS_ON_HOLD,
                   true, "clear settings on hold", NULL),
 #endif

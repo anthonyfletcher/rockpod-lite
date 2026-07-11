@@ -92,8 +92,6 @@
 
 #ifdef BUTTON_REC
     #define SETTINGS_RESET BUTTON_REC
-#elif (CONFIG_KEYPAD == GIGABEAT_PAD)
-    #define SETTINGS_RESET BUTTON_A
 #endif
 
 #if (CONFIG_STORAGE & STORAGE_MMC)
@@ -511,10 +509,7 @@ static void init(void)
     settings_load();
     CHART("<settings_load");
 
-#if defined(BUTTON_REC) || \
-    (CONFIG_KEYPAD == GIGABEAT_PAD) || \
-    (CONFIG_KEYPAD == IPOD_4G_PAD) || \
-    (CONFIG_KEYPAD == IRIVER_H10_PAD)
+#if (CONFIG_KEYPAD == IPOD_4G_PAD)
     if (global_settings.clear_settings_on_hold &&
 #ifdef SETTINGS_RESET
     /* Reset settings if holding the reset button. (Rec on Archos,

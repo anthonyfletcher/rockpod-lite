@@ -216,18 +216,9 @@ enum {  ALARM_START_WPS = 0,
 #if defined(CPU_S5L87XX)
 /* 256K IRAM at 0x0 */
 #define VIRT_PTR ((unsigned char*)0x40000)
-#elif CONFIG_CPU==DM320 || CONFIG_CPU == RK27XX
-/* 4K of IRAM at 0x0 */
-#define VIRT_PTR ((unsigned char*)0x4000)
-#elif defined(CPU_TCC780X)
-/* 1K of IRAM at 0x0 */
-#define VIRT_PTR ((unsigned char*)0x1000)
-#elif CONFIG_CPU == S3C2440 || defined(CPU_PP) || CONFIG_CPU==IMX31L
+#elif defined(CPU_PP)
 /* up to 64MB of DRAM at 0x0 */
 #define VIRT_PTR ((unsigned char*)0x4000000)
-#elif CONFIG_CPU == STM32H743
-/* 64k ITCM at 0x0 */
-#define VIRT_PTR ((unsigned char*)0x10000)
 #else
 /* offset from 0x0 slightly */
 #define VIRT_PTR ((unsigned char*)sizeof(char*))
@@ -765,10 +756,7 @@ struct user_settings
 #if defined(DX50) || defined(DX90) || (defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR))
     int usb_mode;
 #endif
-#if defined(BUTTON_REC) || \
-    (CONFIG_KEYPAD == GIGABEAT_PAD) || \
-    (CONFIG_KEYPAD == IPOD_4G_PAD) || \
-    (CONFIG_KEYPAD == IRIVER_H10_PAD)
+#if (CONFIG_KEYPAD == IPOD_4G_PAD)
     bool clear_settings_on_hold;
 #endif
     bool playback_log; /* ROCKBOX_DIR/playback.log for tracks played */
