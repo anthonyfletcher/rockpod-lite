@@ -360,10 +360,6 @@ MENUITEM_SETTING(usb_keypad_mode, &global_settings.usb_keypad_mode, NULL);
 #ifdef USB_ENABLE_AUDIO
 MENUITEM_SETTING(usb_audio, &global_settings.usb_audio, NULL);
 #endif
-#if defined(USB_ENABLE_STORAGE) && defined(HAVE_MULTIDRIVE)
-MENUITEM_SETTING(usb_skip_first_drive, &global_settings.usb_skip_first_drive, NULL);
-#endif
-
 #ifdef HAVE_MORSE_INPUT
 MENUITEM_SETTING(morse_input, &global_settings.morse_input, NULL);
 #endif
@@ -436,9 +432,6 @@ MAKE_MENU(system_menu, ID2P(LANG_SYSTEM),
 #endif
 #ifdef USB_ENABLE_AUDIO
             &usb_audio,
-#endif
-#if defined(USB_ENABLE_STORAGE) && defined(HAVE_MULTIDRIVE)
-            &usb_skip_first_drive,
 #endif
 
 #if defined(DX50) || defined(DX90)

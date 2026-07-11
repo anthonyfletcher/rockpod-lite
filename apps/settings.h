@@ -398,7 +398,7 @@ struct user_settings
 
 
     int  pause_rewind; /* time in s to rewind when pausing */
-#if defined(HAVE_HEADPHONE_DETECTION) || defined(HAVE_LINEOUT_DETECTION)
+#if defined(HAVE_HEADPHONE_DETECTION)
     int  unplug_mode; /* pause on headphone unplug */
     bool unplug_autoresume; /* disable auto-resume if no phones */
 #endif
@@ -620,9 +620,6 @@ struct user_settings
 #if defined(HAVE_BACKLIGHT_FADING_INT_SETTING)
     int backlight_fade_in;  /* backlight fade in timing: 0..3 */
     int backlight_fade_out; /* backlight fade in timing: 0..7 */
-#elif defined(HAVE_BACKLIGHT_FADING_BOOL_SETTING)
-    bool backlight_fade_in;
-    bool backlight_fade_out;
 #endif
 #ifdef HAVE_BACKLIGHT_BRIGHTNESS
     int brightness;
@@ -659,10 +656,6 @@ struct user_settings
 
 #ifdef USB_ENABLE_AUDIO
     int usb_audio;
-#endif
-
-#if defined(USB_ENABLE_STORAGE) && defined(HAVE_MULTIDRIVE)
-    bool usb_skip_first_drive;
 #endif
 
     unsigned char ui_vp_config[64]; /* viewport string for the lists */

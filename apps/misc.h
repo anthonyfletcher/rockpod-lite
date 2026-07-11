@@ -147,8 +147,7 @@ int open_utf8(const char* pathname, int flags);
 int string_option(const char *option, const char *const oplist[], bool ignore_case);
 
 #ifdef BOOTFILE
-#if !defined(USB_NONE) && !defined(USB_HANDLED_BY_OF) \
-        || defined(HAVE_HOTSWAP_STORAGE_AS_MAIN)
+#if !defined(USB_NONE) && !defined(USB_HANDLED_BY_OF)
 void check_bootfile(bool do_rolo);
 #endif
 #endif

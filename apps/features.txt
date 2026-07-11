@@ -48,10 +48,6 @@ flash_storage
 headphone_detection
 #endif
 
-#if defined(HAVE_LINEOUT_DETECTION)
-lineout_detection
-#endif
-
 #if defined(HAS_BUTTON_HOLD)
 hold_button
 #endif
@@ -88,10 +84,6 @@ pitchscreen
 
 #if defined(HAVE_MULTIVOLUME)
 multivolume
-#endif
-
-#if defined(HAVE_MULTIDRIVE) && defined(USB_ENABLE_STORAGE)
-multidrive_usb
 #endif
 
 #if defined(HAVE_QUICKSCREEN)
@@ -191,8 +183,6 @@ albumart
 
 #if defined(HAVE_BACKLIGHT_FADING_INT_SETTING)
 backlight_fade_int
-#elif defined(HAVE_BACKLIGHT_FADING_BOOL_SETTING)
-backlight_fade_bool
 #endif
 
 #if defined(HAVE_DISK_STORAGE)
@@ -247,10 +237,6 @@ hardware_click
 
 #if defined(HAVE_PLAY_FREQ)
 play_frequency
-#endif
-
-#if defined(HAVE_BOOTDATA)
-boot_data
 #endif
 
 #if defined(HAVE_MULTIBOOT)

@@ -187,7 +187,7 @@ static int refresh_data(struct info_data *info)
 	else
 #endif
 	    info->name[i] = LANG_DISK_NAME_INTERNAL;
-#if defined(HAVE_MULTIVOLUME) && (defined(HAVE_HOTSWAP) || defined(HAVE_DIRCACHE) || defined(HAVE_BOOTDATA)) // Is this #ifdef necessary?
+#if defined(HAVE_MULTIVOLUME) && defined(HAVE_DIRCACHE) // Is this #ifdef necessary?
             if (volume_partition(i) == -1)
 #endif
 	    {

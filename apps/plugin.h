@@ -274,11 +274,6 @@ struct plugin_api {
                                 int bx, int by, int bwidth, int bheight,
                                 int stride);
 #endif /* LCD_DEPTH */
-#if defined(HAVE_LCD_MODES) && (HAVE_LCD_MODES & LCD_MODE_PAL256)
-    void (*lcd_blit_pal256)(unsigned char *src, int src_x, int src_y, int x, int y,
-                            int width, int height);
-    void (*lcd_pal256_update_pal)(fb_data *palette);
-#endif
 
 #if defined(HAVE_LCD_ENABLE) || defined(HAVE_LCD_SLEEP)
     void (*button_queue_post)(long id, intptr_t data);

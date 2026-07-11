@@ -1061,11 +1061,6 @@ const struct settings_list settings[] = {
                   UNIT_MS, formatter_time_unit_0_is_off,
                   getlang_time_unit_0_is_off,
                   backlight_set_fade_out, 10, backlight_fade),
-#elif defined(HAVE_BACKLIGHT_FADING_BOOL_SETTING)
-    OFFON_SETTING(0, backlight_fade_in, LANG_BACKLIGHT_FADE_IN,
-                    true, "backlight fade in", backlight_set_fade_in),
-    OFFON_SETTING(0, backlight_fade_out, LANG_BACKLIGHT_FADE_OUT,
-                    true, "backlight fade out", backlight_set_fade_out),
 #endif
 #endif /* HAVE_BACKLIGHT */
     INT_SETTING(F_PADTITLE, scroll_speed, LANG_SCROLL_SPEED, 9,"scroll speed",
@@ -1776,9 +1771,6 @@ const struct settings_list settings[] = {
         ID2P(LANG_NEVER), ID2P(LANG_ALWAYS), ID2P(LANG_WHILE_USB_CHARGE_ONLY), ID2P(LANG_WHILE_MASS_STORAGE_USB_ONLY)),
 #endif
 
-#if defined(USB_ENABLE_STORAGE) && defined(HAVE_MULTIDRIVE)
-    OFFON_SETTING(0, usb_skip_first_drive, LANG_USB_SKIP_FIRST_DRIVE, false, "usb skip first drive", usb_set_skip_first_drive),
-#endif
 
 
     /* Customizable list */

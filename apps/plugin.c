@@ -236,10 +236,6 @@ static const struct plugin_api rockbox_api = {
     lcd_blit_mono,
     lcd_blit_grey_phase,
 #endif /* LCD_DEPTH */
-#if defined(HAVE_LCD_MODES) && (HAVE_LCD_MODES & LCD_MODE_PAL256)
-    lcd_blit_pal256,
-    lcd_pal256_update_pal,
-#endif
 #if defined(HAVE_LCD_ENABLE) || defined(HAVE_LCD_SLEEP)
     button_queue_post,
 #endif

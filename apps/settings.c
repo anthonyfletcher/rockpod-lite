@@ -857,8 +857,7 @@ void settings_apply(bool read_disk)
 #if CONFIG_CHARGING
     backlight_set_timeout_plugged(global_settings.backlight_timeout_plugged);
 #endif
-#if    defined(HAVE_BACKLIGHT_FADING_INT_SETTING) \
-    || defined(HAVE_BACKLIGHT_FADING_BOOL_SETTING)
+#if defined(HAVE_BACKLIGHT_FADING_INT_SETTING)
     backlight_set_fade_in(global_settings.backlight_fade_in);
     backlight_set_fade_out(global_settings.backlight_fade_out);
 #endif

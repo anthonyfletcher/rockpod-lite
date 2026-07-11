@@ -126,9 +126,6 @@ int main(void)
     }
     list_init();
     tree_init();
-#if defined(HAVE_DEVICEDATA) && !defined(BOOTLOADER) /* SIMULATOR */
-    verify_device_data();
-#endif
     /* Keep the order of this 3
      * Must be done before any code uses the multi-screen API */
 #ifdef HAVE_USBSTACK
@@ -294,22 +291,13 @@ static void init(void)
     core_allocator_init();
     kernel_init();
 
-#if defined(HAVE_BOOTDATA) && !defined(BOOTLOADER)
-    verify_boot_data();
-#endif
 
-#if defined(HAVE_DEVICEDATA) && !defined(BOOTLOADER)
-    verify_device_data();
-#endif
 
     /* early early early! */
     filesystem_init();
 
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
     set_cpu_frequency(CPUFREQ_NORMAL);
-#ifdef CPU_COLDFIRE
-    coldfire_set_pllcr_audio_bits(DEFAULT_PLLCR_AUDIO_BITS);
-#endif
     cpu_boost(true);
 #endif
 

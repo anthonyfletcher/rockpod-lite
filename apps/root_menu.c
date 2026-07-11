@@ -1293,7 +1293,7 @@ static int root_menu_setup_screens(void)
     }
 #endif /* HAVE_RTC_ALARM */
 
-#if defined(HAVE_HEADPHONE_DETECTION) || defined(HAVE_LINEOUT_DETECTION)
+#if defined(HAVE_HEADPHONE_DETECTION)
     if (new_screen == GO_TO_WPS && global_settings.unplug_autoresume)
     {
        new_screen = GO_TO_ROOT;
@@ -1302,7 +1302,7 @@ static int root_menu_setup_screens(void)
             new_screen = GO_TO_WPS;
 #endif
     }
-#endif /*(HAVE_HEADPHONE_DETECTION) || (HAVE_LINEOUT_DETECTION)*/
+#endif /* HAVE_HEADPHONE_DETECTION */
     return new_screen;
 }
 

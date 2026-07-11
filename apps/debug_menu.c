@@ -88,9 +88,6 @@
 #endif
 #include "appevents.h"
 
-#if defined(HAVE_AS3514) && CONFIG_CHARGING
-#include "ascodec.h"
-#endif
 
 #ifdef IPOD_NANO2G
 #include "pmu-target.h"
@@ -110,17 +107,6 @@
 
 #include "talk.h"
 
-#if defined(HAVE_DEVICEDATA)// && !defined(SIMULATOR)
-#include "devicedata.h"
-#endif
-
-#if defined(HAVE_BOOTDATA) && !defined(SIMULATOR)
-#include "bootdata.h"
-#include "multiboot.h"
-#include "rbpaths.h"
-#include "pathfuncs.h"
-#include "rb-loader.h"
-#endif
 
 #if defined(IPOD_6G) && !defined(SIMULATOR)
 #include "norboot-target.h"
@@ -576,159 +562,6 @@ static bool dbg_partitions(void)
     return simplelist_show_list(&info);
 }
 
-#if defined(CPU_COLDFIRE) && defined(HAVE_SPDIF_OUT)
-static bool dbg_spdif(void)
-{
-    int line;
-    unsigned int control;
-    int x;
-    char *s;
-    int category;
-    int generation;
-    unsigned int interruptstat;
-    bool valnogood, symbolerr, parityerr;
-    bool done = false;
-    bool spdif_src_on;
-    int spdif_source = spdif_get_output_source(&spdif_src_on);
-    spdif_set_output_source(AUDIO_SRC_SPDIF IF_SPDIF_POWER_(, true));
-
-    lcd_clear_display();
-    lcd_setfont(FONT_SYSFIXED);
-
-
-    while (!done)
-    {
-        line = 0;
-
-        control = EBU1RCVCCHANNEL1;
-        interruptstat = INTERRUPTSTAT;
-        INTERRUPTCLEAR = 0x03c00000;
-
-        valnogood = (interruptstat & 0x01000000)?true:false;
-        symbolerr = (interruptstat & 0x00800000)?true:false;
-        parityerr = (interruptstat & 0x00400000)?true:false;
-
-        lcd_putsf(0, line++, "Val: %s Sym: %s Par: %s",
-                 valnogood?"--":"OK",
-                 symbolerr?"--":"OK",
-                 parityerr?"--":"OK");
-
-        lcd_putsf(0, line++, "Status word: %08x", (int)control);
-
-        line++;
-
-        x = control >> 31;
-        lcd_putsf(0, line++, "PRO: %d (%s)",
-                 x, x?"Professional":"Consumer");
-
-        x = (control >> 30) & 1;
-        lcd_putsf(0, line++, "Audio: %d (%s)",
-                 x, x?"Non-PCM":"PCM");
-
-        x = (control >> 29) & 1;
-        lcd_putsf(0, line++, "Copy: %d (%s)",
-                 x, x?"Permitted":"Inhibited");
-
-        x = (control >> 27) & 7;
-        switch(x)
-        {
-        case 0:
-            s = "None";
-            break;
-        case 1:
-            s = "50/15us";
-            break;
-        default:
-            s = "Reserved";
-            break;
-        }
-        lcd_putsf(0, line++, "Preemphasis: %d (%s)", x, s);
-
-        x = (control >> 24) & 3;
-        lcd_putsf(0, line++, "Mode: %d", x);
-
-        category = (control >> 17) & 127;
-        switch(category)
-        {
-        case 0x00:
-            s = "General";
-            break;
-        case 0x40:
-            s = "Audio CD";
-            break;
-        default:
-            s = "Unknown";
-        }
-        lcd_putsf(0, line++, "Category: 0x%02x (%s)", category, s);
-
-        x = (control >> 16) & 1;
-        generation = x;
-        if(((category & 0x70) == 0x10) ||
-           ((category & 0x70) == 0x40) ||
-           ((category & 0x78) == 0x38))
-        {
-            generation = !generation;
-        }
-        lcd_putsf(0, line++, "Generation: %d (%s)",
-                 x, generation?"Original":"No ind.");
-
-        x = (control >> 12) & 15;
-        lcd_putsf(0, line++, "Source: %d", x);
-
-
-        x = (control >> 8) & 15;
-        switch(x)
-        {
-        case 0:
-            s = "Unspecified";
-            break;
-        case 8:
-            s = "A (Left)";
-            break;
-        case 4:
-            s = "B (Right)";
-            break;
-        default:
-            s = "";
-            break;
-        }
-        lcd_putsf(0, line++, "Channel: %d (%s)", x, s);
-
-        x = (control >> 4) & 15;
-        switch(x)
-        {
-        case 0:
-            s = "44.1kHz";
-            break;
-        case 0x4:
-            s = "48kHz";
-            break;
-        case 0xc:
-            s = "32kHz";
-            break;
-        }
-        lcd_putsf(0, line++, "Frequency: %d (%s)", x, s);
-
-        x = (control >> 2) & 3;
-        lcd_putsf(0, line++, "Clock accuracy: %d", x);
-        line++;
-
-        lcd_putsf(0, line++, "Measured freq: %ldHz",
-                 spdif_measure_frequency());
-
-        lcd_update();
-
-        if (action_userabort(HZ/10))
-            break;
-    }
-
-    spdif_set_output_source(spdif_source IF_SPDIF_POWER_(, spdif_src_on));
-
-
-    lcd_setfont(FONT_UI);
-    return false;
-}
-#endif /* CPU_COLDFIRE */
 
 #if (CONFIG_RTC == RTC_PCF50605) && (CONFIG_PLATFORM & PLATFORM_NATIVE)
 static bool dbg_pcf(void)
@@ -1035,27 +868,6 @@ static bool view_battery(void)
                     /* Conversion disabled */
                     lcd_putsf(0, line++, "T %s: ?", "Battery");
                 }
-#elif defined(HAVE_AS3514) && CONFIG_CHARGING
-                static const char * const chrgstate_strings[] =
-                {
-                    [CHARGE_STATE_DISABLED - CHARGE_STATE_DISABLED]= "Disabled",
-                    [CHARGE_STATE_ERROR - CHARGE_STATE_DISABLED] = "Error",
-                    [DISCHARGING - CHARGE_STATE_DISABLED]       = "Discharging",
-                    [CHARGING - CHARGE_STATE_DISABLED]          = "Charging",
-                };
-                const char *str = NULL;
-
-                lcd_putsf(0, 3, "Charger: %s",
-                         charger_inserted() ? "present" : "absent");
-
-                y = charge_state - CHARGE_STATE_DISABLED;
-                if ((unsigned)y < ARRAYLEN(chrgstate_strings))
-                    str = chrgstate_strings[y];
-
-                lcd_putsf(0, 4, "State: %s",
-                         str ? str : "<unknown>");
-
-                lcd_putsf(0, 5, "CHARGER: %02X", ascodec_read_charger());
 #elif defined(IPOD_NANO2G)
                 y = pmu_read_battery_voltage();
                 lcd_putsf(17, 1, "RAW: %d.%03d V", y / 1000, y % 1000);
@@ -1945,22 +1757,6 @@ static bool dbg_metadatalog(void)
     return false;
 }
 
-#if defined(CPU_COLDFIRE)
-static bool dbg_set_memory_guard(void)
-{
-    static const struct opt_items names[MAXMEMGUARD] = {
-        { "None",             -1 },
-        { "Flash ROM writes", -1 },
-        { "Zero area (all)",  -1 }
-    };
-    int mode = system_memory_guard(MEMGUARD_KEEP);
-
-    set_option( "Catch mem accesses", &mode, RB_INT, names, MAXMEMGUARD, NULL);
-    system_memory_guard(mode);
-
-    return false;
-}
-#endif /* defined(CPU_COLDFIRE) */
 
 #ifdef CPU_BOOST_LOGGING
 static bool cpu_boost_log(void)
@@ -2204,78 +2000,6 @@ static bool dbg_usb_audio(void)
 #endif /* HAVE_USBSTACK */
 
 
-#if defined(HAVE_BOOTDATA) && !defined(SIMULATOR)
-static bool dbg_boot_data(void)
-{
-    struct simplelist_info info;
-    info.scroll_all = true;
-    simplelist_info_init(&info, "Boot data", 0, NULL);
-    simplelist_reset_lines();
-
-    if (!boot_data_valid)
-    {
-        simplelist_setline("Boot data invalid");
-        simplelist_addline("Magic[0]: %08lx", boot_data.magic[0]);
-        simplelist_addline("Magic[1]: %08lx", boot_data.magic[1]);
-        simplelist_addline("Length: %lu", boot_data.length);
-    }
-    else
-    {
-        simplelist_setline("Boot data valid");
-        simplelist_addline("Version: %d", (int)boot_data.version);
-
-        if (boot_data.version == 0)
-        {
-            simplelist_addline("Boot volume: %d", (int)boot_data._boot_volume);
-        }
-        else if (boot_data.version == 1)
-        {
-            simplelist_addline("Boot drive: %d", (int)boot_data.boot_drive);
-            simplelist_addline("Boot partition: %d", (int)boot_data.boot_partition);
-        }
-        simplelist_setline("Boot path:");
-        simplelist_addline(" %s%s/%s", root_realpath(), BOOTDIR, BOOTFILE);
-    }
-
-    simplelist_setline("Bootdata RAW:");
-    for (size_t i = 0; i < boot_data.length; i += 4)
-    {
-        simplelist_addline("%02x: %02x %02x %02x %02x", i,
-                           boot_data.payload[i + 0], boot_data.payload[i + 1],
-                           boot_data.payload[i + 2], boot_data.payload[i + 3]);
-    }
-
-    return simplelist_show_list(&info);
-}
-#endif /* defined(HAVE_BOOTDATA) && !defined(SIMULATOR) */
-
-#if defined(HAVE_DEVICEDATA)// && !defined(SIMULATOR)
-static bool dbg_device_data(void)
-{
-    struct simplelist_info info;
-    info.scroll_all = true;
-    simplelist_info_init(&info, "Device data", 0, NULL);
-    simplelist_reset_lines();
-
-    simplelist_setline("Device data");
-
-#if defined(EROS_QN)
-    simplelist_addline("Hardware Revision: %d", (int)device_data.hw_rev);
-#endif
-    simplelist_addline("Struct Ver: %d", (int)device_data.version);
-
-    simplelist_setline("Device data RAW:");
-    for (size_t i = 0; i < device_data.length; i += 4)
-    {
-        simplelist_addline("%02zx: %02x %02x %02x %02x", i,
-                           device_data.payload[i + 0], device_data.payload[i + 1],
-                           device_data.payload[i + 2], device_data.payload[i + 3]);
-    }
-
-    return simplelist_show_list(&info);
-}
-#endif /* defined(HAVE_DEVICEDATA)*/
-
 
 #if defined(IPOD_6G) && !defined(SIMULATOR)
 static bool dbg_syscfg(void) {
@@ -2451,9 +2175,6 @@ static const struct {
 #if defined(IRIVER_H100_SERIES) && !defined(SIMULATOR)
         { "S/PDIF analyzer", dbg_spdif },
 #endif
-#if defined(CPU_COLDFIRE)
-        { "Catch mem accesses", dbg_set_memory_guard },
-#endif
         { "View OS stacks", dbg_os },
 #ifdef __linux__
         { "View CPU stats", dbg_cpuinfo },
@@ -2515,13 +2236,6 @@ static const struct {
         {"Debug IAP", dbg_iap },
 #endif
         {"Talk engine stats", dbg_talk },
-#if defined(HAVE_BOOTDATA) && !defined(SIMULATOR)
-        {"Boot data", dbg_boot_data },
-#endif
-
-#if defined(HAVE_DEVICEDATA)// && !defined(SIMULATOR)
-        {"Device data", dbg_device_data },
-#endif
 
 #if defined(IPOD_6G) && !defined(SIMULATOR)
         {"View SysCfg", dbg_syscfg },

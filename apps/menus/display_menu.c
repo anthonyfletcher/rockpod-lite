@@ -122,8 +122,7 @@ MENUITEM_SETTING(backlight_on_button_hold,
                 &global_settings.backlight_on_button_hold, NULL);
 
 MENUITEM_SETTING(caption_backlight, &global_settings.caption_backlight, NULL);
-#if    defined(HAVE_BACKLIGHT_FADING_INT_SETTING) \
-    || defined(HAVE_BACKLIGHT_FADING_BOOL_SETTING)
+#if defined(HAVE_BACKLIGHT_FADING_INT_SETTING)
 MENUITEM_SETTING(backlight_fade_in, &global_settings.backlight_fade_in, NULL);
 MENUITEM_SETTING(backlight_fade_out, &global_settings.backlight_fade_out, NULL);
 #endif
@@ -160,8 +159,7 @@ MAKE_MENU(lcd_settings,ID2P(LANG_LCD_MENU),
 # endif
             ,&backlight_on_button_hold
             ,&caption_backlight
-#if    defined(HAVE_BACKLIGHT_FADING_INT_SETTING) \
-    || defined(HAVE_BACKLIGHT_FADING_BOOL_SETTING)
+#if defined(HAVE_BACKLIGHT_FADING_INT_SETTING)
             ,&backlight_fade_in, &backlight_fade_out
 #endif
             ,&bl_filter_first_keypress

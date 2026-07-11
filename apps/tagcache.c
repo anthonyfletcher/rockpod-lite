@@ -5132,10 +5132,6 @@ void tagcache_shutdown(void)
     /* Flush the command queue. */
     run_command_queue(true);
 
-#if defined(HAVE_EEPROM_SETTINGS) && defined(HAVE_TC_RAMCACHE)
-    if (tc_stat.ramcache)
-        tagcache_dumpsave();
-#endif
 }
 
 void tagcache_remove_statefile(void)

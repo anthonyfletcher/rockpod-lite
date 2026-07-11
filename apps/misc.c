@@ -81,8 +81,7 @@
 #include "voice_thread.h"
 
 #ifdef BOOTFILE
-#if !defined(USB_NONE) && !defined(USB_HANDLED_BY_OF) \
-        || defined(HAVE_HOTSWAP_STORAGE_AS_MAIN)
+#if !defined(USB_NONE) && !defined(USB_HANDLED_BY_OF)
 #include "rolo.h"
 #endif
 #endif
@@ -660,7 +659,7 @@ long default_event_handler(long event)
 }
 
 #ifdef BOOTFILE
-#if !defined(USB_NONE) && !defined(USB_HANDLED_BY_OF) || defined(HAVE_HOTSWAP_STORAGE_AS_MAIN)
+#if !defined(USB_NONE) && !defined(USB_HANDLED_BY_OF)
 /*
     memorize/compare details about the BOOTFILE
     we don't use dircache because it may not be up to date after
