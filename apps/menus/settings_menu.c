@@ -51,10 +51,6 @@
 #ifndef HAS_BUTTON_HOLD
 #include "mask_select.h"
 #endif
-#if defined(DX50) || defined(DX90)
-#include "governor-ibasso.h"
-#include "usb-ibasso.h"
-#endif
 #include "plugin.h"
 #include "onplay.h"
 #include "misc.h"
@@ -387,9 +383,6 @@ MAKE_MENU(sel_softlock, ID2P(LANG_SOFTLOCK_SELECTIVE),
 
 MENUITEM_SETTING(wps_select_action, &global_settings.wps_select_action, NULL);
 
-#if defined(DX50) || defined(DX90)
-MENUITEM_SETTING(governor, &global_settings.governor, NULL);
-#endif
 
 MAKE_MENU(system_menu, ID2P(LANG_SYSTEM),
           0, Icon_System_menu,
@@ -434,9 +427,6 @@ MAKE_MENU(system_menu, ID2P(LANG_SYSTEM),
             &usb_audio,
 #endif
 
-#if defined(DX50) || defined(DX90)
-            &governor,
-#endif
 #if defined(DX50) || defined(DX90) || (defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR))
             &usb_mode,
 #endif

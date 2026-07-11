@@ -59,10 +59,6 @@
 
 #include "voice_thread.h"
 
-#if defined(DX50) || defined(DX90)
-#include "governor-ibasso.h"
-#include "usb-ibasso.h"
-#endif
 
 #define UNUSED {.RESERVED=NULL}
 #define INT(a) {.int_ = a}
@@ -1816,21 +1812,6 @@ const struct settings_list settings[] = {
                   root_menu_load_from_cfg, root_menu_write_to_cfg,
                   root_menu_is_changed, root_menu_set_default),
 
-#if defined(DX50) || defined(DX90)
-    CHOICE_SETTING(0,
-                   governor,
-                   LANG_IBASSO_FREQ_SCALING_GOVERNOR,
-                   GOVERNOR_POWERSAVE,
-                   "freq scaling governor",
-                   "conservative,ondemand,interactive,powersave,performance",
-                   ibasso_set_governor,
-                   5,
-                   "Conservative",
-                   "Ondemand",
-                   "Interactive",
-                   "Powersave",
-                   "Performance"),
-#endif
 #if defined(DX50) || defined(DX90) || (defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR))
     CHOICE_SETTING(0,
                    usb_mode,
@@ -1838,26 +1819,11 @@ const struct settings_list settings[] = {
                    USBMODE_DEFAULT,
                    "usb mode",
                    "mass storage,charge"
-#if defined(DX50) || defined(DX90) || defined(HIBY_R3PROII) || defined(HIBY_R1)
-                   ",adb"
-#endif
                    ,
-#if defined(DX50) || defined(DX90)
-                   ibasso_set_usb_mode,
-                   3,
-#else
                    usb_set_mode,
-#if defined(HIBY_R3PROII) || defined(HIBY_R1)
-                   3,
-#else
                    2,
-#endif
-#endif
                    ID2P(LANG_USB_MODE_MASS_STORAGE),
                    ID2P(LANG_USB_MODE_CHARGE)
-#if defined(DX50) || defined(DX90) || defined(HIBY_R3PROII) || defined(HIBY_R1)
-                   ,ID2P(LANG_USB_MODE_ADB)
-#endif
         ),
 #endif
 #if (CONFIG_KEYPAD == IPOD_4G_PAD)

@@ -734,12 +734,6 @@ static const struct plugin_api rockbox_api = {
     wheel_send_events,
 #endif
 
-#if defined(IRIVER_H100_SERIES) || defined(IRIVER_H300_SERIES)
-    /* Routines for the iriver_flash -plugin. */
-    detect_original_firmware,
-    detect_flashed_ramimage,
-    detect_flashed_romimage,
-#endif
 
     /*plugin*/
     plugin_open,
