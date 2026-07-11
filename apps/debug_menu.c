@@ -820,62 +820,6 @@ static bool dbg_cpufreq(void)
 }
 #endif /* HAVE_ADJUSTABLE_CPU_FREQ */
 
-#if defined(HAVE_TSC2100) && (CONFIG_PLATFORM & PLATFORM_NATIVE)
-#include "tsc2100.h"
-static const char* tsc2100_debug_getname(int selected_item, void * data,
-                                         char *buffer, size_t buffer_len)
-{
-    int *page = (int*)data;
-    bool reserved = false;
-    switch (*page)
-    {
-        case 0:
-            if ((selected_item > 0x0a)  ||
-                (selected_item == 0x04) ||
-                (selected_item == 0x08))
-                reserved = true;
-            break;
-        case 1:
-            if ((selected_item > 0x05) ||
-                (selected_item == 0x02))
-                reserved = true;
-            break;
-        case 2:
-            if (selected_item > 0x1e)
-                reserved = true;
-            break;
-    }
-    if (reserved)
-        snprintf(buffer, buffer_len, "%02x: RSVD", selected_item);
-    else
-        snprintf(buffer, buffer_len, "%02x: %04x", selected_item,
-                    tsc2100_readreg(*page, selected_item)&0xffff);
-    return buffer;
-}
-static int tsc2100debug_action_callback(int action, struct gui_synclist *lists)
-{
-    int *page = (int*)lists->data;
-    if (action == ACTION_STD_OK)
-    {
-        *page = (*page+1)%3;
-        snprintf((char*)lists->title, 32, "tsc2100 registers - Page %d", *page);
-        return ACTION_REDRAW;
-    }
-    return action;
-}
-static bool tsc2100_debug(void)
-{
-    int page = 0;
-    char title[32];
-    snprintf(title, 32, "tsc2100 registers - Page %d", page);
-    struct simplelist_info info;
-    simplelist_info_init(&info, title, 32, &page);
-    info.timeout = HZ/100;
-    info.get_name = tsc2100_debug_getname;
-    info.action_callback= tsc2100debug_action_callback;
-    return simplelist_show_list(&info);
-}
-#endif
 #if (CONFIG_BATTERY_MEASURE != 0) && !defined(SIMULATOR)
 /*
  * view_battery() shows a automatically scaled graph of the battery voltage
@@ -2259,30 +2203,6 @@ static bool dbg_usb_audio(void)
 #endif /* USB_ENABLE_AUDIO */
 #endif /* HAVE_USBSTACK */
 
-#if CONFIG_USBOTG == USBOTG_ISP1583
-extern int dbg_usb_num_items(void);
-extern const char* dbg_usb_item(int selected_item, void *data,
-                                char *buffer, size_t buffer_len);
-
-static int isp1583_action_callback(int action, struct gui_synclist *lists)
-{
-    (void)lists;
-    if (action == ACTION_NONE)
-        action = ACTION_REDRAW;
-    return action;
-}
-
-static bool dbg_isp1583(void)
-{
-    struct simplelist_info isp1583;
-    isp1583.scroll_all = true;
-    simplelist_info_init(&isp1583, "ISP1583", dbg_usb_num_items(), NULL);
-    isp1583.timeout = HZ/100;
-    isp1583.get_name = dbg_usb_item;
-    isp1583.action_callback = isp1583_action_callback;
-    return simplelist_show_list(&isp1583);
-}
-#endif
 
 #if defined(HAVE_BOOTDATA) && !defined(SIMULATOR)
 static bool dbg_boot_data(void)
@@ -2525,9 +2445,6 @@ static const struct {
 #if (CONFIG_RTC == RTC_PCF50605) && (CONFIG_PLATFORM & PLATFORM_NATIVE)
         { "View PCF registers", dbg_pcf },
 #endif
-#if defined(HAVE_TSC2100) && (CONFIG_PLATFORM & PLATFORM_NATIVE)
-        { "TSC2100 debug", tsc2100_debug },
-#endif
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
         { "CPU frequency", dbg_cpufreq },
 #endif
@@ -2573,9 +2490,6 @@ static const struct {
 #endif /* PM_DEBUG */
 #ifdef BUFLIB_DEBUG_PRINT
         { "View buflib allocs", dbg_buflib_allocs },
-#endif
-#if CONFIG_USBOTG == USBOTG_ISP1583
-        { "View ISP1583 info", dbg_isp1583 },
 #endif
 #ifdef ROCKBOX_HAS_LOGF
         {"Show Log File", logfdisplay },

@@ -11,9 +11,6 @@ core_keymap.c
 debug_menu.c
 filetypes.c
 fileop.c
-#ifdef HAVE_TOUCHSCREEN
-gesture.c
-#endif
 language.c
 main.c
 menu.c
@@ -92,12 +89,7 @@ gui/scrollbar.c
 gui/splash.c
 gui/statusbar.c
 gui/statusbar-skinned.c
-#if (CONFIG_PLATFORM&PLATFORM_ANDROID)
-hosted/android/yesno.c
-hosted/android/notification.c
-#else
 gui/yesno.c
-#endif
 gui/viewport.c
 
 /* Core-linked "Album covers" screen (ported from apps/plugins/pictureflow/,
@@ -114,9 +106,6 @@ gui/skin_engine/skin_engine.c
 gui/skin_engine/skin_parser.c
 gui/skin_engine/skin_render.c
 gui/skin_engine/skin_tokens.c
-#ifdef HAVE_TOUCHSCREEN
-gui/skin_engine/skin_touchsupport.c
-#endif
 
 #if (LCD_DEPTH > 1)
 gui/backdrop.c
@@ -124,11 +113,7 @@ gui/backdrop.c
 
 recorder/bmp.c
 recorder/icons.c
-#if (CONFIG_PLATFORM&PLATFORM_ANDROID)
-hosted/android/keyboard.c
-#else
 recorder/keyboard.c
-#endif
 recorder/peakmeter.c
 recorder/spectrum_meter.c
 #if defined(HAVE_ALBUMART) || defined(HAVE_JPEG)

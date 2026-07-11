@@ -98,14 +98,6 @@
 #include "ata_mmc.h"
 #endif
 
-#if CONFIG_USBOTG == USBOTG_ISP1362
-#include "isp1362.h"
-#endif
-
-#if CONFIG_USBOTG == USBOTG_M5636
-#include "m5636.h"
-#endif
-
 #ifdef HAVE_HARDWARE_CLICK
 #include "piezo.h"
 #endif
@@ -361,11 +353,6 @@ static void init(void)
     adc_init();
 
     usb_init();
-#if CONFIG_USBOTG == USBOTG_ISP1362
-    isp1362_init();
-#elif CONFIG_USBOTG == USBOTG_M5636
-    m5636_init();
-#endif
 
     backlight_init();
 
