@@ -150,11 +150,6 @@ void *skin_find_item(const char *label, enum skin_find_what what,
         case SKIN_FIND_IMAGE:
             list.linkedlist = SKINOFFSETTOPTR(databuf, data->images);
         break;
-#ifdef HAVE_SKIN_VARIABLES
-        case SKIN_VARIABLE:
-            list.linkedlist = SKINOFFSETTOPTR(databuf, data->skinvars);
-        break;
-#endif
     }
 
     while (list.linkedlist)
@@ -183,14 +178,6 @@ void *skin_find_item(const char *label, enum skin_find_what what,
                 if (!ret) break;
                 itemlabel = SKINOFFSETTOPTR(databuf, ((struct gui_img *)ret)->label);
                 break;
-#ifdef HAVE_SKIN_VARIABLES
-            case SKIN_VARIABLE:
-                if (!token) break;
-                ret = SKINOFFSETTOPTR(databuf, token->value.data);
-                if (!ret) break;
-                itemlabel = SKINOFFSETTOPTR(databuf, ((struct skin_var *)ret)->label);
-                break;
-#endif
         }
         if (!skip && itemlabel && !strcmp(itemlabel, label))
         {
@@ -1399,93 +1386,6 @@ static int parse_albumart_load(struct skin_element* element,
 }
 
 #endif /* HAVE_ALBUMART */
-#ifdef HAVE_SKIN_VARIABLES
-static struct skin_var* find_or_add_var(const char* label,
-                                        struct wps_data *data)
-{
-    struct skin_var* ret = skin_find_item(label, SKIN_VARIABLE, data);
-    if (ret)
-        return ret;
-
-    ret = skin_buffer_alloc(sizeof(*ret));
-    if (!ret)
-        return ret;
-    ret->label = PTRTOSKINOFFSET(skin_buffer, label);
-    ret->value = 1;
-    ret->last_changed = 0xffff;
-    struct skin_token_list *item = new_skin_token_list_item(NULL, ret);
-    if (!item)
-        return NULL;
-    add_to_ll_chain(&data->skinvars, item);
-    return ret;
-}
-static int parse_skinvar(  struct skin_element *element,
-                           struct wps_token *token,
-                           struct wps_data *wps_data)
-{
-    const char* label = get_param_text(element, 0);
-    struct skin_var* var = find_or_add_var(label, wps_data);
-    if (!var)
-        return WPS_ERROR_INVALID_PARAM;
-    switch (token->type)
-    {
-        case SKIN_TOKEN_VAR_GETVAL:
-            token->value.data = PTRTOSKINOFFSET(skin_buffer, var);
-            return 0;
-        case SKIN_TOKEN_VAR_SET:
-        {
-            static const char * const sv_options[] = {"touch", "set", "inc", "dec", NULL};
-
-            struct skin_var_changer *data = skin_buffer_alloc(sizeof(*data));
-            if (!data)
-                return WPS_ERROR_INVALID_PARAM;
-            data->var = PTRTOSKINOFFSET(skin_buffer, var);
-            char *text_param1 = get_param_text(element, 1);
-            int sv_op = string_option(text_param1, sv_options, false);
-
-            if (!isdefault(get_param(element, 2)))
-                data->newval = get_param(element, 2)->data.number;
-            else if (sv_op != 0) /*!touch*/
-                return WPS_ERROR_INVALID_PARAM;
-            data->max = 0;
-            if (sv_op == 1) /*set*/
-                data->direct = true;
-            else if (sv_op == 2) /*inc*/
-            {
-                data->direct = false;
-            }
-            else if (sv_op == 3) /*dec*/
-            {
-                data->direct = false;
-                data->newval *= -1;
-            }
-            else if (sv_op == 0) /*touch*/
-            {
-                data->direct = false;
-                data->newval = 0;
-            }
-            if (element->params_count > 3)
-                data->max = get_param(element, 3)->data.number;
-            token->value.data = PTRTOSKINOFFSET(skin_buffer, data);
-        }
-        return 0;
-        case SKIN_TOKEN_VAR_TIMEOUT:
-        {
-            struct skin_var_lastchange *data = skin_buffer_alloc(sizeof(*data));
-            if (!data)
-                return WPS_ERROR_INVALID_PARAM;
-            data->var = PTRTOSKINOFFSET(skin_buffer, var);
-            data->timeout = 10;
-            if (element->params_count > 1)
-                data->timeout = get_param(element, 1)->data.number;
-            data->timeout *= TIMEOUT_UNIT;
-            token->value.data = PTRTOSKINOFFSET(skin_buffer, data);
-        }
-        default:
-            return 0;
-    }
-}
-#endif /* HAVE_SKIN_VARIABLES */
 
 static bool check_feature_tag(const int type)
 {
@@ -1574,9 +1474,6 @@ static void skin_data_reset(struct wps_data *wps_data)
     if (wps_data->backdrop_id >= 0)
         skin_backdrop_unload(wps_data->backdrop_id);
     backdrop_filename = NULL;
-#endif
-#ifdef HAVE_SKIN_VARIABLES
-    wps_data->skinvars = INVALID_OFFSET;
 #endif
 #ifdef HAVE_ALBUMART
     wps_data->albumart = INVALID_OFFSET;
@@ -2005,9 +1902,6 @@ static int skin_element_callback(struct skin_element* element, void* data)
                 case SKIN_TOKEN_PEAKMETER_RIGHT:
                 case SKIN_TOKEN_PLAYLIST_PERCENT:
                 case SKIN_TOKEN_LIST_NEEDS_SCROLLBAR:
-#ifdef HAVE_RADIO_RSSI
-                case SKIN_TOKEN_TUNER_RSSI:
-#endif
                     function = parse_progressbar_tag;
                     break;
                 case SKIN_TOKEN_SUBLINE_TIMEOUT:
@@ -2093,13 +1987,6 @@ static int skin_element_callback(struct skin_element* element, void* data)
 #ifdef HAVE_ALBUMART
                 case SKIN_TOKEN_ALBUMART_LOAD:
                     function = parse_albumart_load;
-                    break;
-#endif
-#ifdef HAVE_SKIN_VARIABLES
-                case SKIN_TOKEN_VAR_SET:
-                case SKIN_TOKEN_VAR_GETVAL:
-                case SKIN_TOKEN_VAR_TIMEOUT:
-                    function = parse_skinvar;
                     break;
 #endif
                 default:

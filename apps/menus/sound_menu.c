@@ -91,11 +91,7 @@ MENUITEM_SETTING(volume, &global_status.volume, NULL);
 MENUITEM_SETTING(volume_limit, &global_settings.volume_limit, volume_limit_callback);
 #ifdef AUDIOHW_HAVE_BASS
 MENUITEM_SETTING(bass, &global_settings.bass,
-#ifdef HAVE_SW_TONE_CONTROLS
-    lowlatency_callback
-#else
     NULL
-#endif
 );
 
 #ifdef AUDIOHW_HAVE_BASS_CUTOFF
@@ -106,11 +102,7 @@ MENUITEM_SETTING(bass_cutoff, &global_settings.bass_cutoff, NULL);
 
 #ifdef AUDIOHW_HAVE_TREBLE
 MENUITEM_SETTING(treble, &global_settings.treble,
-#ifdef HAVE_SW_TONE_CONTROLS
-    lowlatency_callback
-#else
     NULL
-#endif
 );
 
 #ifdef AUDIOHW_HAVE_TREBLE_CUTOFF
@@ -135,9 +127,6 @@ MENUITEM_SETTING(depth_3d, &global_settings.depth_3d, NULL);
 MENUITEM_SETTING(roll_off, &global_settings.roll_off, NULL);
 #endif
 
-#ifdef HAVE_EROS_QN_CODEC
-MENUITEM_SETTING(hp_lo_select, &global_settings.hp_lo_select,NULL);
-#endif
 
 #ifdef AUDIOHW_HAVE_POWER_MODE
 MENUITEM_SETTING(power_mode, &global_settings.power_mode, NULL);
@@ -225,9 +214,6 @@ static int timestretch_callback(int action,
               &compressor_threshold, &compressor_gain, &compressor_ratio,
               &compressor_knee, &compressor_attack, &compressor_release);
 
-#ifdef HAVE_SPEAKER
-    MENUITEM_SETTING(speaker_mode, &global_settings.speaker_mode, NULL);
-#endif
 
 #ifdef AUDIOHW_HAVE_EQ
 #endif /* AUDIOHW_HAVE_EQ */
@@ -257,9 +243,6 @@ MAKE_MENU(sound_settings, ID2P(LANG_SOUND_SETTINGS), NULL, Icon_Audio,
 #ifdef AUDIOHW_HAVE_FILTER_ROLL_OFF
           ,&roll_off
 #endif
-#ifdef HAVE_EROS_QN_CODEC
-          ,&hp_lo_select
-#endif
 #ifdef AUDIOHW_HAVE_POWER_MODE
           ,&power_mode
 #endif
@@ -269,7 +252,4 @@ MAKE_MENU(sound_settings, ID2P(LANG_SOUND_SETTINGS), NULL, Icon_Audio,
           ,&timestretch_enabled
 #endif
           ,&compressor_menu
-#ifdef HAVE_SPEAKER
-         ,&speaker_mode
-#endif
          );

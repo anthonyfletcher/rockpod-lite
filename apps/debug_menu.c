@@ -75,9 +75,6 @@
 #include "pcmbuf.h"
 #include "buffering.h"
 #include "playback.h"
-#if defined(HAVE_SPDIF_OUT) || defined(HAVE_SPDIF_IN)
-#include "spdif.h"
-#endif
 #ifdef IRIVER_H300_SERIES
 #include "pcf50606.h"   /* for pcf50606_read */
 #endif
@@ -598,9 +595,6 @@ static bool dbg_spdif(void)
     lcd_clear_display();
     lcd_setfont(FONT_SYSFIXED);
 
-#ifdef HAVE_SPDIF_POWER
-    spdif_power_enable(true); /* We need SPDIF power for both sending & receiving */
-#endif
 
     while (!done)
     {
@@ -730,9 +724,6 @@ static bool dbg_spdif(void)
 
     spdif_set_output_source(spdif_source IF_SPDIF_POWER_(, spdif_src_on));
 
-#ifdef HAVE_SPDIF_POWER
-    spdif_power_enable(global_settings.spdif_enable);
-#endif
 
     lcd_setfont(FONT_UI);
     return false;
@@ -796,11 +787,6 @@ static bool dbg_cpufreq(void)
         lcd_putsf(x, line++, "Frequency: %ld.%ld MHz", temp / 1000, temp % 1000);
         lcd_putsf(x, line++, "boost_counter: %d", get_cpu_boost_counter());
 
-#ifdef HAVE_ADJUSTABLE_CPU_VOLTAGE
-        extern int get_cpu_voltage_setting(void);
-        temp = get_cpu_voltage_setting();
-        lcd_putsf(x, line++, "CPU voltage: %d.%03dV", temp / 1000, temp % 1000);
-#endif
 
         lcd_update();
         button = get_action(CONTEXT_STD,HZ/10);
@@ -1266,12 +1252,6 @@ static int disk_callback(int btn, struct gui_synclist *lists)
 
     if ((btn == ACTION_STD_OK) || (btn == SYS_FS_CHANGED) || (btn == ACTION_REDRAW))
     {
-#ifdef HAVE_HOTSWAP
-        if (btn == ACTION_STD_OK)
-        {
-            *cardnum ^= 0x1; /* change cards */
-        }
-#endif
 
         simplelist_reset_lines();
 
@@ -2010,30 +1990,6 @@ static bool dbg_save_roms(void)
     }
     system_memory_guard(oldmode);
 
-#ifdef HAVE_EEPROM
-    fd = creat("/internal_eeprom.bin", 0666);
-    if (fd >= 0)
-    {
-        int old_irq_level;
-        char buf[EEPROM_SIZE];
-        int err;
-
-        old_irq_level = disable_irq_save();
-
-        err = eeprom_24cxx_read(0, buf, sizeof buf);
-
-        restore_irq(old_irq_level);
-
-        if (err)
-            splashf(HZ*3, "Eeprom read failure (%d)", err);
-        else
-        {
-            write(fd, buf, sizeof buf);
-        }
-
-        close(fd);
-    }
-#endif
 
     return false;
 }
@@ -2156,42 +2112,6 @@ static bool dbg_set_memory_guard(void)
 }
 #endif /* defined(CPU_COLDFIRE) */
 
-#if defined(HAVE_EEPROM) && !defined(HAVE_EEPROM_SETTINGS)
-static bool dbg_write_eeprom(void)
-{
-    int fd = open("/internal_eeprom.bin", O_RDONLY);
-
-    if (fd >= 0)
-    {
-        char buf[EEPROM_SIZE];
-        int rc = read(fd, buf, EEPROM_SIZE);
-
-        if(rc == EEPROM_SIZE)
-        {
-            int old_irq_level = disable_irq_save();
-
-            int err = eeprom_24cxx_write(0, buf, sizeof buf);
-            if (err)
-                splashf(HZ*3, "Eeprom write failure (%d)", err);
-            else
-                splash(HZ*3, "Eeprom written successfully");
-
-            restore_irq(old_irq_level);
-        }
-        else
-        {
-            splashf(HZ*3, "File read error (%d)",rc);
-        }
-        close(fd);
-    }
-    else
-    {
-        splash(HZ*3, "Failed to open 'internal_eeprom.bin'");
-    }
-
-    return false;
-}
-#endif /* defined(HAVE_EEPROM) && !defined(HAVE_EEPROM_SETTINGS) */
 #ifdef CPU_BOOST_LOGGING
 static bool cpu_boost_log(void)
 {
@@ -2756,9 +2676,6 @@ static const struct {
 #endif /* PM_DEBUG */
 #ifdef BUFLIB_DEBUG_PRINT
         { "View buflib allocs", dbg_buflib_allocs },
-#endif
-#if defined(HAVE_EEPROM) && !defined(HAVE_EEPROM_SETTINGS)
-        { "Write back EEPROM", dbg_write_eeprom },
 #endif
 #if CONFIG_USBOTG == USBOTG_ISP1583
         { "View ISP1583 info", dbg_isp1583 },

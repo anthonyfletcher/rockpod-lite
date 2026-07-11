@@ -404,13 +404,7 @@ struct user_settings
     int list_accel_wait; /* ms between increases */
 #endif
 
-#ifdef HAVE_TOUCHPAD_SENSITIVITY_SETTING
-    int touchpad_sensitivity;
-#endif
 
-#ifdef HAVE_TOUCHPAD_DEADZONE
-    int touchpad_deadzone;
-#endif
 
     int  pause_rewind; /* time in s to rewind when pausing */
 #if defined(HAVE_HEADPHONE_DETECTION) || defined(HAVE_LINEOUT_DETECTION)
@@ -588,23 +582,11 @@ struct user_settings
 #if BATTERY_CAPACITY_INC > 0
     int battery_capacity; /* in mAh */
 #endif
-#ifdef HAVE_SPDIF_POWER
-    bool spdif_enable; /* S/PDIF power on/off */
-#endif
 #ifdef HAVE_USB_CHARGING_ENABLE
     int usb_charging;
 #endif
     /* device settings */
-#ifdef HAVE_LCD_CONTRAST
-    int contrast;   /* lcd contrast */
-#endif
 
-#ifdef HAVE_LCD_INVERT
-    bool invert;    /* invert display */
-#endif
-#ifdef HAVE_LCD_FLIP
-    bool flip_display; /* turn display (and button layout) by 180 degrees */
-#endif
     int  cursor_style; /* style of the selection cursor */
     int  screen_scroll_step;
     int  show_path_in_browser; /* 0=off, 1=current directory, 2=full path */
@@ -656,12 +638,6 @@ struct user_settings
 #endif
 
 
-#ifdef HAVE_BUTTON_LIGHT
-    int buttonlight_timeout;
-#endif
-#ifdef HAVE_BUTTONLIGHT_BRIGHTNESS
-    int buttonlight_brightness;
-#endif
 
 #ifdef IPOD_ACCESSORY_PROTOCOL
     int serial_bitrate; /* 0=auto 1=9600 2=19200 3=38400 4=57600 */
@@ -673,9 +649,6 @@ struct user_settings
     bool lineout_active;
 #endif
 
-#ifdef HAVE_SPEAKER
-    int speaker_mode; /* 0: off, 1: on, 2: auto (only if headphone detection) */
-#endif /* HAVE_SPEAKER */
     bool prevent_skip;
 
 
@@ -798,13 +771,7 @@ struct user_settings
     (CONFIG_KEYPAD == IRIVER_H10_PAD)
     bool clear_settings_on_hold;
 #endif
-#if defined(HAVE_EROS_QN_CODEC)
-    int hp_lo_select; /* indicates automatic, headphone-only, or lineout-only operation */
-#endif
     bool playback_log; /* ROCKBOX_DIR/playback.log for tracks played */
-#if defined(HAVE_GENERAL_PURPOSE_LED)
-    bool use_led_indicators;
-#endif
 };
 
 /* global settings */

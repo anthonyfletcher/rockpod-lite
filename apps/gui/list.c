@@ -677,14 +677,6 @@ bool gui_synclist_do_button(struct gui_synclist * lists, int *actionptr)
         }
 #endif
 
-#ifdef HAVE_VOLUME_IN_LIST
-        case ACTION_LIST_VOLUP:
-            adjust_volume(1);
-            return true;
-        case ACTION_LIST_VOLDOWN:
-            adjust_volume(-1);
-            return true;
-#endif
         case ACTION_STD_PREVREPEAT:
             allow_wrap = false; /* Prevent list wraparound on repeating actions */
             /*Fallthrough*/

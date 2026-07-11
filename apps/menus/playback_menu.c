@@ -139,9 +139,6 @@ MAKE_MENU(replaygain_settings_menu,ID2P(LANG_REPLAYGAIN),0, Icon_NOICON,
 
 MENUITEM_SETTING(beep, &global_settings.beep ,NULL);
 
-#ifdef HAVE_SPDIF_POWER
-MENUITEM_SETTING(spdif_enable, &global_settings.spdif_enable, NULL);
-#endif
 MENUITEM_SETTING(next_folder, &global_settings.next_folder, NULL);
 MENUITEM_SETTING(constrain_next_folder,
                  &global_settings.constrain_next_folder, NULL);
@@ -197,9 +194,6 @@ MAKE_MENU(playback_settings,ID2P(LANG_PLAYBACK),0,
 
           &replaygain_settings_menu, &beep,
 
-#ifdef HAVE_SPDIF_POWER
-          &spdif_enable,
-#endif
           &next_folder, &constrain_next_folder, &cuesheet
 #ifdef HAVE_HEADPHONE_DETECTION
          ,&unplug_menu

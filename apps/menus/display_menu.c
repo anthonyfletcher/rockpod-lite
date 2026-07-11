@@ -108,24 +108,6 @@ static int selectivebacklight_set_mask(void* param)
 }
 
 #endif /* HAVE_BACKLIGHT */
-#ifdef HAVE_LCD_FLIP
-static int flipdisplay_callback(int action,
-                                const struct menu_item_ex *this_item,
-                                struct gui_synclist *this_list)
-{
-    (void)this_item;
-    (void)this_list;
-    switch (action)
-    {
-        case ACTION_EXIT_MENUITEM:
-            button_set_flip(global_settings.flip_display);
-            lcd_set_flip(global_settings.flip_display);
-            lcd_update();
-            break;
-    }
-    return action;
-}
-#endif
 
 /***********************************/
 /*    LCD MENU                     */
@@ -168,15 +150,6 @@ MENUITEM_SETTING(lcd_sleep_after_backlight_off,
 MENUITEM_SETTING(brightness_item, &global_settings.brightness, NULL);
 #endif
 #endif /* HAVE_BACKLIGHT */
-#ifdef HAVE_LCD_CONTRAST
-MENUITEM_SETTING(contrast, &global_settings.contrast, NULL);
-#endif
-#ifdef HAVE_LCD_INVERT
-MENUITEM_SETTING(invert, &global_settings.invert, NULL);
-#endif
-#ifdef HAVE_LCD_FLIP
-MENUITEM_SETTING(flip_display, &global_settings.flip_display, flipdisplay_callback);
-#endif
 /* now the actual menu */
 MAKE_MENU(lcd_settings,ID2P(LANG_LCD_MENU),
             NULL, Icon_Display_menu
@@ -200,15 +173,6 @@ MAKE_MENU(lcd_settings,ID2P(LANG_LCD_MENU),
             ,&brightness_item
 # endif
 #endif /* HAVE_BACKLIGHT */
-#ifdef HAVE_LCD_CONTRAST
-            ,&contrast
-#endif
-# ifdef HAVE_LCD_INVERT
-            ,&invert
-# endif
-# ifdef HAVE_LCD_FLIP
-            ,&flip_display
-# endif
          );
 /*    LCD MENU                    */
 /***********************************/
@@ -397,27 +361,6 @@ static int peak_meter_max(void) {
     return retval;
 }
 
-#if defined(HAVE_HISTOGRAM)
-static bool history_interval(void)
-{
-    static const struct opt_items names[] = {
-        { "0s", TALK_ID(0, UNIT_SEC) },
-        { "1s", TALK_ID(1, UNIT_SEC) },
-        { "2s", TALK_ID(2, UNIT_SEC) },
-        { "4s", TALK_ID(4, UNIT_SEC) }
-    };
-
-    /* reconfigure histogram settings here */
-
-    return set_option(str(LANG_HISTOGRAM_INTERVAL),
-                          &global_settings.histogram_interval,
-                          RB_INT, names, 4, NULL );
-}
-
-MENUITEM_FUNCTION(histogram, 0, ID2P(LANG_HISTOGRAM_INTERVAL),
-                  history_interval, NULL, Icon_Menu_setting);
-
-#endif
 
 MENUITEM_FUNCTION(peak_meter_scale_item, 0, ID2P(LANG_PM_SCALE),
                   peak_meter_scale, NULL, Icon_NOICON);
@@ -428,9 +371,6 @@ MENUITEM_FUNCTION(peak_meter_max_item, 0, ID2P(LANG_PM_MAX),
 MAKE_MENU(peak_meter_menu, ID2P(LANG_PM_MENU), NULL, Icon_NOICON,
           &peak_meter_release, &peak_meter_hold,
           &peak_meter_clip_hold,
-#ifdef HAVE_HISTOGRAM
-          &histogram,
-#endif
           &peak_meter_scale_item, &peak_meter_min_item, &peak_meter_max_item);
 /*    PEAK METER MENU              */
 /***********************************/

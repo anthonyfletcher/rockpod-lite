@@ -672,13 +672,6 @@ void draw_album_art(struct gui_wps *gwps, int handle_id, bool clear)
                                     STRIDE(gwps->display->screen_type,
                                         bmp->width, bmp->height),
                                    x, y, width, height);
-#ifdef HAVE_LCD_INVERT
-        if (global_settings.invert) {
-            gwps->display->set_drawmode(DRMODE_COMPLEMENT);
-            gwps->display->fillrect(x, y, width, height);
-            gwps->display->set_drawmode(DRMODE_SOLID);
-        }
-#endif
     }
     else
     {

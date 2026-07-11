@@ -72,9 +72,6 @@
 #include "statusbar-skinned.h"
 #include "bootchart.h"
 #include "scroll_engine.h"
-#ifdef HAVE_GENERAL_PURPOSE_LED
-#include "led-general-purpose.h"
-#endif
 
 #include "open_plugin.h"
 struct user_settings global_settings;
@@ -851,9 +848,6 @@ void settings_apply(bool read_disk)
     audio_set_buffer_margin(global_settings.buffer_margin);
 #endif
 
-#ifdef HAVE_LCD_CONTRAST
-    lcd_set_contrast(global_settings.contrast);
-#endif
     lcd_scroll_speed(global_settings.scroll_speed);
 #ifdef HAVE_BACKLIGHT_BRIGHTNESS
     backlight_set_brightness(global_settings.brightness);
@@ -868,12 +862,6 @@ void settings_apply(bool read_disk)
     backlight_set_fade_in(global_settings.backlight_fade_in);
     backlight_set_fade_out(global_settings.backlight_fade_out);
 #endif
-#endif
-#ifdef HAVE_BUTTONLIGHT_BRIGHTNESS
-    buttonlight_set_brightness(global_settings.buttonlight_brightness);
-#endif
-#ifdef HAVE_BUTTON_LIGHT
-    buttonlight_set_timeout(global_settings.buttonlight_timeout);
 #endif
 #ifdef HAVE_DISK_STORAGE
     storage_spindown(global_settings.disk_spindown);
@@ -890,22 +878,12 @@ void settings_apply(bool read_disk)
     set_battery_capacity(global_settings.battery_capacity);
 #endif
 
-#ifdef HAVE_LCD_INVERT
-    lcd_set_invert_display(global_settings.invert);
-#endif
-#ifdef HAVE_LCD_FLIP
-    lcd_set_flip(global_settings.flip_display);
-    button_set_flip(global_settings.flip_display);
-#endif
     lcd_update(); /* refresh after flipping the screen */
     settings_apply_pm_range();
     peak_meter_init_times(
         global_settings.peak_meter_release, global_settings.peak_meter_hold,
         global_settings.peak_meter_clip_hold);
 
-#ifdef HAVE_SPEAKER
-    audio_enable_speaker(global_settings.speaker_mode);
-#endif
 
     if (read_disk)
     {
@@ -1006,9 +984,6 @@ void settings_apply(bool read_disk)
 #endif
     dsp_set_compressor(&global_settings.compressor_settings);
 
-#ifdef HAVE_SPDIF_POWER
-    spdif_power_enable(global_settings.spdif_enable);
-#endif
 
 #ifdef HAVE_BACKLIGHT
     set_backlight_filter_keypress(global_settings.bl_filter_first_keypress);
@@ -1029,13 +1004,7 @@ void settings_apply(bool read_disk)
     action_autosoftlock_init();
 #endif
 
-#ifdef HAVE_TOUCHPAD_SENSITIVITY_SETTING
-    touchpad_set_sensitivity(global_settings.touchpad_sensitivity);
-#endif
 
-#ifdef HAVE_TOUCHPAD_DEADZONE
-    touchpad_set_deadzone(global_settings.touchpad_deadzone);
-#endif
 
 #ifdef HAVE_USB_CHARGING_ENABLE
     usb_charging_enable(global_settings.usb_charging);
@@ -1048,9 +1017,6 @@ void settings_apply(bool read_disk)
     hiby_set_usb_mode(global_settings.usb_mode);
 #elif defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR)
     usb_set_mode(global_settings.usb_mode);
-#endif
-#if defined(HAVE_GENERAL_PURPOSE_LED)
-    led_hw_on();
 #endif
 #if defined(DX50) || defined(DX90)
     ibasso_set_governor(global_settings.governor);

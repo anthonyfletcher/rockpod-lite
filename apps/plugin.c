@@ -187,9 +187,6 @@ static const struct plugin_api rockbox_api = {
     splashf,
     splash_progress,
     splash_progress_set_delay,
-#ifdef HAVE_LCD_CONTRAST
-    lcd_set_contrast,
-#endif
     lcd_update,
     lcd_clear_display,
     lcd_getstringsize,
@@ -242,12 +239,6 @@ static const struct plugin_api rockbox_api = {
 #if defined(HAVE_LCD_MODES) && (HAVE_LCD_MODES & LCD_MODE_PAL256)
     lcd_blit_pal256,
     lcd_pal256_update_pal,
-#endif
-#ifdef HAVE_LCD_INVERT
-    lcd_set_invert_display,
-#endif /* HAVE_LCD_INVERT */
-#if defined(HAVE_LCD_MODES)
-    lcd_set_mode,
 #endif
 #if defined(HAVE_LCD_ENABLE) || defined(HAVE_LCD_SLEEP)
     button_queue_post,
@@ -325,10 +316,6 @@ static const struct plugin_api rockbox_api = {
     button_get,
     button_get_w_tmo,
     button_status,
-#ifdef HAVE_BUTTON_DATA
-    button_get_data,
-    button_status_wdata,
-#endif
     button_clear_queue,
     button_queue_count,
 #ifdef HAS_BUTTON_HOLD
@@ -339,14 +326,6 @@ static const struct plugin_api rockbox_api = {
     button_get_sw_poweroff_state,
 #endif
 
-#ifdef HAVE_BUTTON_LIGHT
-    buttonlight_set_timeout,
-    buttonlight_off,
-    buttonlight_on,
-#ifdef HAVE_BUTTONLIGHT_BRIGHTNESS
-    buttonlight_set_brightness,
-#endif /* HAVE_BUTTONLIGHT_BRIGHTNESS */
-#endif /* HAVE_BUTTON_LIGHT */
 
     /* file */
     open_utf8,

@@ -734,14 +734,6 @@ static void volume_limit_set_default(void* setting, void* defaultval)
     *(int*)setting = sound_max(SOUND_VOLUME);
 }
 
-#if defined(HAVE_EROS_QN_CODEC)
-static void hp_lo_select_apply(int arg)
-{
-    (void)arg;
-
-    sound_settings_apply();
-}
-#endif
 
 
 const struct settings_list settings[] = {
@@ -793,67 +785,6 @@ const struct settings_list settings[] = {
     SOUND_SETTING(F_NO_WRAP, hw_eq_bands[AUDIOHW_EQ_BAND5].gain,
                   LANG_HW_EQ_GAIN, "tone band5 gain", SOUND_EQ_BAND5_GAIN),
 #endif /* AUDIOHW_HAVE_EQ_BAND5 */
-#ifdef HAVE_WM8978
-    /* Frequencies vary with samplerate but at least the user has an idea
-     * about the bands and it will be correct with normal playback rates. */
-/* Band 1 */
-    STRINGCHOICE_SETTING(F_SOUNDSETTING,
-                         hw_eq_bands[AUDIOHW_EQ_BAND1].frequency,
-                         LANG_HW_EQ_FREQUENCY, 0,"tone band1 frequency",
-                         "80 Hz,105 Hz,135 Hz,175 Hz",
-                         sound_set_hw_eq_band1_frequency, 4,
-                         TALK_ID(80, UNIT_HERTZ), TALK_ID(105, UNIT_HERTZ),
-                         TALK_ID(135, UNIT_HERTZ), TALK_ID(175, UNIT_HERTZ)),
-/* Band 2 */
-    STRINGCHOICE_SETTING(F_SOUNDSETTING,
-                         hw_eq_bands[AUDIOHW_EQ_BAND2].frequency,
-                         LANG_HW_EQ_FREQUENCY, 0,"tone band2 frequency",
-                         "230 Hz,300 Hz,385 Hz,500 Hz",
-                         sound_set_hw_eq_band2_frequency, 4,
-                         TALK_ID(230, UNIT_HERTZ), TALK_ID(300, UNIT_HERTZ),
-                         TALK_ID(385, UNIT_HERTZ), TALK_ID(500, UNIT_HERTZ)),
-    CHOICE_SETTING(F_SOUNDSETTING, hw_eq_bands[AUDIOHW_EQ_BAND2].width,
-                   LANG_HW_EQ_WIDTH, 0, "tone band2 width", "narrow,wide",
-                   sound_set_hw_eq_band2_width, 2,
-                   ID2P(LANG_HW_EQ_WIDTH_NARROW), ID2P(LANG_HW_EQ_WIDTH_WIDE)),
-/* Band 3 */
-    STRINGCHOICE_SETTING(F_SOUNDSETTING,
-                         hw_eq_bands[AUDIOHW_EQ_BAND3].frequency,
-                         LANG_HW_EQ_FREQUENCY, 0, "tone band3 frequency",
-                         "650 Hz,850 Hz,1.1 kHz,1.4 kHz",
-                         sound_set_hw_eq_band3_frequency, 4,
-                         TALK_ID(650, UNIT_HERTZ), TALK_ID(850, UNIT_HERTZ),
-                         TALK_ID_DECIMAL(11, 1, UNIT_KHZ),
-                         TALK_ID_DECIMAL(14, 1, UNIT_KHZ)),
-    CHOICE_SETTING(F_SOUNDSETTING,hw_eq_bands[AUDIOHW_EQ_BAND3].width,
-                   LANG_HW_EQ_WIDTH, 0, "tone band3 width", "narrow,wide",
-                   sound_set_hw_eq_band3_width, 2,
-                   ID2P(LANG_HW_EQ_WIDTH_NARROW), ID2P(LANG_HW_EQ_WIDTH_WIDE)),
-/* Band 4 */
-    STRINGCHOICE_SETTING(F_SOUNDSETTING,
-                         hw_eq_bands[AUDIOHW_EQ_BAND4].frequency,
-                         LANG_HW_EQ_FREQUENCY, 0, "tone band4 frequency",
-                         "1.8 kHz,2.4 kHz,3.2 kHz,4.1 kHz",
-                         sound_set_hw_eq_band4_frequency, 4,
-                         TALK_ID_DECIMAL(18, 1, UNIT_KHZ),
-                         TALK_ID_DECIMAL(24, 1, UNIT_KHZ),
-                         TALK_ID_DECIMAL(32, 1, UNIT_KHZ),
-                         TALK_ID_DECIMAL(41, 1, UNIT_KHZ)),
-    CHOICE_SETTING(F_SOUNDSETTING, hw_eq_bands[AUDIOHW_EQ_BAND4].width,
-                   LANG_HW_EQ_WIDTH, 0, "tone band4 width", "narrow,wide",
-                   sound_set_hw_eq_band4_width, 2,
-                   ID2P(LANG_HW_EQ_WIDTH_NARROW), ID2P(LANG_HW_EQ_WIDTH_WIDE)),
-/* Band 5 */
-    STRINGCHOICE_SETTING(F_SOUNDSETTING,
-                         hw_eq_bands[AUDIOHW_EQ_BAND5].frequency,
-                         LANG_HW_EQ_FREQUENCY, 0, "tone band5 frequency",
-                         "5.3 kHz,6.9 kHz,9.0 kHz,11.7 kHz",
-                         sound_set_hw_eq_band5_frequency, 4,
-                         TALK_ID_DECIMAL(53, 1, UNIT_KHZ),
-                         TALK_ID_DECIMAL(69, 1, UNIT_KHZ),
-                         TALK_ID_DECIMAL(90, 1, UNIT_KHZ),
-                         TALK_ID_DECIMAL(117, 1, UNIT_KHZ)),
-#endif /* HAVE_WM8978 */
 #endif /* AUDIOHW_HAVE_EQ */
 /* 3-d enhancement effect */
     CHOICE_SETTING(0, channel_config, LANG_CHANNEL_CONFIGURATION,
@@ -946,16 +877,6 @@ const struct settings_list settings[] = {
 #endif
 
     /* LCD */
-#ifdef HAVE_LCD_CONTRAST
-    /* its easier to leave this one un-macro()ed for the time being */
-    { F_T_INT|F_DEF_ISFUNC|F_INT_SETTING, &global_settings.contrast,
-        LANG_CONTRAST, FUNCTYPE(lcd_default_contrast), "contrast", {
-            .int_setting = (struct int_setting[]) {
-                { .option_callback = lcd_set_contrast,
-                  .unit = UNIT_INT, .step = 1,
-                  .min = MIN_CONTRAST_SETTING, .max = MAX_CONTRAST_SETTING,
-                  .formatter = NULL, .get_talk_id = NULL }}}},
-#endif
 #ifdef HAVE_BACKLIGHT
     TABLE_SETTING_LIST(F_TIME_SETTING | F_ALLOW_ARBITRARY_VALS,
                     backlight_timeout, LANG_BACKLIGHT,
@@ -972,14 +893,6 @@ const struct settings_list settings[] = {
                     23, timeout_sec_common),
 #endif
 #endif /* HAVE_BACKLIGHT */
-#ifdef HAVE_LCD_INVERT
-    BOOL_SETTING(0, invert, LANG_INVERT, false ,"invert", off_on,
-                 LANG_INVERT_LCD_INVERSE, LANG_NORMAL, lcd_set_invert_display),
-#endif
-#ifdef HAVE_LCD_FLIP
-    OFFON_SETTING(0, flip_display, LANG_FLIP_DISPLAY, false, "flip display",
-                  NULL),
-#endif
     /* display */
      CHOICE_SETTING(F_TEMPVAR|F_THEMESETTING, cursor_style, LANG_INVERT_CURSOR,
  #ifdef HAVE_LCD_COLOR
@@ -1336,18 +1249,7 @@ const struct settings_list settings[] = {
         "talk mixer level", UNIT_PERCENT, 0, 100, 5, NULL, NULL, voice_set_mixer_level),
 
 
-#ifdef HAVE_HISTOGRAM
-     /* TO DO: additional restictions of following REP items? */
-    INT_SETTING(F_TIME_SETTING | F_RECSETTING, histogram_interval,
-        LANG_HISTOGRAM_INTERVAL, 0,
-        "histogram interval", UNIT_SEC, 0,4,1,
-        NULL, NULL, NULL),
-#endif /* HAVE_HISTOGRAM */
 
-#ifdef HAVE_SPDIF_POWER
-    OFFON_SETTING(F_SOUNDSETTING, spdif_enable, LANG_SPDIF_ENABLE, false,
-                  "spdif enable", spdif_power_enable),
-#endif
     CHOICE_SETTING(0, next_folder, LANG_NEXT_FOLDER, FOLDER_ADVANCE_OFF,
                    "folder navigation", "off,on,random",NULL ,3,
                    ID2P(LANG_SET_BOOL_NO), ID2P(LANG_SET_BOOL_YES),
@@ -1653,18 +1555,6 @@ const struct settings_list settings[] = {
                    NULL, 3, ID2P(LANG_OFF), ID2P(LANG_SHOW_PATH_CURRENT),
                    ID2P(LANG_DISPLAY_FULL_PATH)),
 
-#ifdef HAVE_AGC
-    {F_T_INT,&global_settings.rec_agc_preset_mic,LANG_RECORDING_AGC_PRESET,
-        INT(1),"agc mic preset",UNUSED},
-    {F_T_INT,&global_settings.rec_agc_preset_line,LANG_RECORDING_AGC_PRESET,
-        INT(1),"agc line preset",UNUSED},
-    {F_T_INT,&global_settings.rec_agc_maxgain_mic,-1,INT(104),
-        "agc maximum mic gain",UNUSED},
-    {F_T_INT,&global_settings.rec_agc_maxgain_line,-1,INT(96),
-        "agc maximum line gain",UNUSED},
-    {F_T_INT|F_HAS_CFGVALS,&global_settings.rec_agc_cliptime,LANG_RECORDING_AGC_CLIPTIME,
-        INT(1),"agc cliptime", {.cfg_vals = "0.2 s,0.4 s,0.6 s,0.8 s,1 s"}},
-#endif
 
 #ifdef HAVE_HEADPHONE_DETECTION
     CHOICE_SETTING(0, unplug_mode, LANG_HEADPHONE_UNPLUG, 0,
@@ -1790,21 +1680,6 @@ const struct settings_list settings[] = {
     OFFON_SETTING(0, album_covers_show_year, LANG_SHOW_YEAR_IN_ALBUM_TITLE,
                   false, "album covers show year", NULL),
 #endif /* HAVE_TAGCACHE */
-#ifdef HAVE_BUTTON_LIGHT
-    TABLE_SETTING_LIST(F_TIME_SETTING | F_ALLOW_ARBITRARY_VALS,
-                    buttonlight_timeout, LANG_BUTTONLIGHT_TIMEOUT,
-                    DEFAULT_BACKLIGHT_TIMEOUT, "button light timeout",
-                    off_on, UNIT_SEC, formatter_time_unit_0_is_always,
-                    getlang_time_unit_0_is_always, buttonlight_set_timeout,
-                    23, timeout_sec_common),
-#endif
-#ifdef HAVE_BUTTONLIGHT_BRIGHTNESS
-    INT_SETTING(F_NO_WRAP, buttonlight_brightness, LANG_BUTTONLIGHT_BRIGHTNESS,
-                DEFAULT_BRIGHTNESS_SETTING,
-                "button light brightness",UNIT_INT, MIN_BRIGHTNESS_SETTING,
-                MAX_BRIGHTNESS_SETTING, 1, NULL, NULL,
-                buttonlight_set_brightness),
-#endif
 #ifndef HAVE_WHEEL_ACCELERATION
     INT_SETTING(F_TIME_SETTING, list_accel_start_delay, LANG_LISTACCEL_START_DELAY,
                 2, "list_accel_start_delay", UNIT_SEC, 0, 10, 1,
@@ -1844,28 +1719,7 @@ const struct settings_list settings[] = {
     OFFON_SETTING(0, show_shutdown_message, LANG_SHOW_SHUTDOWN_MESSAGE, true,
                   "show shutdown message", NULL),
 
-#ifdef HAVE_TOUCHPAD_SENSITIVITY_SETTING
-/* If specific values are set for touchpad sensitivity setting we use those */
-#if (defined(MAX_TOUCHPAD_SENSITIVITY_SETTING) \
-  && defined(MIN_TOUCHPAD_SENSITIVITY_SETTING) \
-  && defined(DEFAULT_TOUCHPAD_SENSITIVITY_SETTING))
-    INT_SETTING(F_NO_WRAP, touchpad_sensitivity, LANG_TOUCHPAD_SENSITIVITY,
-                DEFAULT_TOUCHPAD_SENSITIVITY_SETTING, "touchpad sensitivity",UNIT_INT,
-                MIN_TOUCHPAD_SENSITIVITY_SETTING, MAX_TOUCHPAD_SENSITIVITY_SETTING, 1,
-                NULL, NULL, touchpad_set_sensitivity),
-#else /* we failback to boolean normal/high values */
-    CHOICE_SETTING(0, touchpad_sensitivity, LANG_TOUCHPAD_SENSITIVITY, 0,
-                   "touchpad sensitivity", "normal,high", touchpad_set_sensitivity, 2,
-                   ID2P(LANG_NORMAL), ID2P(LANG_HIGH)),
-#endif /* boolean or analogig values */
-#endif /* HAVE_TOUCHPAD_SENSITIVITY_SETTING */
 
-#ifdef HAVE_TOUCHPAD_DEADZONE
-    INT_SETTING(F_NO_WRAP, touchpad_deadzone, LANG_DEADZONE,
-                DEFAULT_TOUCHPAD_DEADZONE_SETTING, "touchpad deadzone", UNIT_INT,
-                MIN_TOUCHPAD_DEADSPACE_SETTING, MAX_TOUCHPAD_DEADSPACE_SETTING, 1,
-                NULL, NULL, touchpad_set_deadzone),
-#endif
 
 #ifdef HAVE_QUICKSCREEN
    CUSTOM_SETTING(0, qs_items[QUICKSCREEN_TOP], LANG_TOP_QS_ITEM,
@@ -1887,14 +1741,6 @@ const struct settings_list settings[] = {
    OFFON_SETTING(0, shortcuts_replaces_qs, LANG_USE_SHORTCUTS_INSTEAD_OF_QS,
                   false, "shortcuts instead of quickscreen", NULL),
 #endif
-#ifdef HAVE_SPEAKER
-    CHOICE_SETTING(0, speaker_mode, LANG_ENABLE_SPEAKER, 0, "speaker mode",
-# ifdef HAVE_HEADPHONE_DETECTION
-                   "on,off,auto", audio_enable_speaker, 3, ID2P(LANG_OFF), ID2P(LANG_ON), ID2P(LANG_AUTO)),
-#else /* HAVE_HEADPHONE_DETECTION */
-                   "on,off", audio_enable_speaker, 2, ID2P(LANG_OFF), ID2P(LANG_ON)),
-#endif /* HAVE_HEADPHONE_DETECTION */
-#endif /* HAVE_SPEAKER */
     OFFON_SETTING(0, prevent_skip, LANG_PREVENT_SKIPPING, false, "prevent track skip", NULL),
     OFFON_SETTING(0, rewind_across_tracks, LANG_REWIND_ACROSS_TRACKS, false, "rewind across tracks", NULL),
 #ifdef HAVE_PITCHCONTROL
@@ -2029,15 +1875,7 @@ const struct settings_list settings[] = {
     OFFON_SETTING(0, clear_settings_on_hold, LANG_CLEAR_SETTINGS_ON_HOLD,
                   true, "clear settings on hold", NULL),
 #endif
-#if defined(HAVE_EROS_QN_CODEC)
-    CHOICE_SETTING(0, hp_lo_select, LANG_HP_LO_SELECT, 0, "headphone lineout select",
-    "auto,headphone,lineout", hp_lo_select_apply, 3,
-    ID2P(LANG_AUTO), ID2P(LANG_HEADPHONE), ID2P(LANG_LINEOUT)),
-#endif
     OFFON_SETTING(0, playback_log, LANG_LOGGING, false, "play log", NULL),
-#if defined(HAVE_GENERAL_PURPOSE_LED)
-    OFFON_SETTING(0, use_led_indicators, LANG_USE_LED_INDICATORS, false, "LED indicators", NULL),
-#endif
 };
 
 const int nb_settings = sizeof(settings)/sizeof(*settings);

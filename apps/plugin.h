@@ -212,9 +212,6 @@ struct plugin_api {
     void (*splashf)(int ticks, const char *fmt, ...) ATTRIBUTE_PRINTF(2, 3);
     void (*splash_progress)(int current, int total, const char *fmt, ...) ATTRIBUTE_PRINTF(3, 4);
     void (*splash_progress_set_delay)(long delay_ticks);
-#ifdef HAVE_LCD_CONTRAST
-    void (*lcd_set_contrast)(int x);
-#endif
     void (*lcd_update)(void);
     void (*lcd_clear_display)(void);
     int  (*lcd_getstringsize)(const unsigned char *str, int *w, int *h);
@@ -281,12 +278,6 @@ struct plugin_api {
     void (*lcd_blit_pal256)(unsigned char *src, int src_x, int src_y, int x, int y,
                             int width, int height);
     void (*lcd_pal256_update_pal)(fb_data *palette);
-#endif
-#ifdef HAVE_LCD_INVERT
-    void (*lcd_set_invert_display)(bool yesno);
-#endif /* HAVE_LCD_INVERT */
-#if defined(HAVE_LCD_MODES)
-    void (*lcd_set_mode)(int mode);
 #endif
 
 #if defined(HAVE_LCD_ENABLE) || defined(HAVE_LCD_SLEEP)
@@ -385,10 +376,6 @@ struct plugin_api {
     long (*button_get)(bool block);
     long (*button_get_w_tmo)(int ticks);
     int (*button_status)(void);
-#ifdef HAVE_BUTTON_DATA
-    intptr_t (*button_get_data)(void);
-    int (*button_status_wdata)(int *pdata);
-#endif
     void (*button_clear_queue)(void);
     int (*button_queue_count)(void);
 #ifdef HAS_BUTTON_HOLD
@@ -398,14 +385,6 @@ struct plugin_api {
     void (*button_set_sw_poweroff_state)(bool enable);
     bool (*button_get_sw_poweroff_state)(void);
 #endif
-#ifdef HAVE_BUTTON_LIGHT
-    void (*buttonlight_set_timeout)(int value);
-    void (*buttonlight_off)(void);
-    void (*buttonlight_on)(void);
-#ifdef HAVE_BUTTONLIGHT_BRIGHTNESS
-    void (*buttonlight_set_brightness)(int val);
-#endif /* HAVE_BUTTONLIGHT_BRIGHTNESS */
-#endif /* HAVE_BUTTON_LIGHT */
 
     /* file */
     int (*open_utf8)(const char* pathname, int flags);

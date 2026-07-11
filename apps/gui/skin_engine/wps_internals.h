@@ -301,23 +301,6 @@ struct listitem_viewport_cfg {
     struct skin_viewport selected_item_vp;
 };
 
-#ifdef HAVE_SKIN_VARIABLES
-struct skin_var {
-    OFFSETTYPE(const char *) label;
-    int value;
-    long last_changed;
-};
-struct skin_var_lastchange {
-    OFFSETTYPE(struct skin_var *) var;
-    long timeout;
-};
-struct skin_var_changer {
-    OFFSETTYPE(struct skin_var *) var;
-    int newval;
-    bool direct; /* true to make val=newval, false for val += newval */
-    int max;
-};
-#endif
 
 /* wps_data
    this struct holds all necessary data which describes the
@@ -343,9 +326,6 @@ struct wps_data
     int16_t last_albumart_width, last_albumart_height;
 #endif
 
-#ifdef HAVE_SKIN_VARIABLES
-    OFFSETTYPE(struct skin_token_list *) skinvars;
-#endif
 
     bool peak_meter_enabled;
     bool spectrum_enabled;
@@ -393,9 +373,6 @@ enum skin_find_what {
     SKIN_FIND_VP = 0,
     SKIN_FIND_UIVP,
     SKIN_FIND_IMAGE,
-#ifdef HAVE_SKIN_VARIABLES
-    SKIN_VARIABLE,
-#endif
 };
 void *skin_find_item(const char *label, enum skin_find_what what,
                      struct wps_data *data);

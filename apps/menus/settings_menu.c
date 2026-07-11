@@ -95,9 +95,6 @@ int mask = global_settings.bt_selective_softlock_actions_mask;
                                        {ID2P(LANG_ACTION_AUTOLOCK_ON),    SEL_ACTION_AUTOLOCK},
                                        {ID2P(LANG_ACTION_ALWAYSAUTOLOCK), SEL_ACTION_ALWAYSAUTOLOCK},
  #endif
- #if defined(HAVE_TOUCHPAD)
-                                       {ID2P(LANG_ACTION_DISABLE_TOUCH),  SEL_ACTION_NOTOUCH},
- #endif
                                        {ID2P(LANG_ACTION_DISABLE_NOTIFY), SEL_ACTION_NONOTIFY},
                                        {ID2P(LANG_SOFTLOCK_DISABLE_ALL_NOTIFY), SEL_ACTION_ALLNONOTIFY}
                                             };
@@ -272,9 +269,6 @@ MAKE_MENU(battery_menu, ID2P(LANG_BATTERY_MENU), 0, Icon_NOICON,
 #if defined(DX50) || defined(DX90) || (defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR))
 MENUITEM_SETTING(usb_mode, &global_settings.usb_mode, NULL);
 #endif
-#if defined(HAVE_GENERAL_PURPOSE_LED)
-MENUITEM_SETTING(use_led_indicators, &global_settings.use_led_indicators, NULL);
-#endif
 /* Disk */
 #ifdef HAVE_DISK_STORAGE
 MENUITEM_SETTING(disk_spindown, &global_settings.disk_spindown, NULL);
@@ -374,21 +368,9 @@ MENUITEM_SETTING(usb_skip_first_drive, &global_settings.usb_skip_first_drive, NU
 MENUITEM_SETTING(morse_input, &global_settings.morse_input, NULL);
 #endif
 
-#ifdef HAVE_BUTTON_LIGHT
-MENUITEM_SETTING(buttonlight_timeout, &global_settings.buttonlight_timeout, NULL);
-#endif
 
-#ifdef HAVE_BUTTONLIGHT_BRIGHTNESS
-MENUITEM_SETTING(buttonlight_brightness, &global_settings.buttonlight_brightness, NULL);
-#endif
 
-#ifdef HAVE_TOUCHPAD_SENSITIVITY_SETTING
-MENUITEM_SETTING(touchpad_sensitivity, &global_settings.touchpad_sensitivity, NULL);
-#endif
 
-#ifdef HAVE_TOUCHPAD_DEADZONE
-MENUITEM_SETTING(touchpad_deadzone, &global_settings.touchpad_deadzone, NULL);
-#endif
 
 #ifdef HAVE_QUICKSCREEN
 MENUITEM_SETTING(shortcuts_replaces_quickscreen, &global_settings.shortcuts_replaces_qs, NULL);
@@ -444,19 +426,7 @@ MAKE_MENU(system_menu, ID2P(LANG_SYSTEM),
 #ifdef HAVE_LINEOUT_POWEROFF
             &lineout_onoff,
 #endif
-#ifdef HAVE_BUTTON_LIGHT
-            &buttonlight_timeout,
-#endif
-#ifdef HAVE_BUTTONLIGHT_BRIGHTNESS
-            &buttonlight_brightness,
-#endif
             &keyclick_menu,
-#ifdef HAVE_TOUCHPAD_SENSITIVITY_SETTING
-            &touchpad_sensitivity,
-#endif
-#ifdef HAVE_TOUCHPAD_DEADZONE
-            &touchpad_deadzone,
-#endif
 #ifndef HAS_BUTTON_HOLD
             &sel_softlock,
 #endif
@@ -476,9 +446,6 @@ MAKE_MENU(system_menu, ID2P(LANG_SYSTEM),
 #endif
 #if defined(DX50) || defined(DX90) || (defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR))
             &usb_mode,
-#endif
-#if defined(HAVE_GENERAL_PURPOSE_LED)
-            &use_led_indicators,
 #endif
             &wps_select_action,
          );

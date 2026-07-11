@@ -183,10 +183,6 @@ static bool is_action_filtered(int action, unsigned int mask, int context)
         case ACTION_FM_PREV_PRESET:
             match = has_flag(mask, SEL_ACTION_SKIP);
             break;
-#ifdef HAVE_VOLUME_IN_LIST
-        case ACTION_LIST_VOLUP:   /* volume exempted outside of WPS */
-        case ACTION_LIST_VOLDOWN: /* ( if the device supports it )*/
-#endif
         case ACTION_WPS_VOLUP:
         case ACTION_WPS_VOLDOWN:
             match = has_flag(mask, SEL_ACTION_VOL);
@@ -281,15 +277,6 @@ static void action_handle_backlight(bool backlight, bool ignore_next)
 
     backlight_on_ignore(ignore_next, 5*HZ);/*must be set everytime we handle bl*/
 
-#ifdef HAVE_BUTTON_LIGHT
-    if (backlight)
-    {
-        buttonlight_on_ignore(false, 0);
-        buttonlight_on();
-    }
-
-    buttonlight_on_ignore(ignore_next, 5*HZ);/* as a precautionary fallback */
-#endif /* HAVE_BUTTON_LIGHT */
 
 #endif/* HAVE_BACKLIGHT */
 }
@@ -682,14 +669,6 @@ static inline void do_key_lock(bool lock)
     action_last.keys_locked = lock;
     action_last.button = BUTTON_NONE;
     button_clear_queue();
-#if defined(HAVE_TOUCHPAD)
- /* disable touch device on keylock if std behavior or selected disable touch */
-    if (!has_flag(action_last.softlock_mask, SEL_ACTION_ENABLED) ||
-         has_flag(action_last.softlock_mask, SEL_ACTION_NOTOUCH))
-    {
-        button_enable_touch(!lock);
-    }
-#endif
 }
 
 /**********************************************
@@ -719,21 +698,6 @@ static inline int do_auto_softlock(action_last_t *last, action_cur_t *cur)
     {
         do_key_lock(true);
 
-#if defined(HAVE_TOUCHPAD)
-        /* if the touchpad is supposed to be off and the current buttonpress
-         * is from the touchpad, nullify both button and action. */
-        if (!has_flag(action_last.softlock_mask, SEL_ACTION_ENABLED) ||
-            has_flag(action_last.softlock_mask, SEL_ACTION_NOTOUCH))
-        {
-#if defined(HAVE_TOUCHPAD)
-            cur->button = touchpad_filter(cur->button);
-#endif
-            if (cur->button == BUTTON_NONE)
-            {
-                action = ACTION_NONE;
-            }
-        }
-#endif
     }
     else if (action == ACTION_STD_KEYLOCK)
     {

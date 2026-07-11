@@ -1420,30 +1420,6 @@ const char *get_token_value(struct gui_wps *gwps,
         case SKIN_TOKEN_LANG_IS_RTL:
             return lang_is_rtl() ? "r" : NULL;
 
-#ifdef HAVE_SKIN_VARIABLES
-        case SKIN_TOKEN_VAR_GETVAL:
-        {
-            char *skin_base = get_skin_buffer(data);
-            struct skin_var* var = SKINOFFSETTOPTR(skin_base, token->value.data);
-            numeric_ret = var->value;
-            itoa_buf(buf, buf_size, numeric_ret);
-            numeric_buf = buf;
-            goto gtv_ret_numeric_tag_info;
-        }
-        break;
-        case SKIN_TOKEN_VAR_TIMEOUT:
-            {
-            char *skin_base = get_skin_buffer(data);
-            struct skin_var_lastchange *data = SKINOFFSETTOPTR(skin_base, token->value.data);
-            struct skin_var* var = SKINOFFSETTOPTR(skin_base, data->var);
-            unsigned int last_change = var->last_changed;
-
-            if (last_change != 0xffff &&
-                TIME_BEFORE(current_tick, data->timeout + last_change))
-                return "t";
-            }
-            return NULL;
-#endif
         default:
         {
             /* if the token is an RTC one, update the time

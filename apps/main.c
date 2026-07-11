@@ -79,9 +79,6 @@
 #include "bootchart.h"
 #include "logdiskf.h"
 #include "bootdata.h"
-#if defined(HAVE_DEVICEDATA)
-#include "devicedata.h"
-#endif
 
 #include "shortcuts.h"
 
@@ -126,16 +123,9 @@ static void init(void);
  * be INIT_ATTR. These functions must not be called after the final call
  * to root_menu() at the end of main()
  * see definition of INIT_ATTR in config.h */
-#ifdef HAVE_ARGV_MAIN
-int main(int argc, char *argv[]) INIT_ATTR MAIN_NORETURN_ATTR ;
-int main(int argc, char *argv[])
-{
-    sys_handle_argv(argc, argv);
-#else
 int main(void) INIT_ATTR MAIN_NORETURN_ATTR;
 int main(void)
 {
-#endif
     CHART(">init");
     init();
     CHART("<init");
@@ -219,17 +209,6 @@ static int INIT_ATTR init_dircache(bool preinit)
 
     int result = -1;
 
-#ifdef HAVE_EEPROM_SETTINGS
-    if (firmware_settings.initialized &&
-        firmware_settings.disk_clean &&
-        preinit)
-    {
-        result = dircache_load();
-        if (result < 0)
-            firmware_settings.disk_clean = false;
-    }
-    else
-#endif /* HAVE_EEPROM_SETTINGS */
     if (!preinit)
     {
         result = dircache_enable();
@@ -440,19 +419,11 @@ static void init(void)
      * can be measured. Initialize power management if it was delayed. */
     powermgmt_init();
 #endif
-#ifdef HAVE_EEPROM_SETTINGS
-    CHART(">eeprom_settings_init");
-    eeprom_settings_init();
-    CHART("<eeprom_settings_init");
-#endif
 
 #ifndef HAVE_USBSTACK
     usb_start_monitoring();
     while (usb_detect() == USB_INSERTED)
     {
-#ifdef HAVE_EEPROM_SETTINGS
-        firmware_settings.disk_clean = false;
-#endif
         /* enter USB mode early, before trying to mount */
         if (button_get_w_tmo(HZ/10) == SYS_USB_CONNECTED)
 #if (CONFIG_STORAGE & STORAGE_MMC)
@@ -508,9 +479,6 @@ static void init(void)
             lcd_update();
 
 #if defined(MAX_VIRT_SECTOR_SIZE) && defined(DEFAULT_VIRT_SECTOR_SIZE)
-#ifdef HAVE_MULTIDRIVE
-            for (int i = 0 ; i < NUM_DRIVES ; i++)
-#endif
                 disk_set_sector_multiplier(IF_MD(i,) DEFAULT_VIRT_SECTOR_SIZE/SECTOR_SIZE);
 #endif
 
@@ -588,16 +556,6 @@ static void init(void)
     CHART("<init_tagcache");
 #endif
 
-#ifdef HAVE_EEPROM_SETTINGS
-    if (firmware_settings.initialized)
-    {
-        /* In case we crash. */
-        firmware_settings.disk_clean = false;
-        CHART(">eeprom_settings_store");
-        eeprom_settings_store();
-        CHART("<eeprom_settings_store");
-    }
-#endif
     playlist_init();
     tree_mem_init();
     filetype_init();
@@ -609,9 +567,6 @@ static void init(void)
     CHART("<audio_init");
     talk_announce_voice_invalid(); /* notify user w/ voice prompt if voice file invalid */
 
-#ifdef HAVE_WIFI
-    wifi_init();
-#endif
 
     /* runtime database has to be initialized after audio_init() */
     cpu_boost(false);
@@ -627,11 +582,6 @@ static void init(void)
 #endif
 #ifdef HAVE_LINEOUT_POWEROFF
     lineout_set(global_settings.lineout_active);
-#endif
-#ifdef HAVE_HOTSWAP_STORAGE_AS_MAIN
-    CHART("<check_bootfile(false)");
-    check_bootfile(false); /* remember write time and filesize */
-    CHART(">check_bootfile(false)");
 #endif
     CHART("<settings_apply_skins");
     settings_apply_skins();

@@ -112,9 +112,6 @@ static void gui_skin_reset(struct gui_skin *skin)
     skin->data.wps_loaded = false;
     skin->data.buflib_handle = -1;
     skin->data.tree = -1;
-#ifdef HAVE_SKIN_VARIABLES
-    skin->data.skinvars = -1;
-#endif
     skin->data.font_ids = -1;
     skin->data.images = -1;
 #ifdef HAVE_ALBUMART

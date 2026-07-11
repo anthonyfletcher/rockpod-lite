@@ -407,14 +407,6 @@ static bool clean_shutdown(enum shutdown_type sd_type,
                 callback(parameter);
 
             system_flush();
-#ifdef HAVE_EEPROM_SETTINGS
-            if (firmware_settings.initialized)
-            {
-                firmware_settings.disk_clean = true;
-                firmware_settings.bl_version = 0;
-                eeprom_settings_store();
-            }
-#endif
         }
 #if defined(HAVE_DIRCACHE) && defined(HAVE_DISK_STORAGE)
         else
@@ -564,47 +556,9 @@ static void hp_unplug_change(bool inserted)
         }
     }
 
-#ifdef HAVE_SPEAKER
-    /* update speaker status */
-    audio_enable_speaker(global_settings.speaker_mode);
-#endif
 }
 #endif /*HAVE_HEADPHONE_DETECTION*/
 
-#ifdef HAVE_LINEOUT_DETECTION
-static void lo_unplug_change(bool inserted)
-{
-#ifdef HAVE_LINEOUT_POWEROFF
-    lineout_set(inserted);
-#else
-#ifdef AUDIOHW_HAVE_LINEOUT
-    audiohw_set_lineout_volume(0,0); /*hp vol re-set by this function as well*/
-#endif
-    static bool lineout_caused_pause = true;
-
-    if (global_settings.unplug_mode)
-    {
-        int audio_stat = audio_status();
-        if (inserted)
-        {
-            backlight_on();
-            if ((audio_stat & AUDIO_STATUS_PLAY) &&
-                    lineout_caused_pause &&
-                    global_settings.unplug_mode > 1 )
-                unpause_action(true);
-            lineout_caused_pause = false;
-        } else {
-            if ((audio_stat & AUDIO_STATUS_PLAY) &&
-                    !(audio_stat & AUDIO_STATUS_PAUSE))
-            {
-                lineout_caused_pause = true;
-                pause_action(false);
-            }
-        }
-    }
-#endif /*HAVE_LINEOUT_POWEROFF*/
-}
-#endif /*HAVE_LINEOUT_DETECTION*/
 
 long default_event_handler_ex(long event, void (*callback)(void *), void *parameter)
 {
@@ -669,23 +623,6 @@ long default_event_handler_ex(long event, void (*callback)(void *), void *parame
             unpause_action(true);
             return SYS_CAR_ADAPTER_RESUME;
 #endif
-#ifdef HAVE_HOTSWAP_STORAGE_AS_MAIN
-        case SYS_FS_CHANGED:
-        {
-            /* simple sanity: assume rockbox is on the first hotswappable
-             * driver, abort out if that one isn't inserted */
-            int i;
-            for (i = 0; i < NUM_DRIVES; i++)
-            {
-                if (storage_removable(i) && !storage_present(i))
-                    return SYS_FS_CHANGED;
-            }
-            system_flush();
-            check_bootfile(true); /* state gotten in main.c:init() */
-            system_restore();
-        }
-            return SYS_FS_CHANGED;
-#endif
 #ifdef HAVE_HEADPHONE_DETECTION
         case SYS_PHONE_PLUGGED:
             hp_unplug_change(true);
@@ -694,15 +631,6 @@ long default_event_handler_ex(long event, void (*callback)(void *), void *parame
         case SYS_PHONE_UNPLUGGED:
             hp_unplug_change(false);
             return SYS_PHONE_UNPLUGGED;
-#endif
-#ifdef HAVE_LINEOUT_DETECTION
-        case SYS_LINEOUT_PLUGGED:
-            lo_unplug_change(true);
-            return SYS_LINEOUT_PLUGGED;
-
-        case SYS_LINEOUT_UNPLUGGED:
-            lo_unplug_change(false);
-            return SYS_LINEOUT_UNPLUGGED;
 #endif
 #if (CONFIG_PLATFORM & PLATFORM_HOSTED) && defined(PLATFORM_HAS_VOLUME_CHANGE)
         case SYS_VOLUME_CHANGED:
@@ -721,41 +649,6 @@ long default_event_handler_ex(long event, void (*callback)(void *), void *parame
             }
             return 0;
         }
-#endif
-#ifdef HAVE_MULTIMEDIA_KEYS
-        /* multimedia keys on keyboards, headsets */
-        case BUTTON_MULTIMEDIA_PLAYPAUSE:
-        {
-            int status = audio_status();
-            if (status & AUDIO_STATUS_PLAY)
-            {
-                if (status & AUDIO_STATUS_PAUSE)
-                    unpause_action(true);
-                else
-                    pause_action(true);
-            }
-            else
-                if (playlist_resume() != -1)
-                {
-                    playlist_start(global_status.resume_index,
-                                   global_status.resume_elapsed,
-                                   global_status.resume_offset);
-                }
-            return event;
-        }
-        case BUTTON_MULTIMEDIA_NEXT:
-            audio_next();
-            return event;
-        case BUTTON_MULTIMEDIA_PREV:
-            audio_prev();
-            return event;
-        case BUTTON_MULTIMEDIA_STOP:
-            list_stop_handler();
-            return event;
-        case BUTTON_MULTIMEDIA_REW:
-        case BUTTON_MULTIMEDIA_FFWD:
-            /* not supported yet, needs to be done in the WPS */
-            return 0;
 #endif
     }
     return 0;

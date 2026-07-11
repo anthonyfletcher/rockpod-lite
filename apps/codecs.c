@@ -259,15 +259,3 @@ int codec_close(void)
     return status;
 }
 
-#ifdef HAVE_RECORDING
-enc_callback_t codec_get_enc_callback(void)
-{
-    if (curr_handle == NULL ||
-        c_hdr->lc_hdr.magic != CODEC_ENC_MAGIC) {
-        logf("Codec: not an encoder");
-        return NULL;
-    }
-
-    return c_hdr->rec_extension[0];
-}
-#endif /* HAVE_RECORDING */

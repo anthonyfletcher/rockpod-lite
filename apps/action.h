@@ -195,10 +195,6 @@ enum {
     /* list and tree page up/down */
     ACTION_LISTTREE_PGUP,/* optional */
     ACTION_LISTTREE_PGDOWN,/* optional */
-#ifdef HAVE_VOLUME_IN_LIST
-    ACTION_LIST_VOLUP,
-    ACTION_LIST_VOLDOWN,
-#endif
 
     /* tree */
     ACTION_TREE_ROOT_INIT,

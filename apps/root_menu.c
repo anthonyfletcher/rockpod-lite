@@ -40,10 +40,6 @@
 #include "audio.h"
 #include "shortcuts.h"
 
-#ifdef HAVE_HOTSWAP
-#include "storage.h"
-#include "mv.h"
-#endif
 /* gui api */
 #include "list.h"
 #include "splash.h"
@@ -230,32 +226,6 @@ static int browser(void* param)
             }
             else
             {
-#ifdef HAVE_HOTSWAP
-                bool in_hotswap = false;
-                /* handle entering an ejected drive */
-                int i;
-                for (i = 0; i < NUM_VOLUMES; i++)
-                {
-                    char vol_string[VOL_MAX_LEN + 1];
-                    if (!volume_removable(i))
-                        continue;
-                    get_volume_name(i, vol_string);
-                    /* test whether we would browse the external card */
-                    if (!volume_present(i) &&
-                            (strstr(last_folder, vol_string)
-#ifdef HAVE_HOTSWAP_STORAGE_AS_MAIN
-                                                                || (i == 0)
-#endif
-                                                                ))
-                    {   /* leave folder as "/" to avoid crash when trying
-                         * to access an ejected drive */
-                        strcpy(folder, "/");
-                        in_hotswap = true;
-                        break;
-                    }
-                }
-                if (!in_hotswap)
-#endif /*HAVE_HOTSWAP*/
                     strcpy(folder, last_folder);
             }
             push_current_activity(ACTIVITY_FILEBROWSER);
@@ -1329,10 +1299,6 @@ static int root_menu_setup_screens(void)
        new_screen = GO_TO_ROOT;
 #ifdef HAVE_HEADPHONE_DETECTION
         if (headphones_inserted())
-            new_screen = GO_TO_WPS;
-#endif
-#ifdef HAVE_LINEOUT_DETECTION
-        if (lineout_inserted())
             new_screen = GO_TO_WPS;
 #endif
     }

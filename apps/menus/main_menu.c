@@ -176,51 +176,26 @@ static int refresh_data(struct info_data *info)
 {
     int i = 0;
 #ifdef HAVE_MULTIVOLUME
-#ifdef HAVE_MULTIDRIVE
-    int max = -1;
-    int special = 0;
-#endif
     int drive = 0;
     for (i = 0 ; i < NUM_VOLUMES ; i++)
 #endif
     {
 	volume_size(IF_MV(i,) &info->size[i], &info->free[i]);
 #ifdef HAVE_MULTIVOLUME
-#ifdef HAVE_MULTIDRIVE
-	drive = volume_drive(i);
-#endif
 	if (drive > 0)
 	    info->name[i] = LANG_DISK_NAME_MMC;
 	else
 #endif
 	    info->name[i] = LANG_DISK_NAME_INTERNAL;
-#ifdef HAVE_MULTIDRIVE
-	if (drive > max) {
-	    max = drive;
-        } else if (drive < max) {
-            if (max == 0) {
-                /* Special case, make sure we display a single entry for
-                   secondary drive too */
-                special = 1;
-            }
-#endif
 #if defined(HAVE_MULTIVOLUME) && (defined(HAVE_HOTSWAP) || defined(HAVE_DIRCACHE) || defined(HAVE_BOOTDATA)) // Is this #ifdef necessary?
             if (volume_partition(i) == -1)
 #endif
 	    {
-#ifdef HAVE_MULTIDRIVE
-                if (special)
-                    info->name[i] = LANG_DISK_NAME_MMC;
-                else
-#endif
                     info->name[i] = 0;
 #ifdef HAVE_MULTIVOLUME
                 break; /* ie stop when we run out of valid partitions */
 #endif
             }
-#ifdef HAVE_MULTIDRIVE
-        }
-#endif
     }
 
     info->new_data = false;
@@ -343,9 +318,6 @@ static int info_action_callback(int action, struct gui_synclist *lists)
         return action;
     }
     else if (action == ACTION_STD_OK
-#ifdef HAVE_HOTSWAP
-        || action == SYS_FS_CHANGED
-#endif
         )
     {
         action = ACTION_REDRAW;

@@ -25,21 +25,12 @@
 #include "audio.h"
 #include "general.h"
 #include "settings.h"
-#if defined(HAVE_SPDIF_IN) || defined(HAVE_SPDIF_OUT)
-#ifdef HAVE_SPDIF_POWER
-#include "power.h"
-#endif
-#include "spdif.h"
-#endif
 #if defined(IPOD_ACCESSORY_PROTOCOL) && defined(HAVE_LINE_REC)
 #include "iap.h"
 #endif
 
 /* Some audio sources may require a boosted CPU */
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
-#ifdef HAVE_SPDIF_REC
-#define AUDIO_CPU_BOOST
-#endif
 #endif
 
 #if ((CONFIG_PLATFORM & PLATFORM_NATIVE) || defined(SAMSUNG_YPR0) || defined(SAMSUNG_YPR1) \
@@ -72,18 +63,7 @@ void audio_set_input_source(int source, unsigned flags)
     audio_cpu_boost(source == AUDIO_SRC_SPDIF);
 #endif /* AUDIO_CPU_BOOST */
 
-#ifdef HAVE_SPDIF_POWER
-    /* Check if S/PDIF output power should be switched off or on. NOTE: assumes
-       both optical in and out is controlled by the same power source, which is
-       the case on H1x0. */
-    spdif_power_enable((source == AUDIO_SRC_SPDIF) ||
-                       global_settings.spdif_enable);
-#endif /* HAVE_SPDIF_POWER */
     /* Set the appropriate feed for spdif output */
-#ifdef HAVE_SPDIF_OUT
-    spdif_set_output_source(source
-        IF_SPDIF_POWER_(, global_settings.spdif_enable));
-#endif /* HAVE_SPDIF_OUT */
 
 #if defined(IPOD_ACCESSORY_PROTOCOL) && defined(HAVE_LINE_REC)
     static bool last_rec_onoff = false;
@@ -96,21 +76,6 @@ void audio_set_input_source(int source, unsigned flags)
     audio_input_mux(source, flags);
 } /* audio_set_source */
 
-#ifdef HAVE_SPDIF_IN
-/**
- * Return SPDIF sample rate index in audio_master_sampr_list. Since we base
- * our reading on the actual SPDIF sample rate (which might be a bit
- * inaccurate), we round off to the closest sample rate that is supported by
- * SPDIF.
- */
-int audio_get_spdif_sample_rate(void)
-{
-    unsigned long measured_rate = spdif_measure_frequency();
-    /* Find which SPDIF sample rate we're closest to. */
-    return round_value_to_list32(measured_rate, audio_master_sampr_list,
-                                 SAMPR_NUM_FREQ, false);
-} /* audio_get_spdif_sample_rate */
-#endif /* HAVE_SPDIF_IN */
 
 #else /* PLATFORM_HOSTED */
 
@@ -134,33 +99,6 @@ void audio_set_input_source(int source, unsigned flags)
     (void)flags;
 } /* audio_set_input_source */
 
-#ifdef HAVE_SPDIF_IN
-int audio_get_spdif_sample_rate(void)
-{
-    return FREQ_44;
-} /* audio_get_spdif_sample_rate */
-#endif /* HAVE_SPDIF_IN */
 
 #endif /* PLATFORM_NATIVE */
 
-#ifdef HAVE_SPEAKER
-void audio_enable_speaker(int mode)
-{
-#if defined(HAVE_HEADPHONE_DETECTION) || defined(HAVE_LINEOUT_DETECTION)
-    /* if needed, query jack state */
-    if(mode == 2)
-    {
-#ifdef HAVE_HEADPHONE_DETECTION
-        if (headphones_inserted())
-            mode = 0;
-#endif
-#ifdef HAVE_LINEOUT_DETECTION
-        if (lineout_inserted())
-            mode = 0;
-#endif
-    }
-#endif
-    /* treat any nonzero value as enable */
-    audiohw_enable_speaker(mode);
-}
-#endif

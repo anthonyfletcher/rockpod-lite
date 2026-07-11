@@ -176,20 +176,6 @@ void iap_handlepkt_mode2(const unsigned int len, const unsigned char *buf)
             if (poweron_pressed && len >= 5 && !(buf[4] & 2))
             {
                 poweron_pressed = false;
-#ifdef HAVE_LINE_REC
-                /* Belkin TuneTalk microphone sends power-on press+release
-                 * events once authentication sequence is finished,
-                 * GetDevCaps command is ignored by the device when it is
-                 * sent before power-on release event is received.
-                 * XXX: It is unknown if other microphone devices are
-                 * sending the power-on events.
-                 */
-                if (DEVICE_LINGO_SUPPORTED(0x01)) {
-                    /* GetDevCaps */
-                    IAP_TX_INIT(0x01, 0x07);
-                    iap_send_tx();
-                }
-#endif
             }
 
             break;
