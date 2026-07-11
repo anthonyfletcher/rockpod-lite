@@ -32,9 +32,7 @@
 #include "strptokspn_r.h"
 #include "scrollbar.h"
 #include "font.h"
-#ifndef BOOTLOADER
 #include "misc.h" /* get_current_activity */
-#endif
 
 static long progress_next_tick, talked_tick;
 
@@ -48,7 +46,6 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
                             struct viewport *vp, int addl_lines)
 {
     static int max_width[NB_SCREENS] = {2*RECT_SPACING};
-#ifndef BOOTLOADER
     static enum current_activity last_act = ACTIVITY_UNKNOWN;
     enum current_activity act = get_current_activity();
 
@@ -58,7 +55,6 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
             max_width[i] = 2*RECT_SPACING;
         last_act = act;
     }
-#endif
     /* prevent screen artifacts by keeping the max width seen */
     int min_width = max_width[screen->screen_type];
     char splash_buf[MAXBUFFER];

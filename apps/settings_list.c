@@ -296,11 +296,7 @@ static const char graphic_numeric[] = "graphic,numeric";
 #define DEFAULT_BACKDROP    BACKDROP_DIR "/cabbiev2.bmp"
 
 
-#if (CONFIG_PLATFORM & PLATFORM_ANDROID)
-#define DEFAULT_TAGCACHE_SCAN_PATHS "/sdcard"
-#else
 #define DEFAULT_TAGCACHE_SCAN_PATHS "/"
-#endif
 
 #ifdef HAVE_BACKLIGHT
 #define DEFAULT_BACKLIGHT_TIMEOUT 15

@@ -523,7 +523,6 @@ struct plugin_api {
     void (*reset_poweroff_timer)(void);
     void (*set_sleeptimer_duration)(int minutes);
     int (*get_sleep_timer)(void);
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
     int (*system_memory_guard)(int newmode);
     long *cpu_frequency;
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
@@ -533,7 +532,6 @@ struct plugin_api {
     void (*cpu_boost)(bool on_off);
 #endif
 #endif /* HAVE_ADJUSTABLE_CPU_FREQ */
-#endif /* PLATFORM_NATIVE */
 #ifdef HAVE_SCHEDULER_BOOSTCTRL
     void (*trigger_cpu_boost)(void);
     void (*cancel_cpu_boost)(void);
@@ -580,13 +578,6 @@ struct plugin_api {
     void (*remove_event)(unsigned short id, void (*handler)(unsigned short id, void *data));
     void (*send_event)(unsigned short id, void *data);
 
-#if (CONFIG_PLATFORM & PLATFORM_HOSTED)
-    /* special simulator hooks */
-#if LCD_DEPTH < 8
-    void (*sim_lcd_ex_init)(unsigned long (*getpixel)(int, int));
-    void (*sim_lcd_ex_update_rect)(int x, int y, int width, int height);
-#endif
-#endif
 
     /* strings and memory */
     int (*snprintf)(char *buf, size_t size, const char *fmt, ...)
@@ -605,9 +596,7 @@ struct plugin_api {
     void* (*memset)(void *dst, int c, size_t length);
     void* (*memcpy)(void *out, const void *in, size_t n);
     void* (*memmove)(void *out, const void *in, size_t n);
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
     const unsigned char *_rbctype_;
-#endif
     int (*atoi)(const char *str);
     long int (*strtol)(const char *ptr, char **endptr, int base);
     unsigned long int (*strtoul)(const char *ptr, char **endptr, int base);
@@ -868,9 +857,7 @@ struct plugin_api {
 #endif
 
     /* misc */
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
     int * (*__errno)(void);
-#endif
     void (*led)(bool on);
     void (*srand)(unsigned int seed);
     int  (*rand)(void);
@@ -959,7 +946,6 @@ struct plugin_header {
 };
 
 #ifdef PLUGIN
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
 extern unsigned char plugin_start_addr[];
 extern unsigned char plugin_end_addr[];
 #define PLUGIN_HEADER \
@@ -969,14 +955,6 @@ extern unsigned char plugin_end_addr[];
         { PLUGIN_MAGIC, TARGET_ID, PLUGIN_API_VERSION, \
           plugin_start_addr, plugin_end_addr, }, \
         plugin__start, &rb, sizeof(struct plugin_api) };
-#else /* PLATFORM_HOSTED */
-#define PLUGIN_HEADER \
-        const struct plugin_api *rb DATA_ATTR; \
-        const struct plugin_header __header \
-        __attribute__((visibility("default"))) = { \
-            { PLUGIN_MAGIC, TARGET_ID, PLUGIN_API_VERSION, NULL, NULL }, \
-            plugin__start, &rb, sizeof(struct plugin_api) };
-#endif /* CONFIG_PLATFORM */
 #endif /* PLUGIN */
 
 /*

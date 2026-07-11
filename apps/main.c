@@ -83,9 +83,6 @@
 #include "devicedata.h"
 #endif
 
-#if (CONFIG_PLATFORM & PLATFORM_ANDROID)
-#include "notification.h"
-#endif
 #include "shortcuts.h"
 
 #ifdef IPOD_ACCESSORY_PROTOCOL
@@ -118,28 +115,9 @@
 #include "piezo.h"
 #endif
 
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
 #define MAIN_NORETURN_ATTR NORETURN_ATTR
-#else
-/* gcc adds an implicit 'return 0;' at the end of main(), causing a warning
- * with noreturn attribute */
-#define MAIN_NORETURN_ATTR
-#endif
 
-#if (CONFIG_PLATFORM & PLATFORM_HOSTED)
-#ifdef HAVE_MULTIVOLUME
-#include "pathfuncs.h" /* for init_volume_names */
-#endif
-#endif
 
-#if (CONFIG_PLATFORM & PLATFORM_SDL)
-#include "system-sdl.h"
-#define HAVE_ARGV_MAIN
-/* Don't use SDL_main on windows -> no more stdio redirection */
-#if defined(WIN32)
-#undef main
-#endif
-#endif /* SDL */
 
 /*#define AUTOROCK*/ /* define this to check for "autostart.rock" on boot */
 
@@ -187,7 +165,6 @@ int main(void)
     }
 #endif
 
-#if !defined(BOOTLOADER)
     allocate_playback_log();
     if (!file_exists(ROCKBOX_DIR"/playername.txt"))
     {
@@ -198,7 +175,6 @@ int main(void)
             close(fd);
         }
     }
-#endif
 
 #ifdef AUTOROCK
     {
@@ -336,73 +312,6 @@ static void init_tagcache(void)
 }
 #endif /* HAVE_TAGCACHE */
 
-#if (CONFIG_PLATFORM & PLATFORM_HOSTED)
-
-static void init(void)
-{
-    system_init();
-    core_allocator_init();
-    kernel_init();
-    enable_irq();
-    lcd_init();
-    FOR_NB_SCREENS(i)
-        global_status.font_id[i] = FONT_SYSFIXED;
-    font_init();
-    show_logo_boot();
-    button_init();
-    powermgmt_init();
-    backlight_init();
-    unicode_init();
-#ifdef HAVE_MULTIVOLUME
-    init_volume_names();
-#endif
-#if (CONFIG_PLATFORM & PLATFORM_ANDROID)
-    notification_init();
-#endif
-    lang_init(core_language_builtin, language_strings,
-              LANG_LAST_INDEX_IN_ARRAY);
-#ifdef DEBUG
-    debug_init();
-#endif
-    /* Keep the order of this 3 (viewportmanager handles statusbars)
-     * Must be done before any code uses the multi-screen API */
-    gui_syncstatusbar_init(&statusbars);
-    gui_sync_skin_init();
-    sb_skin_init();
-    viewportmanager_init();
-
-    storage_init();
-    pcm_init();
-    dsp_init();
-    settings_reset();
-    settings_load();
-    settings_apply(true);
-    init_battery_tables();
-#ifdef HAVE_DIRCACHE
-    init_dircache(true);
-    init_dircache(false);
-#endif
-#ifdef HAVE_TAGCACHE
-    init_tagcache();
-#endif
-    tree_mem_init();
-    filetype_init();
-    playlist_init();
-    shortcuts_init();
-
-    audio_init();
-    talk_announce_voice_invalid(); /* notify user w/ voice prompt if voice file invalid */
-    settings_apply_skins();
-
-/* do USB last so prompt (if enabled) can work correctly if USB was inserted with device off,
- * also doesn't hurt that it will display the nice pretty backdrop this way too. */
-#ifndef USB_NONE
-    usb_init();
-    usb_start_monitoring();
-#endif
-}
-
-#else /* ! (CONFIG_PLATFORM & PLATFORM_HOSTED) */
 
 #include "errno.h"
 
@@ -753,4 +662,3 @@ void cop_main(void)
 }
 #endif /* CPU_PP */
 
-#endif /* CONFIG_PLATFORM & PLATFORM_HOSTED */

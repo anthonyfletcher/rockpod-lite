@@ -40,8 +40,5 @@ void status_set_ffmode(enum playmode mode);
 enum playmode status_get_ffmode(void);
 int current_playmode(void);
 
-#if (CONFIG_PLATFORM & PLATFORM_HOSTED)
-#include <time.h>
-#endif
 
 #endif /* _STATUS_H */

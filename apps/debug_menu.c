@@ -51,7 +51,6 @@
 #endif
 #include "crc32.h"
 #include "logf.h"
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
 #include "disk.h"
 #include "adc.h"
 #include "usb.h"
@@ -65,7 +64,6 @@
 #if (CONFIG_STORAGE & STORAGE_ATA)
 #include "ata.h"
 #endif
-#endif /* CONFIG_PLATFORM & PLATFORM_NATIVE */
 #include "power.h"
 
 
@@ -470,10 +468,8 @@ static bool dbg_buffering_thread(void)
 
             screens[i].putsf(0, line++, "handle count: %d", (int)d.num_handles);
 
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
             screens[i].putsf(0, line++, "cpu freq: %3dMHz",
                              (int)((FREQ + 500000) / 1000000));
-#endif
 
             if (ticks > 0)
             {
@@ -549,7 +545,6 @@ static bool dbg_buflib_allocs(void)
 }
 #endif /* BUFLIB_DEBUG_PRINT */
 
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
 static const char* dbg_partitions_getname(int selected_item, void *data,
                                           char *buffer, size_t buffer_len)
 {
@@ -583,7 +578,6 @@ static bool dbg_partitions(void)
     info.get_name = dbg_partitions_getname;
     return simplelist_show_list(&info);
 }
-#endif /* PLATFORM_NATIVE */
 
 #if defined(CPU_COLDFIRE) && defined(HAVE_SPDIF_OUT)
 static bool dbg_spdif(void)
@@ -725,10 +719,8 @@ static bool dbg_spdif(void)
         lcd_putsf(0, line++, "Clock accuracy: %d", x);
         line++;
 
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
         lcd_putsf(0, line++, "Measured freq: %ldHz",
                  spdif_measure_frequency());
-#endif
 
         lcd_update();
 
@@ -1247,7 +1239,6 @@ static bool view_battery(void)
 
 #endif /* (CONFIG_BATTERY_MEASURE != 0)  */
 
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
 #if (CONFIG_STORAGE & STORAGE_MMC) || (CONFIG_STORAGE & STORAGE_SD)
 
 #if (CONFIG_STORAGE & STORAGE_MMC)
@@ -1856,7 +1847,6 @@ static bool dbg_disk_info(void)
     info.scroll_all = true;
     return simplelist_show_list(&info);
 }
-#endif /* PLATFORM_NATIVE */
 
 #ifdef HAVE_DIRCACHE
 static int dircache_callback(int btn, struct gui_synclist *lists)
@@ -2745,16 +2735,12 @@ static const struct {
 #if ((CONFIG_PLATFORM & PLATFORM_NATIVE) || defined(SONY_NWZ_LINUX) || defined(HIBY_LINUX) || defined(FIIO_M3K_LINUX)) && !defined(SIMULATOR)
         { "View HW info", dbg_hw_info },
 #endif
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
         { "View partitions", dbg_partitions },
-#endif
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
         { "View disk info", dbg_disk_info },
 #if (CONFIG_STORAGE & STORAGE_ATA)
         { "Dump ATA identify info", dbg_identify_info},
 #ifdef HAVE_ATA_SMART
         { "View/Dump S.M.A.R.T. data", dbg_ata_smart},
-#endif
 #endif
 #endif
         { "Metadata log", dbg_metadatalog },

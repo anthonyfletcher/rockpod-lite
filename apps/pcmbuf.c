@@ -34,9 +34,7 @@
 /* Define LOGF_ENABLE to enable logf output in this file */
 /*#define LOGF_ENABLE*/
 #include "logf.h"
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
 #include "cpu.h"
-#endif
 #include "settings.h"
 #include "audio.h"
 #include "voice_thread.h"

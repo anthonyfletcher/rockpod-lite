@@ -26,9 +26,7 @@
 #include "config.h"
 #include "lang.h"
 
-#if !defined(BOOTLOADER)
 #include "language.h"
-#endif
 
 #include "appevents.h"
 #include "button.h"
@@ -435,11 +433,6 @@ static inline bool get_action_touchscreen(action_last_t *last, action_cur_t *cur
 static inline void button_flip_horizontally(int context, int *button)
 {
 
-#if defined(BOOTLOADER)
-    (void) context;
-    (void) *button;
-    return;
-#else
     int newbutton = *button;
     if (!(lang_is_rtl() && ((context == CONTEXT_STD) ||
         (context == CONTEXT_TREE) || (context == CONTEXT_LIST) ||
@@ -490,7 +483,6 @@ static inline void button_flip_horizontally(int context, int *button)
 #endif
 
     *button = newbutton;
-#endif /* !BOOTLOADER */
 } /* button_flip_horizontally */
 
 /**********************************************************************

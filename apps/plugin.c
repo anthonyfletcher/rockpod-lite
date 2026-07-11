@@ -70,14 +70,8 @@
 
 #define WRAPPER(_x_) _x_ ## _wrapper
 
-#if (CONFIG_PLATFORM & PLATFORM_HOSTED)
-static unsigned char pluginbuf[PLUGIN_BUFFER_SIZE];
-void sim_lcd_ex_init(unsigned long (*getpixel)(int, int));
-void sim_lcd_ex_update_rect(int x, int y, int width, int height);
-#else
 extern unsigned char pluginbuf[];
 #include "bitswap.h"
-#endif
 
 /* for actual plugins only, not for codecs */
 static int  plugin_size = 0;
@@ -453,7 +447,6 @@ static const struct plugin_api rockbox_api = {
     reset_poweroff_timer,
     set_sleeptimer_duration, /*stub*/
     get_sleep_timer, /*stub*/
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
     system_memory_guard,
     &cpu_frequency,
 
@@ -464,7 +457,6 @@ static const struct plugin_api rockbox_api = {
     cpu_boost,
 #endif
 #endif /* HAVE_ADJUSTABLE_CPU_FREQ */
-#endif /* PLATFORM_NATIVE */
 #ifdef HAVE_SCHEDULER_BOOSTCTRL
     trigger_cpu_boost,
     cancel_cpu_boost,
@@ -503,13 +495,6 @@ static const struct plugin_api rockbox_api = {
     remove_event,
     send_event,
 
-#if (CONFIG_PLATFORM & PLATFORM_HOSTED)
-    /* special simulator hooks */
-#if LCD_DEPTH < 8
-    sim_lcd_ex_init,
-    sim_lcd_ex_update_rect,
-#endif
-#endif
 
     /* strings and memory */
     snprintf,
@@ -527,9 +512,7 @@ static const struct plugin_api rockbox_api = {
     memset,
     memcpy,
     memmove,
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
     _ctype_,
-#endif
     atoi,
     strtol,
     strtoul,
@@ -736,9 +719,7 @@ static const struct plugin_api rockbox_api = {
 #endif
 
     /* misc */
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
     __errno,
-#endif
     led,
     srand,
     rand,
@@ -884,10 +865,8 @@ int plugin_load(const char* plugin, const void* parameter)
     if (hdr == NULL
         || hdr->magic != PLUGIN_MAGIC
         || hdr->target_id != TARGET_ID
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
         || hdr->load_addr != pluginbuf
         || hdr->end_addr > pluginbuf + PLUGIN_BUFFER_SIZE
-#endif
         )
     {
         hdr = NULL;
@@ -903,12 +882,8 @@ int plugin_load(const char* plugin, const void* parameter)
         return -1;
     }
 
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
     /* tlsf crashes observed on arm with 0x4 aligned addresses */
     plugin_size = ALIGN_UP(hdr->end_addr - pluginbuf, 0x8);
-#else
-    plugin_size = 0;
-#endif
 
     *(p_hdr->api) = &rockbox_api;
     lcd_set_viewport(NULL);

@@ -351,10 +351,8 @@ static int info_action_callback(int action, struct gui_synclist *lists)
         action = ACTION_REDRAW;
         info->new_data = true;
         splash(0, ID2P(LANG_SCANNING_DISK));
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
         for (int i = 0; i < NUM_VOLUMES; i++)
             volume_recalc_free(IF_MV(i));
-#endif
         gui_synclist_speak_item(lists);
     }
 #if CONFIG_RTC

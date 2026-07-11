@@ -608,9 +608,6 @@ static void lo_unplug_change(bool inserted)
 
 long default_event_handler_ex(long event, void (*callback)(void *), void *parameter)
 {
-#if CONFIG_PLATFORM & (PLATFORM_ANDROID)
-    static bool resume = false;
-#endif
 
     switch(event)
     {
@@ -706,23 +703,6 @@ long default_event_handler_ex(long event, void (*callback)(void *), void *parame
         case SYS_LINEOUT_UNPLUGGED:
             lo_unplug_change(false);
             return SYS_LINEOUT_UNPLUGGED;
-#endif
-#if CONFIG_PLATFORM & (PLATFORM_ANDROID)
-        /* stop playback if we receive a call */
-        case SYS_CALL_INCOMING:
-            resume = audio_status() == AUDIO_STATUS_PLAY;
-            list_stop_handler();
-            return SYS_CALL_INCOMING;
-        /* resume playback if needed */
-        case SYS_CALL_HUNG_UP:
-            if (resume && playlist_resume() != -1)
-            {
-                playlist_start(global_status.resume_index,
-                               global_status.resume_elapsed,
-                               global_status.resume_offset);
-            }
-            resume = false;
-            return SYS_CALL_HUNG_UP;
 #endif
 #if (CONFIG_PLATFORM & PLATFORM_HOSTED) && defined(PLATFORM_HAS_VOLUME_CHANGE)
         case SYS_VOLUME_CHANGED:

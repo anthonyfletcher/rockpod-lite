@@ -54,19 +54,10 @@
 #define LOGF_ENABLE
 #include "logf.h"
 
-#if (CONFIG_PLATFORM & PLATFORM_SDL)
-#define PREFIX(_x_) sim_ ## _x_
-#else
 #define PREFIX(_x_) _x_
-#endif
 
-#if (CONFIG_PLATFORM & PLATFORM_HOSTED)
-/* For PLATFORM_HOSTED this buffer must be define here. */
-static unsigned char codecbuf[CODEC_SIZE];
-#else
 /* For PLATFORM_NATIVE this buffer is defined in *.lds files. */
 extern unsigned char codecbuf[];
-#endif
 
 static size_t codec_size;
 
@@ -179,10 +170,8 @@ static int codec_load_ram(struct codec_api *api)
         || (hdr->magic != CODEC_MAGIC
             )
         || hdr->target_id != TARGET_ID
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
         || hdr->load_addr != codecbuf
         || hdr->end_addr > codecbuf + CODEC_SIZE
-#endif
         )
     {
         logf("codec header error");
@@ -200,11 +189,7 @@ static int codec_load_ram(struct codec_api *api)
         return CODEC_ERROR;
     }
 
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
     codec_size = hdr->end_addr - codecbuf;
-#else
-    codec_size = 0;
-#endif
 
     *(c_hdr->api) = api;
 
