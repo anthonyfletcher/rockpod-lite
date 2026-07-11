@@ -92,15 +92,6 @@ static long lasttime = 0;
 #include "playback.h"
 #include "pcm_sampr.h"
 
-#if defined(DX50) || defined(DX90)
-#include "governor-ibasso.h"
-#include "usb-ibasso.h"
-#endif
-
-#if (defined(HIBY_R3PROII) || defined(HIBY_R1))
-#include "usb-hiby-gadget.h"
-#endif
-
 #ifdef LOGF_ENABLE
 static char *debug_get_flags(uint32_t flags);
 #undef DEBUGF /* allow DEBUGF or logf not both */
@@ -1010,15 +1001,8 @@ void settings_apply(bool read_disk)
 #endif
 
 
-#if defined(DX50) || defined(DX90)
-    ibasso_set_usb_mode(global_settings.usb_mode);
-#elif (defined(HIBY_R3PROII) || defined(HIBY_R1)) && !defined(SIMULATOR)
-    hiby_set_usb_mode(global_settings.usb_mode);
-#elif defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR)
+#if defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR)
     usb_set_mode(global_settings.usb_mode);
-#endif
-#if defined(DX50) || defined(DX90)
-    ibasso_set_governor(global_settings.governor);
 #endif
 
     /* already called with THEME_STATUSBAR in settings_apply_skins() */

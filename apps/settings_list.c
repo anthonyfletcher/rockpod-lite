@@ -235,9 +235,6 @@ static const char graphic_numeric[] = "graphic,numeric";
   #define DEFAULT_FONT_HEIGHT 15
 #elif LCD_HEIGHT <= 320
   #define DEFAULT_FONT_HEIGHT 18
-#elif defined(SHANLING_Q1)
-  /* 16pt font looks pretty aliased & ugly */
-  #define DEFAULT_FONT_HEIGHT 18
 #elif LCD_HEIGHT <= 400
   #define DEFAULT_FONT_HEIGHT 16
 #elif LCD_HEIGHT <= 480 && LCD_WIDTH < 800
@@ -257,7 +254,7 @@ static const char graphic_numeric[] = "graphic,numeric";
 #endif
 
 #ifdef HAVE_LCD_COLOR
-  #if DEFAULT_FONT_HEIGHT >= 31 || defined(SHANLING_Q1)
+  #if DEFAULT_FONT_HEIGHT >= 31
     #define DEFAULT_ICONSET "tango_icons.32x32"
     #define DEFAULT_VIEWERS_ICONSET "tango_icons_viewers.32x32"
   #elif DEFAULT_FONT_HEIGHT >= 23
@@ -1080,7 +1077,7 @@ const struct settings_list settings[] = {
     OFFON_SETTING(0,list_wraparound,LANG_LIST_WRAPAROUND,
                   true,"list wraparound",NULL),
     CHOICE_SETTING(0, list_order, LANG_LIST_ORDER,
-#if defined(HAVE_SCROLLWHEEL) && !defined(FIIO_M3K)
+#if defined(HAVE_SCROLLWHEEL)
                    1,
 #else
                    0,
@@ -1812,7 +1809,7 @@ const struct settings_list settings[] = {
                   root_menu_load_from_cfg, root_menu_write_to_cfg,
                   root_menu_is_changed, root_menu_set_default),
 
-#if defined(DX50) || defined(DX90) || (defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR))
+#if (defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR))
     CHOICE_SETTING(0,
                    usb_mode,
                    LANG_USB_MODE,

@@ -759,7 +759,7 @@ static bool view_battery(void)
                 lcd_putsf(0, 2, "%s: %d.%03d V", "External", y / 1000, y % 1000);
 #endif
 #if CONFIG_CHARGING
-#if defined IPOD_NANO || defined IPOD_VIDEO
+#if defined IPOD_VIDEO
                 int usb_pwr  = (GPIOL_INPUT_VAL & 0x10)?true:false;
                 int ext_pwr  = (GPIOL_INPUT_VAL & 0x08)?false:true;
                 int dock     = (GPIOA_INPUT_VAL & 0x10)?true:false;
@@ -784,112 +784,6 @@ static bool view_battery(void)
                     x = (adc_read(ADC_4066_ISTAT) * 2400) / (1024 * 3);
                 lcd_putsf(0, 8, "Ibat: %d mA", x);
                 lcd_putsf(0, 9, "Vbat * Ibat: %d mW", x * y / 1000);
-#elif defined TOSHIBA_GIGABEAT_S
-                int line = 3;
-                unsigned int st;
-
-                static const unsigned char * const chrgstate_strings[] =
-                {
-                    "Disabled",
-                    "Error",
-                    "Discharging",
-                    "Precharge",
-                    "Constant Voltage",
-                    "Constant Current",
-                    "<unknown>",
-                };
-
-                lcd_putsf(0, line++, "Charger: %s",
-                         charger_inserted() ? "present" : "absent");
-
-                st = power_input_status() &
-                     (POWER_INPUT_CHARGER | POWER_INPUT_BATTERY);
-
-                lcd_putsf(0, line++, "%.*s%.*s",
-                         !!(st & POWER_INPUT_MAIN_CHARGER)*5, " Main",
-                         !!(st & POWER_INPUT_USB_CHARGER)*4, " USB");
-
-                y = ARRAYLEN(chrgstate_strings) - 1;
-
-                switch (charge_state)
-                {
-                case CHARGE_STATE_DISABLED: y--;
-                case CHARGE_STATE_ERROR:    y--;
-                case DISCHARGING:           y--;
-                case TRICKLE:               y--;
-                case TOPOFF:                y--;
-                case CHARGING:              y--;
-                default:;
-                }
-
-                lcd_putsf(0, line++, "State: %s", chrgstate_strings[y]);
-
-                lcd_putsf(0, line++, "%s Switch: %s", "Battery",
-                         (st & POWER_INPUT_BATTERY) ? "On" : "Off");
-
-                y = chrgraw_adc_voltage();
-                lcd_putsf(0, line++, "CHRGRAW: %d.%03d V",
-                         y / 1000, y % 1000);
-
-                y = application_supply_adc_voltage();
-                lcd_putsf(0, line++, "BP     : %d.%03d V",
-                         y / 1000, y % 1000);
-
-                y = battery_adc_charge_current();
-                lcd_putsf(0, line++, "CHRGISN:% d mA", y);
-
-                y = cccv_regulator_dissipation();
-                lcd_putsf(0, line++, "P CCCV : %d mW", y);
-
-                y = battery_charge_current();
-                lcd_putsf(0, line++, "I Charge:% d mA", y);
-
-                y = battery_adc_temp();
-
-                if (y != INT_MIN) {
-                    lcd_putsf(0, line++, "T %s: %d\u00b0C (%d\u00b0F)",
-                              "Battery", y, (9*y + 160) / 5);
-                } else {
-                    /* Conversion disabled */
-                    lcd_putsf(0, line++, "T %s: ?", "Battery");
-                }
-#elif defined(IPOD_NANO2G)
-                y = pmu_read_battery_voltage();
-                lcd_putsf(17, 1, "RAW: %d.%03d V", y / 1000, y % 1000);
-                y = pmu_read_battery_current();
-                lcd_putsf(0, 2, "%s current: %d mA", "Battery", y);
-                lcd_putsf(0, 3, "PWRCON: %08x %08x", PWRCON, PWRCONEXT);
-                lcd_putsf(0, 4, "CLKCON: %08x %03x %03x", CLKCON, CLKCON2, CLKCON3);
-                lcd_putsf(0, 5, "PLL: %06x %06x %06x", PLL0PMS, PLL1PMS, PLL2PMS);
-                x = pmu_read(0x1b) & 0xf;
-                y = pmu_read(0x1a) * 25 + 625;
-                lcd_putsf(0, 6, "AUTO: %x / %d mV", x, y);
-                x = pmu_read(0x1f) & 0xf;
-                y = pmu_read(0x1e) * 25 + 625;
-                lcd_putsf(0, 7, "DOWN1: %x / %d mV", x, y);
-                x = pmu_read(0x23) & 0xf;
-                y = pmu_read(0x22) * 25 + 625;
-                lcd_putsf(0, 8, "DOWN2: %x / %d mV", x, y);
-                x = pmu_read(0x27) & 0xf;
-                y = pmu_read(0x26) * 100 + 900;
-                lcd_putsf(0, 9, "MEMLDO: %x / %d mV", x, y);
-                for (i = 0; i < 6; i++)
-                {
-                    x = pmu_read(0x2e + (i << 1)) & 0xf;
-                    y = pmu_read(0x2d + (i << 1)) * 100 + 900;
-                    lcd_putsf(0, 10 + i, "LDO%d: %x / %d mV", i + 1, x, y);
-                }
-#elif defined(SANSA_CONNECT)
-                lcd_putsf(0, 3, "Charger: %s",
-                         charger_inserted() ? "present" : "absent");
-                x = (avr_hid_hdq_read_short(HDQ_REG_TEMP) / 4) - 273;
-                lcd_putsf(0, 4, "%s temperature: %d C", "Battery", x);
-                x = (avr_hid_hdq_read_short(HDQ_REG_AI) * 357) / 200;
-                lcd_putsf(0, 5, "%s current: %d.%01d mA", "Battery", x / 10, x % 10);
-                x = (avr_hid_hdq_read_short(HDQ_REG_AP) * 292) / 20;
-                lcd_putsf(0, 6, "Discharge power: %d.%01d mW", x / 10, x % 10);
-                x = (avr_hid_hdq_read_short(HDQ_REG_SAE) * 292) / 2;
-                lcd_putsf(0, 7, "Available energy: %d.%01d mWh", x / 10, x % 10);
 #else
                 lcd_putsf(0, 3, "Charger: %s",
                          charger_inserted() ? "present" : "absent");
@@ -2118,7 +2012,7 @@ static const struct {
 #endif
         { "Screendump", dbg_screendump },
         { "Skin Engine RAM usage", dbg_skin_engine },
-#if ((CONFIG_PLATFORM & PLATFORM_NATIVE) || defined(SONY_NWZ_LINUX) || defined(HIBY_LINUX) || defined(FIIO_M3K_LINUX)) && !defined(SIMULATOR)
+#if (CONFIG_PLATFORM & PLATFORM_NATIVE) && !defined(SIMULATOR)
         { "View HW info", dbg_hw_info },
 #endif
         { "View partitions", dbg_partitions },

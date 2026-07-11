@@ -743,7 +743,7 @@ struct user_settings
 
     int afr_enabled;
 
-#if defined(DX50) || defined(DX90) || (defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR))
+#if (defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR))
     int usb_mode;
 #endif
 #if (CONFIG_KEYPAD == IPOD_4G_PAD)
