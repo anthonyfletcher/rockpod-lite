@@ -20,14 +20,24 @@
 #--- Viewport Declarations ---# $VD
 # these need to be here to prevent rendering issues.
 #
+# CC: $VD picks which title viewport to show up front. It measures the
+# CC: track title length (%ss slices of %it) and, if it fits on one line,
+# CC: uses a single-line title; otherwise it splits into a dual-line title
+# CC: at the right space. 'High_' variants are used when two sublines show.
 %?or(%or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,off),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,off)),%or(%if(%ft(themes/Themify_2.preferences,sub-line mode: ),=,off),%if(%ft(themes/Themify_2.preferences,sub-line mode:),=,off)))<%?and(%if(%ss(0, 26, %it), =, %it),%if(%ss(0, 14, %it), !=, %it))<%?if(%ss(14,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Dual_Line_Song_Title_Space_14)|%?if(%ss(13,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Dual_Line_Song_Title_Space_13)|%?if(%ss(12,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Dual_Line_Song_Title_Space_12)|%?if(%ss(11,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Dual_Line_Song_Title_Space_11)|%?if(%ss(10,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Dual_Line_Song_Title_Space_10)|%?if(%ss(9,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Dual_Line_Song_Title_Space_9)|%?if(%ss(8,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Dual_Line_Song_Title_Space_8)|%?if(%ss(7,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Dual_Line_Song_Title_Space_7)|%?if(%ss(6,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Dual_Line_Song_Title_Space_6)|%?if(%ss(5,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Dual_Line_Song_Title_Space_5)|%?if(%ss(4,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Dual_Line_Song_Title_Space_4)|%?if(%ss(3,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Dual_Line_Song_Title_Space_3)|%Vd(Single_Line_Song_Title)>>>>>>>>>>>>|%Vd(Single_Line_Song_Title)>|%?and(%if(%ss(0, 26, %it), =, %it),%if(%ss(0, 14, %it), !=, %it))<%?if(%ss(14,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(High_Dual_Line_Song_Title_Space_14)|%?if(%ss(13,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(High_Dual_Line_Song_Title_Space_13)|%?if(%ss(12,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(High_Dual_Line_Song_Title_Space_12)|%?if(%ss(11,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(High_Dual_Line_Song_Title_Space_11)|%?if(%ss(10,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(High_Dual_Line_Song_Title_Space_10)|%?if(%ss(9,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(High_Dual_Line_Song_Title_Space_9)|%?if(%ss(8,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(High_Dual_Line_Song_Title_Space_8)|%?if(%ss(7,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(High_Dual_Line_Song_Title_Space_7)|%?if(%ss(6,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(High_Dual_Line_Song_Title_Space_6)|%?if(%ss(5,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(High_Dual_Line_Song_Title_Space_5)|%?if(%ss(4,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(High_Dual_Line_Song_Title_Space_4)|%?if(%ss(3,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(High_Dual_Line_Song_Title_Space_3)|%Vd(High_Single_Line_Song_Title)>>>>>>>>>>>>|%Vd(High_Single_Line_Song_Title)>>
 #
+# CC: Then pick the subline viewport(s) from the theme prefs (sub-line mode
+# CC: / extra sub-line mode: artist, album, rating, file_format, year,
+# CC: volume_meter, off...).
 %?and(%if(%ss(0, 26, %it), =, %it),%if(%ss(0, 14, %it), !=, %it),%or(%if(%ss(14,1,%it),=,%ft(themes/Themify_2.preferences,space:)),%if(%ss(13,1,%it),=,%ft(themes/Themify_2.preferences,space:)),%if(%ss(12,1,%it),=,%ft(themes/Themify_2.preferences,space:)),%if(%ss(11,1,%it),=,%ft(themes/Themify_2.preferences,space:)),%if(%ss(10,1,%it),=,%ft(themes/Themify_2.preferences,space:)),%if(%ss(9,1,%it),=,%ft(themes/Themify_2.preferences,space:)),%if(%ss(8,1,%it),=,%ft(themes/Themify_2.preferences,space:)),%if(%ss(7,1,%it),=,%ft(themes/Themify_2.preferences,space:)),%if(%ss(6,1,%it),=,%ft(themes/Themify_2.preferences,space:)),%if(%ss(5,1,%it),=,%ft(themes/Themify_2.preferences,space:)),%if(%ss(4,1,%it),=,%ft(themes/Themify_2.preferences,space:)),%if(%ss(3,1,%it),=,%ft(themes/Themify_2.preferences,space:))))<%?or(%if(%ft(themes/Themify_2.preferences,sub-line mode: ),=,volume_meter),%if(%ft(themes/Themify_2.preferences,sub-line mode:),=,volume_meter))<%Vd(Dual_Line_Subline_Volume_Meter)|%?or(%if(%ft(themes/Themify_2.preferences,sub-line mode: ),=,off),%if(%ft(themes/Themify_2.preferences,sub-line mode:),=,off))<%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,rating),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,rating))<%Vd(Dual_Line_Subline_Rating)|%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,file_format),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,file_format))<%Vd(Dual_Line_File_Format)|%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,year),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,year))<%Vd(Dual_Line_Song_Year)|%Vd(Dual_Line_Subline_Text)>>>|%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,off),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,off))<%Vd(Dual_Line_Subline_Text)|%Vd(High_Dual_Line_Subline_Text)%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,rating),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,rating))<%Vd(High_Dual_Line_Subline_Rating)|%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,file_format),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,file_format))<%Vd(High_Dual_Line_File_Format)|%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,year),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,year))<%Vd(High_Dual_Line_Song_Year)|%Vd(High_Dual_Line_Extra_Subline_Text)>>>>>>|%?or(%if(%ft(themes/Themify_2.preferences,sub-line mode: ),=,volume_meter),%if(%ft(themes/Themify_2.preferences,sub-line mode:),=,volume_meter))<%Vd(Single_Line_Subline_Volume_Meter)|%?or(%if(%ft(themes/Themify_2.preferences,sub-line mode: ),=,off),%if(%ft(themes/Themify_2.preferences,sub-line mode:),=,off))<%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,rating),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,rating))<%Vd(Single_Line_Subline_Rating)|%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,file_format),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,file_format))<%Vd(Single_Line_File_Format)|%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,year),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,year))<%Vd(Single_Line_Song_Year)|%Vd(Single_Line_Subline_Text)>>>|%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,off),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,off))<%Vd(Single_Line_Subline_Text)|%Vd(High_Single_Line_Subline_Text)%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,rating),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,rating))<%Vd(High_Single_Line_Subline_Rating)|%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,file_format),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,file_format))<%Vd(High_Single_Line_File_Format)|%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,year),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,year))<%Vd(High_Single_Line_Song_Year)|%Vd(High_Single_Line_Extra_Subline_Text)>>>>>>>
 #
 #- Battery -#
+# CC: Enable numeric or graphical battery per the theme setting.
 %?St(battery display)<%Vd(Battery_Graphical)|%Vd(Battery_Numeric)>
 #
 #- Status Bar -#
+# CC: Enable the status bar; the 'Long' variant when a sleep timer (%bs) or
+# CC: hold (%mh) icon is present, plus the sub-status icons unless minimal mode.
 %?bs<%Vd(Status_Bar_Long)|%?mh<%Vd(Status_Bar_Long)|%Vd(Status_Bar_Short)>>%Vd(Status_Bar)%?or(%if(%ft(themes/Themify_2.preferences,minimal player mode: ),=,on),%if(%ft(themes/Themify_2.preferences,minimal player mode:),=,on))<|%?bs<%Vd(Sub_Status_Bar_Long)|%?mh<%Vd(Sub_Status_Bar_Long)|%Vd(Sub_Status_Bar_Short)>>>
 #
 #- Playlist Position -#
@@ -40,6 +50,8 @@
 #
 #--- Graphics Reset ---# $GR
 # need to flush the background and foreground, or the previous screen's background remains.
+# CC: $GR: flush both layers so the previous screen's background doesn't
+# CC: bleed through; %wd disables the default statusbar.
 %V(0,0,-,-,-)%VB
 %V(0,0,-,-,-)
 %wd
@@ -48,6 +60,8 @@
 #
 #
 #--- Font-loading ---# $FL
+# CC: $FL: preload the fonts used below (title, artist/album, and the icon
+# CC: fonts). The number is the font id referenced as the last %V/%Vl arg.
 %Fl(2,22-LeagueSpartan-Bold.fnt) # song titles font
 %Fl(3,18-LeagueSpartan-Medium.fnt) # artist/album and playlist position font
 %Fl(4,../wps/Themify_2/Player_Icons.fnt) # vector icons for the song playback status
@@ -63,7 +77,11 @@
 #--- Album Art ---# $AA
 #
 # in this instance the character u is a 14% opacity block used to shade the background.
+# CC: $AA: draw the album-art frame, then the real art (%C = art available)
+# CC: or the fallback placeholder.
 %Vd(Album_Widget)%?C<%Vd(Album_Art)|%Vd(Album_Fallback_Art)>
+# CC: Load the album art into a 160x160 area (%Cl position, %Cd draw); the
+# CC: 'v' rows shade the backdrop behind it.
 %Vl(Album_Art,0,22,160,160,9)%VB%Cl(0,0,160,160)%Cdvvvvvvv
 vvvvvvv
 vvvvvvv
@@ -85,6 +103,7 @@ uuuuuuu
 #
 %Vl(Album_Fallback_Art,0,22,160,160,-)
 %V(159,22,1,1,-)%VB
+# CC: The rounded frame/mask drawn around the album art.
 %Vl(Album_Widget,0,16,145,6,-)%VB%dr(0,0,-,-)
 %Vl(Album_Widget,160,38,6,128,-)%VB%dr(0,0,-,-)
 %Vl(Album_Widget,160,38,6,128,-)%dr(0,0,-,-)
@@ -116,6 +135,8 @@ uuuuuuu
 # × = 25px
 # Ó = Slider BG Rounded End
 #
+# CC: Custom progress slider. %px = playback position (0-100); the glyph
+# CC: string builds a rounded bar of the right length (see legend above).
 %V(17,196,127,5,6)%aLØ%aR%?px<ÒÖ××××Ó|ÒÖ××××Ó|ÒÑÑÑÑÔÕ××××Ó|ÒÑÑÑÔÕ××××Ó|ÒÑÑÔÕ××××Ó|ÒÑÔÕ××××Ó|ÒÔÕ××××Ó|ÒÑÑÑÑÕ××××Ó|ÒÑÑÑÕ××××Ó|ÒÑÑÕ××××Ó|ÒÑÕ××××Ó|ÒÕ××××Ó|ÒÑÑÑÑÔ××××Ó|ÒÑÑÑÔ××××Ó|ÒÑÑÔ××××Ó|ÒÑÔ××××Ó|ÒÔ××××Ó|ÒÑÑÑÑ××××Ó|ÒÑÑÑ××××Ó|ÒÑÑ××××Ó|ÒÑ××××Ó|Ò××××Ó|ÒÑÑÑÑÖ×××Ó|ÒÑÑÑÖ×××Ó|ÒÑÑÖ×××Ó|ÒÑÑÖ×××Ó|ÒÑÖ×××Ó|ÒÖ×××Ó|ÒÑÑÑÑÔÕ×××Ó|ÒÑÑÑÔÕ×××Ó|ÒÑÑÔÕ×××Ó|ÒÑÔÕ×××Ó|ÒÔÕ×××Ó|ÒÑÑÑÑÕ×××Ó|ÒÑÑÑÕ×××Ó|ÒÑÑÕ×××Ó|ÒÑÕ×××Ó|ÒÕ×××Ó|ÒÑÑÑÑÔ×××Ó|ÒÑÑÑÔ×××Ó|ÒÑÑÔ×××Ó|ÒÑÔ×××Ó|ÒÔ×××Ó|ÒÑÑÑÑ×××Ó|ÒÑÑÑ×××Ó|ÒÑÑ×××Ó|ÒÑ×××Ó|Ò×××Ó|ÒÑÑÑÑÖ××Ó|ÒÑÑÑÖ××Ó|ÒÑÑÖ××Ó|ÒÑÖ××Ó|ÒÖ××Ó|ÒÑÑÑÑÔÕ××Ó|ÒÑÑÑÔÕ××Ó|ÒÑÑÔÕ××Ó|ÒÑÔÕ××Ó|ÒÔÕ××Ó|ÒÑÑÑÑÕ××Ó|ÒÑÑÑÕ××Ó|ÒÑÑÕ××Ó|ÒÑÕ××Ó|ÒÕ××Ó|ÒÑÑÑÑÔ××Ó|ÒÑÑÑÔ××Ó|ÒÑÑÔ××Ó|ÒÑÔ××Ó|ÒÔ××Ó|ÒÑÑÑÑ××Ó|ÒÑÑÑ××Ó|ÒÑÑ××Ó|ÒÑ××Ó|Ò××Ó|ÒÑÑÑÑÖ×Ó|ÒÑÑÑÖ×Ó|ÒÑÑÖ×Ó|ÒÑÖ×Ó|ÒÖ×Ó|ÒÑÑÑÑÔÕ×Ó|ÒÑÑÑÔÕ×Ó|ÒÑÑÔÕ×Ó|ÒÑÔÕ×Ó|ÒÔÕ×Ó|ÒÑÑÑÑÕ×Ó|ÒÑÑÑÕ×Ó|ÒÑÑÕ×Ó|ÒÑÕ×Ó|ÒÕ×Ó|ÒÑÑÑÑÔ×Ó|ÒÑÑÑÔ×Ó|ÒÑÑÔ×Ó|ÒÑÔ×Ó|ÒÔ×Ó|ÒÑÑÑÑ×Ó|ÒÑÑÑ×Ó|ÒÑÑ×Ó|ÒÑ×Ó|Ò×Ó|ÒÑÑÑÑÖÓ|ÒÑÑÑÖÓ|ÒÑÑÖÓ|ÒÑÖÓ|ÒÖÓ|ÒÑÑÑÑÔÕÓ|ÒÑÑÑÔÕÓ|ÒÑÑÔÕÓ|ÒÑÔÕÓ|ÒÔÕÓ|ÒÑÑÑÑÕÓ|ÒÑÑÑÕÓ|ÒÑÑÕÓ|ÒÑÕÓ|ÒÕÓ|ÒÑÑÑÑÔÓ|ÒÑÑÑÔÓ|ÒÑÑÔÓ|ÒÑÔÓ|ÒÔÓ|ÒÑÑÑÑÓ|ÒÑÑÑÓ|ÒÑÑÓ|ÒÑÓ|ÒÓ|ÒÑ|Ù>
 #
 #--- END ---#
@@ -125,6 +146,8 @@ uuuuuuu
 #
 %V(283,14,37,29,-)%VB%dr(0,0,37,8)%dr(0,21,37,8)%dr(30,8,7,13)
 %V(283,14,37,29,-)
+# CC: $SB: the WPS status-bar background (Long variant, extra width for the
+# CC: hold/sleep icon).
 %Vl(Status_Bar_Long,264,14,19,29,-)%VB%dr(0,0,19,8)%dr(0,21,19,8)%dr(12,8,7,13)
 %Vl(Status_Bar_Long,264,14,19,29,-)
 #
@@ -134,6 +157,7 @@ uuuuuuu
 #-- Battery Status --#
 #
 #- Numerical Battery Display --#
+# CC: WPS battery (numeric here, graphical below), same idea as the .sbs.
 %Vl(Battery_Numeric,283,22,30,14,8)%Vs(invert)EFG
 %Vl(Battery_Numeric,285,24,24,9,5)%VB%?bc<%t(3)%ac%bl;%t(2)|%?if(%bl,<=,15)<%t(2)%ac%bl;%t(.5)|%ac%bl>>
 %Vl(Battery_Numeric,285,24,24,9,5)%?bc<%t(3)%ac%bl;%t(2)|%?if(%bl,<=,15)<%t(2)%ac%bl;%t(.5)|%ac%bl>>
@@ -151,6 +175,8 @@ uuuuuuu
 #
 # when hold or sleep icon isn't active.
 #- Short Backdrop -#
+# CC: Sub-status backdrop: a pill sized to fit whichever of the shuffle /
+# CC: repeat / HQ-audio icons are active (%ps shuffle, %mm repeat, %fc codec).
 %Vl(Sub_Status_Backdrop_Short,202,14,82,29,6)%VB
 %aR%?or(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<À>%?and(%if(%ps, !=, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<Á>%?and(%if(%ps, =, 1),%if(%mm, =, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<Á>%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11),%if(%fc, !=, 13)))<Á>%?and(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<Á>%?or(%if(%ps, =, 1),%if(%mm, >, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<Â>
 #
@@ -167,6 +193,7 @@ uuuuuuu
 %Vl(Status_Bar_Long,254,14,10,29,6)%Vs(invert)%aL%?mh<a|a>
 #
 # icon slot 1
+# CC: The shuffle / repeat / HQ-audio status glyphs themselves.
 %Vl(Sub_Status_Bar_Short,252,22,14,13,8)%?and(%if(%ps, =, 1),%or(%if(%mm, =, 1),%if(%mm, >, 1)),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<m>%?and(%if(%ps, =, 1),%or(%if(%mm, =, 1),%if(%mm, >, 1)),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<m>%?and(%if(%ps, !=, 1),%if(%mm, >, 1),%or(%if(%fc, !=, 4),%if(%fc, !=, 5),%if(%fc, !=, 7),%if(%fc, !=, 11)))<n>%?and(%if(%ps, !=, 1),%if(%mm, =, 1),%or(%if(%fc, =, 4),%if(%fc, =, 5),%if(%fc, =, 7),%if(%fc, =, 11)))<p>
 #
 # icon slot 1
@@ -189,6 +216,8 @@ uuuuuuu
 #--- Player & Playlist Status ---# $PS
 #-- Player Status Backdrops --#
 #
+# CC: $PS: rounded backdrop behind the play controls; the glyphs change with
+# CC: play state (%mp) and whether the volume popup (%mv) is up.
 %V(196,154,124,29,6)%VB
 %aR%?if(%mp,<=,3)<%?mv(1)<ÍÎ|%?mp<ÃÄ|ÉÊ|ÃÄ>>|ÃÄ>%?or(%if(%ft(themes/Themify_2.preferences,minimal player mode: ),=,on),%if(%ft(themes/Themify_2.preferences,minimal player mode:),=,on))<|%?if(%pe,!=,1)<ÇÇ>>È
 #
@@ -200,6 +229,8 @@ uuuuuuu
 #
 #-- Play, Pause, Forward, Rewind and Volume --#
 # don't display volume if fastwarding etc.
+# CC: Choose the play-status vs volume-popup viewport, short or long form
+# CC: (long leaves room for the playlist counter when not in minimal mode).
 %?or(%if(%ft(themes/Themify_2.preferences,minimal player mode: ),=,on),%if(%ft(themes/Themify_2.preferences,minimal player mode:),=,on))<%?if(%mp,<=,3)<%?mv(1)<%Vd(Player_Volume_Short)|%Vd(Player_Status_Short)>|%Vd(Player_Status_Short)>|%?if(%pe,!=,1)<%?if(%mp,<=,3)<%?mv(1)<%Vd(Player_Volume_Long)|%Vd(Player_Status_Long)>|%Vd(Player_Status_Long)>|%?if(%mp,<=,3)<%?mv(1)<%Vd(Player_Volume_Short)|%Vd(Player_Status_Short)>|%Vd(Player_Status_Short)>>>
 #
 #- Shorter Dialog Positions -#
@@ -245,9 +276,12 @@ uuuuuuu
 # %Vd(Player_Spectrum_*) call -- and the spectrum's own refresh -- still
 # fires. Suppressing %Sb itself, rather than trying to out-order it, is the
 # only way to stop it drawing over the popup for as long as %mv(1) holds.
+# CC: Play/pause/ff/rw indicator; while playing it shows the spectrum
+# CC: analyser (%Sb), declared last so nothing clears over it (see comment).
 %Vl(Player_Status_Short,260,160,46,46,4)%?mp<|%Vd(Player_Spectrum_Short)|1|æ|õ>
 %Vl(Player_Spectrum_Short,268,168,30,30,4)%?mv(1)<|%Sb(5,center)>
 # volume Slider, one character for the 91 positions of regular volume settings.
+# CC: Volume popup: one glyph per volume step (%pv).
 %Vl(Player_Volume_Short,260,160,46,46,4)%?pv<4|5|6|7|8|9|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|À|Á|Â|Ã|Ä|Å|Ç|È|É|Ê|Ë|Ì|Í|Î|Ï|Ð|Ñ|Ò|Ó|Ô|Õ|Ö|×|Ø|Ù|Ú|Û|Ü|Ý|Þ|ß|à|á|â|ã|ä|ä|å>
 #
 #- Longer Dialog Positions -#
@@ -262,6 +296,8 @@ uuuuuuu
 #
 #-- Playlist Position --#
 #
+# CC: Playlist position ("n of m"), shown as one or three lines depending on
+# CC: how big the numbers are.
 %Vl(Playlist_Position_Three_Lines,250,167,68,12,3)%?mv<%?mp<%ac%pp %Sx(of)|%ac%pp %Sx(of)|%ac%pp %Sx(of)|%ac%pp %Sx(of)|%ac%pp %Sx(of)||||>|%?mp<%ac%pp %Sx(of)|%ac%pp %Sx(of)|%ac%pp %Sx(of)|%ac%pp %Sx(of)|%ac%pp %Sx(of)||||>>
 %Vl(Playlist_Position_Three_Lines,250,187,68,12,3)%ac%pe
 #
@@ -275,19 +311,26 @@ uuuuuuu
 #-- Single Line Title --#
 #
 #- Single Line Title when one subline active -#
+# CC: $SI: single-line track title (%it, or filename %fn if untagged).
 %Vl(Single_Line_Song_Title,180,76,132,18,2)%?if(%St(scroll speed),=,1)<|%s>%aL%?it<%it|%fn>
 #
+# CC: The subline text, filled from whichever field the sub-line-mode pref
+# CC: selects (artist/album/genre/playlist/bitrate/playtime).
 %Vl(Single_Line_Subline_Text,180,102,132,16,3)%?if(%St(scroll speed),=,1)<|%s>%aL%?or(%if(%ft(themes/Themify_2.preferences,sub-line mode: ),=,off),%if(%ft(themes/Themify_2.preferences,sub-line mode:),=,off))<%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,artist),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,artist))<%?ia<%ia|%d(1)>>%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,album),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,album))<%?id<%id|%d(1)>>%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,genre),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,genre))<%?ig<%ig|%d(1)>>%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,playlist_name),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,playlist_name))<%?pn<%pn|%d(1)>>%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,bitrate),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,bitrate))<%fbkbps>%?or(%if(%ft(themes/Themify_2.preferences,extra sub-line mode: ),=,song_playtime),%if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,song_playtime))<%pc/%pt>|%?or(%if(%ft(themes/Themify_2.preferences,sub-line mode: ),=,artist),%if(%ft(themes/Themify_2.preferences,sub-line mode:),=,artist))<%?ia<%ia|%d(1)>>%?or(%if(%ft(themes/Themify_2.preferences,sub-line mode: ),=,album),%if(%ft(themes/Themify_2.preferences,sub-line mode:),=,album))<%?id<%id|%d(1)>>%?or(%if(%ft(themes/Themify_2.preferences,sub-line mode: ),=,genre),%if(%ft(themes/Themify_2.preferences,sub-line mode:),=,genre))<%?ig<%ig|%d(1)>>%?or(%if(%ft(themes/Themify_2.preferences,sub-line mode: ),=,playlist_name),%if(%ft(themes/Themify_2.preferences,sub-line mode:),=,playlist_name))<%?pn<%pn|%d(1)>>%?or(%if(%ft(themes/Themify_2.preferences,sub-line mode: ),=,bitrate),%if(%ft(themes/Themify_2.preferences,sub-line mode:),=,bitrate))<%fbkbps>%?or(%if(%ft(themes/Themify_2.preferences,sub-line mode: ),=,song_playtime),%if(%ft(themes/Themify_2.preferences,sub-line mode:),=,song_playtime))<%pc/%pt>>
 #
 %Vl(Single_Line_Subline_Volume_Meter,180,106,132,18,6)%VB%aLllllllllllllllllll
+# CC: Alternative subline: a live volume meter (%pL) instead of text.
 %Vl(Single_Line_Subline_Volume_Meter,180,106,132,18,6)%aL%?pS(0.2)<|%?if(%pL,=,0)<%t(2.5);%t(2)k|%?pL<k|kk|kkk|kkkk|kkkkk|kkkkkk|kkkkkkk|kkkkkkkk|kkkkkkkkk|kkkkkkkkkk|kkkkkkkkkkk|kkkkkkkkkkkk|kkkkkkkkkkkkk|kkkkkkkkkkkkkk|kkkkkkkkkkkkkkk|kkkkkkkkkkkkkkkk|kkkkkkkkkkkkkkkkk|kkkkkkkkkkkkkkkkkk>>>
 #
+# CC: Alternative subline: the track rating as filled/empty stars (%rr).
 %Vl(Single_Line_Subline_Rating,180,106,132,18,8)%aL%?rr<uuuuu|vuuuu|wuuuu|wvuuu|wwuuu|wwvuu|wwwuu|wwwvu|wwwwu|wwwwv|wwwww>
 #
+# CC: Alternative subline: a file-format badge sized to the codec name (%fc).
 %Vl(Single_Line_File_Format,181,101,120,18,6)%aL%VBÚÛÛÛÛ%?if(%ss(8,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ|%?if(%ss(7,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛÛÛÛÛÛÛ|%?if(%ss(6,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛÛÛÛÛ|%?if(%ss(5,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛÛÛ|%?if(%ss(4,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛ|%?if(%ss(3,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛ|%?if(%ss(2,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛ|%?if(%ss(1,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛ>>>>>>>>Ü
 %Vl(Single_Line_File_Format,181,101,120,18,7)
 %Vl(Single_Line_File_Format,188,104,120,18,3)%aL%fc
 #
+# CC: Alternative subline: a year badge (%iy).
 %Vl(Single_Line_Song_Year,181,101,50,20,6)%VB%aL%?iy<ÝÞÞÞÞÞß>
 %Vl(Single_Line_Song_Year,181,101,50,20,7)
 %Vl(Single_Line_Song_Year,187,105,37,16,3)%ac%?if(%ss(0,4,%iy),=,%iy)<%iy|%ss(0,4,%iy)>
@@ -315,6 +358,9 @@ uuuuuuu
 #
 #- Dual Line Titles when one subline active -#
 #
+# CC: Dual-line title variants: each splits %it into two lines at a
+# CC: different space position (Space_14..Space_3) so the break lands on a
+# CC: word; $VD above chose which one to show.
 %Vl(Dual_Line_Song_Title_Space_14,180,62,132,60,2)
 %ss(0,15,%it)
 %ss(15,26,%it)
@@ -380,6 +426,8 @@ uuuuuuu
 #
 #
 #- Dual Line Title when two sublines active -#
+# CC: Same dual-line title split, positioned higher ('High_') for when two
+# CC: sublines are active below the title.
 %Vl(High_Dual_Line_Song_Title_Space_14,180,52,132,60,2)
 %ss(0,15,%it)
 %ss(15,26,%it)
