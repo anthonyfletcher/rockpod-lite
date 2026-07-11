@@ -28,9 +28,7 @@
 #include "tag_table.h"
 #include "skin_parser.h"
 #include "gesture.h"
-#ifndef __PCTOOL__
 #include "core_alloc.h"
-#endif
 
 struct wps_data;
 
@@ -182,11 +180,7 @@ struct gradient_config {
 #define VP_DRAW_WASHIDDEN   0x4
 /* these are never drawn, nor cleared, i.e. just ignored */
 #define VP_NEVER_VISIBLE    0x8
-#ifndef __PCTOOL__
 #define VP_DEFAULT_LABEL    -200
-#else
-#define VP_DEFAULT_LABEL    NULL
-#endif
 #define VP_DEFAULT_LABEL_STRING "|"
 struct skin_viewport {
     struct viewport vp;   /* The LCD viewport struct */
@@ -360,16 +354,12 @@ struct wps_data
     bool wps_loaded;
 };
 
-#ifndef __PCTOOL__
 static inline char* get_skin_buffer(struct wps_data* data)
 {
     if (data->buflib_handle > 0)
         return core_get_data(data->buflib_handle);
     return NULL;
 }
-#else
-#define get_skin_buffer(d) skin_buffer
-#endif
 
 /* wps_data end */
 

@@ -54,13 +54,8 @@
 #else
 #define BDEBUGF(...)
 #endif
-#ifndef __PCTOOL__
 #include "config.h"
 #include "resize.h"
-#else
-#undef DEBUGF
-#define DEBUGF(...)
-#endif
 
 #ifdef __GNUC__
 #define STRUCT_PACKED __attribute__((packed))

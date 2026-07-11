@@ -51,7 +51,6 @@ int usb_keypad_mode;
 static bool usb_hid;
 #endif
 
-#ifndef SIMULATOR
 
 static int handle_usb_events(void)
 {
@@ -107,7 +106,6 @@ static int handle_usb_events(void)
 
     return 0;
 }
-#endif /* SIMULATOR */
 
 #define MODE_NAME_LEN 32
 
@@ -277,14 +275,8 @@ void gui_usb_screen_run(bool early_usb, intptr_t seqnum)
     while (1)
     {
         usb_screens_draw(usb_screen_vps_ar);
-#ifdef SIMULATOR
-        if (button_get_w_tmo(HZ/2))
-            break;
-        send_event(GUI_EVENT_ACTIONUPDATE, NULL);
-#else
         if (handle_usb_events())
             break;
-#endif /* SIMULATOR */
     }
 
     FOR_NB_SCREENS(i)
@@ -322,7 +314,4 @@ void gui_usb_screen_run(bool early_usb, intptr_t seqnum)
     }
 
     pop_current_activity();
-#ifdef SIMULATOR
-    in_usb_screen = false;
-#endif
 }

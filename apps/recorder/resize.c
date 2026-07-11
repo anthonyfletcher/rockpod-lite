@@ -49,15 +49,10 @@
 #else
 #define SDEBUGF(...)
 #endif
-#ifndef __PCTOOL__
 #include "config.h"
 #include "system.h"
 #include <bmp.h>
 #include "resize.h"
-#else
-#undef DEBUGF
-#define DEBUGF(...)
-#endif
 #include <jpeg_load.h>
 
 #define MULUQ(a, b) ((a) * (b))

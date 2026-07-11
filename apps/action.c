@@ -463,7 +463,6 @@ static inline void button_flip_horizontally(int context, int *button)
 #warning "BUTTON_LEFT / BUTTON_RIGHT not defined!"
 #endif
 
-#ifndef SIMULATOR
 #ifdef HAVE_SCROLLWHEEL
     newbutton &= ~(BUTTON_SCROLL_BACK | BUTTON_SCROLL_FWD);
     if (has_flag(*button, BUTTON_SCROLL_BACK))
@@ -489,7 +488,6 @@ static inline void button_flip_horizontally(int context, int *button)
         newbutton |= BUTTON_MINUS;
     }
 #endif
-#endif /* !SIMULATOR */
 
     *button = newbutton;
 #endif /* !BOOTLOADER */

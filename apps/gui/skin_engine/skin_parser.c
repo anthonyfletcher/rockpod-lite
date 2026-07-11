@@ -24,9 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "config.h"
-#ifndef __PCTOOL__
 #include "core_alloc.h"
-#endif
 #include "file.h"
 #include "misc.h"
 #include "plugin.h"
@@ -37,26 +35,10 @@
 #include "skin_parser.h"
 #include "tag_table.h"
 
-#ifdef __PCTOOL__
-#ifdef WPSEDITOR
-#include "proxy.h"
-#include "sysfont.h"
-#else
-#include "action.h"
-#include "checkwps.h"
-#include "language.h"
-#include "lang_enum.h"
-#include "audio.h"
-#define lang_is_rtl() (false)
-#define DEBUGF printf
-#define splashf(...)
-#endif /*WPSEDITOR*/
-#else
 #include "debug.h"
 #include "splash.h"
 #include "lang.h"
 #include "language.h"
-#endif /*__PCTOOL__*/
 
 #include <ctype.h>
 #include <stdbool.h>
@@ -567,7 +549,6 @@ static int parse_listitemviewport(struct skin_element *element,
                                   struct wps_token *token,
                                   struct wps_data *wps_data)
 {
-#ifndef __PCTOOL__
     struct skin_tag_parameter *param;
     struct listitem_viewport_cfg *cfg = skin_buffer_alloc(sizeof(*cfg));
     if (!cfg)
@@ -590,7 +571,6 @@ static int parse_listitemviewport(struct skin_element *element,
         !strcmp(get_param_text(element, 3), "tile"))
         cfg->tile = true;
     token->value.data = PTRTOSKINOFFSET(skin_buffer, (void*)cfg);
-#endif
     return 0;
 }
 
@@ -938,11 +918,7 @@ static int parse_timeout_tag(struct skin_element *element,
             {
                 st->show = val;
                 st->hide = get_param(element, 1)->data.number;
-#ifndef __PCTOOL__
                 st->next_tick = current_tick; /* show immediately the first time */
-#else
-                st->next_tick = 0; /* checkwps doesn't have current_tick */
-#endif
                 token->type = SKIN_TOKEN_SUBLINE_TIMEOUT_HIDE;
                 token->value.data = PTRTOSKINOFFSET(skin_buffer, st);
                 return 0;
@@ -1171,12 +1147,10 @@ static int parse_progressbar_tag(struct skin_element* element,
                 curr_param++;
                 param++;
                 text = SKINOFFSETTOPTR(skin_buffer, param->data.text);
-#ifndef __PCTOOL__
                 pb->setting = find_setting_by_cfgname(text);
                 if (!pb->setting)
                     return WPS_ERROR_INVALID_PARAM;
                 pb->setting_offset = setting_offset;
-#endif
             }
         }
         else if (curr_param == 4)
@@ -1545,7 +1519,6 @@ void skin_data_free_buflib_allocs(struct wps_data *wps_data)
     if (wps_data->wps_loaded)
         skin_buffer = get_skin_buffer(wps_data);
 
-#ifndef __PCTOOL__
     if (!skin_buffer)
         goto abort;
 
@@ -1585,7 +1558,6 @@ abort:
     wps_data->font_ids = PTRTOSKINOFFSET(skin_buffer, NULL); /* Safe if skin_buffer is NULL */
     wps_data->images = PTRTOSKINOFFSET(skin_buffer, NULL);
     wps_data->buflib_handle = core_free(wps_data->buflib_handle);
-#endif
 }
 
 /*
@@ -1621,7 +1593,6 @@ static void skin_data_reset(struct wps_data *wps_data)
     wps_data->wps_loaded = false;
 }
 
-#ifndef __PCTOOL__
 static int buflib_move_callback(int handle, void* current, void* new)
 {
     (void)handle;
@@ -1639,7 +1610,6 @@ static int buflib_move_callback(int handle, void* current, void* new)
 
     return BUFLIB_CB_OK;
 }
-#endif
 
 static int load_skin_bmp(struct wps_data *wps_data, struct gui_img *img, char* bmpdir)
 {
@@ -1785,9 +1755,6 @@ static bool skin_load_fonts(struct wps_data *data)
         {
             vp->font = FONT_SYSFIXED;
             DEBUGF("WARNING: Do not use SYSFONT (id 0) in viewports!\n");
-#ifdef __PCTOOL__
-//            success = false;
-#endif
             continue;
         }
 
@@ -1810,12 +1777,8 @@ static bool skin_load_fonts(struct wps_data *data)
         {
             char path[MAX_PATH];
             snprintf(path, sizeof path, FONT_DIR "/%s", font->name);
-#ifndef __PCTOOL__
             font->id = font_load_ex(path, 0, skinfonts[font_id-2].glyphs);
 
-#else
-            font->id = font_load(path);
-#endif
             //printf("[%d] %s -> %d\n",font_id, font->name, font->id);
             id_array[font_count++] = font->id;
         }
@@ -2067,9 +2030,7 @@ static int skin_element_callback(struct skin_element* element, void* data)
                     function = parse_statusbar_tags;
                     break;
                 case SKIN_TOKEN_LIST_TITLE_TEXT:
-#ifndef __PCTOOL__
                     sb_skin_has_title(curr_screen);
-#endif
                     break;
 #if (LCD_DEPTH > 1)
                 case SKIN_TOKEN_DRAWRECTANGLE:
@@ -2173,9 +2134,7 @@ static int skin_element_callback(struct skin_element* element, void* data)
         {
             struct line_alternator *alternator = skin_buffer_alloc(sizeof(*alternator));
             alternator->current_line = 0;
-#ifndef __PCTOOL__
             alternator->next_change_tick = current_tick;
-#endif
             element->data = PTRTOSKINOFFSET(skin_buffer, alternator);
         }
         break;
@@ -2316,7 +2275,6 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
         playback_update_aa_dims();
     }
 #endif
-#ifndef __PCTOOL__
     wps_data->buflib_handle = core_alloc(skin_buffer_usage());
     if (wps_data->buflib_handle > 0)
     {
@@ -2326,9 +2284,6 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
         stats->buflib_handles++;
         stats->tree_size = skin_buffer_usage();
     }
-#else
-    wps_data->wps_loaded = wps_data->tree >= 0;
-#endif
 
 
     skin_buffer = NULL;

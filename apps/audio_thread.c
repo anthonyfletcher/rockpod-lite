@@ -37,12 +37,6 @@
 
 /* Macros to enable logf for queues
    logging on SYS_TIMEOUT can be disabled */
-#ifdef SIMULATOR
-/* Define this for logf output of all queuing except SYS_TIMEOUT */
-#define AUDIO_LOGQUEUES
-/* Define this to logf SYS_TIMEOUT messages */
-/*#define AUDIO_LOGQUEUES_SYS_TIMEOUT*/
-#endif
 
 #ifdef AUDIO_LOGQUEUES
 #define LOGFQUEUE logf

@@ -34,7 +34,6 @@
 #include "dircache.h"
 #endif
 #include "file.h"
-#ifndef __PCTOOL__
 #include "pathfuncs.h"
 #include "lang.h"
 #include "dir.h"
@@ -73,10 +72,8 @@
 #endif
 #include "tree.h"
 #include "eeprom_settings.h"
-#if !defined(__PCTOOL__)
 #include "bmp.h"
 #include "icons.h"
-#endif /* !__PCTOOL__ */
 #include "bookmark.h"
 #include "wps.h"
 #include "gui/statusbar-skinned.h"
@@ -1103,9 +1100,7 @@ void keyclick_click(bool rawbutton, int action)
         }
         if (global_settings.keyclick_hardware)
         {
-#if !defined(SIMULATOR)
             piezo_button_beep(false, false);
-#endif
         }
 #else
         system_sound_play(SOUND_KEYCLICK);
@@ -1178,7 +1173,6 @@ void format_sound_value(char *buf, size_t buf_sz, int snd, int val)
     format_sound_value_ex(buf, buf_sz, snd, val, false);
 }
 
-#endif /* !defined(__PCTOOL__) */
 
 /* Read (up to) a line of text from fd into buffer and return number of bytes
  * read (which may be larger than the number of bytes stored in buffer). If
@@ -1761,7 +1755,6 @@ int clamp_value_wrap(int value, int max, int min)
 #endif
 
 
-#ifndef __PCTOOL__
 
 #define MAX_ACTIVITY_DEPTH 12
 static enum current_activity
@@ -2002,4 +1995,3 @@ void clear_screen_buffer(bool update)
     }
 }
 
-#endif /* ndef __PCTOOL__ */

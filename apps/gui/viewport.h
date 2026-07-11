@@ -44,7 +44,6 @@ void viewport_set_defaults(struct viewport *vp,
 void viewport_set_fullscreen(struct viewport *vp,
                               const enum screen_type screen);
 
-#ifndef __PCTOOL__
 
 /*
  * Initialize the viewportmanager, which in turns initializes the UI vp and
@@ -66,6 +65,5 @@ void viewport_set_buffer(struct viewport *vp, struct frame_buffer_t *buffer,
                                                 const enum screen_type screen);
 
 
-#endif /* __PCTOOL__ */
 
 #endif /* __VIEWPORT_H__ */

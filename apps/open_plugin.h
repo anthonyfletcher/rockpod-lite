@@ -29,7 +29,6 @@
  * return rb->plugin_open(path, parameter);
  */
 
-#ifndef __PCTOOL__
 /* open_plugin path lookup */
 #define OPEN_PLUGIN_DAT PLUGIN_DIR "/plugin.dat"
 #define OPEN_RBPLUGIN_DAT PLUGIN_DIR "/rb_plugins.dat"
@@ -88,5 +87,4 @@ void open_plugin_import(char *strdat);
 void open_plugin_export(int cfg_fd);
 #endif
 
-#endif /*ndef __PCTOOL__ */
 #endif /* OPEN_PLUGIN_H */

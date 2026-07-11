@@ -46,12 +46,6 @@
 
 /* macros to enable logf for queues
    logging on SYS_TIMEOUT can be disabled */
-#ifdef SIMULATOR
-/* Define this for logf output of all queuing except SYS_TIMEOUT */
-#define BUFFERING_LOGQUEUES
-/* Define this to logf SYS_TIMEOUT messages */
-/* #define BUFFERING_LOGQUEUES_SYS_TIMEOUT */
-#endif
 
 #ifdef BUFFERING_LOGQUEUES
 #define LOGFQUEUE logf
@@ -948,11 +942,6 @@ int bufopen(const char *file, off_t offset, enum data_type type,
     }
     else if (type == TYPE_UNKNOWN)
         return ERR_UNSUPPORTED_TYPE;
-#ifdef APPLICATION
-    /* Loading code from memory is not supported in application builds */
-    else if (type == TYPE_CODEC)
-        return ERR_UNSUPPORTED_TYPE;
-#endif
     /* Other cases: there is a little more work. */
     int fd = open(file, O_RDONLY);
     if (fd < 0)

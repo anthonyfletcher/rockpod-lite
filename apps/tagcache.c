@@ -63,10 +63,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#ifdef APPLICATION
-#include <unistd.h> /* readlink() */
-#include <limits.h> /* PATH_MAX */
-#endif
 #include "config.h"
 #include "ata_idle_notify.h"
 #include "thread.h"
@@ -88,10 +84,8 @@
 #include "dircache.h"
 #include "errno.h"
 
-#ifndef __PCTOOL__
 #include "lang.h"
 #include "eeprom_settings.h"
-#endif
 #define USR_CANCEL false
 #else/*!defined(PLUGIN)*/
 #define USR_CANCEL (tc_stat.commit_delayed == true)
@@ -165,25 +159,13 @@
 #define FLAG_TRKNUMGEN   0x0008  /* Track number has been generated  */
 #define FLAG_RESURRECTED 0x0010  /* Statistics data has been resurrected */
 
-#ifdef __PCTOOL__
-#define yield() do { } while(0)
-#define sim_sleep(timeout) do { } while(0)
-#define do_timed_yield() do { } while(0)
-static void db_log(const char *prefix, const char *msg);
-#endif
 
-#ifdef __PCTOOL__
-#define DB_LOG(__prefix, __file) db_log(__prefix, __file)
-#else
 #define DB_LOG(...)
-#endif
 
-#ifndef __PCTOOL__
 /* Tag Cache thread. */
 static struct event_queue tagcache_queue SHAREDBSS_ATTR;
 static long tagcache_stack[(DEFAULT_STACK_SIZE + 0x4000)/sizeof(long)];
 static const char tagcache_thread_name[] = "tagcache";
-#endif
 
 /* Previous path when scanning directory tree recursively. */
 static char curpath[TAGCACHE_BUFSZ];
@@ -196,9 +178,7 @@ static long tempbufidx;   /* Current location in buffer. */
 static size_t tempbuf_size; /* Buffer size (TEMPBUF_SIZE). */
 static long tempbuf_left; /* Buffer space left. */
 static long tempbuf_pos;
-#ifndef __PCTOOL__
 static int tempbuf_handle;
-#endif
 
 #define SORTED_TAGS_COUNT 9
 #define TAGCACHE_IS_UNIQUE(tag) (BIT_N(tag) & TAGCACHE_UNIQUE_TAGS)
@@ -286,12 +266,10 @@ struct tagcache_command_entry {
     int32_t data;
 };
 
-#ifndef __PCTOOL__
 static struct tagcache_command_entry command_queue[TAGCACHE_COMMAND_QUEUE_LENGTH];
 static volatile int command_queue_widx = 0;
 static volatile int command_queue_ridx = 0;
 static struct mutex command_queue_mutex SHAREDBSS_ATTR;
-#endif
 
 /* Tag database structures. */
 
@@ -762,7 +740,6 @@ static bool update_master_header(void)
 }
 
 #if !defined(PLUGIN)
-#ifndef __PCTOOL__
 static bool do_timed_yield(void)
 {
     /* Sorting can lock up for quite a while, so yield occasionally */
@@ -775,7 +752,6 @@ static bool do_timed_yield(void)
     }
     return false;
 }
-#endif /* __PCTOOL__ */
 
 static void allocate_tempbuf(void)
 {
@@ -783,12 +759,6 @@ static void allocate_tempbuf(void)
     size_t size;
     tempbuf_size = 0;
 
-#ifdef __PCTOOL__
-    size = 32*1024*1024;
-    tempbuf = malloc(size);
-    if (tempbuf)
-        tempbuf_size = size;
-#else /* !__PCTOOL__ */
     /* Need to pass dummy ops to prevent the buffer being moved
      * out from under us, since we yield during the tagcache commit.
      *
@@ -807,7 +777,6 @@ static void allocate_tempbuf(void)
             tempbuf_size = size;
         }
     }
-#endif /* __PCTOOL__ */
 
 }
 
@@ -816,11 +785,7 @@ static void free_tempbuf(void)
     if (tempbuf_size == 0)
         return ;
 
-#ifdef __PCTOOL__
-    free(tempbuf);
-#else
     tempbuf_handle = core_free(tempbuf_handle);
-#endif
     tempbuf = NULL;
     tempbuf_size = 0;
 }
@@ -898,11 +863,6 @@ static long find_entry_disk(const char *filename_raw, bool localfd)
 
     const char *filename = filename_raw;
 
-#ifdef APPLICATION
-    char pathbuf[PATH_MAX]; /* Note: Don't use MAX_PATH here, it's too small */
-    if (realpath(filename, pathbuf) == pathbuf)
-        filename = pathbuf;
-#endif /* APPLICATION */
 
     if (!tc_stat.ready)
         return -2;
@@ -1077,7 +1037,6 @@ static bool get_index(int masterfd, int idxid,
     (void)use_ram;
 }
 
-#ifndef __PCTOOL__
 
 static bool write_index(int masterfd, int idxid, struct index_entry *idx)
 {
@@ -1122,7 +1081,6 @@ static bool write_index(int masterfd, int idxid, struct index_entry *idx)
     return true;
 }
 
-#endif /* !__PCTOOL__ */
 
 static bool open_files(struct tagcache_search *tcs, int tag)
 {
@@ -1231,7 +1189,6 @@ failure:
 
 static long tc_find_tag(int tag, int idx_id, const struct index_entry *idx)
 {
-#ifndef __PCTOOL__
     if (! COMMAND_QUEUE_IS_EMPTY && TAGCACHE_IS_NUMERIC(tag))
     {
         /* Attempt to find tag data through store-to-load forwarding in
@@ -1265,9 +1222,6 @@ static long tc_find_tag(int tag, int idx_id, const struct index_entry *idx)
             return result;
         }
     }
-#else
-    (void)idx_id;
-#endif
 
     return idx->tag_seek[tag];
 }
@@ -2252,22 +2206,6 @@ static int check_if_empty(char **tag)
     return length + 1;
 }
 
-#ifdef __PCTOOL__
-static void db_log(const char *prefix, const char *msg)
-{
-    /* Crude logging for the sim - to aid in debugging */
-    int logfd = open(ROCKBOX_DIR "/database.log",
-                     O_WRONLY | O_APPEND | O_CREAT, 0666);
-    if (logfd >= 0)
-    {
-        write(logfd, prefix, strlen(prefix));
-        write(logfd, ": ", 2);
-        write(logfd, msg, strlen(msg));
-        write(logfd, "\n", 1);
-        close(logfd);
-    }
-}
-#endif
 
 /* GCC 3.4.6 for Coldfire can choose to inline this function. Not a good
  * idea, as it uses lots of stack and is called from a recursive function
@@ -3609,7 +3547,6 @@ void tagcache_commit_finalize(void)
 }
 
 #if !defined(PLUGIN)
-#ifndef __PCTOOL__
 
 static bool modify_numeric_entry(int masterfd, int idx_id, int tag, long data)
 {
@@ -3767,7 +3704,6 @@ void tagcache_update_numeric(int idx_id, int tag, long data)
 {
     queue_command(CMD_UPDATE_NUMERIC, idx_id, tag, data);
 }
-#endif /* !__PCTOOL__ */
 
 static bool write_tag(int fd, const char *tagstr, const char *datastr)
 {
@@ -3803,7 +3739,6 @@ static bool write_tag(int fd, const char *tagstr, const char *datastr)
     return true;
 }
 
-#ifndef __PCTOOL__
 
 static bool read_tag(char *dest, long size,
                      const char *src, const char *tagstr)
@@ -4001,7 +3936,6 @@ bool tagcache_import_changelog(void)
     return true;
 }
 
-#endif /* !__PCTOOL__ */
 
 bool tagcache_create_changelog(struct tagcache_search *tcs)
 {
@@ -4301,7 +4235,6 @@ static bool delete_entry(long idx_id)
  */
 static bool check_event_queue(void)
 {
-#ifndef __PCTOOL__
     struct queue_event ev;
 
     if(!queue_peek(&tagcache_queue, &ev))
@@ -4315,7 +4248,6 @@ static bool check_event_queue(void)
         case SYS_USB_CONNECTED:
             return true;
     }
-#endif /* __PCTOOL__ */
 
     return false;
 }
@@ -4870,97 +4802,8 @@ static bool search_root_exists(const char *path)
     return false;
 }
 
-#ifdef APPLICATION
-/*
- * This adds a path to the search roots, possibly during traveling through
- * the filesystem. It only adds if the path is not inside an already existing
- * search root.
- *
- * Returns true if it added the path to the search roots
- *
- * Windows 2000 and greater supports symlinks, but they don't provide
- * realpath() or readlink(), and symlinks are rarely used on them so
- * ignore this for windows for now
- **/
-static bool add_search_root(const char *name)
-{
-    (void)name;
-#ifndef WIN32
-    struct search_roots_ll *this, *prev = NULL;
-    char target[MAX_PATH];
-    const int target_bufsz = sizeof(target);
-    /* Okay, realpath() is almost completely broken on android
-     *
-     * It doesn't accept NULL for resolved_name to dynamically allocate
-     * the resulting path; and it assumes resolved_name to be PATH_MAX
-     * (actually MAXPATHLEN, but it's the same [as of 2.3]) long
-     * and blindly writes to the end if it
-     *
-     * therefore use sufficiently large static storage here
-     * Note that PATH_MAX != MAX_PATH
-     **/
-    static char abs_target[PATH_MAX];
-    ssize_t len;
-
-    len = readlink(name, target, target_bufsz-1);
-    if (len < 0)
-        return false;
-
-    str_setlen(target, len);
-    if (realpath(target, abs_target) == NULL)
-        return false;
-
-    if (search_root_exists(abs_target))
-        return false;
-
-    /* get the end of the list */
-    for(this = &roots_ll[0]; this; prev = this, this = this->next);
-
-    if (prev)
-    {
-        size_t len = strlen(abs_target) + 1; /* count \0 */
-        this = malloc(sizeof(struct search_roots_ll) + len );
-        if (!this || len > MIN(PATH_MAX, MAX_PATH))
-        {
-            logf("Error at adding a search root: %s", this ? "path too long":"OOM");
-            free(this);
-            prev->next = NULL;
-            return false;
-        }
-        this->path = ((char*)this) + sizeof(struct search_roots_ll);
-        strcpy((char*)this->path, abs_target); /* ok to cast const away here */
-        this->next = NULL;
-        prev->next = this;
-        logf("Added %s to the search roots\n", abs_target);
-        return true;
-    }
-#endif
-    return false;
-}
-
-static int free_search_root_single(struct search_roots_ll * start)
-{
-    if (start < &roots_ll[0] && start >= &roots_ll[MAX_STATIC_ROOTS])
-    {
-        free(start->next);
-        return sizeof(struct search_roots_ll);
-    }
-    return 0;
-}
-
-static int free_search_roots(struct search_roots_ll * start)
-{
-    int ret = 0;
-    if (start->next)
-    {
-        ret += free_search_root_single(start->next);
-    }
-    return ret;
-}
-#else /* native, simulator */
 #define add_search_root(a) do {} while(0)
 #define free_search_roots(a) do {} while(0)
-#endif
 
 static bool check_dir(const char *dirname, int add_files)
 {
@@ -5002,13 +4845,11 @@ static bool check_dir(const char *dirname, int add_files)
         processed_dir_count++;
         if (info.attribute & ATTR_DIRECTORY)
         {
-#ifndef SIMULATOR
             /* don't follow symlinks to dirs, but try to add it as a search root
              * this makes able to avoid looping in recursive symlinks */
             if (info.attribute & ATTR_LINK)
                 add_search_root(curpath);
             else
-#endif /* SIMULATOR */
                 check_dir(curpath, add_files);
         }
         else if (add_files)
@@ -5043,10 +4884,8 @@ void tagcache_screensync_enable(bool state)
     tc_stat.syncscreen = state;
 }
 
-#ifndef __PCTOOL__
 /* this is called by the database tool to not pull in global_settings */
 static
-#endif
 void do_tagcache_build(const char *path[])
 {
     struct tagcache_header header;
@@ -5188,16 +5027,10 @@ void do_tagcache_build(const char *path[])
     }
 
     /* Commit changes to the database. */
-#ifdef __PCTOOL__
-    allocate_tempbuf();
-#endif
     if (commit())
     {
         logf("tagcache built!");
     }
-#ifdef __PCTOOL__
-    free_tempbuf();
-#endif
 
 #ifdef HAVE_TC_RAMCACHE
     if (tcramcache.hdr)
@@ -5211,7 +5044,6 @@ void do_tagcache_build(const char *path[])
     cpu_boost(false);
 }
 
-#ifndef __PCTOOL__
 void tagcache_build(void)
 {
     char *vect[MAX_STATIC_ROOTS + 1]; /* +1 to ensure NULL sentinel */
@@ -5223,7 +5055,6 @@ void tagcache_build(void)
 
     do_tagcache_build((const char**)vect);
 }
-#endif /* __PCTOOL__ */
 
 #ifdef HAVE_TC_RAMCACHE
 static void load_ramcache(void)
@@ -5258,7 +5089,6 @@ void tagcache_unload_ramcache(void)
 }
 #endif /* HAVE_TC_RAMCACHE */
 
-#ifndef __PCTOOL__
 
 /*
  * db_file_exists is noinline to minimize stack usage
@@ -5490,7 +5320,6 @@ void tagcache_stop_scan(void)
     queue_post(&tagcache_queue, Q_STOP_SCAN, 0);
 }
 
-#endif /* !__PCTOOL__ */
 
 
 void tagcache_init(void)
@@ -5500,7 +5329,6 @@ void tagcache_init(void)
     filenametag_fd = -1;
     write_lock = read_lock = 0;
 
-#ifndef __PCTOOL__
     strmemccpy(tc_stat.db_path, global_settings.tagcache_db_path,
                sizeof(tc_stat.db_path));
     mutex_init(&command_queue_mutex);
@@ -5509,24 +5337,8 @@ void tagcache_init(void)
                   sizeof(tagcache_stack), 0, tagcache_thread_name
                   IF_PRIO(, PRIORITY_BACKGROUND)
                   IF_COP(, CPU));
-#else
-    /* use default DB path */
-    strcpy(tc_stat.db_path, ROCKBOX_DIR);
-    tc_stat.initialized = true;
-    allocate_tempbuf();
-    commit();
-    free_tempbuf();
-    tc_stat.ready = check_all_headers();
-#endif
 }
 
-#ifdef __PCTOOL__
-void tagcache_reverse_scan(void)
-{
-    logf("Checking for deleted files");
-    check_deleted_files();
-}
-#endif
 
 bool tagcache_is_initialized(void)
 {

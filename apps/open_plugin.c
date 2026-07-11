@@ -19,7 +19,6 @@
  *
  ****************************************************************************/
 
-#ifndef __PCTOOL__
 
 #include "plugin.h"
 #include "open_plugin.h"
@@ -603,4 +602,3 @@ void open_plugin_export(int cfg_fd)
     logf("%s exported %d entries", __func__, index);
 }
 
-#endif /* ndef __PCTOOL__ */

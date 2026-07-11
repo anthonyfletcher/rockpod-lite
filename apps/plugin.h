@@ -65,7 +65,6 @@ void* plugin_get_buffer(size_t *buffer_size);
 size_t plugin_reserve_buffer(size_t buffer_size);
 int plugin_open(const char *plugin, const char *parameter);
 
-#ifndef __PCTOOL__
 #include "config.h"
 #include "system.h"
 #include "dir.h"
@@ -995,5 +994,4 @@ enum plugin_status plugin_start(const void* parameter);
 enum plugin_status plugin__start(const void* parameter)
     NO_PROF_ATTR;
 
-#endif /* __PCTOOL__ */
 #endif

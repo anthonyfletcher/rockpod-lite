@@ -133,9 +133,6 @@
 #endif
 
 #if (CONFIG_PLATFORM & PLATFORM_SDL)
-#ifdef SIMULATOR
-#include "sim_tasks.h"
-#endif
 #include "system-sdl.h"
 #define HAVE_ARGV_MAIN
 /* Don't use SDL_main on windows -> no more stdio redirection */
@@ -207,11 +204,7 @@ int main(void)
     {
         char filename[MAX_PATH];
         const char *file =
-#ifdef APPLICATION
-                                ROCKBOX_DIR
-#else
                                 PLUGIN_DIR
-#endif
                                     "/autostart.rock";
         if(file_exists(file)) /* no complaint if it doesn't exist */
         {
@@ -236,9 +229,6 @@ int show_logo_boot( void )
     lcd_bmp(&bm_rockpodlogo, (LCD_WIDTH - BMPWIDTH_rockpodlogo) / 2,
                              (LCD_HEIGHT - BMPHEIGHT_rockpodlogo) / 2);
     lcd_update();
-#ifdef SIMULATOR
-    sleep(HZ); /* sim is too fast to see logo */
-#endif
     return 0;
 }
 
@@ -353,9 +343,6 @@ static void init(void)
     system_init();
     core_allocator_init();
     kernel_init();
-#ifdef APPLICATION
-    paths_init();
-#endif
     enable_irq();
     lcd_init();
     FOR_NB_SCREENS(i)
@@ -368,9 +355,6 @@ static void init(void)
     unicode_init();
 #ifdef HAVE_MULTIVOLUME
     init_volume_names();
-#endif
-#ifdef SIMULATOR
-    sim_tasks_init();
 #endif
 #if (CONFIG_PLATFORM & PLATFORM_ANDROID)
     notification_init();

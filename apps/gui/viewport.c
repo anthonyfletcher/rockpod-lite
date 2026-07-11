@@ -40,7 +40,6 @@
 
 /* all below isn't needed for pc tools (i.e. checkwps/wps editor)
  * only viewport_parse_viewport() is */
-#ifndef __PCTOOL__
 #include "string.h"
 #include "kernel.h"
 #include "system.h"
@@ -250,7 +249,6 @@ static void set_default_align_flags(struct viewport *vp)
         vp->flags |= VP_FLAG_ALIGN_RIGHT;
 }
 
-#endif /* __PCTOOL__ */
 
 void viewport_set_fullscreen(struct viewport *vp,
                               const enum screen_type screen)
@@ -260,9 +258,7 @@ void viewport_set_fullscreen(struct viewport *vp,
     vp->y = 0;
     vp->width = screens[screen].lcdwidth;
     vp->height = screens[screen].lcdheight;
-#ifndef __PCTOOL__
     set_default_align_flags(vp);
-#endif
     vp->font = screens[screen].getuifont();
     vp->drawmode = DRMODE_SOLID;
 #if LCD_DEPTH > 1
@@ -292,7 +288,6 @@ void viewport_set_defaults(struct viewport *vp,
 {
     vp->buffer = NULL; /* use default frame_buffer */
     vp->flags = VP_DEFAULT_FLAGS;
-#if !defined(__PCTOOL__)
     struct viewport *sbs_area = NULL;
     if (!is_theme_enabled(screen))
     {
@@ -304,6 +299,5 @@ void viewport_set_defaults(struct viewport *vp,
     if (sbs_area)
         *vp = *sbs_area;
     else
-#endif /* !__PCTOOL__ */
         viewport_set_fullscreen(vp, screen);
 }

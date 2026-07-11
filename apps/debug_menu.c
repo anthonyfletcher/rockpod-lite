@@ -2131,7 +2131,6 @@ static bool dbg_save_roms(void)
 #endif /* CPU */
 
 
-#if !defined(APPLICATION)
 extern bool do_screendump_instead_of_usb;
 
 static bool dbg_screendump(void)
@@ -2140,7 +2139,6 @@ static bool dbg_screendump(void)
     splashf(HZ, "Screendump %sabled", do_screendump_instead_of_usb?"en":"dis");
     return false;
 }
-#endif /* !APPLICATION */
 
 extern bool write_metadata_log;
 
@@ -2742,9 +2740,7 @@ static const struct {
 #if (CONFIG_BATTERY_MEASURE != 0) && !defined(SIMULATOR)
         { "View battery", view_battery },
 #endif
-#ifndef APPLICATION
         { "Screendump", dbg_screendump },
-#endif
         { "Skin Engine RAM usage", dbg_skin_engine },
 #if ((CONFIG_PLATFORM & PLATFORM_NATIVE) || defined(SONY_NWZ_LINUX) || defined(HIBY_LINUX) || defined(FIIO_M3K_LINUX)) && !defined(SIMULATOR)
         { "View HW info", dbg_hw_info },
