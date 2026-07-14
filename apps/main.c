@@ -66,6 +66,9 @@
 #include "dircache.h"
 #ifdef HAVE_TAGCACHE
 #include "tagcache.h"
+#ifdef HAVE_ALBUMART
+#include "albumart_cache.h"
+#endif
 #include "tagtree.h"
 #endif
 #include "lang.h"
@@ -231,6 +234,9 @@ static void init_tagcache(void)
     long talked_tick = 0;
 #endif
     tagcache_init();
+#ifdef HAVE_ALBUMART
+    albumart_cache_init();
+#endif
 
     while (!tagcache_is_initialized())
     {

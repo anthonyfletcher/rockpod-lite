@@ -4950,7 +4950,9 @@ void tagcache_build(void)
     int res = split_string(str, ':', vect, MAX_STATIC_ROOTS);
     vect[res] = NULL;
 
+    tc_stat.scanning = true;
     do_tagcache_build((const char**)vect);
+    tc_stat.scanning = false;
 }
 
 #ifdef HAVE_TC_RAMCACHE
@@ -5070,8 +5072,24 @@ static void tagcache_thread(void)
                 check_done = false;
                 /* fallthrough */
             case SYS_TIMEOUT:
-                if (check_done || !tc_stat.ready)
+                if (check_done)
                     break ;
+
+                /* A fresh player has no database yet. Rather than make the
+                 * user open the database browser and confirm a prompt to
+                 * create one, build it here in the background automatically
+                 * -- there's no situation where you wouldn't want one. */
+                if (!tc_stat.ready)
+                {
+                    tagcache_build();
+#ifdef HAVE_TC_RAMCACHE
+                    if (global_settings.tagcache_ram)
+                        load_ramcache();
+#endif
+                    check_deleted_files();
+                    check_done = true;
+                    break ;
+                }
 
 #ifdef HAVE_TC_RAMCACHE
                 if (!tc_stat.ramcache && global_settings.tagcache_ram)
@@ -5177,6 +5195,13 @@ struct tagcache_stat* tagcache_get_stat(void)
     tc_stat.processed_entries = processed_dir_count;
 
     return &tc_stat;
+}
+
+bool tagcache_is_busy(void)
+{
+    /* A disk scan (scanning) or a database commit (commit_step) is running.
+     * Drives the status-bar %ld indicator so background work needs no splash. */
+    return tc_stat.scanning || tc_stat.commit_step > 0;
 }
 
 void tagcache_start_scan(void)

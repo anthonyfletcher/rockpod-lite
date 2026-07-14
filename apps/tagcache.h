@@ -87,6 +87,7 @@ struct tagcache_stat {
     bool commit_delayed;     /* Has commit been delayed until next reboot? */
     bool econ;               /* Is endianess correction enabled? */
     volatile bool syncscreen;/* Synchronous operation with debug screen? */
+    volatile bool scanning;  /* Is a build/update scan currently running? */
     volatile const char 
         *curentry;           /* Path of the current entry being scanned. */
 
@@ -183,6 +184,9 @@ bool tagcache_modify_numeric_entry(struct tagcache_search *tcs,
                                    int tag, long data);
 
 struct tagcache_stat* tagcache_get_stat(void);
+/* True while a database build/update scan or commit is in progress. Used to
+ * drive the status-bar activity indicator (%ld) instead of a modal splash. */
+bool tagcache_is_busy(void);
 int tagcache_get_commit_step(void);
 bool tagcache_prepare_shutdown(void);
 void tagcache_shutdown(void);

@@ -1457,6 +1457,8 @@ void skin_data_free_buflib_allocs(struct wps_data *wps_data)
 abort:
     wps_data->font_ids = PTRTOSKINOFFSET(skin_buffer, NULL); /* Safe if skin_buffer is NULL */
     wps_data->images = PTRTOSKINOFFSET(skin_buffer, NULL);
+    if (wps_data->buflib_handle > 0)
+        core_unpin(wps_data->buflib_handle); /* balance the pin in skin_data_load() */
     wps_data->buflib_handle = core_free(wps_data->buflib_handle);
 }
 
@@ -2165,6 +2167,12 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
     wps_data->buflib_handle = core_alloc(skin_buffer_usage());
     if (wps_data->buflib_handle > 0)
     {
+        /* Pin the skin buffer so it never moves. list-skinned.c (listcfg) and
+         * skin viewports cache raw pointers into this buffer; if background
+         * buflib compaction (e.g. a tagcache commit or the album-art
+         * thumbnail cache) relocated it, those pointers would dangle and
+         * skinlist_draw() would take a data abort. */
+        core_pin(wps_data->buflib_handle);
         wps_data->wps_loaded = true;
         memcpy(core_get_data(wps_data->buflib_handle), skin_buffer,
                 skin_buffer_usage());

@@ -118,30 +118,24 @@ static bool wait_for_tagcache_ready(void)
 
             /* Check if ready status is known */
             if (!stat->readyvalid)
-            {
-                splash(0, ID2P(LANG_TAGCACHE_BUSY));
                 continue;
-            }
 
-            /* Re-init if required */
+            /* The database isn't usable yet (missing, or a previous build
+             * never finished). The background tagcache thread builds a
+             * missing database on its own now, but if we've landed here with
+             * nothing in progress, kick a rebuild automatically. Progress is
+             * shown non-intrusively by the status-bar activity indicator
+             * (%ld), not a modal splash -- the previous screen stays visible
+             * underneath. */
             if (!reinit_attempted && !stat->ready &&
                 stat->processed_entries == 0 && stat->commit_step == 0)
             {
-                /* Prompt the user */
                 reinit_attempted = true;
-                static const char *lines[]={
-                    ID2P(LANG_TAGCACHE_BUSY), ID2P(LANG_TAGCACHE_FORCE_UPDATE)};
-                static const struct text_message message={lines, 2};
-                if(gui_syncyesno_run(&message, NULL, NULL) == YESNO_NO)
-                    break;
-                FOR_NB_SCREENS(i)
-                    screens[i].clear_display();
-
-                /* Start initialisation */
                 tagcache_rebuild();
             }
 
-            /* Display building progress */
+            /* Announce building progress by voice only (the status bar shows
+             * the activity visually). */
             static long talked_tick = 0;
             if(global_settings.talk_menu &&
                (talked_tick == 0
@@ -159,35 +153,6 @@ static bool wait_for_tagcache_ready(void)
                     talk_number(stat->processed_entries, false);
                     talk_id(LANG_BUILDING_DATABASE, true);
                 }
-            }
-            if (stat->commit_step > 0)
-            {
-                /* (prevent redundant voicing by splash_progress */
-                bool tmp = global_settings.talk_menu;
-                global_settings.talk_menu = false;
-
-                if (lang_is_rtl())
-                {
-                    splash_progress(stat->commit_step,
-                                    tagcache_get_max_commit_step(),
-                                    "[%d/%d] %s", stat->commit_step,
-                                    tagcache_get_max_commit_step(),
-                                    str(LANG_TAGCACHE_INIT));
-                }
-                else
-                {
-                    splash_progress(stat->commit_step,
-                                    tagcache_get_max_commit_step(),
-                                    "%s [%d/%d]", str(LANG_TAGCACHE_INIT),
-                                    stat->commit_step,
-                                    tagcache_get_max_commit_step());
-                }
-                global_settings.talk_menu = tmp;
-            }
-            else
-            {
-                splashf(0, str(LANG_BUILDING_DATABASE),
-                           stat->processed_entries); /* (voiced above) */
             }
         }
     }

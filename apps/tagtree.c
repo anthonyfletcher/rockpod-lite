@@ -2295,11 +2295,11 @@ int tagtree_load(struct tree_context* c)
 
     if (count < 0)
     {
-        if (count != RELOAD_TAGTREE)
-            splash(HZ, ID2P(LANG_TAGCACHE_BUSY));
-        else /* unload and re-init tagtree */
+        /* No modal "Loading..."/"Database busy" splash here -- background
+         * database activity is surfaced by the status-bar indicator (%ld)
+         * instead. A busy load just recovers to the root level. */
+        if (count == RELOAD_TAGTREE) /* unload and re-init tagtree */
         {
-            splash(HZ, ID2P(LANG_WAIT));
             tagtree_unload(c);
             if (!initialize_tagtree())
                 return 0;
