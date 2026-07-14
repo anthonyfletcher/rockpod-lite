@@ -210,11 +210,12 @@ static void usb_screens_draw(struct usb_screen_vps_t *usb_screen_vps_ar)
             /* full-screen background art */
             screen->bmp(&bm_rockpodusb, 0, 0);
 
-            /* white caption, centred horizontally, top edge at y = 180, drawn
-             * transparently over the art in the theme's bold UI font */
+            /* caption in Themify_2's dark colour (#000C21), centred
+             * horizontally, top edge at y = 180, drawn transparently over the
+             * art in the theme's bold UI font */
             caption.font = font_get_ui_bold();
             caption.drawmode = DRMODE_FG;
-            caption.fg_pattern = LCD_WHITE;
+            caption.fg_pattern = LCD_RGBPACK(0x00, 0x0c, 0x21);
             screen->set_viewport(&caption);
             screen->getstringsize(msg, &tw, &th);
             screen->putsxy((screen->lcdwidth - tw) / 2, 180, msg);
