@@ -22,11 +22,23 @@
 /* Click-wheel oriented single-line text editor.
  *
  * This replaces the old on-screen virtual keyboard with a one-line editor
- * driven entirely by the click wheel: the wheel cycles the character under
- * the caret, Left/Right move the caret (holding them backspaces/deletes),
- * SELECT accepts and MENU cancels. See the iPod click-wheel text input
- * specification. This is an iPod-only build, so the old keyboard's loadable
- * layouts, morse input and touchscreen grid are intentionally gone. */
+ * driven entirely by the click wheel. The caret is an insertion point *between*
+ * characters (a bar, 0..len), not a block sitting on one:
+ *
+ *   - the wheel inserts a character at the bar and then cycles it in place, so
+ *     text can be added anywhere, not just appended at the end;
+ *   - Left/Right move the bar one gap, which commits the character being
+ *     composed (the next spin inserts a fresh one);
+ *   - holding Left/Right backspaces the character before the bar / deletes the
+ *     one after it;
+ *   - SELECT accepts and MENU cancels.
+ *
+ * The two caret shapes state what the wheel will do: a bar means "I will insert
+ * a new character here", the inverse-video block means "I will keep changing
+ * this one". See the iPod click-wheel text input specification and
+ * docs/design/keyboard-gap-caret.md. This is an iPod-only build, so the old
+ * keyboard's loadable layouts, morse input and touchscreen grid are
+ * intentionally gone. */
 
 #include "config.h"
 #include <stdio.h>
@@ -51,6 +63,7 @@
 #define KBD_BTN_PAD_Y 5      /* vertical padding inside each button */
 #define KBD_MAX_LEN 512      /* absolute cap on editable characters */
 #define KBD_CHARSET_MAX 64
+#define KBD_CARET_W 2        /* width of the bar caret drawn at the gap */
 
 /* wheel acceleration: shorter gaps between wheel steps skip more characters */
 #define WHEEL_FAST   (HZ/15)
@@ -63,11 +76,12 @@
 struct kbd_edit {
     ucschar_t text[KBD_MAX_LEN];
     int len;
-    int caret;
+    int caret;           /* insertion point, 0..len: the gap *before* text[caret] */
     int max_len;
     int scroll;          /* horizontal pixel scroll to keep the caret visible */
     long last_wheel_tick;
     long last_del_tick;  /* throttles held backspace/delete */
+    bool editing;        /* the wheel is composing text[caret-1] (implies caret>0) */
     bool on_buttons;     /* focus is on the Cancel/OK button row, not the input */
     bool btn_ok;         /* on the button row, OK is selected (else Cancel) */
     bool dirty;          /* text changed since the editor opened */
@@ -122,9 +136,22 @@ static void build_charset(void)
         charset[charset_len++] = ' ';
 }
 
-static void wheel_step(struct kbd_edit *s, int dir)
+static void insert_at(struct kbd_edit *s, int pos, ucschar_t ch)
 {
-    /* dir: +1 advance, -1 reverse. Acceleration: fast spins skip characters. */
+    for (int i = s->len; i > pos; i--)
+        s->text[i] = s->text[i - 1];
+    s->text[pos] = ch;
+    s->len++;
+}
+
+/* dir: +1 advance, -1 reverse. Acceleration: fast spins skip characters.
+ *
+ * Not composing yet: open a gap at the caret with a blank character, step onto
+ * it, and start composing -- so one forward click yields the first character of
+ * the cycle rather than overwriting whatever was there. Already composing: cycle
+ * that character in place. Returns false if the line is full (nothing changed). */
+static bool wheel_step(struct kbd_edit *s, int dir)
+{
     long now = current_tick;
     long dt = now - s->last_wheel_tick;
     s->last_wheel_tick = now;
@@ -135,67 +162,64 @@ static void wheel_step(struct kbd_edit *s, int dir)
     else if (dt < WHEEL_FAST)
         mag = 2;
 
-    int idx = charset_index(s->text[s->caret]);
+    if (!s->editing)
+    {
+        if (s->len >= s->max_len)
+            return false;
+        insert_at(s, s->caret, ' ');   /* build_charset() guarantees ' ' is in
+                                        * the cycle, so the step below finds it */
+        s->caret++;
+        s->editing = true;
+    }
+
+    int idx = charset_index(s->text[s->caret - 1]);
     if (idx < 0)
         idx = 0;
     idx = (idx + dir * mag) % charset_len;
     if (idx < 0)
         idx += charset_len;
-    s->text[s->caret] = charset[idx];
+    s->text[s->caret - 1] = charset[idx];
+    return true;
 }
 
-static void ensure_nonempty(struct kbd_edit *s)
-{
-    if (s->len <= 0)
-    {
-        s->text[0] = ' ';
-        s->len = 1;
-    }
-    if (s->caret >= s->len)
-        s->caret = s->len - 1;
-    if (s->caret < 0)
-        s->caret = 0;
-}
-
+/* Moving the bar commits the character being composed: the next spin inserts a
+ * fresh one rather than editing this one again. Right at the end of the line
+ * does not grow it -- that is the wheel's job now. */
 static void caret_left(struct kbd_edit *s)
 {
     if (s->caret > 0)
         s->caret--;
+    s->editing = false;
 }
 
 static void caret_right(struct kbd_edit *s)
 {
-    if (s->caret < s->len - 1)
+    if (s->caret < s->len)
         s->caret++;
-    else if (s->len < s->max_len)
-    {
-        s->text[s->len++] = ' ';   /* grow the line with a fresh space */
-        s->caret++;
-    }
-    /* else: at maximum length, Right no longer appends */
+    s->editing = false;
 }
 
 static void do_backspace(struct kbd_edit *s)
 {
-    /* delete the character before the caret; everything shifts left */
+    /* delete the character before the bar; everything shifts left */
     if (s->caret <= 0)
         return;
     for (int i = s->caret - 1; i < s->len - 1; i++)
         s->text[i] = s->text[i + 1];
     s->len--;
     s->caret--;
-    ensure_nonempty(s);
+    s->editing = false;
 }
 
 static void do_delete(struct kbd_edit *s)
 {
-    /* delete the character under the caret; everything shifts left */
-    if (s->len <= 0)
+    /* delete the character after the bar; everything shifts left */
+    if (s->caret >= s->len)
         return;
     for (int i = s->caret; i < s->len - 1; i++)
         s->text[i] = s->text[i + 1];
     s->len--;
-    ensure_nonempty(s);
+    s->editing = false;
 }
 
 static int uc_width(struct screen *display, ucschar_t ch)
@@ -214,6 +238,28 @@ static void draw_char(struct screen *display, int x, int y, ucschar_t ch)
     unsigned char *e = utf8encode(ch, tmp);
     *e = '\0';
     display->putsxy(x, y, (char *)tmp);
+}
+
+/* Draw `ch` over an already-filled block so it reads as inverse video. On colour
+ * targets that means DRMODE_FG in the background colour, NOT
+ * DRMODE_SOLID|DRMODE_INVERSEVID: inversevid only flips the glyph mask and then
+ * clears itself, leaving DRMODE_SOLID, which sources the glyph's background from
+ * the theme backdrop and paints over the block we just filled. */
+static void draw_char_inverse(struct screen *display, int x, int y, ucschar_t ch)
+{
+#if LCD_DEPTH > 1
+    if (display->depth > 1)
+    {
+        unsigned fg = display->get_foreground();
+        display->set_foreground(display->get_background());
+        display->set_drawmode(DRMODE_FG);
+        draw_char(display, x, y, ch);
+        display->set_foreground(fg);
+        return;
+    }
+#endif
+    display->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
+    draw_char(display, x, y, ch);
 }
 
 /* Box spans the display width minus a horizontal margin; height fits the
@@ -255,15 +301,20 @@ static void kbd_draw(struct dialog *d, struct screen *display,
     tvp.height = ch_h;
     display->set_viewport(&tvp);
 
-    /* caret x (absolute from text start) and keep it visible */
+    /* The bar sits at the gap before text[caret] (caret == len is legal, so the
+     * text is never indexed here). Keep it visible, along with the character
+     * being composed just left of it. */
     int caret_x = 0;
     for (int i = 0; i < s->caret; i++)
         caret_x += uc_width(display, s->text[i]);
-    int caret_w = uc_width(display, s->text[s->caret]);
-    if (caret_x < s->scroll)
-        s->scroll = caret_x;
-    if (caret_x + caret_w > s->scroll + tvp.width)
-        s->scroll = caret_x + caret_w - tvp.width;
+
+    int vis_left = caret_x;
+    if (s->editing)
+        vis_left -= uc_width(display, s->text[s->caret - 1]);
+    if (vis_left < s->scroll)
+        s->scroll = vis_left;
+    if (caret_x + KBD_CARET_W > s->scroll + tvp.width)
+        s->scroll = caret_x + KBD_CARET_W - tvp.width;
     if (s->scroll < 0)
         s->scroll = 0;
 
@@ -271,13 +322,12 @@ static void kbd_draw(struct dialog *d, struct screen *display,
     for (int i = 0; i < s->len; i++)
     {
         int cw = uc_width(display, s->text[i]);
-        if (i == s->caret)
+        if (s->editing && i == s->caret - 1)
         {
-            /* caret: inverse-video block */
+            /* the character the wheel is composing: inverse-video block */
             display->set_drawmode(DRMODE_FG);
             display->fillrect(x, 0, cw, tvp.height);
-            display->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
-            draw_char(display, x, 0, s->text[i]);
+            draw_char_inverse(display, x, 0, s->text[i]);
         }
         else
         {
@@ -288,6 +338,10 @@ static void kbd_draw(struct dialog *d, struct screen *display,
         }
         x += cw;
     }
+
+    /* the insertion bar itself, over the gap */
+    display->set_drawmode(DRMODE_FG);
+    display->fillrect(caret_x - s->scroll, 0, KBD_CARET_W, tvp.height);
 
     /* --- bottom Cancel / OK buttons (triggered by MENU / SELECT) --- */
     display->set_viewport(content);
@@ -336,20 +390,14 @@ static int kbd_on_action(struct dialog *d, int action, void *data)
         case ACTION_KBD_DOWN:      /* wheel forward */
             if (s->on_buttons)
                 s->btn_ok = !s->btn_ok;         /* toggle OK/Cancel */
-            else
-            {
-                wheel_step(s, +1);              /* advance character */
+            else if (wheel_step(s, +1))         /* insert / advance character */
                 s->dirty = true;
-            }
             break;
         case ACTION_KBD_UP:        /* wheel back */
             if (s->on_buttons)
                 s->btn_ok = !s->btn_ok;
-            else
-            {
-                wheel_step(s, -1);              /* reverse character */
+            else if (wheel_step(s, -1))         /* insert / reverse character */
                 s->dirty = true;
-            }
             break;
         case ACTION_KBD_LEFT:      /* tap left */
             if (s->on_buttons)
@@ -361,12 +409,7 @@ static int kbd_on_action(struct dialog *d, int action, void *data)
             if (s->on_buttons)
                 s->btn_ok = true;               /* OK (right button) */
             else
-            {
-                int before = s->len;
-                caret_right(s);                 /* may append a space */
-                if (s->len != before)
-                    s->dirty = true;
-            }
+                caret_right(s);
             break;
         case ACTION_KBD_BACKSPACE: /* hold left -> backspace (throttled) */
             if (!s->on_buttons &&
@@ -377,7 +420,7 @@ static int kbd_on_action(struct dialog *d, int action, void *data)
                 s->last_del_tick = current_tick;
             }
             break;
-        case ACTION_KBD_DELETE:    /* hold right -> delete under caret (throttled) */
+        case ACTION_KBD_DELETE:    /* hold right -> delete after the bar (throttled) */
             if (!s->on_buttons &&
                 current_tick - s->last_del_tick >= KBD_DEL_REPEAT)
             {
@@ -442,20 +485,16 @@ int dialog_input(char* text, int buflen)
             break;
         st.text[st.len++] = ch;
     }
-    /* Append one editable space so there is always a caret position: for
-     * existing text this puts the caret at the end (the trailing space is
-     * trimmed on accept), and for empty input it is the single blank char
-     * the wheel immediately edits. */
-    if (st.len < st.max_len)
-        st.text[st.len++] = ' ';
-    st.caret = st.len - 1;
+    /* Open with the bar at the end of the existing text, composing nothing: the
+     * first wheel spin inserts a character there. An empty line is legal. */
+    st.caret = st.len;
+    st.editing = false;
     st.scroll = 0;
     st.last_wheel_tick = current_tick;
     st.last_del_tick = 0;
     st.on_buttons = false;   /* focus starts on the input line */
     st.btn_ok = true;
     st.dirty = false;
-    ensure_nonempty(&st);
 
     dialog_init(&d, CONTEXT_KEYBOARD, NULL, NULL, &cb, &st);
     if (dialog_run(&d, TIMEOUT_BLOCK) != DIALOG_ACCEPT)

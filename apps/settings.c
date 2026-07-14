@@ -72,6 +72,7 @@
 #include "statusbar-skinned.h"
 #include "bootchart.h"
 #include "scroll_engine.h"
+#include "dialog.h"
 
 #include "open_plugin.h"
 struct user_settings global_settings;
@@ -835,6 +836,57 @@ int font_get_ui_bold(void)
     return screens[SCREEN_MAIN].getuifont();
 }
 
+static int clamp_int(int v, int lo, int hi)
+{
+    if (v < lo)
+        return lo;
+    if (v > hi)
+        return hi;
+    return v;
+}
+
+/* Push the theme's dialog chrome into the shared default dialog style. The
+ * metrics always apply; the colours only when "dialog colours" is on, otherwise
+ * every colour stays DIALOG_COLOR_INHERIT and the dialogs follow the theme's own
+ * foreground/background exactly as they did before this setting existed.
+ *
+ * These values come straight out of a hand-edited .cfg (atoi, no range check in
+ * the settings loader), so they are clamped here: a negative margin or an absurd
+ * border width would otherwise corrupt the frame's geometry. */
+static void settings_apply_dialog_style(void)
+{
+    struct dialog_style s;
+    dialog_style_default(&s);
+
+    s.box_border_width     = clamp_int(global_settings.dialog_box_border_width,
+                                       0, 16);
+    s.box_border_radius    = clamp_int(global_settings.dialog_box_border_radius,
+                                       0, 64);
+    s.box_margin           = clamp_int(global_settings.dialog_box_margin,
+                                       0, LCD_WIDTH / 4);
+    s.button_border_width  = clamp_int(global_settings.dialog_btn_border_width,
+                                       0, 16);
+    s.button_border_radius = clamp_int(global_settings.dialog_btn_border_radius,
+                                       0, 64);
+
+#ifdef HAVE_LCD_COLOR
+    if (global_settings.dialog_colors)
+    {
+        s.box_fg                       = global_settings.dialog_box_fg;
+        s.box_bg                       = global_settings.dialog_box_bg;
+        s.box_border_color             = global_settings.dialog_box_border;
+        s.button_fg                    = global_settings.dialog_btn_fg;
+        s.button_bg                    = global_settings.dialog_btn_bg;
+        s.button_border_color          = global_settings.dialog_btn_border;
+        s.button_fg_selected           = global_settings.dialog_btn_fg_sel;
+        s.button_bg_selected           = global_settings.dialog_btn_bg_sel;
+        s.button_border_color_selected = global_settings.dialog_btn_border_sel;
+    }
+#endif
+
+    dialog_set_default_style(&s);
+}
+
 void settings_apply(bool read_disk)
 {
     logf("%s", __func__);
@@ -884,6 +936,7 @@ void settings_apply(bool read_disk)
         global_settings.peak_meter_release, global_settings.peak_meter_hold,
         global_settings.peak_meter_clip_hold);
 
+    settings_apply_dialog_style();
 
     if (read_disk)
     {

@@ -79,11 +79,9 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
     const char matchstr[] = "\r\n\f\v\t ";
 
     /* the popup is framed with the default dialog style, but keeps its own
-     * padding; an icon (if the style carries one) narrows the text column */
+     * padding */
     struct dialog_style style = *dialog_get_default_style();
     style.box_margin = RECT_SPACING;
-    int icon_w = style.icon ? style.icon->width + DIALOG_ICON_GAP : 0;
-    int icon_h = style.icon ? style.icon->height : 0;
 
     font_getstringsize(" ", &space_w, &chr_h, fontnum);
     /* Reserve a line for each additional element (e.g. the progress bar),
@@ -107,7 +105,7 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
         {
             len = next - lastbreak;
             int next_w = len * space_w;
-            if (x + next_w + w > vp->width - RECT_SPACING*2 - icon_w
+            if (x + next_w + w > vp->width - RECT_SPACING*2
                 || lastbrkchr != ' ')
             {   /* too wide, or control character wrap */
                 if (x > maxw)
@@ -159,8 +157,8 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
 
     screen->scroll_stop();
 
-    width = maxw + icon_w + 2*RECT_SPACING;
-    height = (icon_h > y ? icon_h : y) + 2*RECT_SPACING;
+    width = maxw + 2*RECT_SPACING;
+    height = y + 2*RECT_SPACING;
 
     if (width > vp->width)
         width = vp->width;
@@ -195,18 +193,22 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
     }
 #endif
 
-    /* opaque box + border (+ icon) via the shared dialog frame */
+    /* opaque box + border via the shared dialog frame */
     struct viewport content;
     dialog_frame_box(screen, vp, &style, &content);
 
-    /* print the message into the content column (past the icon, if any), then
-     * restore the box viewport: splash_progress draws its scrollbar in box
+    /* print the message into the content column, then restore the box
+     * viewport: splash_progress draws its scrollbar in box
      * coordinates and the caller flushes the box. */
     screen->set_viewport(&content);
+    /* DRMODE_FG so glyphs draw over our solid fill without the theme backdrop
+     * bleeding into each character's background */
+    screen->set_drawmode(DRMODE_FG);
     for(i = 0, y = 0; i <= line; i++, y+= chr_h)
     {
         screen->putsxyf(0, y, "%.*s", lines[i].len, lines[i].str);
     }
+    screen->set_drawmode(DRMODE_SOLID);
     screen->set_viewport(vp);
 
     return true; /* needs update */

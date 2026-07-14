@@ -518,6 +518,28 @@ struct user_settings
 #endif
 #endif
 
+    /* Modal dialog chrome (apps/gui/dialog.h). Applied in settings_apply() via
+     * dialog_set_default_style(). The metrics always apply; the colours only
+     * when dialog_colors is on, otherwise every colour is inherited from the
+     * theme (DIALOG_COLOR_INHERIT), which is the default look. */
+    int dialog_box_border_width;
+    int dialog_box_border_radius;
+    int dialog_box_margin;
+    int dialog_btn_border_width;
+    int dialog_btn_border_radius;
+#ifdef HAVE_LCD_COLOR
+    bool dialog_colors;         /* off == inherit every colour from the theme */
+    int dialog_box_fg;
+    int dialog_box_bg;
+    int dialog_box_border;
+    int dialog_btn_fg;
+    int dialog_btn_bg;
+    int dialog_btn_border;
+    int dialog_btn_fg_sel;      /* the selected button */
+    int dialog_btn_bg_sel;
+    int dialog_btn_border_sel;
+#endif
+
 #ifdef HAVE_TAGCACHE
     /* apps/gui/album_covers.c settings -- see enum show_album_name_values /
      * sort_albums_by_values / year_sort_order_values in album_covers.h for

@@ -15,9 +15,8 @@ thin *content providers* on top of it:
 - `dialog_input`  — single-line text editor                 (was `kbd_input`)
 
 Theming is done with **properties**, not a render engine (agreed): a small
-`struct dialog_style` of colours/metrics plus an optional icon bitmap, read
-from the theme. No 9-patch/background image — the frame is drawn, and an
-optional icon is inset at the left of the content (see "Icon layout").
+`struct dialog_style` of colours/metrics, read from the theme. No
+9-patch/background image — the frame is drawn.
 
 ## Why this is worth doing
 
@@ -235,29 +234,27 @@ owned by `ui-refactor-and-layout.md` (its Step 0). To keep this work
 independently reviewable, build `dialog.{c,h}` **in place in `apps/gui/`** and
 let the directory reshuffle happen separately.
 
-## Icon layout
+## Icon layout — built in Stage 4, then removed
 
-No 9-patch or background image. The dialog frame is drawn as today (fill +
-border). A style may carry an **optional icon bitmap**, inset at the left of the
-content area; the text column is shifted right by the icon width (+ a gap) and
-wraps within the remaining width, aligned under itself — not under the icon:
+An optional icon bitmap, inset at the left of the content with the text column
+shifted right past it, was specified here and built in Stage 4 as a
+`struct dialog_style` field. **It has since been removed.** Two reasons:
 
-```
-+-------------------------+
-| [icon]  text here and   |
-|         aligned here     |
-+-------------------------+
-```
+1. **It was in the wrong struct.** An icon is *content* ("this dialog is a
+   warning"), not theme chrome. Living in the style, it inherited the style's
+   lifetime — so `dialog_set_default_style()` would have stamped the same icon
+   on every dialog in the app, which is never what a caller wants.
+2. **Nothing used it.** The only caller that ever set it was `dialog_test.c`,
+   which synthesised a disc purely to exercise the field. Meanwhile it was
+   paying rent in the `dialog_get_insets()` left-inset, the icon draw in
+   `dialog_frame_box()`, and the `icon_w`/`icon_h` terms in the popup's
+   word-wrap and box sizing.
 
-Layout rules:
-- No icon (`icon == NULL`, the common case): content spans the full padded
-  width, exactly as the three dialogs draw today. Zero behaviour change.
-- With an icon: reserve `icon->width + gap` on the left; the icon is drawn
-  top-aligned to the first text line (or vertically centred in the content
-  band — decide once, in Stage 4). Text measurement (gap 4, caller-owned)
-  accounts for the reduced column width so wrapping stays correct.
-- The icon lives in `struct dialog_style`, so it arrives with the theming phase
-  (Stage 4); Stages 1-3 pass no icon and are pixel-identical to today.
+It landed in the style in the first place only to dodge the plugin ABI: an icon
+passed to the *opening call* means a new parameter on `splashf`, whose signature
+`plugin.h` pins. That constraint disappears in Stage 5. **If an icon is wanted
+later, add it as a real parameter to the `dialog_*` entry points once the plugin
+wrappers are gone** — do not put it back in the style.
 
 ## Staged implementation plan
 
@@ -287,7 +284,8 @@ Move the message + button-row interior onto the run loop; the
 `_w_title`, `_w_tmo`, and `yesno_pop*` as wrappers. -> verify: Yes/No selection,
 timeout countdown + default, USB abort, result messages, and talk are unchanged.
 
-**Stage 3 — `dialog_input` from the click-wheel editor.** *(done; insertion defect tracked in `keyboard-gap-caret.md`)*
+**Stage 3 — `dialog_input` from the click-wheel editor.** *(done; the overtype
+insertion defect it inherited is now fixed too — see `keyboard-gap-caret.md`)*
 Reimplement `keyboard.c` on `dialog_run`; drop `load_kbd` and the
 `ucschar_t *kbd` param internally; keep a `kbd_input(buffer, buflen, kbd)`
 wrapper for the plugin ABI and update the ~7 core `load_kbd`/`kbd_input` call
@@ -295,12 +293,12 @@ sites; remove the LoadableKeyboardLayouts header comment. -> verify: text entry,
 caret/wheel/backspace behaviour, and the discard-confirm prompt (which itself
 calls `dialog_yesno`) all work; plugins still link.
 
-**Stage 4 — Theming properties + optional icon.** *(done)*
+**Stage 4 — Theming properties.** *(done; the icon was built, then removed —
+see "Icon layout")*
 Introduce `struct dialog_style` + `dialog_style_default()` sourcing from the
-theme, and the optional left-inset icon (see "Icon layout"). This is the home
-for the border/radius/button-colour fields the interface above front-loads;
-add only the ones actually wanted. -> verify: default style reproduces
-Stages 1-3 exactly; an icon and overrides render as specified.
+theme. This is the home for the border/radius/button-colour fields the interface
+above front-loads; add only the ones actually wanted. -> verify: default style
+reproduces Stages 1-3 exactly; overrides render as specified.
 
 See "Stage 4 output" below for what was actually built.
 
@@ -354,11 +352,12 @@ selection, `tmo_default`, `end_tick`, last-drawn second, and result.
   - `measure` → full-width box, height = edit line + gap + button row
     (`keyboard.c:250-274`).
   - `draw` → the clipped, horizontally-scrolled edit line + caret and the
-    Cancel/OK row (`keyboard.c:282-338`).
+    Cancel/OK row. The caret is a **bar at the insertion gap**; the character the
+    wheel is composing carries the inverse-video block (`keyboard-gap-caret.md`).
   - `on_action` → wheel/caret/backspace/delete + focus moves, all requesting
     redraw; SELECT/ABORT map to ACCEPT/CANCEL (the discard-confirm prompt calls
-    `dialog_yesno`); USB → `DIALOG_ABORT` (`keyboard.c:395-475`). Accept-side
-    trim + re-encode stays in `dialog_input.c`.
+    `dialog_yesno`); USB → `DIALOG_ABORT`. Accept-side trim + re-encode stays in
+    `dialog_input.c`.
   `load_kbd` and the `ucschar_t *kbd` param are dropped from the core function;
   a `kbd_input(buffer, buflen, kbd)` wrapper remains for the plugin ABI.
 
@@ -368,8 +367,8 @@ All three map with no leftover behaviour, which closes Stage 0.
 
 `struct dialog_style` lives in `apps/gui/dialog.h` and carries what the proposal
 front-loaded: box fg/bg/border colour, border width, corner radius, margin, font,
-the optional icon, and the button row's normal/selected colours, border width,
-radius and font.
+and the button row's normal/selected colours, border width, radius and font.
+(It also carried an optional icon, since removed — see "Icon layout".)
 
 **Colours inherit rather than being sampled from the theme.** Every colour field
 defaults to `DIALOG_COLOR_INHERIT` and every font to `DIALOG_FONT_INHERIT`,
@@ -385,17 +384,41 @@ instead would have quietly diverged wherever an SBS viewport sets its own colour
 which has no style parameter of its own. That is the only way to theme popups
 without changing `splashf`'s signature, which the plugin ABI still pins.
 
-**Consequences of the icon.** Insetting text past an icon meant the interior had
-to be drawn into the *content* viewport rather than the box:
-- `dialog_frame_box()` now takes a style, draws the icon, and hands back a content
-  viewport already inset by the margin and the icon column (`dialog_get_insets()`
-  is exposed so `measure()` callbacks can size a box around a content area).
+**The style comes from the theme `.cfg`.** Fifteen `F_THEMESETTING` entries in
+`settings_list.c` (config-file only, `lang_id -1`, no menu entries) are pushed
+into the default style by `settings_apply_dialog_style()` in `settings.c`, which
+`settings_apply()` calls - so they land at boot (`main.c`) and again whenever a
+theme is loaded (`theme_menu.c`).
+
+- **Metrics** (`dialog box border width|border radius|margin`, `dialog button
+  border width|border radius`) always apply. Their defaults reproduce
+  `dialog_style_default()`, so an unset theme looks exactly as before.
+- **Colours** are gated on `dialog colours` (default off). Off, every colour stays
+  `DIALOG_COLOR_INHERIT` and the dialogs follow the theme's own fg/bg as they
+  always did - which is what keeps the popup's broken-theme fallback working. On,
+  the nine `dialog box|button ...` colours are used. The gate exists because
+  `SETTINGS_SAVE_THEME` writes every theme setting unconditionally, so an
+  "unset colour" sentinel would be silently serialised as `ffffff` by the `F_RGB`
+  writer on a Save Theme.
+- Values are `atoi`'d straight out of a hand-edited file with no range check in
+  the settings loader, so `settings_apply_dialog_style()` clamps them.
+- **Fonts are deliberately not exposed.** `box_font`/`button_font` stay
+  `DIALOG_FONT_INHERIT`; wiring them to the `.cfg` would mean font loading and
+  buffer-slot management for a want nobody has yet.
+- Anything that overrides the default style temporarily (e.g. `dialog_test.c`)
+  must save and restore it rather than resetting to `dialog_style_default()`,
+  which would drop the theme's configuration.
+
+**The content viewport.** The style owns the padding, so the interior is drawn
+into a *content* viewport rather than the box itself:
+- `dialog_frame_box()` takes a style and hands back a content viewport already
+  inset by the margin (`dialog_get_insets()` is exposed so `measure()` callbacks
+  can size a box around a content area).
 - The `draw` callback receives that content viewport; yes/no and text input
   dropped their own `YN_PAD`/`KBD_PAD` insets, which the style's `box_margin`
   (default 10, the same value) now owns.
-- The popup word-wraps to the narrowed column and grows the box by the icon's
-  width, so an icon never sits under the first line of text. It pins
-  `box_margin` to its own `RECT_SPACING`, since its hand-rolled layout assumes it.
+- The popup pins `box_margin` to its own `RECT_SPACING`, since its hand-rolled
+  word-wrap layout assumes it.
 - Both dialogs' near-identical button renderers collapsed into
   `dialog_draw_button()`, which is where the button style fields are read.
 
@@ -404,5 +427,12 @@ per-row-span fill and an outline whose inner edge shares the outer corner's
 centre). Radius 0 short-circuits to plain `fillrect`/`drawrect`, so the default
 path is unchanged. There is no anti-aliasing.
 
-Icon vertical alignment: **top-aligned** to the first text line, per "Icon
-layout".
+**Text is drawn in `DRMODE_FG`, never `DRMODE_SOLID`.** With a theme backdrop
+active, `DRMODE_SOLID` (which carries the `DRMODE_BG` bit) makes the LCD driver
+source each glyph's *background* pixels from the backdrop image
+(`lcd-16bit-common.c:467`), stamping rectangles of backdrop over the box fill.
+`DRMODE_FG` draws only the glyph pixels and lets the fill show through.
+`DRMODE_INVERSEVID` is not an escape: it merely flips the glyph mask and clears
+itself, leaving plain `DRMODE_SOLID` (`lcd-16bit-common.c:458-462`). For an
+inverse-video effect on a colour target, draw in `DRMODE_FG` with the foreground
+set to the box's background colour.

@@ -1,6 +1,7 @@
 # Plan: gap-caret text insertion (`dialog_input`)
 
-Status: agreed, not yet implemented
+Status: **implemented** in `apps/recorder/keyboard.c`; builds clean, not yet
+verified on device (see "Verification")
 Related: `dialog-widget.md` (Stage 3)
 
 ## The defect
@@ -75,6 +76,21 @@ today would read one past the end of the text.
 Insert mid-word; insert a space mid-string; backspace/delete at both ends; empty
 the line completely; long-text horizontal scrolling; Cancel-while-dirty (the
 discard prompt, which routes through `dialog_yesno`).
+
+## As built — three points the spec left open
+
+- **Inserting the blank.** The spec says "insert `charset[0]` (space)". The code
+  inserts a literal `' '` instead: `build_charset()` guarantees a space is *in*
+  the cycle but not that it is *first*, so a localized charset whose first entry
+  isn't a space would otherwise insert the wrong character. With the default
+  charset (space at index 0) the behaviour is identical — one forward click still
+  yields `A`.
+- **Wheel at maximum length.** `wheel_step()` returns `false` and changes nothing
+  when the line is full, so a no-op spin doesn't set `dirty` and can't provoke a
+  spurious discard prompt on Cancel.
+- **Left/Right at the ends of the line.** They clear `editing` even when the bar
+  cannot move, so a tap always commits the character being composed. Right at the
+  end of the line is otherwise a no-op, as specified.
 
 ## Accepted cost, and the escape hatch
 

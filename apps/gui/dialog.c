@@ -51,7 +51,6 @@ void dialog_style_default(struct dialog_style *s)
     s->box_border_radius = 0;
     s->box_margin        = DIALOG_MARGIN;
     s->box_font          = DIALOG_FONT_INHERIT;
-    s->icon              = NULL;
 
     s->button_fg                     = DIALOG_COLOR_INHERIT;
     s->button_bg                     = DIALOG_COLOR_INHERIT;
@@ -87,8 +86,6 @@ void dialog_get_insets(const struct dialog_style *style,
                        struct dialog_insets *out)
 {
     out->left = out->top = out->right = out->bottom = style->box_margin;
-    if (style->icon)
-        out->left += style->icon->width + DIALOG_ICON_GAP;
 }
 
 /* ---------------------------------------------------------------------- *
@@ -258,18 +255,14 @@ void dialog_frame_box(struct screen *screen, struct viewport *box,
         draw_round_rect(screen, 0, 0, box->width, box->height, r, bw);
     }
 
-    /* content sub-viewport: the box inset by the margin, and shifted right past
-     * the icon (drawn top-aligned at the left of the content, per "Icon layout"
-     * in the design doc). It inherits the box's (styled) colours and font. */
+    /* content sub-viewport: the box inset by the margin. It inherits the box's
+     * (styled) colours and font. */
     dialog_get_insets(style, &in);
     *content_out = *box;
     content_out->x      += in.left;
     content_out->y      += in.top;
     content_out->width  -= in.left + in.right;
     content_out->height -= in.top + in.bottom;
-
-    if (style->icon)
-        screen->bmp(style->icon, style->box_margin, style->box_margin);
 }
 
 void dialog_draw_button(struct screen *screen,

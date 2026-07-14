@@ -20,7 +20,7 @@
  ****************************************************************************/
 
 /* Interactive walkthrough of the dialog widgets: popup, yes-no, text input, and
- * the styled variants (rounded corners, icon, custom colours). Wired into the
+ * the styled variants (rounded corners, custom colours). Wired into the
  * main menu so behaviour and layout can be checked on device. Temporary
  * scaffolding - remove with its menu item once the dialog refactor is
  * verified. */

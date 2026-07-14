@@ -34,7 +34,7 @@
  *                        inside the loop so no caller can forget it.
  *
  * Theming is by properties (struct dialog_style), not a render engine: colours,
- * border width/radius, fonts and an optional icon. Every colour defaults to
+ * border width/radius and fonts. Every colour defaults to
  * DIALOG_COLOR_INHERIT, i.e. "whatever the screen already has" - the theme's
  * colours, or an override a caller installed before drawing (the popup's
  * broken-theme fallback). So the default style reproduces the untheme
@@ -48,7 +48,6 @@
 #include "screen_access.h"
 #include "viewport.h"
 
-struct bitmap;
 struct dialog;
 
 /* ---------------------------------------------------------------------- *
@@ -62,9 +61,6 @@ struct dialog;
 /* A font that resolves to the one the parent (theme) viewport already carries. */
 #define DIALOG_FONT_INHERIT  (-1)
 
-/* Gap between the optional icon and the text column beside it. */
-#define DIALOG_ICON_GAP 4
-
 struct dialog_style
 {
     /* the box itself */
@@ -75,10 +71,6 @@ struct dialog_style
     int      box_border_radius;     /* 0 == square corners                  */
     int      box_margin;            /* content inset inside the box         */
     int      box_font;
-    const struct bitmap *icon;      /* optional; inset at the left of the
-                                     * content, which is shifted right past
-                                     * it (see "Icon layout" in the design
-                                     * doc). NULL == full-width content.    */
 
     /* the button row (the yes/no and text-input dialogs share one renderer) */
     unsigned button_fg;
@@ -102,9 +94,8 @@ void dialog_style_default(struct dialog_style *s);
 void dialog_set_default_style(const struct dialog_style *s);
 const struct dialog_style *dialog_get_default_style(void);
 
-/* How much `style` takes out of the box on each side: the margin, plus the
- * icon column on the left. Sizing code (a measure() callback) uses this to
- * convert a content size into a box size. */
+/* How much `style` takes out of the box on each side (the margin). Sizing code
+ * (a measure() callback) uses this to convert a content size into a box size. */
 struct dialog_insets { int left, top, right, bottom; };
 void dialog_get_insets(const struct dialog_style *style,
                        struct dialog_insets *out);
@@ -120,8 +111,7 @@ void dialog_get_insets(const struct dialog_style *style,
  * popup's broken-theme fallback reaches DIALOG_COLOR_INHERIT.
  *
  * `content_out` is filled with the content sub-viewport: `box` inset per
- * dialog_get_insets(), i.e. by the style's margin on every side and shifted
- * right past the icon when there is one (the icon is drawn here). It is NOT made
+ * dialog_get_insets(), i.e. by the style's margin on every side. It is NOT made
  * active and NOT flushed - the caller draws the interior into it and owns the
  * update_viewport()/flush.
  *
@@ -178,9 +168,9 @@ struct dialog_callbacks
                     struct viewport *box, void *data);
 
     /* Draw the interior into `content` - the framed box's content viewport,
-     * already active and already inset past the style's margin and icon. The
-     * callback owns its own sub-viewports (message block, button row, edit
-     * line, ...) but not the outer padding. */
+     * already active and already inset past the style's margin. The callback
+     * owns its own sub-viewports (message block, button row, edit line, ...)
+     * but not the outer padding. */
     void (*draw)(struct dialog *d, struct screen *s,
                  struct viewport *content, void *data);
 

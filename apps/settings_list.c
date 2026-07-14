@@ -1106,6 +1106,49 @@ const struct settings_list settings[] = {
         INT(DEFAULT_THEME_SELECTOR_TEXT),"line selector text color",UNUSED},
 
 #endif
+
+    /* Modal dialog chrome. Config-file only (no menu entries): lang_id -1, so
+     * these are edited in a theme .cfg. The defaults reproduce
+     * dialog_style_default() exactly, i.e. today's look. */
+    {F_T_INT|F_THEMESETTING, &global_settings.dialog_box_border_width, -1,
+        INT(1), "dialog box border width", UNUSED},
+    {F_T_INT|F_THEMESETTING, &global_settings.dialog_box_border_radius, -1,
+        INT(0), "dialog box border radius", UNUSED},
+    {F_T_INT|F_THEMESETTING, &global_settings.dialog_box_margin, -1,
+        INT(10), "dialog box margin", UNUSED},
+    {F_T_INT|F_THEMESETTING, &global_settings.dialog_btn_border_width, -1,
+        INT(1), "dialog button border width", UNUSED},
+    {F_T_INT|F_THEMESETTING, &global_settings.dialog_btn_border_radius, -1,
+        INT(0), "dialog button border radius", UNUSED},
+#ifdef HAVE_LCD_COLOR
+    /* off: every dialog colour is inherited from the theme (the default look).
+     * on: the nine colours below are used instead. */
+    OFFON_SETTING(F_THEMESETTING, dialog_colors, -1, false, "dialog colours",
+                  NULL),
+    {F_T_INT|F_RGB|F_THEMESETTING, &global_settings.dialog_box_fg, -1,
+        INT(DEFAULT_THEME_FOREGROUND), "dialog box foreground", UNUSED},
+    {F_T_INT|F_RGB|F_THEMESETTING, &global_settings.dialog_box_bg, -1,
+        INT(DEFAULT_THEME_BACKGROUND), "dialog box background", UNUSED},
+    {F_T_INT|F_RGB|F_THEMESETTING, &global_settings.dialog_box_border, -1,
+        INT(DEFAULT_THEME_FOREGROUND), "dialog box border colour", UNUSED},
+    {F_T_INT|F_RGB|F_THEMESETTING, &global_settings.dialog_btn_fg, -1,
+        INT(DEFAULT_THEME_FOREGROUND), "dialog button foreground", UNUSED},
+    {F_T_INT|F_RGB|F_THEMESETTING, &global_settings.dialog_btn_bg, -1,
+        INT(DEFAULT_THEME_BACKGROUND), "dialog button background", UNUSED},
+    {F_T_INT|F_RGB|F_THEMESETTING, &global_settings.dialog_btn_border, -1,
+        INT(DEFAULT_THEME_FOREGROUND), "dialog button border colour", UNUSED},
+    /* the selected button defaults to the inverse-video look of the plain box */
+    {F_T_INT|F_RGB|F_THEMESETTING, &global_settings.dialog_btn_fg_sel, -1,
+        INT(DEFAULT_THEME_BACKGROUND), "dialog button foreground selected",
+        UNUSED},
+    {F_T_INT|F_RGB|F_THEMESETTING, &global_settings.dialog_btn_bg_sel, -1,
+        INT(DEFAULT_THEME_FOREGROUND), "dialog button background selected",
+        UNUSED},
+    {F_T_INT|F_RGB|F_THEMESETTING, &global_settings.dialog_btn_border_sel, -1,
+        INT(DEFAULT_THEME_FOREGROUND), "dialog button border colour selected",
+        UNUSED},
+#endif
+
     /* more playback */
     OFFON_SETTING(0,play_selected,LANG_PLAY_SELECTED,true,"play selected",NULL),
     CHOICE_SETTING(0, single_mode, LANG_SINGLE_MODE, 0,

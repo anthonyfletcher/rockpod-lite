@@ -32,36 +32,6 @@
 #include "dialog.h"
 #include "dialog_test.h"
 
-#ifdef HAVE_LCD_COLOR
-/* A synthetic icon (a filled disc) for the styled dialogs below, so the icon's
- * extent and the text column inset beside it are both obvious. */
-#define TEST_ICON_SIZE 20
-static fb_data test_icon_data[TEST_ICON_SIZE * TEST_ICON_SIZE];
-static struct bitmap test_icon = {
-    .width       = TEST_ICON_SIZE,
-    .height      = TEST_ICON_SIZE,
-    .format      = FORMAT_NATIVE,
-    .maskdata    = NULL,
-    .alpha_offset = 0,
-    .data        = (unsigned char *)test_icon_data,
-};
-
-static void build_test_icon(void)
-{
-    const int r = TEST_ICON_SIZE / 2;
-    for (int y = 0; y < TEST_ICON_SIZE; y++)
-    {
-        for (int x = 0; x < TEST_ICON_SIZE; x++)
-        {
-            int dx = x - r, dy = y - r;
-            bool inside = (dx * dx + dy * dy) <= r * r;
-            test_icon_data[y * TEST_ICON_SIZE + x] =
-                inside ? LCD_RGBPACK(255, 80, 40) : TRANSPARENT_COLOR;
-        }
-    }
-}
-#endif /* HAVE_LCD_COLOR */
-
 static const char *res_name(enum yesno_res r)
 {
     switch (r)
@@ -149,9 +119,13 @@ int dialog_test_run(void)
             splash(HZ, "Input cancelled");
     }
 
-    /* 8+9. theming: rounded corners, an icon and custom colours, applied to
-     * every dialog at once via the default style. */
+    /* 8+9. theming: rounded corners and custom colours, applied to every dialog
+     * at once via the default style. */
     {
+        /* the theme's style (settings_apply_dialog_style()), to put back
+         * afterwards - resetting to dialog_style_default() would silently drop
+         * whatever the .cfg configured */
+        struct dialog_style saved = *dialog_get_default_style();
         struct dialog_style style;
         dialog_style_default(&style);
         style.box_border_radius    = 10;
@@ -159,8 +133,6 @@ int dialog_test_run(void)
         style.box_margin           = 12;
         style.button_border_radius = 6;
 #ifdef HAVE_LCD_COLOR
-        build_test_icon();
-        style.icon                          = &test_icon;
         style.box_bg                        = LCD_RGBPACK(30, 30, 40);
         style.box_fg                        = LCD_RGBPACK(240, 240, 240);
         style.box_border_color              = LCD_RGBPACK(255, 80, 40);
@@ -171,9 +143,8 @@ int dialog_test_run(void)
 #endif
         dialog_set_default_style(&style);
 
-        /* the popup is framed by the same style: rounded, icon, recoloured */
-        splash(3 * HZ, "8/9 styled: rounded box, icon at the left, and the "
-                       "text column inset beside it");
+        /* the popup is framed by the same style: rounded, recoloured */
+        splash(3 * HZ, "8/9 styled: rounded box and recoloured frame");
 
         const char *lines[] = { "8/9 styled yes/no.", "Rounded buttons?" };
         struct text_message m = { lines, 2 };
@@ -186,7 +157,7 @@ int dialog_test_run(void)
         else
             splash(HZ, "Input cancelled");
 
-        dialog_set_default_style(NULL);   /* back to the theme's plain look */
+        dialog_set_default_style(&saved); /* back to the theme's own style */
     }
 
     splash(HZ, "Dialog tests done");
