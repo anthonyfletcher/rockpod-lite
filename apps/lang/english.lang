@@ -17256,3 +17256,17 @@
     *: "Discard changes?"
   </voice>
 </phrase>
+<phrase>
+  id: LANG_USB_EJECT_BEFORE_DISCONNECT
+  desc: caption shown on the USB (mass storage) connection screen
+  user: core
+  <source>
+    *: "Eject before disconnecting"
+  </source>
+  <dest>
+    *: "Eject before disconnecting"
+  </dest>
+  <voice>
+    *: "Eject before disconnecting"
+  </voice>
+</phrase>

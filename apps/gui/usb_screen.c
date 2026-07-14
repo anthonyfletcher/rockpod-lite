@@ -41,6 +41,14 @@
 #include "icons.h"
 
 #include "bitmaps/usblogo.h"
+#if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
+/* This fork ships a full-screen custom USB (eject) screen for the 320x240
+ * iPods, drawn as a plain bitmap + caption. It is NOT drawn via the skin
+ * engine -- the skin engine must not run during the USB screen on PP502x, it
+ * breaks enumeration (see the guard in usb_screen_fix_viewports()). */
+#define HAVE_ROCKPOD_USB_SCREEN
+#include "bitmaps/rockpodusb.h"
+#endif
 
 #if (CONFIG_STORAGE & STORAGE_MMC)
 #include "ata_mmc.h"
@@ -130,7 +138,19 @@ static void usb_screen_fix_viewports(struct screen *screen,
         logo_height = BMPHEIGHT_usblogo;
     }
 
-    viewportmanager_theme_enable(screen->screen_type, true, parent);
+    /* Draw the USB screen WITHOUT the theme (full screen, no SBS/backdrop).
+     *
+     * This MUST stay disabled. On the PP502x (iPod Video) target, running the
+     * theme/skin engine during the USB screen -- even a single render done
+     * before the mass-storage handoff -- destabilises the connection: the
+     * device flaps between the menu and the eject screen and never enumerates
+     * on the host (you end up in disk mode). Empirically: theme enabled == USB
+     * broken, theme disabled == USB solid. So the USB screen is deliberately
+     * kept theme-free. The cost is a plain USB logo instead of a theme's custom
+     * USB screen -- that is the price of a reliable connection, and intentional.
+     * The theme's Eject graphic is rendered by the skin engine (custom font
+     * glyphs), so it cannot be shown here without re-enabling the theme. */
+    viewportmanager_theme_enable(screen->screen_type, false, parent);
 
     if (logo_width  > parent->width)
         logo_width  = parent->width;
@@ -171,6 +191,39 @@ static void usb_screen_fix_viewports(struct screen *screen,
 static void usb_screens_draw(struct usb_screen_vps_t *usb_screen_vps_ar)
 {
     struct viewport *last_vp;
+#ifdef HAVE_ROCKPOD_USB_SCREEN
+    FOR_NB_SCREENS(i)
+    {
+        struct screen *screen = &screens[i];
+        struct viewport *parent = &usb_screen_vps_ar[i].parent;
+
+        last_vp = screen->set_viewport(parent);
+        screen->clear_viewport();
+        screen->backlight_on();
+
+        if (i == SCREEN_MAIN)
+        {
+            struct viewport caption = *parent;
+            const unsigned char *msg = str(LANG_USB_EJECT_BEFORE_DISCONNECT);
+            int tw, th;
+
+            /* full-screen background art */
+            screen->bmp(&bm_rockpodusb, 0, 0);
+
+            /* white caption, centred horizontally, top edge at y = 180, drawn
+             * transparently over the art in the theme's bold UI font */
+            caption.font = font_get_ui_bold();
+            caption.drawmode = DRMODE_FG;
+            caption.fg_pattern = LCD_WHITE;
+            screen->set_viewport(&caption);
+            screen->getstringsize(msg, &tw, &th);
+            screen->putsxy((screen->lcdwidth - tw) / 2, 180, msg);
+        }
+
+        screen->set_viewport(last_vp);
+        screen->update_viewport();
+    }
+#else
     static const struct bitmap* logos[NB_SCREENS] = {
         &bm_usblogo,
     };
@@ -209,6 +262,7 @@ static void usb_screens_draw(struct usb_screen_vps_t *usb_screen_vps_ar)
         screen->set_viewport(last_vp);
         screen->update_viewport();
     }
+#endif /* HAVE_ROCKPOD_USB_SCREEN */
 }
 
 void gui_usb_screen_run(bool early_usb, intptr_t seqnum)
@@ -241,11 +295,11 @@ void gui_usb_screen_run(bool early_usb, intptr_t seqnum)
         usb_screen_fix_viewports(screen, &usb_screen_vps_ar[i]);
     }
 
-#if 0 /* handled in usb_screen_fix_viewports() */
-    /* update the UI before disabling fonts, this maximizes the propability
-     * that font cache lookups succeed during USB */
-    send_event(GUI_EVENT_ACTIONUPDATE, NULL);
-#endif
+    /* Draw the USB screen once here -- before the fonts are closed and before
+     * the mass-storage handoff -- so the caption renders (and its glyphs get
+     * cached) while the fonts are still open and the app still owns storage.
+     * This is plain bitmap + text drawing, no skin engine, so it is USB-safe. */
+    usb_screens_draw(usb_screen_vps_ar);
 
     if(!early_usb)
     {
@@ -257,9 +311,11 @@ void gui_usb_screen_run(bool early_usb, intptr_t seqnum)
 
     while (1)
     {
-        usb_screens_draw(usb_screen_vps_ar);
         if (handle_usb_events())
             break;
+        /* Reached only on a USB-HID keypad mode switch; repaint (the caption's
+         * glyphs are already cached from the pre-handoff draw above). */
+        usb_screens_draw(usb_screen_vps_ar);
     }
 
     FOR_NB_SCREENS(i)

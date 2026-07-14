@@ -29,6 +29,11 @@ rockpodlogo.bmp
 no_album_cover.bmp
 #endif
 
+/* Full-screen custom USB (eject) screen for the 320x240 iPods */
+#if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
+rockpodusb.bmp
+#endif
+
 /* USB logo */
 #ifdef HAVE_LCD_COLOR
 #if LCD_WIDTH > 176
