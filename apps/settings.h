@@ -273,6 +273,14 @@ void settings_apply_skins(void);
 
 void settings_apply(bool read_disk);
 void settings_apply_pm_range(void);
+
+/* Shared "bold UI font" -- the theme's configured bold font (settings
+ * 'font bold' / global_settings.bold_font_file), loaded once by settings_apply()
+ * and reloaded on theme change. Returns the loaded font id, or the regular UI
+ * font id if no bold font is configured (or it failed to load), so callers can
+ * use it unconditionally. Do NOT font_unload() the returned id -- settings_apply
+ * owns its lifecycle. */
+int font_get_ui_bold(void);
 void settings_display(void);
 
 enum optiontype { RB_INT, RB_BOOL };

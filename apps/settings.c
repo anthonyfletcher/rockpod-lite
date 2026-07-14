@@ -825,6 +825,16 @@ void sound_settings_apply(void)
 #endif
 }
 
+/* Shared bold UI font id (see font_get_ui_bold()); -1 when none is loaded. */
+static int ui_bold_font_id = -1;
+
+int font_get_ui_bold(void)
+{
+    if (ui_bold_font_id >= 0)
+        return ui_bold_font_id;
+    return screens[SCREEN_MAIN].getuifont();
+}
+
 void settings_apply(bool read_disk)
 {
     logf("%s", __func__);
@@ -894,6 +904,27 @@ void settings_apply(bool read_disk)
                 screens[SCREEN_MAIN].setuifont(rc);
                 screens[SCREEN_MAIN].setfont(rc);
             }
+        }
+        /* Optional shared bold UI font (font_get_ui_bold()). Loaded here right
+         * after the UI font so it and its consumers (album covers, USB screen)
+         * share a single font-buffer slot rather than each loading their own. */
+        if (global_settings.bold_font_file[0]
+            && global_settings.bold_font_file[0] != '-')
+        {
+            snprintf(buf, sizeof buf, FONT_DIR "/%s.fnt",
+                     global_settings.bold_font_file);
+            if (ui_bold_font_id < 0
+                || !font_filename_matches_loaded_id(ui_bold_font_id, buf))
+            {
+                if (ui_bold_font_id >= 0)
+                    font_unload(ui_bold_font_id);
+                ui_bold_font_id = font_load(buf); /* <0 -> falls back to UI font */
+            }
+        }
+        else if (ui_bold_font_id >= 0)
+        {
+            font_unload(ui_bold_font_id);
+            ui_bold_font_id = -1;
         }
         if ( global_settings.kbd_file[0]
              && global_settings.kbd_file[0] != '-') {

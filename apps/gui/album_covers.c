@@ -48,6 +48,7 @@
 #include "misc.h"             /* default_event_handler, warn_on_pl_erase, fix_path_part */
 #include "onplay.h"           /* onplay_show_playlist_cat_menu/menu */
 #include "albumart.h"         /* find_albumart / search_albumart_files */
+#include "albumart_cache.h"   /* shared database-driven thumbnail cache */
 #include "metadata.h"         /* struct mp3entry, get_metadata */
 #include "dir.h"
 #include "file.h"
@@ -371,12 +372,10 @@ static int pf_half_height;      /* rows of drawable (post text-margin) height ab
 static int pf_lower_half;       /* rows of drawable (post text-margin) height below center */
 static int pf_draw_y_shift;     /* rows skipped below pf_vp_y for a TOP text caption's margin */
 /* Album name font: global_settings.bold_font_file loaded via font_load(),
- * or the real UI font (screens[SCREEN_MAIN].getuifont(), not the FONT_UI
- * constant -- see init()'s comment) if none is configured (empty string)
- * or loading it failed. Set once in init(), unloaded in cleanup() only if
- * pf_bold_font_loaded is true (this screen doesn't own the UI font). */
+ * or the real UI font if none is configured. Provided by font_get_ui_bold()
+ * (settings.c), which owns the font's lifecycle -- this screen must not unload
+ * it. Set once in init(). */
 static int pf_bold_font;
-static bool pf_bold_font_loaded;
 static int pf_vp_y;             /* viewport y-offset (status bar height) */
 static struct viewport pf_vp;   /* PF rendering viewport (below status bar) */
 static struct frame_buffer_t pf_framebuffer; /* bypass backdrop in clear_viewport */
@@ -407,6 +406,11 @@ unsigned long thread_stack[THREAD_STACK_SIZE / sizeof(long)];
 /* queue (as array) for scheduling load_surface */
 
 static int empty_slide_hid;
+
+/* Index of the "coverflow" size in the shared albumart cache (albumart_sizes.h),
+ * resolved once in init(); -1 if unavailable (falls back to the local pfraw
+ * cache). */
+static int pf_cover_size_idx = -1;
 
 unsigned int thread_id;
 struct event_queue thread_q;
@@ -1951,6 +1955,13 @@ aa_success:
  */
 static bool create_albumart_cache(void)
 {
+    /* Phase 3 v2: generation moved to the background album-art cache; Cover
+     * Flow no longer builds its own pfraw thumbnails. Do nothing. The code
+     * below is intentionally left in place (unreached) so the generation
+     * helpers it references stay referenced rather than triggering a large,
+     * risky removal cascade -- it can be deleted outright later. */
+    return true;
+
     splash_progress_set_delay(HZ / 2);
     draw_progressbar(0, pf_idx.album_ct, STR_STEP_PREPARING_ARTWORK);
     aa_cache.inspected = 0;
@@ -2363,6 +2374,97 @@ static int read_pfraw(char* filename, int prio)
 }
 
 
+/* Resolve the album's folder (directory of its first track) for a slide, so
+ * its thumbnail can be looked up in the folder-keyed shared cache. Runs on the
+ * picture-load thread, so the tagcache search here doesn't stall rendering. */
+static bool get_slide_dir(const int slide_index, char *dir, int dirlen)
+{
+    struct tagcache_search tcs_l;
+    char tcs_buf[TAGCACHE_BUFSZ];
+    bool ret = false;
+
+    if (!tagcache_search(&tcs_l, tag_filename))
+        return false;
+
+    tagcache_search_add_filter(&tcs_l, tag_album,
+                               pf_idx.album_index[slide_index].seek);
+    tagcache_search_add_filter(&tcs_l, tag_albumartist,
+                               pf_idx.album_index[slide_index].artist_seek);
+
+    if (tagcache_get_next(&tcs_l, tcs_buf, sizeof(tcs_buf)))
+    {
+        const char *sep = strrchr(tcs_l.result, '/');
+        int len = sep ? (int)(sep - tcs_l.result) : 0;
+        if (len >= dirlen)
+            len = dirlen - 1;
+        if (len > 0)
+        {
+            memcpy(dir, tcs_l.result, len);
+            dir[len] = 0;
+            ret = true;
+        }
+    }
+    tagcache_search_finish(&tcs_l);
+    return ret;
+}
+
+/* Read a shared-cache thumbnail (.aat: struct albumart_cache_header followed by
+ * row-major native pixels) into a buflib surface, transposing to the
+ * column-major layout render_slide() expects. Returns a buflib handle,
+ * empty_slide_hid on a missing/corrupt file, or -1 on allocation failure. */
+static int read_aat_transposed(const char *filename, int prio)
+{
+    struct albumart_cache_header hdr;
+    pix_t rowbuf[DISPLAY_WIDTH];
+    int row, col, w, h, size, hid;
+    int fh = open(filename, O_RDONLY);
+    if (fh < 0)
+        return empty_slide_hid;
+
+    if (read(fh, &hdr, sizeof(hdr)) != sizeof(hdr) ||
+        hdr.magic != ALBUMART_CACHE_MAGIC ||
+        hdr.version != ALBUMART_CACHE_FORMAT_VERSION ||
+        hdr.width == 0 || hdr.height == 0 ||
+        hdr.width > DISPLAY_WIDTH || hdr.height > DISPLAY_HEIGHT)
+    {
+        close(fh);
+        return empty_slide_hid;
+    }
+
+    w = hdr.width;
+    h = hdr.height;
+    size = sizeof(struct dim) + sizeof(pix_t) * w * h;
+
+    do {
+        hid = buflib_alloc(&buf_ctx, size);
+    } while (hid < 0 && free_slide_prio(prio));
+
+    if (hid < 0)
+    {
+        close(fh);
+        return -1;
+    }
+
+    struct dim *bm = buflib_get_data(&buf_ctx, hid);
+    bm->width = w;
+    bm->height = h;
+    pix_t *dst = (pix_t*)(sizeof(struct dim) + (char *)bm);
+
+    for (row = 0; row < h; row++)
+    {
+        if (read(fh, rowbuf, sizeof(pix_t) * w) != (ssize_t)(sizeof(pix_t) * w))
+        {
+            close(fh);
+            buflib_free(&buf_ctx, hid);
+            return empty_slide_hid;
+        }
+        for (col = 0; col < w; col++)
+            dst[col * h + row] = rowbuf[col];
+    }
+    close(fh);
+    return hid;
+}
+
 /**
   Load the surface for the given slide_index into the cache at cache_index.
  */
@@ -2370,22 +2472,42 @@ static inline bool load_and_prepare_surface(const int slide_index,
                                             const int cache_index,
                                             const int prio)
 {
-    char pfraw_file[MAX_PATH];
-    unsigned int hash_artist = mfnv(get_album_artist(slide_index));
-    unsigned int hash_album = mfnv(get_album_name(slide_index));
+    int hid = -1;
+    bool got_shared = false;
 
-    snprintf(pfraw_file, sizeof(pfraw_file), CACHE_PREFIX "/%x%x.pfraw",
-                 hash_album, hash_artist);
+    /* Prefer the shared, database-driven thumbnail cache (folder-keyed). */
+    if (pf_cover_size_idx >= 0)
+    {
+        char dir[MAX_PATH];
+        char aat_file[MAX_PATH];
+        if (get_slide_dir(slide_index, dir, sizeof(dir)) &&
+            albumart_cache_lookup(dir, pf_cover_size_idx, aat_file,
+                                  sizeof(aat_file)))
+        {
+            hid = read_aat_transposed(aat_file, prio);
+            if (hid < 0)
+                return false; /* allocation failure: retry later */
+            got_shared = (hid != empty_slide_hid);
+        }
+    }
 
-    int hid = read_pfraw(pfraw_file, prio);
-    if (hid < 0)
-        return false;
+    /* Fall back to this screen's own pfraw cache when a shared thumbnail
+     * isn't available yet (e.g. background generation hasn't reached it),
+     * so nothing regresses versus before the shared cache existed. */
+    if (!got_shared)
+    {
+        char pfraw_file[MAX_PATH];
+        snprintf(pfraw_file, sizeof(pfraw_file), CACHE_PREFIX "/%x%x.pfraw",
+                 mfnv(get_album_name(slide_index)),
+                 mfnv(get_album_artist(slide_index)));
+        hid = read_pfraw(pfraw_file, prio);
+        if (hid < 0)
+            return false; /* allocation failure: retry later */
+    }
 
     pf_sldcache.cache[cache_index].hid = hid;
-
-    if ( cache_index < SLIDE_CACHE_SIZE ) {
+    if (cache_index < SLIDE_CACHE_SIZE)
         pf_sldcache.cache[cache_index].index = slide_index;
-    }
 
     return true;
 }
@@ -3346,10 +3468,9 @@ static void cleanup(void)
 #endif
 
     /* Nothing to free: pf_idx.buf points into plugin_get_buffer()'s static
-     * pluginbuf[] (see init()), not a buflib handle. */
-
-    if (pf_bold_font_loaded)
-        font_unload(pf_bold_font);
+     * pluginbuf[] (see init()), not a buflib handle. The bold album-name font
+     * is the shared font_get_ui_bold() -- owned by settings.c, not unloaded
+     * here. */
 }
 
 enum {
@@ -3656,33 +3777,13 @@ static bool init(void)
 
     lcd_setfont(screens[SCREEN_MAIN].getuifont());
 
-    /* Optional bold album name font (see global_settings.bold_font_file's
-     * comment in settings.h) -- falls back to the real UI font if the
-     * theme hasn't configured one, or if loading it fails for any reason.
-     * Deliberately screens[SCREEN_MAIN].getuifont() rather than the FONT_UI
-     * constant: FONT_UI resolves via font_get()'s fallback search, which
-     * walks slots downward from the top looking for anything loaded at
-     * all -- it does not consult the actually-configured UI font. Loading
-     * this bold font adds one more occupant to the shared font-slot pool,
-     * and if it (or any other theme font) lands in a higher slot than the
-     * real UI font, FONT_UI silently starts resolving to that other font
-     * instead (observed as the artist text rendering in an icon font). */
-    pf_bold_font = screens[SCREEN_MAIN].getuifont();
-    pf_bold_font_loaded = false;
-    if (global_settings.bold_font_file[0])
-    {
-        char bold_font_path[MAX_PATH];
-        int loaded;
-
-        snprintf(bold_font_path, sizeof(bold_font_path), FONT_DIR "/%s.fnt",
-                 global_settings.bold_font_file);
-        loaded = font_load(bold_font_path);
-        if (loaded >= 0)
-        {
-            pf_bold_font = loaded;
-            pf_bold_font_loaded = true;
-        }
-    }
+    /* Album-name font: the shared bold UI font. settings.c loads it once and
+     * owns its lifecycle (so we must not unload it), and it already falls back
+     * to the real configured UI font when the theme has no bold font -- so this
+     * can be used unconditionally. Using the shared id (not the FONT_UI
+     * constant) also sidesteps FONT_UI's fallback slot-search, which could
+     * otherwise resolve to some other theme font in a higher slot. */
+    pf_bold_font = font_get_ui_bold();
 
     if (!dir_exists(CACHE_PREFIX))
     {
@@ -3726,6 +3827,13 @@ static bool init(void)
 
     number_of_slides = pf_idx.album_ct;
 
+    /* Phase 3 v2: Cover Flow no longer generates its own thumbnails -- the
+     * background album-art cache (albumart_cache.c) does. Mark inspection
+     * complete so the idle-loop generator never runs and the navigation
+     * "wait for cache" splashes don't appear; slides come from the shared
+     * .aat cache (with the old pfraw / empty slide as fallback). */
+    aa_cache.inspected = pf_idx.album_ct;
+
     size_t aa_min = DISPLAY_WIDTH * DISPLAY_HEIGHT * sizeof(pix_t);
     size_t aa_bufsz = ALIGN_DOWN(MAX(aa_min * 3, pf_idx.buf_sz / 8),
                                  sizeof(long));
@@ -3741,6 +3849,8 @@ static bool init(void)
 
     pf_idx.buf += aa_bufsz;
     pf_idx.buf_sz -= aa_bufsz;
+
+    pf_cover_size_idx = albumart_cache_size_index("coverflow");
 
     buflib_init(&buf_ctx, (void *)pf_idx.buf, pf_idx.buf_sz);
     initialize_slide_cache();
