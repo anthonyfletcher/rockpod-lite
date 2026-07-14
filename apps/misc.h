@@ -256,6 +256,14 @@ void pop_current_activity(void);
 void pop_current_activity_without_refresh(void);
 enum current_activity get_current_activity(void);
 
+/* Generic "working" indicator for the themed status bar (%lw / "Working..").
+ * Bracket a long-running foreground or background operation with
+ * ui_set_working(true)/(false) to show the skin's generic busy notification.
+ * Distinct from the database/thumbnail-cache "building" indicator (%lb), which
+ * is driven automatically. No built-in caller yet -- reserved for future use. */
+bool ui_working(void);
+void ui_set_working(bool working);
+
 /* Format a sound value like: "-1.05 dB"    (negative values)
  *                            " 1.05 dB"    (positive values include leading space)
  */

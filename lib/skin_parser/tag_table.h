@@ -247,6 +247,9 @@ enum skin_token_type {
 
     /* Virtual LED */
     SKIN_TOKEN_VLED_HDD,
+    SKIN_TOKEN_VLED_BUILDING,
+    SKIN_TOKEN_VLED_WORKING,
+    SKIN_TOKEN_LOADING_ANIM,
     /* Volume level */
     SKIN_TOKEN_VOLUME,
     SKIN_TOKEN_VOLUMEBAR,

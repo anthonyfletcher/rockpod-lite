@@ -41,7 +41,7 @@
 # CC: $VD runs first on every screen. %cs = current screen id. This line
 # CC: pre-enables the viewports the quickscreen (cs=10) needs, plus the
 # CC: battery + loading/sleep icons, so they exist before anything draws.
-%?if(%cs, =, 10)<%Vd(Quickscreen)%VI(Default_Menu_Supression)%?or(%if(%Ql,=,0),%if(%Ql,=,%Sx(No)),%if(%Ql,=,%Sx(Off)),%if(%Ql,=,ERR))<%Vd(Quickitem_Left_Flush)|%Vd(Quickitem_Left)>%?or(%if(%Qt,=,0),%if(%Qt,=,%Sx(No)),%if(%Qt,=,%Sx(Off)),%if(%Qt,=,ERR))<%Vd(Quickitem_Top_Flush)|%Vd(Quickitem_Top)>%?or(%if(%Qb,=,0),%if(%Qb,=,%Sx(No)),%if(%Qb,=,%Sx(Off)),%if(%Qb,=,ERR))<%Vd(Quickitem_Bottom_Flush)|%Vd(Quickitem_Bottom)>%?or(%if(%Qr,=,0),%if(%Qr,=,%Sx(No)),%if(%Qr,=,%Sx(Off)),%if(%Qr,=,ERR))<%Vd(Quickitem_Right_Flush)|%Vd(Quickitem_Right)>>%?St(battery display)<%Vd(Battery_Graphical)|%Vd(Battery_Numeric)>%?lh<%Vd(Loading_Notification)|%?bs<%Vd(Sleep)|%Vd(Loading_Notification_Flush)>>
+%?if(%cs, =, 10)<%Vd(Quickscreen)%VI(Default_Menu_Supression)%?or(%if(%Ql,=,0),%if(%Ql,=,%Sx(No)),%if(%Ql,=,%Sx(Off)),%if(%Ql,=,ERR))<%Vd(Quickitem_Left_Flush)|%Vd(Quickitem_Left)>%?or(%if(%Qt,=,0),%if(%Qt,=,%Sx(No)),%if(%Qt,=,%Sx(Off)),%if(%Qt,=,ERR))<%Vd(Quickitem_Top_Flush)|%Vd(Quickitem_Top)>%?or(%if(%Qb,=,0),%if(%Qb,=,%Sx(No)),%if(%Qb,=,%Sx(Off)),%if(%Qb,=,ERR))<%Vd(Quickitem_Bottom_Flush)|%Vd(Quickitem_Bottom)>%?or(%if(%Qr,=,0),%if(%Qr,=,%Sx(No)),%if(%Qr,=,%Sx(Off)),%if(%Qr,=,ERR))<%Vd(Quickitem_Right_Flush)|%Vd(Quickitem_Right)>>%?St(battery display)<%Vd(Battery_Graphical)|%Vd(Battery_Numeric)>%?lh<%Vd(Loading_Notification)|%?lb<%Vd(Loading_Notification)|%?lw<%Vd(Loading_Notification)|%?bs<%Vd(Sleep)|%Vd(Loading_Notification_Flush)>>>>
 #
 # Now-playing widget removed from the main menu: the menu below uses the
 # full screen width unconditionally, which would otherwise collide with
@@ -126,12 +126,12 @@
 %Vl(Loading_Notification,110,2,94,21,7)
 # CC: Disk-activity spinner: animate frames unless the theme's 'animations'
 # CC: preference is off (then show a single static glyph t).
-%Vl(Loading_Notification,118,5,13,13,8)%VB%?or(%if(%ft(themes/Themify_2.preferences,animations: ),=,off),%if(%ft(themes/Themify_2.preferences,animations:),=,off))<%Vs(invert)t|%t(0.1)Â;%t(0.1)Ã;%t(0.1)Ä;%t(0.1)Å;%t(0.1)Æ;%t(0.1)Ç;%t(0.1)È;%t(0.1)É;%t(0.1)Ê;%t(0.1)Ë;%t(0.1)Ì>
+%Vl(Loading_Notification,118,5,13,13,8)%VB%?or(%if(%ft(themes/Themify_2.preferences,animations: ),=,off),%if(%ft(themes/Themify_2.preferences,animations:),=,off))<%Vs(invert)t|%?la<Â|Ã|Ä|Å|Æ|Ç|È|É|Ê|Ë|Ì>>
 %Vl(Loading_Notification,118,5,13,13,8)
 %?or(%if(%ft(themes/Themify_2.preferences,animations: ),=,off),%if(%ft(themes/Themify_2.preferences,animations:),=,off))<%Vs(invert)t|%t(0.1)Á;%t(0.1)Á>
 #
-%Vl(Loading_Notification,135,5,69,15,4)%VB%Vs(invert)Loading..
-%Vl(Loading_Notification,135,5,69,15,4)%Vs(invert)Loading..
+%Vl(Loading_Notification,135,5,69,15,4)%VB%Vs(invert)%?lb<Building..|%?lw<Working..|Loading..>>
+%Vl(Loading_Notification,135,5,69,15,4)%Vs(invert)%?lb<Building..|%?lw<Working..|Loading..>>
 #
 #
 #-- Sleep Notification --#

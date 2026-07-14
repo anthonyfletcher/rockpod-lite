@@ -44,6 +44,7 @@
 #include "peakmeter.h"
 /* Image stuff */
 #include "albumart.h"
+#include "albumart_cache.h"
 #include "playlist.h"
 #include "playback.h"
 #include "tdspeed.h"
@@ -1300,6 +1301,37 @@ const char *get_token_value(struct gui_wps *gwps,
             else
                 return NULL;
 #endif
+        case SKIN_TOKEN_VLED_BUILDING:
+        {
+            /* database and/or thumbnail-cache background work in progress */
+            bool building = false;
+#ifdef HAVE_TAGCACHE
+            if (tagcache_is_busy())
+                building = true;
+#endif
+#ifdef HAVE_ALBUMART
+            if (albumart_cache_is_busy())
+                building = true;
+#endif
+            return building ? "b" : NULL;
+        }
+        case SKIN_TOKEN_VLED_WORKING:
+            /* generic busy flag for other long-running work; set via
+             * ui_set_working() -- no built-in driver yet */
+            return ui_working() ? "w" : NULL;
+        case SKIN_TOKEN_LOADING_ANIM:
+            /* Time-cycling frame index for an animated "busy" spinner. A theme
+             * conditional (%?la<f0|f1|...|fN>) maps it to N glyphs; the value
+             * changes ~10x/s so the spinner advances via ordinary value-change
+             * refreshes, with no reliance on skin sub-image timers. The frame
+             * count follows however many options the theme provides. Only ever
+             * drawn while the busy notification viewport is visible. */
+            if (intval)
+            {
+                int frames = (limit >= 2) ? limit : 2;
+                *intval = (int)((current_tick / (HZ / 10)) % frames) + 1;
+            }
+            return "a";
         case SKIN_TOKEN_BUTTON_VOLUME:
             if (global_status.last_volume_change &&
                 TIME_BEFORE(current_tick, global_status.last_volume_change +

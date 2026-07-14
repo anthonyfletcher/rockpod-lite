@@ -1701,6 +1701,19 @@ enum current_activity get_current_activity(void)
     return current_activity[current_activity_top?current_activity_top-1:0];
 }
 
+/* Generic "working" busy indicator, surfaced to skins as %lw. */
+static bool ui_working_flag = false;
+
+bool ui_working(void)
+{
+    return ui_working_flag;
+}
+
+void ui_set_working(bool working)
+{
+    ui_working_flag = working;
+}
+
 /* core_load_bmp opens bitmp filename and allocates space for it
 *  you must set bm->data with the result from core_get_data(handle)
 *  you must also call core_free(handle) when finished with the bitmap

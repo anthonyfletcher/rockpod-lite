@@ -41,6 +41,12 @@
 #include "appevents.h"
 #include "statusbar-skinned.h"
 #include "skin_engine/skin_albumart_color.h"
+#ifdef HAVE_TAGCACHE
+#include "tagcache.h"
+#endif
+#ifdef HAVE_ALBUMART
+#include "albumart_cache.h"
+#endif
 
 /* The minimum number of pending button events in queue before starting
  * to limit list drawing interval.
@@ -794,6 +800,27 @@ int list_do_action_timeout(struct gui_synclist *lists, int timeout)
             timeout = fade_timeout;
     }
 #endif
+    /* While the themed status bar shows its animated "busy" spinner -- the
+     * database/thumbnail "Building.." indicator (%lb) or the generic "Working.."
+     * one (%lw) -- that animation only advances when the status bar is redrawn.
+     * An idle list would otherwise block on input and freeze it, so mirror the
+     * colour-fade case above and cap the wait to the spinner's frame rate for as
+     * long as any such work is busy. */
+    {
+        bool ui_busy = ui_working();
+#if defined(HAVE_TAGCACHE)
+        ui_busy = ui_busy || tagcache_is_busy();
+#endif
+#if defined(HAVE_ALBUMART)
+        ui_busy = ui_busy || albumart_cache_is_busy();
+#endif
+        if (ui_busy)
+        {
+            int busy_timeout = HZ / 10;
+            if (timeout > busy_timeout || timeout == TIMEOUT_BLOCK)
+                timeout = busy_timeout;
+        }
+    }
     add_event_ex(GUI_EVENT_NEED_UI_UPDATE, true, _lists_uiviewport_update_callback, NULL);
     current_lists = lists;
     if(lists->scheduled_talk_tick)

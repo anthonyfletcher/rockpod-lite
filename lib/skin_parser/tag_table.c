@@ -141,6 +141,9 @@ static const struct tag_info legal_tags[] =
     TAG(SKIN_TOKEN_SOUND_SPEED,           "Ss", "", SKIN_REFRESH_DYNAMIC),
 
     TAG(SKIN_TOKEN_VLED_HDD,              "lh", "", SKIN_REFRESH_DYNAMIC),
+    TAG(SKIN_TOKEN_VLED_BUILDING,         "lb", "", SKIN_REFRESH_DYNAMIC),
+    TAG(SKIN_TOKEN_VLED_WORKING,          "lw", "", SKIN_REFRESH_DYNAMIC),
+    TAG(SKIN_TOKEN_LOADING_ANIM,          "la", "", SKIN_REFRESH_DYNAMIC),
 
     TAG(SKIN_TOKEN_MAIN_HOLD,             "mh", "", SKIN_REFRESH_DYNAMIC),
     TAG(SKIN_TOKEN_REMOTE_HOLD,           "mr", "", SKIN_REFRESH_DYNAMIC),
