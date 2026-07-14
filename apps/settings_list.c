@@ -214,9 +214,13 @@ static const int backlight_fade[] = {0,100,200,300,500,1000,2000,3000,5000,10000
 
 static const char graphic_numeric[] = "graphic,numeric";
 
-/* Default theme settings */
-#define DEFAULT_WPSNAME  "cabbiev2"
-#define DEFAULT_SBSNAME  "-"
+/* Default theme settings.
+ * This fork ships only Themify_2 (cabbiev2 is not bundled), so the compiled
+ * fallbacks point at Themify_2. This makes it the default even when no
+ * config.cfg is applied (settings reset, or a device that never received the
+ * shipped .rockbox/config.cfg). */
+#define DEFAULT_WPSNAME  "Themify_2"
+#define DEFAULT_SBSNAME  "Themify_2"
 #define DEFAULT_FMS_NAME "cabbiev2"
 
 #if LCD_HEIGHT <= 64
@@ -233,6 +237,8 @@ static const char graphic_numeric[] = "graphic,numeric";
   #define DEFAULT_FONT_HEIGHT 12
 #elif LCD_HEIGHT <= 240
   #define DEFAULT_FONT_HEIGHT 15
+  /* Themify_2's UI font (bundled); overrides the Adobe-Helvetica fallback. */
+  #define DEFAULT_FONTNAME "22-LeagueSpartan-Regular"
 #elif LCD_HEIGHT <= 320
   #define DEFAULT_FONT_HEIGHT 18
 #elif LCD_HEIGHT <= 400
@@ -279,8 +285,9 @@ static const char graphic_numeric[] = "graphic,numeric";
 #endif
 
 
-#define DEFAULT_THEME_FOREGROUND LCD_RGBPACK(0xce, 0xcf, 0xce)
-#define DEFAULT_THEME_BACKGROUND LCD_RGBPACK(0x00, 0x00, 0x00)
+/* Themify_2 palette, so a colours reset falls back to the shipped theme. */
+#define DEFAULT_THEME_FOREGROUND LCD_RGBPACK(0xe1, 0xf0, 0xee)
+#define DEFAULT_THEME_BACKGROUND LCD_RGBPACK(0x00, 0x0c, 0x21)
 #define DEFAULT_THEME_SELECTOR_START LCD_RGBPACK(0xff, 0xeb, 0x9c)
 #define DEFAULT_THEME_SELECTOR_END LCD_RGBPACK(0xb5, 0x8e, 0x00)
 #define DEFAULT_THEME_SELECTOR_TEXT LCD_RGBPACK(0x00, 0x00, 0x00)
@@ -1456,7 +1463,7 @@ const struct settings_list settings[] = {
                    NULL, 3,
                    ID2P(LANG_OFF), ID2P(LANG_ON), ID2P(LANG_QUICK_IGNORE_DIRACHE)),
 #endif
-    OFFON_SETTING(F_BANFROMQS, tagcache_autoupdate, LANG_TAGCACHE_AUTOUPDATE, false,
+    OFFON_SETTING(F_BANFROMQS, tagcache_autoupdate, LANG_TAGCACHE_AUTOUPDATE, true,
                   "tagcache_autoupdate", NULL),
 #endif
     CHOICE_SETTING(F_TEMPVAR, default_codepage, LANG_DEFAULT_CODEPAGE, 14,
@@ -1559,7 +1566,7 @@ const struct settings_list settings[] = {
     TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY, font_file, "font",
                      DEFAULT_FONTNAME, FONT_DIR "/", ".fnt"),
     TEXT_SETTING(F_THEMESETTING, bold_font_file, "font bold",
-                     "", FONT_DIR "/", ".fnt"),
+                     "22-LeagueSpartan-Bold", FONT_DIR "/", ".fnt"),
     INT_SETTING(0, glyphs_to_cache, LANG_GLYPHS, DEFAULT_GLYPHS,
                 "glyphs", UNIT_INT, MIN_GLYPHS, MAX_GLYPHS, 10,
                 NULL, NULL, NULL),
@@ -1825,7 +1832,7 @@ const struct settings_list settings[] = {
 #endif
 #if (CONFIG_KEYPAD == IPOD_4G_PAD)
     OFFON_SETTING(0, clear_settings_on_hold, LANG_CLEAR_SETTINGS_ON_HOLD,
-                  true, "clear settings on hold", NULL),
+                  false, "clear settings on hold", NULL),
 #endif
     OFFON_SETTING(0, playback_log, LANG_LOGGING, false, "play log", NULL),
 };
