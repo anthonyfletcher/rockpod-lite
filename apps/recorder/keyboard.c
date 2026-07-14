@@ -44,10 +44,11 @@
 #include "viewport.h"
 #include "splash.h"
 #include "yesno.h"
-#include "skin_engine/skin_engine.h" /* skin_render_inhibit_flush */
+#include "dialog.h"
 
 #define KBD_MARGIN 12        /* horizontal gap from the display edge to the box */
-#define KBD_PAD    10        /* inner padding inside the box */
+#define KBD_BTN_GAP 10       /* gap between the Cancel and OK buttons */
+#define KBD_BTN_PAD_Y 5      /* vertical padding inside each button */
 #define KBD_MAX_LEN 512      /* absolute cap on editable characters */
 #define KBD_CHARSET_MAX 64
 
@@ -66,8 +67,10 @@ struct kbd_edit {
     int max_len;
     int scroll;          /* horizontal pixel scroll to keep the caret visible */
     long last_wheel_tick;
+    long last_del_tick;  /* throttles held backspace/delete */
     bool on_buttons;     /* focus is on the Cancel/OK button row, not the input */
     bool btn_ok;         /* on the button row, OK is selected (else Cancel) */
+    bool dirty;          /* text changed since the editor opened */
 };
 
 /* Not reentrant (there is only ever one text-input screen at a time); kept
@@ -85,14 +88,6 @@ static const ucschar_t default_charset[] = {
 
 static ucschar_t charset[KBD_CHARSET_MAX];
 static int charset_len;
-
-/* '*kbd' (loadable layouts) no longer applies to the click-wheel editor;
- * kept so callers in filetree.c / settings.c still link and succeed. */
-int load_kbd(unsigned char* filename)
-{
-    (void)filename;
-    return 0;
-}
 
 static int charset_index(ucschar_t ch)
 {
@@ -221,69 +216,42 @@ static void draw_char(struct screen *display, int x, int y, ucschar_t ch)
     display->putsxy(x, y, (char *)tmp);
 }
 
-/* Draw a labelled button; when selected it is filled with inverse text
- * (focus is on the button row), otherwise a plain outline. */
-static void draw_hint_button(struct screen *display, int x, int y,
-                             int w, int h, const char *label, bool selected)
+/* Box spans the display width minus a horizontal margin; height fits the
+ * content (edit line + button row) and is centred within the theme content
+ * area, matching the yes/no dialog. */
+static void kbd_measure(struct dialog *d, struct screen *display,
+                        struct viewport *box, void *data)
 {
-    int lw, lh;
-    display->getstringsize(label, &lw, &lh);
-    int tx = x + (w - lw) / 2;
-    int ty = y + (h - lh) / 2;
-    if (selected)
-    {
-        display->set_drawmode(DRMODE_FG);
-        display->fillrect(x, y, w, h);
-        display->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
-        display->putsxy(tx, ty, label);
-    }
-    else
-    {
-        display->set_drawmode(DRMODE_SOLID);
-        display->drawrect(x, y, w, h);
-        display->set_drawmode(DRMODE_FG);
-        display->putsxy(tx, ty, label);
-    }
-    display->set_drawmode(DRMODE_SOLID);
-}
-
-static void kbd_draw(struct screen *display, struct viewport *vp,
-                     struct kbd_edit *s)
-{
+    (void)data;
+    struct dialog_insets in;
+    int area_y = box->y;
+    int area_h = box->height;
     int sw = display->getwidth();
-    int sh = display->getheight();
-
-    /* Box spans the display width minus a horizontal margin; height fits the
-     * content (edit line + button row) and is centred vertically, matching the
-     * yes/no dialog. Inherits the theme's colours/font from vp. */
-    struct viewport box = *vp;
-    box.x = KBD_MARGIN;
-    box.width = sw - 2 * KBD_MARGIN;
-    box.y = 0;
-    box.height = sh;
-    struct viewport *last_vp = display->set_viewport(&box);
     int ch_h = display->getcharheight();
 
-    int bh = ch_h + 2 * 5;                  /* button height */
-    int gap = ch_h / 2;                     /* gap between edit line and buttons */
-    int box_h = ch_h + gap + bh + 2 * KBD_PAD;
-    if (box_h > sh - 2 * KBD_MARGIN)
-        box_h = sh - 2 * KBD_MARGIN;
-    box.y = (sh - box_h) / 2;
-    box.height = box_h;
-    display->set_viewport(&box);
+    dialog_get_insets(&d->style, &in);
 
-    /* clear and frame the dialog like a window */
-    display->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
-    display->fillrect(0, 0, box.width, box.height);
-    display->set_drawmode(DRMODE_SOLID);
-    display->drawrect(0, 0, box.width, box.height);
+    int bh = ch_h + 2 * KBD_BTN_PAD_Y;      /* button height */
+    int gap = ch_h / 2;                     /* gap between edit line and buttons */
+    int box_h = ch_h + gap + bh + in.top + in.bottom;
+    if (box_h > area_h)
+        box_h = area_h;
+
+    box->x = KBD_MARGIN;
+    box->width = sw - 2 * KBD_MARGIN;
+    box->y = area_y + (area_h - box_h) / 2;
+    box->height = box_h;
+}
+
+static void kbd_draw(struct dialog *d, struct screen *display,
+                     struct viewport *content, void *data)
+{
+    struct kbd_edit *s = data;
+    int ch_h = display->getcharheight();
+    int bh = ch_h + 2 * KBD_BTN_PAD_Y;      /* button height */
 
     /* --- edit line in a clipped sub-viewport so long text can scroll --- */
-    struct viewport tvp = box;
-    tvp.x += KBD_PAD;
-    tvp.width -= 2 * KBD_PAD;
-    tvp.y += KBD_PAD;
+    struct viewport tvp = *content;
     tvp.height = ch_h;
     display->set_viewport(&tvp);
 
@@ -313,6 +281,8 @@ static void kbd_draw(struct screen *display, struct viewport *vp,
         }
         else
         {
+            /* DRMODE_FG so glyphs draw over our fill without the theme
+             * backdrop bleeding into each character's background */
             display->set_drawmode(DRMODE_FG);
             draw_char(display, x, 0, s->text[i]);
         }
@@ -320,32 +290,138 @@ static void kbd_draw(struct screen *display, struct viewport *vp,
     }
 
     /* --- bottom Cancel / OK buttons (triggered by MENU / SELECT) --- */
-    display->set_viewport(&box);
+    display->set_viewport(content);
     display->set_drawmode(DRMODE_SOLID);
 
-    int by = box.height - bh - KBD_PAD;
-    int bw = (box.width - 3 * KBD_PAD) / 2;
+    int by = content->height - bh;
+    int bw = (content->width - KBD_BTN_GAP) / 2;
     if (bw > 0)
     {
-        draw_hint_button(display, KBD_PAD, by, bw, bh, str(LANG_KBD_CANCEL),
-                         s->on_buttons && !s->btn_ok);
-        draw_hint_button(display, KBD_PAD * 2 + bw, by, bw, bh,
-                         str(LANG_KBD_OK), s->on_buttons && s->btn_ok);
+        dialog_draw_button(display, &d->style, 0, by, bw, bh,
+                           str(LANG_KBD_CANCEL),
+                           s->on_buttons && !s->btn_ok);
+        dialog_draw_button(display, &d->style, bw + KBD_BTN_GAP, by, bw, bh,
+                           str(LANG_KBD_OK),
+                           s->on_buttons && s->btn_ok);
     }
 
     display->set_drawmode(DRMODE_SOLID);
-    display->update_viewport();
-    display->set_viewport(last_vp);
 }
 
-int kbd_input(char* text, int buflen, ucschar_t *kbd)
+/* Confirm discarding edits (only if the text changed); returns the disposition
+ * dialog_run() should act on. */
+static int kbd_confirm_cancel(struct kbd_edit *s)
 {
-    (void)kbd;   /* loadable layouts are not used by the click-wheel editor */
-    struct screen *display = &screens[SCREEN_MAIN];
-    struct viewport vp;
-    bool dirty = false;
-    int ret = 0;
-    long last_del_tick = 0;   /* throttles held backspace/delete */
+    if (s->dirty)
+    {
+        static const unsigned char *lines[1];
+        lines[0] = (const unsigned char *)ID2P(LANG_KBD_DISCARD);
+        struct text_message message = { (const char **)lines, 1 };
+        if (gui_syncyesno_run(&message, NULL, NULL) != YESNO_YES)
+        {
+            s->on_buttons = false;   /* keep editing, back to the input */
+            return DIALOG_CONTINUE;
+        }
+    }
+    return DIALOG_CANCEL;
+}
+
+static int kbd_on_action(struct dialog *d, int action, void *data)
+{
+    (void)d;
+    struct kbd_edit *s = data;
+
+    switch (action)
+    {
+        case ACTION_KBD_DOWN:      /* wheel forward */
+            if (s->on_buttons)
+                s->btn_ok = !s->btn_ok;         /* toggle OK/Cancel */
+            else
+            {
+                wheel_step(s, +1);              /* advance character */
+                s->dirty = true;
+            }
+            break;
+        case ACTION_KBD_UP:        /* wheel back */
+            if (s->on_buttons)
+                s->btn_ok = !s->btn_ok;
+            else
+            {
+                wheel_step(s, -1);              /* reverse character */
+                s->dirty = true;
+            }
+            break;
+        case ACTION_KBD_LEFT:      /* tap left */
+            if (s->on_buttons)
+                s->btn_ok = false;              /* Cancel (left button) */
+            else
+                caret_left(s);
+            break;
+        case ACTION_KBD_RIGHT:     /* tap right */
+            if (s->on_buttons)
+                s->btn_ok = true;               /* OK (right button) */
+            else
+            {
+                int before = s->len;
+                caret_right(s);                 /* may append a space */
+                if (s->len != before)
+                    s->dirty = true;
+            }
+            break;
+        case ACTION_KBD_BACKSPACE: /* hold left -> backspace (throttled) */
+            if (!s->on_buttons &&
+                current_tick - s->last_del_tick >= KBD_DEL_REPEAT)
+            {
+                do_backspace(s);
+                s->dirty = true;
+                s->last_del_tick = current_tick;
+            }
+            break;
+        case ACTION_KBD_DELETE:    /* hold right -> delete under caret (throttled) */
+            if (!s->on_buttons &&
+                current_tick - s->last_del_tick >= KBD_DEL_REPEAT)
+            {
+                do_delete(s);
+                s->dirty = true;
+                s->last_del_tick = current_tick;
+            }
+            break;
+        case ACTION_KBD_DONE:      /* PLAY: move focus down to the buttons */
+            if (!s->on_buttons)
+            {
+                s->on_buttons = true;
+                s->btn_ok = true;               /* start on OK */
+            }
+            break;
+        case ACTION_KBD_SELECT:    /* accept, or confirm the chosen button */
+            if (s->on_buttons && !s->btn_ok)
+                return kbd_confirm_cancel(s);   /* Cancel button */
+            return DIALOG_ACCEPT;               /* OK / input shortcut */
+        case ACTION_KBD_ABORT:     /* MENU: up to the input, or cancel */
+            if (s->on_buttons)
+            {
+                s->on_buttons = false;          /* back up to the input */
+                break;
+            }
+            return kbd_confirm_cancel(s);
+        default:
+            if (default_event_handler(action) == SYS_USB_CONNECTED)
+                return DIALOG_ABORT;
+            break;
+    }
+    return DIALOG_CONTINUE;
+}
+
+/* Click-wheel single-line text editor. Returns 0 on accept (buffer updated),
+ * -1 on cancel or USB (buffer left unchanged). */
+int dialog_input(char* text, int buflen)
+{
+    static const struct dialog_callbacks cb = {
+        .measure   = kbd_measure,
+        .draw      = kbd_draw,
+        .on_action = kbd_on_action,
+    };
+    struct dialog d;
 
     build_charset();
 
@@ -375,123 +451,16 @@ int kbd_input(char* text, int buflen, ucschar_t *kbd)
     st.caret = st.len - 1;
     st.scroll = 0;
     st.last_wheel_tick = current_tick;
+    st.last_del_tick = 0;
     st.on_buttons = false;   /* focus starts on the input line */
     st.btn_ok = true;
+    st.dirty = false;
     ensure_nonempty(&st);
 
-    action_wait_for_release();
-    viewportmanager_theme_enable(SCREEN_MAIN, true, &vp);
+    dialog_init(&d, CONTEXT_KEYBOARD, NULL, NULL, &cb, &st);
+    if (dialog_run(&d, TIMEOUT_BLOCK) != DIALOG_ACCEPT)
+        return -1;           /* cancelled or USB */
 
-    while (true)
-    {
-        kbd_draw(display, &vp, &st);
-
-        /* Inhibit the SBS's own flush during input so the theme's status-bar
-         * skin doesn't overdraw the editor between keystrokes (flicker) --
-         * same pattern as the list and album-covers screens. */
-        skin_render_inhibit_flush(true);
-        int action = get_action(CONTEXT_KEYBOARD, TIMEOUT_BLOCK);
-        skin_render_inhibit_flush(false);
-        switch (action)
-        {
-            case ACTION_KBD_DOWN:      /* wheel forward */
-                if (st.on_buttons)
-                    st.btn_ok = !st.btn_ok;         /* toggle OK/Cancel */
-                else
-                {
-                    wheel_step(&st, +1);            /* advance character */
-                    dirty = true;
-                }
-                break;
-            case ACTION_KBD_UP:        /* wheel back */
-                if (st.on_buttons)
-                    st.btn_ok = !st.btn_ok;
-                else
-                {
-                    wheel_step(&st, -1);           /* reverse character */
-                    dirty = true;
-                }
-                break;
-            case ACTION_KBD_LEFT:      /* tap left */
-                if (st.on_buttons)
-                    st.btn_ok = false;             /* Cancel (left button) */
-                else
-                    caret_left(&st);
-                break;
-            case ACTION_KBD_RIGHT:     /* tap right */
-                if (st.on_buttons)
-                    st.btn_ok = true;              /* OK (right button) */
-                else
-                {
-                    int before = st.len;
-                    caret_right(&st);              /* may append a space */
-                    if (st.len != before)
-                        dirty = true;
-                }
-                break;
-            case ACTION_KBD_BACKSPACE: /* hold left -> backspace (throttled) */
-                if (!st.on_buttons &&
-                    current_tick - last_del_tick >= KBD_DEL_REPEAT)
-                {
-                    do_backspace(&st);
-                    dirty = true;
-                    last_del_tick = current_tick;
-                }
-                break;
-            case ACTION_KBD_DELETE:    /* hold right -> delete under caret (throttled) */
-                if (!st.on_buttons &&
-                    current_tick - last_del_tick >= KBD_DEL_REPEAT)
-                {
-                    do_delete(&st);
-                    dirty = true;
-                    last_del_tick = current_tick;
-                }
-                break;
-            case ACTION_KBD_DONE:      /* PLAY: move focus down to the buttons */
-                if (!st.on_buttons)
-                {
-                    st.on_buttons = true;
-                    st.btn_ok = true;              /* start on OK */
-                }
-                break;
-            case ACTION_KBD_SELECT:    /* accept, or confirm the chosen button */
-                if (st.on_buttons && !st.btn_ok)
-                    goto cancel;                   /* Cancel button */
-                goto accept;                       /* OK / input shortcut */
-            case ACTION_KBD_ABORT:     /* MENU: up to the input, or cancel */
-                if (st.on_buttons)
-                {
-                    st.on_buttons = false;         /* back up to the input */
-                    break;
-                }
-                goto cancel;
-            default:
-                if (default_event_handler(action) == SYS_USB_CONNECTED)
-                {
-                    ret = -1;
-                    goto done;
-                }
-                break;
-        }
-        continue;
-
-    cancel:
-        if (dirty)
-        {
-            static const unsigned char *lines[1];
-            lines[0] = (const unsigned char *)ID2P(LANG_KBD_DISCARD);
-            struct text_message message = { (const char **)lines, 1 };
-            if (gui_syncyesno_run(&message, NULL, NULL) != YESNO_YES)
-            {
-                st.on_buttons = false;   /* keep editing, back to the input */
-                continue;
-            }
-        }
-        ret = -1;
-        goto done;
-    }
-
-accept:
     /* trim leading and trailing spaces, then re-encode into the caller buffer */
     while (st.len > 0 && st.text[st.len - 1] == ' ')
         st.len--;
@@ -513,9 +482,12 @@ accept:
         }
         *out = '\0';
     }
-    ret = 0;
+    return 0;
+}
 
-done:
-    viewportmanager_theme_undo(SCREEN_MAIN, false);
-    return ret;
+/* Plugin-ABI wrapper: the loadable-layout `kbd` argument is ignored. */
+int kbd_input(char* text, int buflen, ucschar_t *kbd)
+{
+    (void)kbd;
+    return dialog_input(text, buflen);
 }

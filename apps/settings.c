@@ -926,16 +926,8 @@ void settings_apply(bool read_disk)
             font_unload(ui_bold_font_id);
             ui_bold_font_id = -1;
         }
-        if ( global_settings.kbd_file[0]
-             && global_settings.kbd_file[0] != '-') {
-            snprintf(buf, sizeof buf, ROCKBOX_DIR "/%s.kbd",
-                     global_settings.kbd_file);
-            CHART(">load_kbd");
-            load_kbd(buf);
-            CHART("<load_kbd");
-        }
-        else
-            load_kbd(NULL);
+        /* Loadable keyboard layouts are gone (click-wheel editor); the
+         * kbd_file setting is inert. */
         if ( global_settings.lang_file[0]) {
             snprintf(buf, sizeof buf, LANG_DIR "/%s.lng",
                      global_settings.lang_file);

@@ -19,6 +19,7 @@
  *
  ****************************************************************************/
 #include "config.h"
+#include <stdio.h>
 #include "yesno.h"
 #include "system.h"
 #include "kernel.h"
@@ -28,28 +29,35 @@
 #include "talk.h"
 #include "settings.h"
 #include "viewport.h"
-#include "appevents.h"
+#include "font.h"
 #include "splash.h"
-#include "backlight.h"
-#include "statusbar-skinned.h"
-#include "skin_engine/skin_engine.h" /* skin_render_inhibit_flush */
+#include "dialog.h"
 
-/* Message box geometry: full display width minus a horizontal margin, height
- * fitted to the content and centred vertically, with inner padding between the
- * border and its contents. */
+/* Message box geometry: at most the display width minus a horizontal margin,
+ * height fitted to the content and centred vertically. The inner padding
+ * between the border and the contents is the style's box_margin. */
 #define YN_MARGIN 12   /* horizontal gap from the display edge to the box */
-#define YN_PAD    10   /* inner padding inside the box */
+#define YN_MAX_LINES 16 /* cap on wrapped message display lines */
+#define YN_BTN_PAD_X 12 /* horizontal padding inside each button */
+#define YN_BTN_PAD_Y 5  /* vertical padding inside each button */
+#define YN_BTN_GAP   18 /* gap between the two buttons */
 
-struct gui_yesno
+/* Per-run yes/no state, handed to the dialog callbacks via `data`. */
+struct yesno_ctx
 {
-    struct viewport vp;
-    const struct text_message * main_message;
-    struct screen * display;
-    int vp_lines;
-    enum yesno_res selection; /* highlighted button, non-touchscreen */
-    /* timeout data */
+    const struct text_message *message;
+    enum yesno_res selection;      /* highlighted button */
+    enum yesno_res tmo_default;    /* result on timeout, or YESNO_TMO for none */
+    int  tmo_secs;                 /* initial timeout in seconds (button sizing) */
     long end_tick;
-    enum yesno_res tmo_default_res;
+    long talked_tick;
+    bool talk_menu;
+    const struct text_message *yes_message; /* shown on accept, optional */
+    const struct text_message *no_message;  /* shown on cancel, optional */
+    enum yesno_res result;
+    /* message word-wrapped to the box width, rebuilt by yesno_measure() */
+    struct dialog_text_line wrap[YN_MAX_LINES];
+    int wrap_count;
 };
 
 static void talk_text_message(const struct text_message * message, bool enqueue)
@@ -80,166 +88,257 @@ static int put_message(struct screen *display,
     return i;
 }
 
-/* Draw one Yes/No button. The highlighted button is filled with inverse
- * text; the other is drawn as a plain outline. */
-static void gui_yesno_draw_button(struct screen *display, int x, int y,
-                                  int w, int h, const char *label,
-                                  int label_w, int label_h, bool selected)
+/* Seconds left on the timeout, or -1 when there is no timeout default. */
+static int yesno_tmo_remaining(struct yesno_ctx *c)
 {
-    int tx = x + (w - label_w) / 2;
-    int ty = y + (h - label_h) / 2;
-
-    /* mirror the list's selector rendering: fill with foreground and draw
-     * inverted text for the selected button, plain outline for the other */
-    if (selected)
-    {
-        display->set_drawmode(DRMODE_FG);
-        display->fillrect(x, y, w, h);
-        display->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
-        display->putsxy(tx, ty, label);
-    }
-    else
-    {
-        display->set_drawmode(DRMODE_SOLID);
-        display->drawrect(x, y, w, h);
-        display->set_drawmode(DRMODE_FG);
-        display->putsxy(tx, ty, label);
-    }
-    display->set_drawmode(DRMODE_SOLID); /* restore for later drawing */
+    if (c->tmo_default != YESNO_YES && c->tmo_default != YESNO_NO)
+        return -1;
+    int r = (c->end_tick - current_tick) / HZ;
+    return r < 0 ? 0 : r;
 }
 
-/* Draw the Yes/No buttons side by side near the bottom of the box, with the
- * currently selected one highlighted. Coordinates are relative to box. */
-static void gui_yesno_draw_buttons(struct gui_yesno *yn, struct viewport *box)
+/* Build the two button labels; the timeout-default button gets " (secs)"
+ * appended (secs < 0 appends nothing). */
+static void yesno_button_labels(struct yesno_ctx *c, int secs,
+                                char *yes, char *no, size_t sz)
 {
-    struct screen *display = yn->display;
-    const char *yes = str(LANG_SET_BOOL_YES);
-    const char *no  = str(LANG_SET_BOOL_NO);
-    int w_yes, w_no, h;
+    if (secs >= 0 && c->tmo_default == YESNO_YES)
+        snprintf(yes, sz, "%s (%d)", str(LANG_SET_BOOL_YES), secs);
+    else
+        snprintf(yes, sz, "%s", str(LANG_SET_BOOL_YES));
 
-    display->getstringsize(yes, &w_yes, &h);
+    if (secs >= 0 && c->tmo_default == YESNO_NO)
+        snprintf(no, sz, "%s (%d)", str(LANG_SET_BOOL_NO), secs);
+    else
+        snprintf(no, sz, "%s", str(LANG_SET_BOOL_NO));
+}
+
+/* Widest button width for this dialog: sized to the initial countdown so the
+ * button (and box) don't jitter as the seconds tick down. */
+static int yesno_button_width(struct yesno_ctx *c, struct screen *display)
+{
+    char yes[24], no[24];
+    int w_yes, w_no;
+    yesno_button_labels(c, c->tmo_secs, yes, no, sizeof yes);
+    display->getstringsize(yes, &w_yes, NULL);
     display->getstringsize(no,  &w_no,  NULL);
+    return MAX(w_yes, w_no) + YN_BTN_PAD_X * 2;
+}
 
-    const int pad_x = 12;  /* horizontal padding inside each button */
-    const int pad_y = 5;   /* vertical padding inside each button */
-    const int gap   = 18;  /* gap between the two buttons */
+/* Draw the Yes/No buttons side by side along the bottom of the content area,
+ * with the currently selected one highlighted. Coordinates are relative to the
+ * content viewport. */
+static void yesno_draw_buttons(struct yesno_ctx *c, struct dialog *d,
+                               struct screen *display,
+                               struct viewport *content)
+{
+    char yes[24], no[24];
+    int h;
 
-    int bw = MAX(w_yes, w_no) + pad_x * 2;
-    int bh = h + pad_y * 2;
-    int x  = (box->width - (bw * 2 + gap)) / 2;
+    yesno_button_labels(c, yesno_tmo_remaining(c), yes, no, sizeof yes);
+    display->getstringsize(yes, NULL, &h);
+
+    const int gap = YN_BTN_GAP;
+    int bw = yesno_button_width(c, display);   /* stable width */
+    int bh = h + YN_BTN_PAD_Y * 2;
+    int x  = (content->width - (bw * 2 + gap)) / 2;
     if (x < 0)
         x = 0;
-    int y = box->height - bh - YN_PAD;   /* YN_PAD gap below the button row */
+    int y = content->height - bh;
     if (y < 0)
         y = 0;
 
-    gui_yesno_draw_button(display, x, y, bw, bh, yes, w_yes, h,
-                          yn->selection == YESNO_YES);
-    gui_yesno_draw_button(display, x + bw + gap, y, bw, bh, no, w_no, h,
-                          yn->selection == YESNO_NO);
-
-    /* countdown next to the timeout default button, if there is one */
-    if (yn->tmo_default_res == YESNO_YES || yn->tmo_default_res == YESNO_NO)
-    {
-        int tm_rem = (yn->end_tick - current_tick) / HZ;
-        if (tm_rem < 0)
-            tm_rem = 0;
-        int cx = (yn->tmo_default_res == YESNO_YES) ? x : x + bw + gap;
-        display->set_drawmode(DRMODE_SOLID);
-        display->putsxyf(cx + pad_x, y + bh + 2, "(%d)", tm_rem);
-    }
+    dialog_draw_button(display, &d->style, x, y, bw, bh, yes,
+                       c->selection == YESNO_YES);
+    dialog_draw_button(display, &d->style, x + bw + gap, y, bw, bh, no,
+                       c->selection == YESNO_NO);
 }
 
-/*
- * Draws the yesno
- *  - yn : the yesno structure
- */
-static void gui_yesno_draw(struct gui_yesno * yn)
+/* Draw a yes/no result message (shown briefly after a choice), into the
+ * theme viewport `vp`. */
+static void gui_yesno_draw_result(struct screen *display, struct viewport *vp,
+                                  const struct text_message *message)
 {
-    struct screen * display=yn->display;
-    struct viewport *vp = &yn->vp;
-    const struct text_message *main_message = yn->main_message;
-    int sw = display->getwidth();
-    int sh = display->getheight();
-    bool has_tmo = (yn->tmo_default_res == YESNO_YES ||
-                    yn->tmo_default_res == YESNO_NO);
-
-    /* Box spans the display width minus a horizontal margin; height fits the
-     * content and is centred vertically. Inherits the theme's colours/font
-     * from the content viewport, and only the box region is drawn/flushed so
-     * the rest of the screen is left untouched. */
-    struct viewport box = *vp;
-    box.x = YN_MARGIN;
-    box.width = sw - 2 * YN_MARGIN;
-    box.y = 0;              /* provisional: set the font before sizing */
-    box.height = sh;
-    struct viewport *last_vp = display->set_viewport_ex(&box, VP_FLAG_VP_SET_CLEAN);
-    int ch = display->getcharheight();
-
-    int btn_h = ch + 2 * 5;                 /* button height (matches buttons) */
-    int gap   = ch / 2;                     /* gap between message and buttons */
-    int nlines = main_message->nb_lines;
-    int content_h = nlines * ch + gap + btn_h + (has_tmo ? ch : 0);
-    int box_h = content_h + 2 * YN_PAD;
-    if (box_h > sh - 2 * YN_MARGIN)
-        box_h = sh - 2 * YN_MARGIN;         /* clamp to the display */
-    box.y = (sh - box_h) / 2;
-    box.height = box_h;
-    display->set_viewport(&box);            /* re-set with the final geometry */
-
-    /* opaque background + border */
-    display->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
-    display->fillrect(0, 0, box.width, box.height);
-    display->set_drawmode(DRMODE_SOLID);
-    display->drawrect(0, 0, box.width, box.height);
-
-    /* message: inner area padded by YN_PAD, above the button row */
-    struct viewport txt = box;
-    txt.x += YN_PAD;
-    txt.y += YN_PAD;
-    txt.width  -= 2 * YN_PAD;
-    txt.height  = (nlines > 0 ? nlines : 1) * ch;
-    display->set_viewport(&txt);
-    put_message(display, main_message, 0, viewport_get_nb_lines(&txt));
-
-    display->set_viewport(&box);
-    gui_yesno_draw_buttons(yn, &box);
-
-    display->update_viewport();
-    display->set_viewport(last_vp);
-}
-
-/*
- * Draws the yesno result
- *  - yn : the yesno structure
- *  - result : the result to be displayed :
- *    YESNO_NO if no
- *    YESNO_YES if yes
- */
-static void gui_yesno_draw_result(struct gui_yesno * yn, const struct text_message * message)
-{
-    struct viewport *vp = &yn->vp;
-    struct screen * display=yn->display;
     struct viewport *last_vp = display->set_viewport_ex(vp, VP_FLAG_VP_SET_CLEAN);
 
     display->clear_viewport();
-    put_message(display, message, 0, yn->vp_lines);
+    put_message(display, message, 0, viewport_get_nb_lines(vp));
     display->update_viewport();
     display->set_viewport(last_vp);
 }
-#if 0
-static void gui_yesno_ui_update(unsigned short id, void *event_data, void *user_data)
-{
-    (void)id;
-    (void)event_data;
 
-    struct gui_yesno* yn = (struct gui_yesno*)user_data;
-    FOR_NB_SCREENS(i)
+/* --- dialog callbacks --- */
+
+/* Word-wrap the message lines to the box content width into c->wrap. */
+static void yesno_wrap_message(struct yesno_ctx *c, int content_w, int font)
+{
+    c->wrap_count = 0;
+    for (int i = 0; i < c->message->nb_lines &&
+                    c->wrap_count < YN_MAX_LINES; i++)
     {
-        gui_yesno_draw(&yn[i]);
+        const char *line = P2STR((unsigned char *)c->message->message_lines[i]);
+        int n = dialog_wrap_text(line, content_w, font,
+                                 &c->wrap[c->wrap_count],
+                                 YN_MAX_LINES - c->wrap_count);
+        if (n == 0)                 /* preserve a blank message line */
+        {
+            c->wrap[c->wrap_count].str = "";
+            c->wrap[c->wrap_count].len = 0;
+            n = 1;
+        }
+        c->wrap_count += n;
     }
 }
-#endif
+
+static void yesno_measure(struct dialog *d, struct screen *s,
+                          struct viewport *box, void *data)
+{
+    struct yesno_ctx *c = data;
+    struct dialog_insets in;
+    /* the box arrives as the theme content viewport: centre within it (i.e.
+     * below the status bar), not the whole physical display */
+    int area_y = box->y;
+    int area_h = box->height;
+    int sw = s->getwidth();
+    int ch = s->getcharheight();
+
+    dialog_get_insets(&d->style, &in);
+
+    /* wrap to the widest the content may grow to, then size the box to the
+     * actual content (widest wrapped line or the button row) and centre it. */
+    int max_content_w = sw - 2 * YN_MARGIN - in.left - in.right;
+    yesno_wrap_message(c, max_content_w, box->font);
+
+    int text_w = 0;
+    for (int i = 0; i < c->wrap_count; i++)
+    {
+        int w = font_getstringnsize((const unsigned char *)c->wrap[i].str,
+                                    c->wrap[i].len, NULL, NULL, box->font);
+        if (w > text_w)
+            text_w = w;
+    }
+
+    int btn_row_w = yesno_button_width(c, s) * 2 + YN_BTN_GAP;
+
+    int box_w = MAX(text_w, btn_row_w) + in.left + in.right;
+    if (box_w > sw - 2 * YN_MARGIN)
+        box_w = sw - 2 * YN_MARGIN;         /* clamp to the display */
+
+    int btn_h = ch + 2 * YN_BTN_PAD_Y;      /* button height (matches buttons) */
+    int gap   = ch / 2;                     /* gap between message and buttons */
+    int nlines = c->wrap_count > 0 ? c->wrap_count : 1;
+    int content_h = nlines * ch + gap + btn_h;
+    int box_h = content_h + in.top + in.bottom;
+    if (box_h > area_h)
+        box_h = area_h;                     /* clamp to the content area */
+
+    box->x = (sw - box_w) / 2;
+    box->width = box_w;
+    box->y = area_y + (area_h - box_h) / 2;
+    box->height = box_h;
+}
+
+static void yesno_draw(struct dialog *d, struct screen *s,
+                       struct viewport *content, void *data)
+{
+    struct yesno_ctx *c = data;
+    int ch = s->getcharheight();
+
+    /* message: centred, word-wrapped, in the area above the buttons */
+    struct viewport txt = *content;
+    txt.height = (c->wrap_count > 0 ? c->wrap_count : 1) * ch;
+    txt.flags |= VP_FLAG_ALIGN_CENTER;
+    s->set_viewport(&txt);
+    /* DRMODE_FG so glyphs draw over our solid fill without the theme backdrop
+     * bleeding into each character's background */
+    s->set_drawmode(DRMODE_FG);
+    for (int i = 0; i < c->wrap_count; i++)
+        s->putsxyf(0, i * ch, "%.*s", c->wrap[i].len, c->wrap[i].str);
+
+    s->set_viewport(content);
+    yesno_draw_buttons(c, d, s, content);
+}
+
+static int yesno_on_action(struct dialog *d, int action, void *data)
+{
+    struct yesno_ctx *c = data;
+
+    /* Repeat the question every 5secs (more or less) */
+    if (c->talk_menu && TIME_AFTER(current_tick, c->talked_tick))
+    {
+        c->talked_tick = current_tick + (HZ * 5);
+        talk_text_message(c->message, false);
+    }
+
+    switch (action)
+    {
+        case ACTION_YESNO_ACCEPT:
+            if (!d->backlight_on)
+                break;              /* don't accept while the screen is off */
+            c->result = c->selection; /* confirm the highlighted button */
+            return (c->selection == YESNO_YES) ? DIALOG_ACCEPT : DIALOG_CANCEL;
+        case ACTION_STD_PREV: /* scroll back / left -> Yes (left button) */
+            c->selection = YESNO_YES;
+            break;
+        case ACTION_STD_NEXT: /* scroll fwd / right -> No (right button) */
+            c->selection = YESNO_NO;
+            break;
+        case ACTION_STD_CANCEL:
+        case ACTION_STD_MENU:
+            if (!d->backlight_on)
+                break;
+            c->result = YESNO_NO; /* back / cancel */
+            return DIALOG_CANCEL;
+        case ACTION_NONE:
+            if (c->tmo_default != YESNO_TMO &&
+                TIME_AFTER(current_tick, c->end_tick))
+            {
+                splash(HZ/2, ID2P(LANG_TIMEOUT));
+                c->result = c->tmo_default;
+                return DIALOG_ACCEPT;
+            }
+            break;
+        case ACTION_UNKNOWN:
+        case ACTION_REDRAW: /* handled by the per-pass repaint */
+            break;
+        default:
+            if (default_event_handler(action) == SYS_USB_CONNECTED)
+            {
+                c->result = YESNO_USB;
+                return DIALOG_ABORT;
+            }
+            /* ignore unmapped buttons; the choice is explicit via the
+             * highlighted Yes/No buttons */
+            break;
+    }
+    return DIALOG_CONTINUE;
+}
+
+static void yesno_on_close(struct dialog *d, void *data)
+{
+    struct yesno_ctx *c = data;
+    const struct text_message *resmsg = NULL;
+
+    if (c->result == YESNO_YES)
+        resmsg = c->yes_message;
+    else if (c->result == YESNO_NO)
+        resmsg = c->no_message;
+
+    if (resmsg == NULL)
+        return;
+
+    FOR_NB_SCREENS(i)
+        gui_yesno_draw_result(&screens[i], &d->parent[i], resmsg);
+
+    if (c->talk_menu)
+    {
+        talk_text_message(resmsg, false);
+        talk_force_enqueue_next();
+    }
+
+    sleep(HZ);
+}
+
 /* Display a YES_NO prompt to the user
  *
  * ticks < HZ will be ignored and the prompt will be blocking
@@ -260,165 +359,32 @@ enum yesno_res gui_syncyesno_run_w_tmo(int ticks, enum yesno_res tmo_default_res
                                        const struct text_message * yes_message,
                                        const struct text_message * no_message)
 {
-    #define YESNO_NONE (-1)
-    int action;
-    bool backlight_on;
-    bool talk_menu = global_settings.talk_menu;
-    int result = YESNO_NONE;
-    enum yesno_res selection = YESNO_YES; /* default highlighted button */
-    struct gui_yesno yn[NB_SCREENS];
-    long talked_tick = current_tick - 1;
-    long end_tick = current_tick + ticks;
+    static const struct dialog_callbacks cb = {
+        .measure   = yesno_measure,
+        .draw      = yesno_draw,
+        .on_action = yesno_on_action,
+        .on_close  = yesno_on_close,
+    };
+    struct yesno_ctx c;
+    struct dialog d;
 
     if (ticks < HZ) /* Display a prompt with NO timeout to the user */
-    {
         tmo_default_res = YESNO_TMO;
-    }
 
-    FOR_NB_SCREENS(i)
-    {
-        yn[i].end_tick = end_tick;
-        yn[i].tmo_default_res = tmo_default_res;
-        yn[i].selection = selection;
-        yn[i].main_message=main_message;
-        yn[i].display=&screens[i];
-        screens[i].scroll_stop();
-        sb_set_persistent_title(title, Icon_NOICON, i);
-        viewportmanager_theme_enable(i, true, &(yn[i].vp));
+    c.message      = main_message;
+    c.selection    = YESNO_YES;     /* default highlighted button */
+    c.tmo_default  = tmo_default_res;
+    c.tmo_secs     = ticks / HZ;
+    c.end_tick     = current_tick + ticks;
+    c.talked_tick  = current_tick - 1;
+    c.talk_menu    = global_settings.talk_menu;
+    c.yes_message  = yes_message;
+    c.no_message   = no_message;
+    c.result       = YESNO_NO;
 
-        yn[i].vp_lines = viewport_get_nb_lines(&(yn[i].vp));
-    }
-
-    /* make sure to eat any extranous keypresses */
-    action_wait_for_release();
-
-    /* hook into UI update events to avoid the dialog disappearing
-     * in case the skin decides to do a full refresh */
-    /*add_event_ex(GUI_EVENT_NEED_UI_UPDATE, false, gui_yesno_ui_update, &yn[0]);*/
-    /* probably no longer needed --Bilgus 2023*/
-
-    bool needs_redraw = true;
-    long last_tmo_sec = -1;
-    while (result==YESNO_NONE)
-    {
-        /* Only redraw when something actually changed -- redrawing every idle
-         * pass repaints the box and fights the theme's status-bar/backdrop
-         * redraw, which shows up as flicker. The timeout countdown (when there
-         * is one) still refreshes once a second. */
-        if (tmo_default_res != YESNO_TMO)
-        {
-            long sec = (end_tick - current_tick) / HZ;
-            if (sec != last_tmo_sec)
-            {
-                last_tmo_sec = sec;
-                needs_redraw = true;
-            }
-        }
-
-        if (needs_redraw)
-        {
-            FOR_NB_SCREENS(i)
-                gui_yesno_draw(&yn[i]);
-            needs_redraw = false;
-        }
-
-        /* Repeat the question every 5secs (more or less) */
-        if (talk_menu && TIME_AFTER(current_tick, talked_tick))
-        {
-            talked_tick = current_tick + (HZ*5);
-            talk_text_message(main_message, false);
-        }
-        backlight_on = is_backlight_on(false);
-        /* Inhibit the SBS's own flush during input: Themify_2's status-bar
-         * skin re-renders on GUI_EVENT_ACTIONUPDATE (fired inside get_action)
-         * and draws into the content area, which would otherwise overdraw
-         * this box between redraws (flicker). Same pattern as the list and
-         * album-covers screens. */
-        skin_render_inhibit_flush(true);
-        action = get_action(CONTEXT_YESNOSCREEN, HZ / 2); /* for statubar and tmo */
-        skin_render_inhibit_flush(false);
-        switch (action)
-        {
-            case ACTION_YESNO_ACCEPT:
-                result = selection; /* confirm the highlighted button */
-                break;
-            case ACTION_STD_PREV: /* scroll back / left -> Yes (left button) */
-                selection = YESNO_YES;
-                FOR_NB_SCREENS(i)
-                    yn[i].selection = selection;
-                needs_redraw = true;
-                continue;
-            case ACTION_STD_NEXT: /* scroll fwd / right -> No (right button) */
-                selection = YESNO_NO;
-                FOR_NB_SCREENS(i)
-                    yn[i].selection = selection;
-                needs_redraw = true;
-                continue;
-            case ACTION_STD_CANCEL:
-            case ACTION_STD_MENU:
-                result = YESNO_NO; /* back / cancel */
-                break;
-            case ACTION_NONE:
-                if(tmo_default_res != YESNO_TMO && TIME_AFTER(current_tick, end_tick))
-                {
-                    splash(HZ/2, ID2P(LANG_TIMEOUT));
-                    result = tmo_default_res;
-                    goto exit;
-                }
-                continue;
-            case ACTION_UNKNOWN:
-                continue;
-            case ACTION_REDRAW:
-                needs_redraw = true; /* theme/UI wants a refresh */
-                continue;
-            default:
-                if(default_event_handler(action) == SYS_USB_CONNECTED) {
-                    result = YESNO_USB;
-                    goto exit;
-                }
-                /* ignore unmapped buttons; the choice is explicit via the
-                 * highlighted Yes/No buttons */
-        }
-
-        if (!backlight_on)
-            result = YESNO_NONE; /* don't allow results if the screen is off */
-    }
-
-exit:
-
-    /*remove_event_ex(GUI_EVENT_NEED_UI_UPDATE, gui_yesno_ui_update, &yn[0]);*/
-
-    if (result == YESNO_YES || result == YESNO_NO)
-    {
-        const struct text_message * resmsg;
-        if (result == YESNO_YES)
-            resmsg = yes_message;
-        else
-            resmsg = no_message;
-
-        if (resmsg != NULL)
-        {
-            FOR_NB_SCREENS(i)
-                gui_yesno_draw_result(&(yn[i]), resmsg);
-
-            if (talk_menu)
-            {
-                talk_text_message(resmsg, false);
-                talk_force_enqueue_next();
-            }
-
-            sleep(HZ);
-        }
-    }
-
-    FOR_NB_SCREENS(i)
-    {
-        screens[i].scroll_stop_viewport(&(yn[i].vp));
-        sb_set_persistent_title(title, Icon_NOICON, i);
-        viewportmanager_theme_undo(i, false);
-    }
-
-    return result;
+    dialog_init(&d, CONTEXT_YESNOSCREEN, title, NULL, &cb, &c);
+    dialog_run(&d, HZ / 2); /* poll for statusbar and the timeout countdown */
+    return c.result;
 }
 
 enum yesno_res gui_syncyesno_run(const struct text_message * main_message,

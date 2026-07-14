@@ -7,7 +7,7 @@
  *                     \/            \/     \/    \/            \/
  * $Id$
  *
- * Copyright (C) 2002 by Björn Stenberg
+ * Copyright (C) 2026 by the Rockbox project
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,13 +18,16 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#ifndef _KEYBOARD_H
-#define _KEYBOARD_H
 
-/* Click-wheel single-line text editor. */
-int dialog_input(char* buffer, int buflen);
+/* Interactive walkthrough of the dialog widgets: popup, yes-no, text input, and
+ * the styled variants (rounded corners, icon, custom colours). Wired into the
+ * main menu so behaviour and layout can be checked on device. Temporary
+ * scaffolding - remove with its menu item once the dialog refactor is
+ * verified. */
 
-/* Plugin-ABI wrapper for dialog_input(); `kbd` is ignored. */
-int kbd_input(char* buffer, int buflen, ucschar_t *kbd);
+#ifndef _GUI_DIALOG_TEST_H_
+#define _GUI_DIALOG_TEST_H_
 
-#endif
+int dialog_test_run(void);
+
+#endif /* _GUI_DIALOG_TEST_H_ */

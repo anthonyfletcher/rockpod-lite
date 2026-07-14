@@ -33,6 +33,7 @@
 #include "scrollbar.h"
 #include "font.h"
 #include "misc.h" /* get_current_activity */
+#include "dialog.h"
 
 static long progress_next_tick, talked_tick;
 
@@ -76,6 +77,14 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
     char lastbrkchr;
     size_t len, next_len;
     const char matchstr[] = "\r\n\f\v\t ";
+
+    /* the popup is framed with the default dialog style, but keeps its own
+     * padding; an icon (if the style carries one) narrows the text column */
+    struct dialog_style style = *dialog_get_default_style();
+    style.box_margin = RECT_SPACING;
+    int icon_w = style.icon ? style.icon->width + DIALOG_ICON_GAP : 0;
+    int icon_h = style.icon ? style.icon->height : 0;
+
     font_getstringsize(" ", &space_w, &chr_h, fontnum);
     /* Reserve a line for each additional element (e.g. the progress bar),
      * plus an explicit gap so the bar isn't drawn hard against the text. */
@@ -98,7 +107,8 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
         {
             len = next - lastbreak;
             int next_w = len * space_w;
-            if (x + next_w + w > vp->width - RECT_SPACING*2 || lastbrkchr != ' ')
+            if (x + next_w + w > vp->width - RECT_SPACING*2 - icon_w
+                || lastbrkchr != ' ')
             {   /* too wide, or control character wrap */
                 if (x > maxw)
                     maxw = x;
@@ -149,8 +159,8 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
 
     screen->scroll_stop();
 
-    width = maxw + 2*RECT_SPACING;
-    height = y + 2*RECT_SPACING;
+    width = maxw + icon_w + 2*RECT_SPACING;
+    height = (icon_h > y ? icon_h : y) + 2*RECT_SPACING;
 
     if (width > vp->width)
         width = vp->width;
@@ -167,46 +177,38 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
 
     vp->flags |=  VP_FLAG_ALIGN_CENTER;
 #if LCD_DEPTH > 1
-    unsigned fg = 0, bg = 0;
-    bool broken = false;
-
     if (screen->depth > 1)
     {
-        fg = screen->get_foreground();
-        bg = screen->get_background();
+        unsigned fg = screen->get_foreground();
+        unsigned bg = screen->get_background();
+        bool broken = (fg == bg) ||
+                      (bg == 63422 && fg == 65535); /* iPod reFresh '22 themes */
 
-        broken = (fg == bg) ||
-                 (bg == 63422 && fg == 65535); /* -> iPod reFresh themes from '22 */
-
-        vp->drawmode = DRMODE_FG;
-        /* can't do vp->fg_pattern here, since set_foreground does a bit more on
-         * greyscale */
-        screen->set_foreground(broken ? SCREEN_COLOR_TO_NATIVE(screen, LCD_LIGHTGRAY) :
-                               bg);     /* gray as fallback for broken themes */
+        /* dialog_frame_box() fills with the background and borders (and the
+         * text below is drawn with) the foreground. For broken themes swap in
+         * a gray box with a black border/text so the message stays legible. */
+        if (broken)
+        {
+            screen->set_background(SCREEN_COLOR_TO_NATIVE(screen, LCD_LIGHTGRAY));
+            screen->set_foreground(SCREEN_COLOR_TO_NATIVE(screen, LCD_BLACK));
+        }
     }
-    else
 #endif
-        vp->drawmode = (DRMODE_SOLID|DRMODE_INVERSEVID);
 
-    screen->fill_viewport();
+    /* opaque box + border (+ icon) via the shared dialog frame */
+    struct viewport content;
+    dialog_frame_box(screen, vp, &style, &content);
 
-#if LCD_DEPTH > 1
-    if (screen->depth > 1)
-        /* can't do vp->fg_pattern here, since set_foreground does a bit more on
-         * greyscale */
-        screen->set_foreground(broken ? SCREEN_COLOR_TO_NATIVE(screen, LCD_BLACK) :
-                               fg);     /* black as fallback for broken themes */
-    else
-#endif
-        vp->drawmode = DRMODE_SOLID;
-
-    screen->draw_border_viewport();
-
-    /* print the message to screen */
-    for(i = 0, y = RECT_SPACING; i <= line; i++, y+= chr_h)
+    /* print the message into the content column (past the icon, if any), then
+     * restore the box viewport: splash_progress draws its scrollbar in box
+     * coordinates and the caller flushes the box. */
+    screen->set_viewport(&content);
+    for(i = 0, y = 0; i <= line; i++, y+= chr_h)
     {
         screen->putsxyf(0, y, "%.*s", lines[i].len, lines[i].str);
     }
+    screen->set_viewport(vp);
+
     return true; /* needs update */
 }
 

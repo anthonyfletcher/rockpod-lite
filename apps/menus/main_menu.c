@@ -46,6 +46,7 @@
 #include "wps.h"
 #include "skin_buffer.h"
 #include "disk.h"
+#include "dialog_test.h"
 
 static const struct browse_folder_info config = {ROCKBOX_DIR, SHOW_CFG};
 static int show_info(void);
@@ -461,11 +462,17 @@ MAKE_MENU(info_menu, ID2P(LANG_SYSTEM), 0, Icon_System_menu,
 MENUITEM_FUNCTION(main_menu_config_item, 0, ID2P(LANG_MAIN_MENU_SETTINGS),
                   main_menu_config, NULL, Icon_Rockbox);
 
+/* Temporary dialog-widget test harness (see dialog_test.c). Remove this item
+ * and its source once the dialog refactor is verified. */
+MENUITEM_FUNCTION(dialog_test_item, 0, "Dialog tests",
+                  dialog_test_run, NULL, Icon_NOICON);
+
 /***********************************/
 /*    MAIN MENU                    */
 
 MAKE_MENU(main_menu_, ID2P(LANG_SETTINGS), NULL,
         Icon_Submenu_Entered,
+        &dialog_test_item,
         &sound_settings,
         &playback_settings,
         &settings_menu_item, &theme_menu,

@@ -646,9 +646,7 @@ int ft_enter(struct tree_context* c)
                 break;
 
             case FILE_ATTR_KBD:
-                splash(0, ID2P(LANG_WAIT));
-                if (!load_kbd(buf))
-                    splash(HZ, ID2P(LANG_KEYBOARD_LOADED));
+                /* loadable layouts are gone; just remember the selection */
                 set_file(buf, (char *)global_settings.kbd_file);
                 break;
 
