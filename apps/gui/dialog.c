@@ -48,7 +48,6 @@ void dialog_style_default(struct dialog_style *s)
     s->box_bg           = DIALOG_COLOR_INHERIT;
     s->box_border_color = DIALOG_COLOR_INHERIT;
     s->box_border_width  = 1;
-    s->box_border_radius = 0;
     s->box_margin        = DIALOG_MARGIN;
     s->box_font          = DIALOG_FONT_INHERIT;
 
@@ -218,7 +217,6 @@ void dialog_frame_box(struct screen *screen, struct viewport *box,
      * from the viewport's stored patterns on colour targets, which would undo
      * a caller's colour override (e.g. the popup's broken-theme fallback, which
      * is what DIALOG_COLOR_INHERIT picks up here). */
-    int r  = style->box_border_radius;
     int bw = style->box_border_width;
     struct dialog_insets in;
 
@@ -236,9 +234,9 @@ void dialog_frame_box(struct screen *screen, struct viewport *box,
 
         screen->set_drawmode(DRMODE_FG);
         screen->set_foreground(bg);          /* fill with the background colour */
-        fill_round_rect(screen, 0, 0, box->width, box->height, r);
+        fill_round_rect(screen, 0, 0, box->width, box->height, 0);
         screen->set_foreground(bc);
-        draw_round_rect(screen, 0, 0, box->width, box->height, r, bw);
+        draw_round_rect(screen, 0, 0, box->width, box->height, 0, bw);
         screen->set_foreground(fg);          /* interior draws in the box fg */
         screen->set_drawmode(DRMODE_SOLID);
 
@@ -250,9 +248,9 @@ void dialog_frame_box(struct screen *screen, struct viewport *box,
 #endif
     {
         screen->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
-        fill_round_rect(screen, 0, 0, box->width, box->height, r);
+        fill_round_rect(screen, 0, 0, box->width, box->height, 0);
         screen->set_drawmode(DRMODE_SOLID);
-        draw_round_rect(screen, 0, 0, box->width, box->height, r, bw);
+        draw_round_rect(screen, 0, 0, box->width, box->height, 0, bw);
     }
 
     /* content sub-viewport: the box inset by the margin. It inherits the box's

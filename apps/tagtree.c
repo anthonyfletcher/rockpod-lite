@@ -1611,19 +1611,6 @@ static int retrieve_entries(struct tree_context *c, int offset, bool init)
     int sort_limit;
     int strip;
 
-    /* Show search progress straight away if the disk needs to spin up,
-       otherwise show it after the normal 1/2 second delay */
-    show_search_progress(
-#ifdef HAVE_DISK_STORAGE
-#ifdef HAVE_TC_RAMCACHE
-        tagcache_is_in_ram() ? true :
-#endif
-        storage_disk_is_active()
-#else
-        true
-#endif
-        , 0, 0, 0);
-
     if (c->currtable == TABLE_ALLSUBENTRIES || c->currtable == TABLE_ALLSUBENTRIES_SORTED_BY_ALBUMS)
     {
         tag = tag_title;
@@ -1894,17 +1881,6 @@ entry_skip_formatter:
             sort = false;
             break ;
         }
-
-        if (init)
-        {
-            if (!show_search_progress(false, total_count, 0, 0))
-            {   /* user aborted */
-                tagcache_search_finish(&tcs);
-                tree_unlock_cache(c);
-                core_unpin(tagtree_handle);
-                return current_entry_count;
-            }
-        }
     }
 
     if (sort)
@@ -1931,11 +1907,7 @@ entry_skip_formatter:
     }
 
     while (tagcache_get_next(&tcs, tcs_buf, tcs_bufsz))
-    {
-        if (!show_search_progress(false, total_count, 0, 0))
-            break;
         total_count++;
-    }
 
     tagcache_search_finish(&tcs);
     tree_unlock_cache(c);
@@ -2282,7 +2254,9 @@ int tagtree_load(struct tree_context* c)
             }
 
             cpu_boost(true);
+            ui_set_working(true);
             count = retrieve_entries(c, 0, true);
+            ui_set_working(false);
             cpu_boost(false);
             break;
 

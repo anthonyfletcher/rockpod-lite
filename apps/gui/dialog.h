@@ -68,7 +68,6 @@ struct dialog_style
     unsigned box_bg;                /* interior fill                        */
     unsigned box_border_color;
     int      box_border_width;      /* 0 == borderless                      */
-    int      box_border_radius;     /* 0 == square corners                  */
     int      box_margin;            /* content inset inside the box         */
     int      box_font;
 

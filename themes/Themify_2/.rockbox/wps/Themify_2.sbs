@@ -130,8 +130,8 @@
 %Vl(Loading_Notification,118,5,13,13,8)
 %?or(%if(%ft(themes/Themify_2.preferences,animations: ),=,off),%if(%ft(themes/Themify_2.preferences,animations:),=,off))<%Vs(invert)t|%t(0.1)Á;%t(0.1)Á>
 #
-%Vl(Loading_Notification,135,5,69,15,4)%VB%Vs(invert)%?lb<Building..|%?lw<Working..|Loading..>>
-%Vl(Loading_Notification,135,5,69,15,4)%Vs(invert)%?lb<Building..|%?lw<Working..|Loading..>>
+%Vl(Loading_Notification,135,5,69,15,4)%VB%Vs(invert)%?lw<Working..|%?lb<Building..|Loading..>>
+%Vl(Loading_Notification,135,5,69,15,4)%Vs(invert)%?lw<Working..|%?lb<Building..|Loading..>>
 #
 #
 #-- Sleep Notification --#

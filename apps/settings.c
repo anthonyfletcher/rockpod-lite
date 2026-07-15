@@ -860,8 +860,6 @@ static void settings_apply_dialog_style(void)
 
     s.box_border_width     = clamp_int(global_settings.dialog_box_border_width,
                                        0, 16);
-    s.box_border_radius    = clamp_int(global_settings.dialog_box_border_radius,
-                                       0, 64);
     s.box_margin           = clamp_int(global_settings.dialog_box_margin,
                                        0, LCD_WIDTH / 4);
     s.button_border_width  = clamp_int(global_settings.dialog_btn_border_width,

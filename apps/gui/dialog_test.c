@@ -128,7 +128,6 @@ int dialog_test_run(void)
         struct dialog_style saved = *dialog_get_default_style();
         struct dialog_style style;
         dialog_style_default(&style);
-        style.box_border_radius    = 10;
         style.box_border_width     = 2;
         style.box_margin           = 12;
         style.button_border_radius = 6;

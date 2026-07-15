@@ -523,7 +523,6 @@ struct user_settings
      * when dialog_colors is on, otherwise every colour is inherited from the
      * theme (DIALOG_COLOR_INHERIT), which is the default look. */
     int dialog_box_border_width;
-    int dialog_box_border_radius;
     int dialog_box_margin;
     int dialog_btn_border_width;
     int dialog_btn_border_radius;

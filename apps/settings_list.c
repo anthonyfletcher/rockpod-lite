@@ -1112,8 +1112,6 @@ const struct settings_list settings[] = {
      * dialog_style_default() exactly, i.e. today's look. */
     {F_T_INT|F_THEMESETTING, &global_settings.dialog_box_border_width, -1,
         INT(1), "dialog box border width", UNUSED},
-    {F_T_INT|F_THEMESETTING, &global_settings.dialog_box_border_radius, -1,
-        INT(0), "dialog box border radius", UNUSED},
     {F_T_INT|F_THEMESETTING, &global_settings.dialog_box_margin, -1,
         INT(10), "dialog box margin", UNUSED},
     {F_T_INT|F_THEMESETTING, &global_settings.dialog_btn_border_width, -1,
