@@ -869,7 +869,7 @@ const struct settings_list settings[] = {
 
 #ifdef HAVE_ALBUMART
     CHOICE_SETTING(F_CB_ON_SELECT_ONLY|F_CB_ONLY_IF_CHANGED, album_art,
-                   LANG_ALBUM_ART, 2, "album art",
+                   LANG_ALBUM_ART, AA_PREFER_EMBEDDED, "album art",
                    "off,prefer embedded,prefer image file",
                    albumart_callback, 3,
                    ID2P(LANG_OFF), ID2P(LANG_PREFER_EMBEDDED),
