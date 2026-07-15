@@ -162,11 +162,14 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
 
     if (width > vp->width)
         width = vp->width;
-    if (height > vp->height)
-        height = vp->height;
+    if (height > screen->lcdheight)
+        height = screen->lcdheight;
 
-    vp->x += (vp->width - width) / 2;
-    vp->y += (vp->height - height) / 2;
+    /* Centre on the physical display, not within vp: a themed SBS can inset the
+     * UI viewport (e.g. %Vi(-,3,28,302,-,-)), which would leave the box visibly
+     * off-centre on screen. */
+    vp->x = (screen->lcdwidth - width) / 2;
+    vp->y = (screen->lcdheight - height) / 2;
     vp->width = width;
     vp->height = height;
 

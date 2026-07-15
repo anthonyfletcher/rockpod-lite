@@ -262,17 +262,19 @@ static void draw_char_inverse(struct screen *display, int x, int y, ucschar_t ch
     draw_char(display, x, y, ch);
 }
 
-/* Box spans the display width minus a horizontal margin; height fits the
- * content (edit line + button row) and is centred within the theme content
- * area, matching the yes/no dialog. */
+/* Box spans the physical display width minus a horizontal margin; height fits
+ * the content (edit line + button row) and is centred on the display, matching
+ * the yes/no dialog. box->x/y are absolute screen coordinates, so the geometry
+ * must come from the display (lcdwidth/lcdheight), not from the theme viewport
+ * (getwidth()/getheight()), which a themed SBS can inset - see yesno_measure(). */
 static void kbd_measure(struct dialog *d, struct screen *display,
                         struct viewport *box, void *data)
 {
     (void)data;
     struct dialog_insets in;
-    int area_y = box->y;
-    int area_h = box->height;
-    int sw = display->getwidth();
+    int area_y = 0;
+    int area_h = display->lcdheight;
+    int sw = display->lcdwidth;
     int ch_h = display->getcharheight();
 
     dialog_get_insets(&d->style, &in);

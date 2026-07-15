@@ -195,11 +195,15 @@ static void yesno_measure(struct dialog *d, struct screen *s,
 {
     struct yesno_ctx *c = data;
     struct dialog_insets in;
-    /* the box arrives as the theme content viewport: centre within it (i.e.
-     * below the status bar), not the whole physical display */
-    int area_y = box->y;
-    int area_h = box->height;
-    int sw = s->getwidth();
+    /* Size and centre against the physical display, not the theme content
+     * viewport the box arrives as. box->x/y below are absolute screen
+     * coordinates, so measuring against s->getwidth()/getheight() (the theme
+     * viewport, which a themed SBS can inset - e.g. %Vi(-,3,28,302,-,-)) would
+     * centre the box on the viewport's size but position it from absolute 0,
+     * leaving it visibly off-centre on the display. */
+    int area_y = 0;
+    int area_h = s->lcdheight;
+    int sw = s->lcdwidth;
     int ch = s->getcharheight();
 
     dialog_get_insets(&d->style, &in);
@@ -230,7 +234,7 @@ static void yesno_measure(struct dialog *d, struct screen *s,
     int content_h = nlines * ch + gap + btn_h;
     int box_h = content_h + in.top + in.bottom;
     if (box_h > area_h)
-        box_h = area_h;                     /* clamp to the content area */
+        box_h = area_h;                     /* clamp to the display */
 
     box->x = (sw - box_w) / 2;
     box->width = box_w;
