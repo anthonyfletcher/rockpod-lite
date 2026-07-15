@@ -369,28 +369,28 @@
 #
 #- Right side Short Scrollbar -#
 %Vl(Scrollbar_Short_Right,310,57,5,173,9)%VB
-%?LB<C|>
-%?LB<D|>
-%?LB<D|>
-%?LB<D|>
-%?LB<D|>
-%?LB<D|>
-%?LB<D|>
-%Vl(Scrollbar_Short_Right,310,230,5,5,9)%VB%?LB<E|>
+C
+D
+D
+D
+D
+D
+D
+%Vl(Scrollbar_Short_Right,310,230,5,5,9)%VBE
 #
-%Vl(Scrollbar_Short_Right,310,57,5,178,-)%?LB<%LB(0,0,5,178,invert,noborder,nobar,slider,Thumb)|%xd(Scrollbar_Flush)>
+%Vl(Scrollbar_Short_Right,310,57,5,178,-)%?LB<%LB(0,0,5,178,invert,noborder,nobar,slider,Thumb)|>
 #
 #- Left side Short Scrollbar -#
 %Vl(Scrollbar_Short_Left,5,57,5,173,9)%VB
-%?LB<C|>
-%?LB<D|>
-%?LB<D|>
-%?LB<D|>
-%?LB<D|>
-%?LB<D|>
-%?LB<D|>
-%Vl(Scrollbar_Short_Left,5,230,5,5,9)%VB%?LB<E|>
-%Vl(Scrollbar_Short_Left,5,57,5,178,-)%?LB<%LB(0,0,5,178,invert,noborder,nobar,slider,Thumb)|%xd(Scrollbar_Flush)>
+C
+D
+D
+D
+D
+D
+D
+%Vl(Scrollbar_Short_Left,5,230,5,5,9)%VBE
+%Vl(Scrollbar_Short_Left,5,57,5,178,-)%?LB<%LB(0,0,5,178,invert,noborder,nobar,slider,Thumb)|>
 #
 #--- END ---#
 #

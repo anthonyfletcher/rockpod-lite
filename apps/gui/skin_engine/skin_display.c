@@ -235,6 +235,15 @@ void draw_progressbar(struct gui_wps *gwps, struct skin_viewport* skin_viewport,
         end = 0;
     }
 
+    /* A zero range divides by zero in the bar/scrollbar fill maths -- e.g. an
+     * always-drawn list scrollbar on an empty or fully-visible list, where
+     * max == min. Clamp to a full bar. */
+    if (length == 0)
+    {
+        length = 1;
+        end = 1;
+    }
+
     if (!pb->horizontal)
     {
         /* we want to fill upwards which is technically inverted. */
