@@ -324,20 +324,6 @@ hit:
 }
 #endif /* HAVE_ALBUMART */
 
-/* Tall rows for album lists in the database browser, so a cover fits. UNIFORM:
- * every row (including the "All Tracks"/"Random" special entries) gets the same
- * tall height, so the list has no mix of heights -- the special rows render with
- * the same [image] name layout as albums (icon instead of a cover), which keeps
- * the skin simple and avoids the special-row boxes fighting the cover viewport.
- * Only registered when db_albumart is on and this is an album list. */
-static int tree_get_item_height(int selected_item, void * data,
-                                int default_height)
-{
-    int h = global_settings.db_albumart_height;
-    (void)selected_item;
-    (void)data;
-    return h > default_height ? h : default_height;
-}
 
 static int tree_voice_cb(int selected_item, void * data)
 {
@@ -674,9 +660,11 @@ static int update_dir(void)
 #ifdef HAVE_ALBUMART
         gui_synclist_set_albumart_callback(list,
                                     tall_rows ? tree_get_albumart : NULL);
+        /* Uniform tall rows so a cover fits (special rows included); 0 = the
+         * skin's default height. */
+        gui_synclist_set_row_height(list,
+                                    tall_rows ? global_settings.db_albumart_height : 0);
 #endif
-        gui_synclist_set_item_height_callback(list,
-                                    tall_rows ? tree_get_item_height : NULL);
     }
     gui_synclist_set_voice_callback(list, &tree_voice_cb);
 #ifdef HAVE_LCD_COLOR

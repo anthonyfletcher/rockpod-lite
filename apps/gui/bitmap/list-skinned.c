@@ -132,23 +132,21 @@ const struct bitmap* skinlist_get_item_albumart(int offset, bool wrap, struct di
     return current_list->callback_get_item_albumart(item, current_list->data, size);
 }
 
-/* Whether this row is an album-art row -- i.e. one the list draws taller than the
- * skin's own pitch. This is what %?La tests, so a theme can lay art rows out
- * differently (art + inset text) from ordinary rows sharing the same list config.
- * Deliberately structural, not "is a thumbnail loaded": the row keeps its art
- * layout while the background cache is still catching up, rather than each row
- * flipping layout as its cover appears. */
+/* Whether the current list is an album-art list -- one drawing rows taller than
+ * the skin's own pitch, with an album-art callback to fill them. This is what
+ * %?La tests, so a theme can lay art rows out differently (art + inset text)
+ * from ordinary rows sharing the same list config. It's a list-level property
+ * (every row is the same height), so the item offset is irrelevant. */
 bool skinlist_item_is_art_row(enum screen_type screen, int offset, bool wrap)
 {
-    int item = offset_to_item(offset, wrap);
-    if (item < 0 || !current_list ||
+    (void)offset; (void)wrap;
+    if (!current_list ||
         current_list->callback_get_item_albumart == NULL ||
-        current_list->callback_get_item_height == NULL ||
         listcfg[screen] == NULL || listcfg[screen]->tile)
     {
         return false;
     }
-    return list_item_height(current_list, screen, item) > listcfg[screen]->height;
+    return list_item_height(current_list, screen) > listcfg[screen]->height;
 }
 #endif
 
@@ -158,46 +156,13 @@ bool skinlist_is_selected_item(void)
     return is_selected;
 }
 
-/* Variable row heights need a single column of rows to accumulate down, so they
- * are not supported in tile mode (a grid is uniform by construction). True when
- * this list's rows may differ in height. */
-static bool skinlist_var_height(enum screen_type screen,
-                                struct gui_synclist *list)
-{
-    return list && list->callback_get_item_height &&
-           listcfg[screen] && !listcfg[screen]->tile;
-}
-
-bool skinlist_is_tile_mode(enum screen_type screen)
-{
-    return listcfg[screen] != NULL && listcfg[screen]->tile;
-}
-
+/* The skin's own row pitch (%Lb height) when a non-tiled skinned list is drawing
+ * `list`; -1 otherwise, so list_item_height() falls back to the font height. */
 int skinlist_row_height(enum screen_type screen, struct gui_synclist *list)
 {
     if (!skinlist_is_configured(screen, list) || listcfg[screen]->tile)
         return -1;
     return listcfg[screen]->height;
-}
-
-/* How many items, starting at `start`, fit in `avail` pixels of variable rows.
- * At least 1, so a row taller than the viewport still draws (clipped) rather
- * than leaving the list stuck at zero visible items. */
-static int skinlist_items_fitting(enum screen_type screen,
-                                  struct gui_synclist *list,
-                                  int start, int avail)
-{
-    int n = 0, used = 0;
-
-    while (start + n < list->nb_items)
-    {
-        int h = list_item_height(list, screen, start + n);
-        if (used + h > avail)
-            break;
-        used += h;
-        n++;
-    }
-    return n > 0 ? n : 1;
 }
 
 int skinlist_get_line_count(enum screen_type screen, struct gui_synclist *list)
@@ -211,14 +176,8 @@ int skinlist_get_line_count(enum screen_type screen, struct gui_synclist *list)
         int cols = (parent->width / listcfg[screen]->width);
         return rows*cols;
     }
-    else if (skinlist_var_height(screen, list))
-    {
-        /* rows differ, so how many fit depends on where the window starts */
-        return skinlist_items_fitting(screen, list, list->start_item[screen],
-                                      parent->height);
-    }
-    else
-        return  (parent->height / listcfg[screen]->height);
+    /* uniform rows: how many of the list's row height fit in the viewport */
+    return parent->height / list_item_height(list, screen);
 }
 
 static int current_item;
@@ -251,29 +210,13 @@ bool skinlist_get_item(struct screen *display, struct gui_synclist *list, int x,
     if (!skinlist_is_configured(screen, list))
         return false;
 
-    if (skinlist_var_height(screen, list))
-    {
-        /* rows are not a fixed pitch: walk down them to find the one holding y */
-        int start = list->start_item[screen];
-        int used = 0, n = 0;
-
-        while (start + n < list->nb_items)
-        {
-            int h = list_item_height(list, screen, start + n);
-            if (y < used + h)
-                break;
-            used += h;
-            n++;
-        }
-        *item = n;      /* an offset into the window, as below */
-        return true;
-    }
-
-    int row = y / listcfg[screen]->height;
+    int rh = listcfg[screen]->tile ? listcfg[screen]->height
+                                   : list_item_height(list, screen);
+    int row = y / rh;
     int column = x / listcfg[screen]->width;
     struct viewport *parent = (list->parent[screen]);
     int cols = (parent->width / listcfg[screen]->width);
-    *item = row * cols+ column;
+    *item = row * cols + column;
     return true;
 }
 
@@ -313,32 +256,25 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
     current_nbitems = list->nb_items;
     needs_scrollbar[screen] = list->nb_items > display_lines;
 
-    const bool var_height = skinlist_var_height(screen, list);
+    const int row_height = list_item_height(list, screen);  /* uniform */
     int row_top = 0;    /* top of the current row, relative to parent */
 
-    if (var_height && list->nb_items > 0)
-    {
-        /* Tall (album) rows rarely divide the viewport evenly, leaving dead
-         * space at the bottom. Centre the rows in that leftover so the list
-         * isn't top-heavy. Uses the (uniform) row height, so the offset stays
-         * put while scrolling instead of jumping near the list's end. */
-        int rh = list_item_height(list, screen, list_start_item);
-        if (rh > 0)
-            row_top = (parent->height % rh) / 2;
-    }
+    /* Tall (album) rows rarely divide the viewport evenly, leaving dead space at
+     * the bottom. Centre them in that leftover so the list isn't top-heavy --
+     * only for lists taller than the skin's own pitch; ordinary menus stay
+     * top-aligned. The offset uses the (uniform) height, so it stays put while
+     * scrolling rather than jumping near the list's end. */
+    if (row_height > listcfg[screen]->height && list->nb_items > 0)
+        row_top = (parent->height % row_height) / 2;
 
     for (cur_line = 0; cur_line < display_lines; cur_line++)
     {
         struct skin_element* viewport;
         struct skin_viewport* skin_viewport = NULL;
-        int row_height;
         if (list_start_item+cur_line+1 > list->nb_items)
             break;
         current_drawing_line = list_start_item+cur_line;
         is_selected = list_start_item+cur_line == list->selected_item;
-        row_height = var_height
-                   ? list_item_height(list, screen, list_start_item+cur_line)
-                   : listcfg[screen]->height;
 
         for (viewport = SKINOFFSETTOPTR(get_skin_buffer(wps.data), listcfg[screen]->data->tree);
              viewport;
@@ -374,15 +310,11 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
                 current_column = 1;
                 current_row = cur_line;
                 skin_viewport->vp.x = parent->x + original_x;
-                skin_viewport->vp.y = parent->y + original_y +
-                                   (var_height ? row_top
-                                               : listcfg[screen]->height*cur_line);
-                /* Variable rows only change where each row STARTS (row_top), not
-                 * the size of the viewports within it: each %Vl keeps its declared
-                 * height and the theme positions elements inside the taller row
-                 * with their own y-offsets (e.g. a cover on the left and the name
-                 * bar centred beside it). Stretching them here instead would
-                 * inflate the selection bar into a full-height block. */
+                skin_viewport->vp.y = parent->y + original_y + row_top;
+                /* row_top is where this row starts; each %Vl keeps its declared
+                 * height and positions its elements within the row (e.g. a cover
+                 * on the left and the name bar centred beside it), rather than
+                 * stretching to fill a taller row. */
             }
             display->set_viewport(&skin_viewport->vp);
 #if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)

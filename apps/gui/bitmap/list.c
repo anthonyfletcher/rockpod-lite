@@ -238,7 +238,7 @@ void list_draw(struct screen *display, struct gui_synclist *list)
 
     const int nb_lines = list_get_nb_lines(list, screen);
 
-    linedes.height = list->line_height[screen];
+    linedes.height = list_item_height(list, screen);
     linedes.nlines = list->selected_size;
 #if LCD_DEPTH > 1
     /* XXX: Do we want to support the separator on remote displays? */
@@ -260,11 +260,7 @@ void list_draw(struct screen *display, struct gui_synclist *list)
             vp.width = SCROLLBAR_WIDTH;
             /* touchscreens must use full viewport height
              * due to pixelwise rendering */
-            /* with variable rows, linedes.height*nb_lines is meaningless -- the
-             * rows span the whole text area, so the bar does too */
-            vp.height = list->callback_get_item_height
-                      ? list_text_vp->height
-                      : linedes.height * nb_lines;
+            vp.height = linedes.height * nb_lines;
             list_text_vp->width -= SCROLLBAR_WIDTH;
             if (scrollbar_in_right)
                 vp.x += list_text_vp->width;
@@ -299,9 +295,7 @@ void list_draw(struct screen *display, struct gui_synclist *list)
         .have_icons = have_icons, .linedes = &linedes, .display = display
     };
 
-    /* Row tops are accumulated rather than computed as line*height, so rows may
-     * differ in height. With a uniform height this is identical to the old
-     * line*linedes.height (draw_offset is 0). */
+    /* Uniform rows: accumulate the top of each row (draw_offset + n*height). */
     int y = draw_offset;
 
     for (i=start; i<end && i<list->nb_items; i++)
@@ -402,7 +396,6 @@ void list_draw(struct screen *display, struct gui_synclist *list)
         linedes.style = style;
         linedes.scroll = is_selected ? true : list->scroll_all;
         linedes.line = i % list->selected_size;
-        linedes.height = list_item_height(list, screen, i);
         icon = list->callback_get_item_icon ?
                     list->callback_get_item_icon(i, list->data) : Icon_NOICON;
 
