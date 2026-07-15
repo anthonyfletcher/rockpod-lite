@@ -260,7 +260,11 @@ void list_draw(struct screen *display, struct gui_synclist *list)
             vp.width = SCROLLBAR_WIDTH;
             /* touchscreens must use full viewport height
              * due to pixelwise rendering */
-            vp.height = linedes.height * nb_lines;
+            /* with variable rows, linedes.height*nb_lines is meaningless -- the
+             * rows span the whole text area, so the bar does too */
+            vp.height = list->callback_get_item_height
+                      ? list_text_vp->height
+                      : linedes.height * nb_lines;
             list_text_vp->width -= SCROLLBAR_WIDTH;
             if (scrollbar_in_right)
                 vp.x += list_text_vp->width;
@@ -295,6 +299,11 @@ void list_draw(struct screen *display, struct gui_synclist *list)
         .have_icons = have_icons, .linedes = &linedes, .display = display
     };
 
+    /* Row tops are accumulated rather than computed as line*height, so rows may
+     * differ in height. With a uniform height this is identical to the old
+     * line*linedes.height (draw_offset is 0). */
+    int y = draw_offset;
+
     for (i=start; i<end && i<list->nb_items; i++)
     {
         /* do the text */
@@ -303,7 +312,6 @@ void list_draw(struct screen *display, struct gui_synclist *list)
         extern char simplelist_buffer[SIMPLELIST_MAX_LINES * SIMPLELIST_MAX_LINELENGTH];
         /*char entry_buffer[MAX_PATH]; use the buffer from gui/list.c instead */
         unsigned char *entry_name;
-        int line = i - start;
         int line_indent = 0;
         int style = STYLE_DEFAULT;
         bool is_selected = false;
@@ -394,11 +402,12 @@ void list_draw(struct screen *display, struct gui_synclist *list)
         linedes.style = style;
         linedes.scroll = is_selected ? true : list->scroll_all;
         linedes.line = i % list->selected_size;
+        linedes.height = list_item_height(list, screen, i);
         icon = list->callback_get_item_icon ?
                     list->callback_get_item_icon(i, list->data) : Icon_NOICON;
 
 
-        list_info.y = line * linedes.height + draw_offset;
+        list_info.y = y;
         list_info.is_selected = is_selected;
         list_info.item_indent = line_indent;
         list_info.line = i;
@@ -407,6 +416,7 @@ void list_draw(struct screen *display, struct gui_synclist *list)
         list_info.item_offset = item_offset;
 
         callback_draw_item(&list_info);
+        y += linedes.height;
     }
 #if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
     parent->fg_pattern = dc_saved_list_fg;

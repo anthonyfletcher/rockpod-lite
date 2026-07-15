@@ -2482,7 +2482,7 @@ static inline bool load_and_prepare_surface(const int slide_index,
         char aat_file[MAX_PATH];
         if (get_slide_dir(slide_index, dir, sizeof(dir)) &&
             albumart_cache_lookup(dir, pf_cover_size_idx, aat_file,
-                                  sizeof(aat_file)))
+                                  sizeof(aat_file), NULL))
         {
             hid = read_aat_transposed(aat_file, prio);
             if (hid < 0)

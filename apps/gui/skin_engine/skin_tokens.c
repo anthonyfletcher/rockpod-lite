@@ -1023,6 +1023,17 @@ const char *get_token_value(struct gui_wps *gwps,
             numeric_buf = buf;
             goto gtv_ret_numeric_tag_info;
         }
+#ifdef HAVE_ALBUMART
+        case SKIN_TOKEN_LIST_ITEM_ALBUMART:
+        {
+            /* value context (%?La): is this an album-art row? The draw context
+             * for %La is handled separately in skin_render.c. */
+            struct listitem *li = (struct listitem *)SKINOFFSETTOPTR(get_skin_buffer(data), token->value.data);
+            if (!li) return NULL;
+            return skinlist_item_is_art_row(gwps->display->screen_type,
+                                            li->offset, li->wrap) ? "a" : "";
+        }
+#endif
         case SKIN_TOKEN_LIST_NEEDS_SCROLLBAR:
             return skinlist_needs_scrollbar(gwps->display->screen_type) ? "s" : "";
         case SKIN_TOKEN_PLAYLIST_NAME:

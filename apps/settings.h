@@ -555,6 +555,15 @@ struct user_settings
     int  album_covers_sort_albums_by;
     int  album_covers_year_sort_order;
     bool album_covers_show_year;
+#ifdef HAVE_ALBUMART
+    /* Album covers in the database browser (tall rows + the skin's %La tag). On
+     * by default; a theme sets it off in its .cfg for the stock/fast list. Off
+     * also means faster scrolling (no cover decode). */
+    bool db_albumart;
+    /* Uniform row height when db_albumart is on -- a little above the cover size
+     * so the square fits. Ignored when db_albumart is off. */
+    int  db_albumart_height;
+#endif
 #endif
 
     int browser_default;        /* Default browser when accessed from WPS */

@@ -3043,6 +3043,73 @@ char *tagtree_get_title(struct tree_context* c)
     return "?";
 }
 
+/* True when this browse level is listing albums -- i.e. the rows that can carry
+ * album art, and so the ones worth giving a taller row to. Kept here rather than
+ * exposing csi/tagorder to callers. */
+bool tagtree_is_album_list(struct tree_context* c)
+{
+    if (c->currtable != TABLE_NAVIBROWSE || !csi)
+        return false;
+    if (c->currextra < 0 || c->currextra >= csi->tagorder_count)
+        return false;
+    return csi->tagorder[c->currextra] == tag_album;
+}
+
+/* The folder of the album on browse row `item`. That folder path is the key the
+ * album-art thumbnail cache hashes on, so this is what turns a database album
+ * row into a cached cover. Resolved by asking the tagcache for the first track
+ * filed under that album (with the ancestor levels -- artist, genre, ... -- still
+ * filtered, so the right album wins when two share a name) and taking its
+ * directory. False for a non-album row, or an album with no retrievable track.
+ *
+ * This is a tagcache search, i.e. far too expensive to call per row per redraw;
+ * callers are expected to cache the result. */
+bool tagtree_get_album_dir(struct tree_context* c, int item,
+                           char *buf, int buflen)
+{
+    struct tagcache_search tcs;
+    char tcs_buf[TAGCACHE_BUFSZ];
+    struct tagentry *entry;
+    int level = c->currextra;
+    bool ok = false;
+    int i;
+
+    if (!tagtree_is_album_list(c) || item < c->special_entry_count)
+        return false;
+
+    entry = tagtree_get_entry(c, item);
+    if (!entry)
+        return false;
+
+    if (!tagcache_search(&tcs, tag_filename))
+        return false;
+
+    for (i = 0; i < level; i++)
+    {
+        if (!TAGCACHE_IS_NUMERIC(csi->tagorder[i]))
+            tagcache_search_add_filter(&tcs, csi->tagorder[i],
+                                       csi->result_seek[i]);
+    }
+    tagcache_search_add_filter(&tcs, csi->tagorder[level], entry->extraseek);
+
+    if (tagcache_get_next(&tcs, tcs_buf, sizeof(tcs_buf)) && tcs.result)
+    {
+        /* Copy first, then truncate the COPY. tcs.result can point into shared
+         * tagcache memory, so writing a NUL into it would corrupt the cache. */
+        char *sep;
+        strlcpy(buf, tcs.result, buflen);
+        sep = strrchr(buf, '/');
+        if (sep && sep != buf)
+        {
+            *sep = '\0';    /* the folder, with no trailing slash: the cache key */
+            ok = true;
+        }
+    }
+
+    tagcache_search_finish(&tcs);
+    return ok;
+}
+
 int tagtree_get_attr(struct tree_context* c)
 {
     int attr = -1;

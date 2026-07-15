@@ -1717,6 +1717,16 @@ const struct settings_list settings[] = {
                   NULL, 2, ID2P(LANG_ASCENDING), ID2P(LANG_DESCENDING)),
     OFFON_SETTING(0, album_covers_show_year, LANG_SHOW_YEAR_IN_ALBUM_TITLE,
                   false, "album covers show year", NULL),
+#ifdef HAVE_ALBUMART
+    /* Config-file only (lang_id -1, no menu entry): a theme sets these. Defaults
+     * on. A theme whose list config doesn't draw the %La cover should set it off
+     * in its .cfg, otherwise its album rows still grow to the tall height (just
+     * with no cover in them). */
+    OFFON_SETTING(F_THEMESETTING, db_albumart, -1, true, "database album art",
+                  NULL),
+    {F_T_INT|F_THEMESETTING, &global_settings.db_albumart_height, -1,
+        INT(52), "database album art row height", UNUSED},
+#endif
 #endif /* HAVE_TAGCACHE */
 #ifndef HAVE_WHEEL_ACCELERATION
     INT_SETTING(F_TIME_SETTING, list_accel_start_delay, LANG_LISTACCEL_START_DELAY,

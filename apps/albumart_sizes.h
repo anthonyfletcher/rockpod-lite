@@ -24,14 +24,17 @@
 
 /* How a source image is fitted into the square NxN thumbnail.
  *
- * AA_FIT_CONTAIN : scale to fit inside NxN preserving aspect (letterbox).
- *                  Square sources come out exactly NxN.
- * AA_FIT_COVER   : scale so the shorter side == N, then centre-crop the
- *                  longer side to N (fills the square, crops non-square art).
+ * AA_FIT_CONTAIN : scale to fit inside NxN preserving aspect (letterbox). The
+ *                  cached image is therefore NOT square for non-square sources;
+ *                  its real dimensions are in the cache header.
+ * AA_FIT_COVER   : scale so the shorter side == N, then centre-crop the longer
+ *                  side to N. Always yields exactly NxN, cropping non-square art.
  *
- * NOTE: AA_FIT_COVER is not implemented yet -- the generator currently treats
- * every size as CONTAIN. The enum value exists so the table and consumers can
- * already express the intent; COVER is a focused follow-up.
+ * COVER needs a non-square intermediate (N x N*aspect) before the crop, so it is
+ * only applied while the source's aspect ratio is within
+ * ALBUMART_CACHE_COVER_MAX_ASPECT; a more elongated source falls back to CONTAIN
+ * rather than blow up the decode work buffer. Album art beyond 2:1 is vanishingly
+ * rare, so raise the cap only if you actually hit it (it costs work-buffer bytes).
  */
 enum albumart_fit
 {
@@ -52,11 +55,18 @@ struct albumart_size
 static const struct albumart_size albumart_sizes[] =
 {
     { "coverflow", 128, AA_FIT_COVER   },
-    /* Add more sizes here once something actually consumes them (e.g. a list
-     * thumbnail: { "list", 32, AA_FIT_COVER }). NOTE: each extra size means an
-     * extra source-image decode per album during generation, so only enable a
-     * size when there's a consumer -- ideally generate the largest size first
-     * and downscale the smaller ones from it rather than re-decoding. */
+    { "list",       48, AA_FIT_COVER   },   /* database album rows (tree.c) */
+    /* Add more sizes here once something actually consumes them.
+     *
+     * NOTE: each extra size costs one more source decode per album. Do NOT
+     * "optimise" that by generating the largest size first and downscaling the
+     * smaller ones from it: on downscale the image pipeline selects the
+     * area-average scalers (scale_h_area/scale_v_area, apps/recorder/resize.c),
+     * i.e. a true box filter, so scaling straight from the source is already
+     * both correct and alias-free. Chaining would resample an already-resampled
+     * grid and compound the error -- it would trade quality for decode time, not
+     * gain detail. Chain only if generation time actually becomes a problem, and
+     * do it knowing that's the trade. */
 };
 
 #define ALBUMART_CACHE_NUM_SIZES \
@@ -64,5 +74,10 @@ static const struct albumart_size albumart_sizes[] =
 
 /* Must be >= the largest 'dim' in albumart_sizes[] above. */
 #define ALBUMART_CACHE_MAX_DIM 128
+
+/* Widest source aspect ratio AA_FIT_COVER will crop; beyond this the size falls
+ * back to CONTAIN. Sizes the decode work buffer (see aa_run_pass()), so raising
+ * it costs memory during cache generation. */
+#define ALBUMART_CACHE_COVER_MAX_ASPECT 2
 
 #endif /* _ALBUMART_SIZES_H_ */

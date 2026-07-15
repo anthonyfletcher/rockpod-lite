@@ -73,6 +73,20 @@ typedef const struct bitmap * list_get_albumart(int selected_item, void * data,
                                                 struct dim *size);
 #endif
 /*
+ * Row height callback (optional; NULL == every row is default_height, which is
+ * what every list did before this existed).
+ *  - selected_item : the item whose row height is wanted
+ *  - data : a void pointer to the data you gave to the list when you
+ *           initialized it
+ *  - default_height : the uniform height the list would otherwise use (the
+ *           viewport font's height). Return this for an ordinary text row.
+ *  Returns the row's height in pixels; values < 1 are clamped to 1.
+ *  Note: the list sums these to lay out, scroll and draw, so it is called often
+ *        (several times per item per frame). Keep it cheap and side-effect free.
+ */
+typedef int list_get_item_height(int selected_item, void * data,
+                                 int default_height);
+/*
  * Text callback
  *  - selected_item : an integer that tells the number of the item to display
  *  - data : a void pointer to the data you gave to the list when you
@@ -183,6 +197,8 @@ struct gui_synclist
 #ifdef HAVE_ALBUMART
     list_get_albumart *callback_get_item_albumart;
 #endif
+    /* NULL == uniform rows of line_height (the default) */
+    list_get_item_height *callback_get_item_height;
     list_get_name *callback_get_item_name;
     list_speak_item *callback_speak_item;
     list_draw_item *callback_draw_item;
@@ -218,6 +234,12 @@ extern void gui_synclist_set_nb_items(struct gui_synclist * lists, int nb_items)
 extern void gui_synclist_set_icon_callback(struct gui_synclist * lists, list_get_icon icon_callback);
 #ifdef HAVE_ALBUMART
 extern void gui_synclist_set_albumart_callback(struct gui_synclist * lists, list_get_albumart albumart_callback);
+/* NULL restores uniform rows. */
+extern void gui_synclist_set_item_height_callback(struct gui_synclist * lists,
+                                          list_get_item_height height_callback);
+/* Height of one row, honouring the callback if there is one. */
+int list_item_height(struct gui_synclist *list, enum screen_type screen,
+                     int item);
 #endif
 extern void gui_synclist_set_voice_callback(struct gui_synclist * lists, list_speak_item voice_callback);
 extern void gui_synclist_set_viewport_defaults(struct viewport *vp, enum screen_type screen);
@@ -262,10 +284,19 @@ int skinlist_get_item_column(void);
 enum themable_icons skinlist_get_item_icon(int offset, bool wrap);
 #ifdef HAVE_ALBUMART
 const struct bitmap* skinlist_get_item_albumart(int offset, bool wrap, struct dim *size);
+/* True when the current skinned row is one drawn taller than the list config's
+ * pitch (an album-art row). Backs the %?La conditional. */
+bool skinlist_item_is_art_row(enum screen_type screen, int offset, bool wrap);
 #endif
 bool skinlist_needs_scrollbar(enum screen_type screen);
 void skinlist_get_scrollbar(int* nb_item, int* first_shown, int* last_shown);
 int skinlist_get_line_count(enum screen_type screen, struct gui_synclist *list);
+/* True when a skin-configured list is laying items out as a grid, which is
+ * uniform by construction and so cannot honour per-item heights. */
+bool skinlist_is_tile_mode(enum screen_type screen);
+/* The skin's own row pitch (%Lb) when a non-tiled skinned list is drawing
+ * `list`; -1 otherwise, so the caller falls back to the font height. */
+int skinlist_row_height(enum screen_type screen, struct gui_synclist *list);
 #endif /* !PLUGIN) */
 
 

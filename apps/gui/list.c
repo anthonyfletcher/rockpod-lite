@@ -107,20 +107,86 @@ static int list_nb_lines(struct gui_synclist *list, enum screen_type screen)
 
 bool list_display_title(struct gui_synclist *list, enum screen_type screen)
 {
+    /* Deliberately the *uniform* line count: this asks "is the viewport tall
+     * enough to spare a row for a title", which is about text rows, not about
+     * however tall the items happen to be. */
     return list->title != NULL &&
         !sb_set_title_text(list->title, list->title_icon, screen) &&
         list_nb_lines(list, screen) > 2;
 }
 
+int list_item_height(struct gui_synclist *list, enum screen_type screen,
+                     int item)
+{
+    /* The pitch this list would use with no callback at all. For a skinned list
+     * that is the skin's own row height (%Lb), NOT the font height: the theme
+     * draws its row decoration to fill that pitch, so handing the callback a
+     * font-sized "default" makes an ordinary row come out shorter than the skin
+     * designed it, clipping the decoration and letting the next row start early. */
+    int h = skinlist_row_height(screen, list);
+    if (h < 1)
+        h = list->line_height[screen];
+
+    if (list->callback_get_item_height)
+    {
+        h = list->callback_get_item_height(item, list->data, h);
+        /* a zero/negative pitch would make the layout loops below spin forever */
+        if (h < 1)
+            h = 1;
+    }
+    return h;
+}
+
+/* Pixels the items themselves get: the parent viewport, less the title row when
+ * the list draws its own title. A skin-configured list draws items across the
+ * whole parent (the SBS owns its title), so nothing is reserved there. */
+static int list_items_avail_height(struct gui_synclist *list,
+                                   enum screen_type screen)
+{
+    int h = list->parent[screen]->height;
+    if (skinlist_get_line_count(screen, list) < 0 &&
+        list_display_title(list, screen))
+    {
+        h -= list->line_height[screen];
+    }
+    return h;
+}
+
+/* How many items, starting at `start`, fit in `avail` pixels. At least 1, so a
+ * row taller than the viewport still renders (clipped) instead of wedging the
+ * list at zero visible items. */
+static int list_items_fitting(struct gui_synclist *list, enum screen_type screen,
+                              int start, int avail)
+{
+    int n = 0, used = 0;
+
+    while (start + n < list->nb_items)
+    {
+        int h = list_item_height(list, screen, start + n);
+        if (used + h > avail)
+            break;
+        used += h;
+        n++;
+    }
+    return n > 0 ? n : 1;
+}
+
 int list_get_nb_lines(struct gui_synclist *list, enum screen_type screen)
 {
     int lines = skinlist_get_line_count(screen, list);
-    if (lines < 0)
+    if (lines >= 0)
+        return lines;
+
+    if (list->callback_get_item_height)
     {
-        lines = list_nb_lines(list, screen);
-        if (list_display_title(list, screen))
-            lines -= 1;
+        /* rows differ, so "how many fit" depends on where we start */
+        return list_items_fitting(list, screen, list->start_item[screen],
+                                  list_items_avail_height(list, screen));
     }
+
+    lines = list_nb_lines(list, screen);
+    if (list_display_title(list, screen))
+        lines -= 1;
     return lines;
 }
 
@@ -163,6 +229,7 @@ void gui_synclist_init(struct gui_synclist * gui_list,
 {
     gui_list->callback_get_item_icon = NULL;
     gui_list->callback_get_item_name = callback_get_item_name;
+    gui_list->callback_get_item_height = NULL;   /* uniform rows */
     gui_list->callback_speak_item = NULL;
     gui_list->callback_draw_item = NULL;
     gui_list->nb_items = 0;
@@ -242,11 +309,59 @@ void gui_synclist_draw(struct gui_synclist *gui_list)
     }
 }
 
+/* Variable-height version: the item arithmetic below assumes a constant number
+ * of visible items, which stops being true once rows differ. Instead walk up
+ * from the selection accumulating heights to find the highest start_item that
+ * still leaves the selection fully visible, then move start_item the minimum
+ * distance into the legal range [first, selected].
+ *
+ * Note this drops the one-row-of-context lookahead (scroll_limit_up/down) the
+ * uniform path has: the selection can sit hard against the top or bottom edge.
+ * Worth revisiting once it's been used. */
+static void gui_list_put_selection_on_screen_var(struct gui_synclist * gui_list,
+                                                 enum screen_type screen)
+{
+    int avail = list_items_avail_height(gui_list, screen);
+    int sel = gui_list->selected_item;
+    int start = gui_list->start_item[screen];
+    int used = 0;
+    int first = sel;
+    int i;
+
+    for (i = sel; i >= 0; i--)
+    {
+        int h = list_item_height(gui_list, screen, i);
+        if (used + h > avail)
+            break;
+        used += h;
+        first = i;
+    }
+
+    if (start < first)          /* selection below the window: scroll down */
+        start = first;
+    if (start > sel)            /* selection above the window: scroll up   */
+        start = sel;
+    if (start < 0)
+        start = 0;
+
+    gui_list->start_item[screen] = start;
+}
+
 /* sets up the list so the selection is shown correctly on the screen */
 static void gui_list_put_selection_on_screen(struct gui_synclist * gui_list,
                                              enum screen_type screen)
 {
-    int nb_lines = list_get_nb_lines(gui_list, screen);
+    int nb_lines;
+
+    /* Both renderers honour per-item heights, except a skinned list in tile mode
+     * -- a grid is uniform by construction, so scroll it the item-wise way. */
+    if (gui_list->callback_get_item_height && !skinlist_is_tile_mode(screen))
+    {
+        gui_list_put_selection_on_screen_var(gui_list, screen);
+        return;
+    }
+
+    nb_lines = list_get_nb_lines(gui_list, screen);
     int bottom = MAX(0, gui_list->nb_items - nb_lines);
     int new_start_item = gui_list->start_item[screen];
     int difference = gui_list->selected_item - gui_list->start_item[screen];
@@ -473,6 +588,12 @@ void gui_synclist_set_albumart_callback(struct gui_synclist * lists,
     lists->callback_get_item_albumart = albumart_callback;
 }
 #endif
+
+void gui_synclist_set_item_height_callback(struct gui_synclist * lists,
+                                           list_get_item_height height_callback)
+{
+    lists->callback_get_item_height = height_callback;
+}
 
 void gui_synclist_set_voice_callback(struct gui_synclist * lists,
                                      list_speak_item voice_callback)

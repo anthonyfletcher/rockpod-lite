@@ -29,7 +29,13 @@
  * (fb_data) pixels in ROW-MAJOR order. Exposed so consumers (e.g. Cover Flow)
  * can read a cached thumbnail directly. */
 #define ALBUMART_CACHE_MAGIC          0x5441u  /* 'AT' */
-#define ALBUMART_CACHE_FORMAT_VERSION 1
+/* Bump whenever the cached pixels' meaning changes (format, geometry, fit rule).
+ * aa_check_format_version() purges the thumbnails when this moves, so a stale
+ * cache regenerates instead of being skipped by the generator (bare file_exists)
+ * while the reader rejects it as the wrong version.
+ *   1 -> 2: AA_FIT_COVER implemented; "coverflow" thumbs are now centre-cropped
+ *           squares rather than letterboxed CONTAIN fits. */
+#define ALBUMART_CACHE_FORMAT_VERSION 2
 
 struct albumart_cache_header
 {
@@ -56,11 +62,16 @@ void albumart_cache_init(void);
 bool albumart_cache_is_busy(void);
 
 /* Resolve the cache-file path for a given album folder and size index.
- * Returns true and fills 'out' if a cached thumbnail file exists, false
- * otherwise. 'dir' is the album's folder path (the directory containing the
- * track), with no trailing slash -- the same key generation uses. */
+ * Returns true and fills 'out' if a thumbnail is available, false otherwise.
+ * 'dir' is the album's folder path (the directory containing the track), with no
+ * trailing slash -- the same key generation uses.
+ *
+ * When the folder has no real art, the shared placeholder thumbnail is returned
+ * instead (if generated), so callers get a valid thumbnail without managing a
+ * "missing art" case. 'is_fallback' (may be NULL) is set true in that case, so a
+ * caller that wants to prefer another source (e.g. embedded ID3 art) still can. */
 bool albumart_cache_lookup(const char *dir, int size_index,
-                           char *out, int out_len);
+                           char *out, int out_len, bool *is_fallback);
 
 /* Number of configured thumbnail sizes, and accessors for each. */
 int         albumart_cache_num_sizes(void);

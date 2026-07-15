@@ -42,6 +42,7 @@
 #include "tagcache.h"
 #include "lcd.h"
 #include "bmp.h"
+#include "bitmaps/no_album_cover.h" /* compiled-in placeholder for aa_ensure_fallback */
 #ifdef HAVE_JPEG
 #include "jpeg_load.h"
 #endif
@@ -55,6 +56,7 @@
 #include "logf.h"
 
 #define THUMBCACHE_DIR ROCKBOX_DIR "/thumbcache"
+#define AA_VERSION_FILE THUMBCACHE_DIR "/format.txt"
 
 /* On-disk thumbnail format (struct albumart_cache_header + row-major native
  * pixels) is declared in albumart_cache.h so consumers can read it. A
@@ -150,13 +152,38 @@ static void aa_cache_path(char *out, int out_len, int size_index,
              albumart_sizes[size_index].name, arthash);
 }
 
-bool albumart_cache_lookup(const char *dir, int size_index,
-                           char *out, int out_len)
+/* The shared placeholder thumbnail for a size. The "_" prefix cannot collide
+ * with an %08x hash filename, so it lives alongside the real thumbnails. */
+static void aa_fallback_path(char *out, int out_len, int size_index)
 {
+    snprintf(out, out_len, THUMBCACHE_DIR "/%s/_fallback.aat",
+             albumart_sizes[size_index].name);
+}
+
+bool albumart_cache_lookup(const char *dir, int size_index,
+                           char *out, int out_len, bool *is_fallback)
+{
+    if (is_fallback)
+        *is_fallback = false;
     if (!dir || size_index < 0 || size_index >= ALBUMART_CACHE_NUM_SIZES)
         return false;
+
     aa_cache_path(out, out_len, size_index, aa_hash(dir));
-    return file_exists(out);
+    if (file_exists(out))
+        return true;
+
+    /* No real art for this folder -- hand back the placeholder so callers don't
+     * each have to draw their own "missing art" state. Absent until the cache
+     * has generated it (early boot), in which case this returns false and the
+     * caller falls back to whatever it did before. */
+    aa_fallback_path(out, out_len, size_index);
+    if (file_exists(out))
+    {
+        if (is_fallback)
+            *is_fallback = true;
+        return true;
+    }
+    return false;
 }
 
 static void aa_ensure_dirs(void)
@@ -168,6 +195,75 @@ static void aa_ensure_dirs(void)
     {
         snprintf(p, sizeof(p), THUMBCACHE_DIR "/%s", albumart_sizes[i].name);
         mkdir(p);
+    }
+}
+
+/* Delete every cached thumbnail of every size (the directories themselves stay).
+ * Used only when the on-disk format changes. */
+static void aa_purge_thumbs(void)
+{
+    int i;
+    char dirpath[MAX_PATH];
+    char filepath[MAX_PATH];
+
+    for (i = 0; i < ALBUMART_CACHE_NUM_SIZES; i++)
+    {
+        DIR *d;
+        struct dirent *e;
+
+        snprintf(dirpath, sizeof(dirpath), THUMBCACHE_DIR "/%s",
+                 albumart_sizes[i].name);
+        d = opendir(dirpath);
+        if (!d)
+            continue;
+
+        while ((e = readdir(d)))
+        {
+            if (e->d_name[0] == '.')
+                continue;
+            snprintf(filepath, sizeof(filepath), "%s/%s", dirpath, e->d_name);
+            remove(filepath);
+            yield();
+        }
+        closedir(d);
+    }
+}
+
+/* The generator decides "already cached?" with a bare file_exists(), and the
+ * reader rejects any file whose header version doesn't match. So on a format
+ * bump the stale files would be skipped forever *and* refused at render time -
+ * every cover would silently go blank. Stamp the format version alongside the
+ * cache and purge the thumbnails whenever it moves. */
+static void aa_check_format_version(void)
+{
+    char buf[16];
+    int fd, n, ver = -1;
+
+    fd = open(AA_VERSION_FILE, O_RDONLY);
+    if (fd >= 0)
+    {
+        n = read(fd, buf, sizeof(buf) - 1);
+        if (n > 0)
+        {
+            buf[n] = '\0';
+            ver = atoi(buf);
+        }
+        close(fd);
+    }
+
+    if (ver == ALBUMART_CACHE_FORMAT_VERSION)
+        return;
+
+    logf("albumart cache: format %d -> %d, purging", ver,
+         ALBUMART_CACHE_FORMAT_VERSION);
+    aa_purge_thumbs();
+
+    fd = open(AA_VERSION_FILE, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (fd >= 0)
+    {
+        n = snprintf(buf, sizeof(buf), "%d\n", ALBUMART_CACHE_FORMAT_VERSION);
+        write(fd, buf, n);
+        close(fd);
     }
 }
 
@@ -204,64 +300,229 @@ static bool aa_seen(unsigned int *seen, unsigned int h)
     return true; /* table full -> treat as present */
 }
 
-/* Decode/scale the source art into a square thumbnail and write it. The
- * source is fitted (aspect preserved) inside dim x dim; square sources fill
- * the square exactly. Returns true on success. */
-static bool aa_generate_one(const char *art_path, int size_index,
-                            unsigned int key, void *workbuf, size_t workbuf_sz)
+/* Read the source image into `bm` with `fmt`, requesting a `w` x `h` target (the
+ * readers treat that as the resize target, or overwrite it with the source's own
+ * dimensions when `fmt` carries no FORMAT_RESIZE). `art_path`'s extension picks
+ * the decoder, matching the rest of the cache. Returns the reader's result. */
+static int aa_read_source(const char *art_path, struct bitmap *bm, int fmt,
+                          int w, int h, void *workbuf, size_t workbuf_sz)
 {
-    int dim = albumart_sizes[size_index].dim;
-    struct bitmap bm;
-    int fmt = FORMAT_NATIVE | FORMAT_RESIZE | FORMAT_KEEP_ASPECT | FORMAT_DITHER;
-    int ret;
     size_t namelen = strlen(art_path);
-    int fd;
-    struct albumart_cache_header hdr;
-    bool ok;
-    size_t bytes;
 
-    memset(&bm, 0, sizeof(bm));
-    bm.data = workbuf;
-    bm.width = dim;
-    bm.height = dim;
+    memset(bm, 0, sizeof(*bm));
+    bm->data = workbuf;
+    bm->width = w;
+    bm->height = h;
 #if LCD_DEPTH > 1
-    bm.format = FORMAT_NATIVE;
+    bm->format = FORMAT_NATIVE;
 #endif
 
     if (namelen >= 4 && strcmp(art_path + namelen - 4, ".bmp") != 0)
     {
 #ifdef HAVE_JPEG
-        ret = read_jpeg_file(art_path, &bm, (int)workbuf_sz, fmt, NULL);
+        return read_jpeg_file(art_path, bm, (int)workbuf_sz, fmt, NULL);
 #else
-        return false;
+        return -1;
 #endif
+    }
+    return read_bmp_file(art_path, bm, (int)workbuf_sz, fmt, NULL);
+}
+
+/* Target size for an AA_FIT_COVER decode: scale so the SHORTER side lands on
+ * exactly `dim`, leaving the longer side >= dim to be cropped away. False if the
+ * source is too elongated to stage in the work buffer (caller falls back to
+ * CONTAIN) or its dimensions are nonsense. */
+static bool aa_cover_dim(int sw, int sh, int dim, int *tw, int *th)
+{
+    if (sw <= 0 || sh <= 0)
+        return false;
+
+    if (sw <= sh)
+    {
+        *tw = dim;
+        *th = (sh * dim + sw / 2) / sw;     /* rounded; >= dim */
     }
     else
     {
-        ret = read_bmp_file(art_path, &bm, (int)workbuf_sz, fmt, NULL);
+        *th = dim;
+        *tw = (sw * dim + sh / 2) / sh;
     }
 
-    if (ret <= 0 || bm.width <= 0 || bm.height <= 0)
-        return false;
+    /* rounding must never leave the short side under dim -- the crop below
+     * assumes both sides are at least dim */
+    if (*tw < dim)
+        *tw = dim;
+    if (*th < dim)
+        *th = dim;
 
-    aa_cache_path(aa_out_path, sizeof(aa_out_path), size_index, key);
-    fd = open(aa_out_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    return *tw <= dim * ALBUMART_CACHE_COVER_MAX_ASPECT &&
+           *th <= dim * ALBUMART_CACHE_COVER_MAX_ASPECT;
+}
+
+/* Centre-crop a tw x th image down to dim x dim, in place. Each output row sits
+ * at or before its source row (dim <= tw), so copying front-to-back is safe. */
+static void aa_crop_center(void *buf, int tw, int th, int dim)
+{
+    fb_data *px = buf;
+    int x0 = (tw - dim) / 2;
+    int y0 = (th - dim) / 2;
+    int y;
+
+    for (y = 0; y < dim; y++)
+        memmove(px + (size_t)y * dim,
+                px + (size_t)(y + y0) * tw + x0,
+                (size_t)dim * FB_DATA_SZ);
+}
+
+/* Write a native (row-major fb_data) bitmap to a .aat file: the shared header
+ * followed by the pixels. Removes the file on a short write. */
+static bool aa_write_aat(const char *out_path, const struct bitmap *bm)
+{
+    struct albumart_cache_header hdr;
+    size_t bytes;
+    bool ok;
+    int fd = open(out_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (fd < 0)
         return false;
 
     hdr.magic = ALBUMART_CACHE_MAGIC;
     hdr.version = ALBUMART_CACHE_FORMAT_VERSION;
-    hdr.width = bm.width;
-    hdr.height = bm.height;
-    bytes = (size_t)bm.width * bm.height * FB_DATA_SZ;
+    hdr.width = bm->width;
+    hdr.height = bm->height;
+    bytes = (size_t)bm->width * bm->height * FB_DATA_SZ;
 
     ok = (write(fd, &hdr, sizeof(hdr)) == (ssize_t)sizeof(hdr)) &&
-         (write(fd, bm.data, bytes) == (ssize_t)bytes);
+         (write(fd, bm->data, bytes) == (ssize_t)bytes);
     close(fd);
 
     if (!ok)
-        remove(aa_out_path);
+        remove(out_path);
     return ok;
+}
+
+/* Decode/scale the source art into a thumbnail and write it.
+ *
+ * CONTAIN: fitted (aspect preserved) inside dim x dim, so the cached image is
+ * only square when the source is.
+ * COVER:   decoded to the cover size (shorter side == dim) and centre-cropped to
+ * exactly dim x dim. A source wider than ALBUMART_CACHE_COVER_MAX_ASPECT falls
+ * back to CONTAIN rather than overrun the work buffer.
+ *
+ * Returns true on success. */
+static bool aa_generate_one(const char *art_path, int size_index,
+                            const char *out_path, void *workbuf,
+                            size_t workbuf_sz)
+{
+    int dim = albumart_sizes[size_index].dim;
+    bool cover = albumart_sizes[size_index].fit == AA_FIT_COVER;
+    struct bitmap bm;
+    int fmt = FORMAT_NATIVE | FORMAT_RESIZE | FORMAT_DITHER;
+    int tw = dim, th = dim;
+    int ret;
+
+    if (cover)
+    {
+        /* Header-only probe: with no FORMAT_RESIZE the readers report the
+         * source's own dimensions, and FORMAT_RETURN_SIZE stops them decoding
+         * any pixels. */
+        ret = aa_read_source(art_path, &bm, FORMAT_NATIVE | FORMAT_RETURN_SIZE,
+                             dim, dim, workbuf, workbuf_sz);
+        if (ret <= 0 || !aa_cover_dim(bm.width, bm.height, dim, &tw, &th))
+        {
+            cover = false;      /* unreadable header, or too elongated to crop */
+            tw = th = dim;
+        }
+    }
+
+    /* KEEP_ASPECT is what makes a decode CONTAIN: it shrinks the requested box
+     * to the source's aspect. COVER instead asks for the exact cover size it
+     * computed above, so the decode must NOT keep aspect. */
+    if (!cover)
+        fmt |= FORMAT_KEEP_ASPECT;
+
+    ret = aa_read_source(art_path, &bm, fmt, tw, th, workbuf, workbuf_sz);
+
+    if (ret <= 0 || bm.width <= 0 || bm.height <= 0)
+        return false;
+
+    /* the decode should have landed on exactly tw x th, but never crop from an
+     * image smaller than the crop window -- write what we got instead */
+    if (cover && bm.width >= dim && bm.height >= dim)
+    {
+        aa_crop_center(bm.data, bm.width, bm.height, dim);
+        bm.width = dim;
+        bm.height = dim;
+    }
+
+    return aa_write_aat(out_path, &bm);
+}
+
+#if LCD_DEPTH > 1
+/* Area-average downscale of a native (fb_data) image. Used only for the
+ * compiled-in placeholder, so it needs no upscale or aspect handling: the source
+ * is square and always larger than the thumbnail sizes. */
+static void aa_scale_native(const fb_data *src, int sw, int sh,
+                            fb_data *dst, int dw, int dh)
+{
+    for (int dy = 0; dy < dh; dy++)
+    {
+        int sy0 = dy * sh / dh, sy1 = (dy + 1) * sh / dh;
+        if (sy1 <= sy0)
+            sy1 = sy0 + 1;
+        for (int dx = 0; dx < dw; dx++)
+        {
+            int sx0 = dx * sw / dw, sx1 = (dx + 1) * sw / dw;
+            unsigned r = 0, g = 0, b = 0, n = 0;
+            if (sx1 <= sx0)
+                sx1 = sx0 + 1;
+            for (int sy = sy0; sy < sy1; sy++)
+                for (int sx = sx0; sx < sx1; sx++)
+                {
+                    fb_data p = src[sy * sw + sx];
+                    r += RGB_UNPACK_RED(p);
+                    g += RGB_UNPACK_GREEN(p);
+                    b += RGB_UNPACK_BLUE(p);
+                    n++;
+                }
+            dst[dy * dw + dx] = LCD_RGBPACK(r / n, g / n, b / n);
+        }
+    }
+}
+#endif
+
+/* Render the compiled-in placeholder (apps/bitmaps/native/no_album_cover.bmp,
+ * linked in as no_album_cover) into each size's _fallback.aat, once. Cheap in
+ * steady state (a file_exists per size); regenerated after a format bump because
+ * the purge removes it. The source is square, so COVER == a plain downscale. */
+static void aa_ensure_fallback(void *workbuf, size_t workbuf_sz)
+{
+#if LCD_DEPTH > 1
+    int s;
+    char path[MAX_PATH];
+    (void)workbuf_sz;
+
+    for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
+    {
+        int dim = albumart_sizes[s].dim;
+        struct bitmap bm;
+
+        aa_fallback_path(path, sizeof(path), s);
+        if (file_exists(path))
+            continue;
+
+        aa_scale_native((const fb_data *)no_album_cover,
+                        BMPWIDTH_no_album_cover, BMPHEIGHT_no_album_cover,
+                        (fb_data *)workbuf, dim, dim);
+        bm.data = workbuf;
+        bm.width = dim;
+        bm.height = dim;
+        bm.format = FORMAT_NATIVE;
+        aa_write_aat(path, &bm);
+        yield();
+    }
+#else
+    (void)workbuf; (void)workbuf_sz;
+#endif
 }
 
 /* True if the pass should stop right now: a USB connection or shutdown is
@@ -296,8 +557,13 @@ static bool aa_run_pass(void)
     bool aborted = false;
     int since_yield = 0;
 
-    worksz = BM_SCALED_SIZE(ALBUMART_CACHE_MAX_DIM, ALBUMART_CACHE_MAX_DIM,
-                            FORMAT_NATIVE, 0);
+    /* An AA_FIT_COVER decode stages a non-square image (shorter side == dim,
+     * longer side up to dim * COVER_MAX_ASPECT) before cropping it square, so
+     * the buffer is sized for that worst case. Elongation on the other axis has
+     * the same pixel count and a narrower row, so this covers both. */
+    worksz = BM_SCALED_SIZE(ALBUMART_CACHE_MAX_DIM *
+                                ALBUMART_CACHE_COVER_MAX_ASPECT,
+                            ALBUMART_CACHE_MAX_DIM, FORMAT_NATIVE, 0);
 #ifdef HAVE_JPEG
     worksz += JPEG_DECODE_OVERHEAD;
 #endif
@@ -318,6 +584,8 @@ static bool aa_run_pass(void)
     memset(seen, 0, AA_SEEN_SLOTS * sizeof(unsigned int));
 
     aa_ensure_dirs();
+    aa_check_format_version();
+    aa_ensure_fallback(workbuf, worksz);
 
     if (!tagcache_search(&tcs, tag_filename))
     {
@@ -392,7 +660,8 @@ static bool aa_run_pass(void)
                 aborted = true;
                 break;
             }
-            aa_generate_one(aa_artpath, s, dh, workbuf, worksz);
+            aa_cache_path(aa_out_path, sizeof(aa_out_path), s, dh);
+            aa_generate_one(aa_artpath, s, aa_out_path, workbuf, worksz);
             yield();
         }
         if (aborted)

@@ -48,6 +48,9 @@
 #include "bookmark.h"
 #include "onplay.h"
 #include "core_alloc.h"
+#ifdef HAVE_ALBUMART
+#include "albumart_cache.h"
+#endif
 #include "power.h"
 #include "action.h"
 #include "talk.h"
@@ -202,15 +205,139 @@ static enum themable_icons tree_get_fileicon(int selected_item, void * data)
 }
 
 #ifdef HAVE_ALBUMART
+/* Album art for database album rows, drawn by the skin's %La tag.
+ *
+ * Resolving one row costs a tagcache search (tagtree_get_album_dir) plus a file
+ * read, and the skin asks for every visible row on every redraw -- so a few
+ * decoded thumbnails are kept, keyed by list item, and thrown away whenever the
+ * list reloads. A miss simply returns NULL: thumbnails are produced in the
+ * background, so a row just has no cover until the cache catches up. */
+#define TREE_AA_SLOTS 8
+
+static int tree_aa_size_idx = -2;   /* -2 == not looked up, -1 == no such size */
+static int tree_aa_handle = -1;     /* pixel store for the slots */
+static int tree_aa_dim;
+static int tree_aa_item[TREE_AA_SLOTS];  /* item cached in each slot, -1 empty */
+static int tree_aa_victim;               /* round-robin replacement */
+static struct bitmap tree_aa_bm;         /* handed back; points into the store */
+
+static void tree_aa_reset(void)
+{
+    for (int i = 0; i < TREE_AA_SLOTS; i++)
+        tree_aa_item[i] = -1;
+    tree_aa_victim = 0;
+}
+
+static size_t tree_aa_slot_bytes(void)
+{
+    return (size_t)tree_aa_dim * tree_aa_dim * FB_DATA_SZ;
+}
+
+static bool tree_aa_ready(void)
+{
+    if (tree_aa_size_idx == -2)
+    {
+        tree_aa_size_idx = albumart_cache_size_index("list");
+        if (tree_aa_size_idx >= 0)
+            tree_aa_dim = albumart_cache_size_dim(tree_aa_size_idx);
+    }
+    if (tree_aa_size_idx < 0)
+        return false;
+
+    if (tree_aa_handle <= 0)
+    {
+        tree_aa_handle = core_alloc(TREE_AA_SLOTS * tree_aa_slot_bytes());
+        if (tree_aa_handle <= 0)
+            return false;   /* no memory right now; try again next redraw */
+        tree_aa_reset();
+    }
+    return true;
+}
+
+/* Read a cached thumbnail into `slot`: a small header followed by row-major
+ * native pixels (see albumart_cache.h). The read yields, so the store is pinned
+ * across it rather than trusting a pointer taken beforehand. */
+static bool tree_aa_load(const char *path, int slot)
+{
+    struct albumart_cache_header hdr;
+    size_t bytes = tree_aa_slot_bytes();
+    bool ok = false;
+    int fd = open(path, O_RDONLY);
+
+    if (fd < 0)
+        return false;
+
+    if (read(fd, &hdr, sizeof(hdr)) == (ssize_t)sizeof(hdr) &&
+        hdr.magic == ALBUMART_CACHE_MAGIC &&
+        hdr.version == ALBUMART_CACHE_FORMAT_VERSION &&
+        hdr.width == tree_aa_dim && hdr.height == tree_aa_dim)
+    {
+        char *store = core_get_data_pinned(tree_aa_handle);
+        ok = read(fd, store + (size_t)slot * bytes, bytes) == (ssize_t)bytes;
+        core_put_data_pinned(store);
+    }
+
+    close(fd);
+    return ok;
+}
+
 static const struct bitmap *tree_get_albumart(int selected_item, void * data,
                                               struct dim *size)
 {
-    (void)selected_item;
-    (void)data;
-    (void)size;
-    return NULL;
+    struct tree_context *local_tc = (struct tree_context *)data;
+    char dir[MAX_PATH];
+    char aat[MAX_PATH];
+    int slot;
+
+    (void)size;   /* we always hand back dim x dim; the skin clips to its viewport */
+
+    if (selected_item < local_tc->special_entry_count || !tree_aa_ready())
+        return NULL;
+
+    for (slot = 0; slot < TREE_AA_SLOTS; slot++)
+        if (tree_aa_item[slot] == selected_item)
+            goto hit;
+
+    /* is_fallback NULL: we want the placeholder returned transparently, so an
+     * album with no cover still fills its viewport (no bare "missing art" box). */
+    if (!tagtree_get_album_dir(local_tc, selected_item, dir, sizeof(dir)) ||
+        !albumart_cache_lookup(dir, tree_aa_size_idx, aat, sizeof(aat), NULL))
+    {
+        return NULL;    /* no art and no placeholder generated yet */
+    }
+
+    slot = tree_aa_victim;
+    tree_aa_victim = (tree_aa_victim + 1) % TREE_AA_SLOTS;
+    tree_aa_item[slot] = -1;    /* in case the load fails partway */
+
+    if (!tree_aa_load(aat, slot))
+        return NULL;
+    tree_aa_item[slot] = selected_item;
+
+hit:
+    tree_aa_bm.width  = tree_aa_dim;
+    tree_aa_bm.height = tree_aa_dim;
+    tree_aa_bm.format = FORMAT_NATIVE;
+    tree_aa_bm.data   = (unsigned char *)core_get_data(tree_aa_handle) +
+                        (size_t)slot * tree_aa_slot_bytes();
+    return &tree_aa_bm;
 }
 #endif /* HAVE_ALBUMART */
+
+/* Tall rows for album lists in the database browser, so a cover fits. UNIFORM:
+ * every row (including the "All Tracks"/"Random" special entries) gets the same
+ * tall height, so the list has no mix of heights -- the special rows render with
+ * the same [image] name layout as albums (icon instead of a cover), which keeps
+ * the skin simple and avoids the special-row boxes fighting the cover viewport.
+ * Only registered when db_albumart is on and this is an album list. */
+static int tree_get_item_height(int selected_item, void * data,
+                                int default_height)
+{
+    int h = global_settings.db_albumart_height;
+    (void)selected_item;
+    (void)data;
+    return h > default_height ? h : default_height;
+}
 
 static int tree_voice_cb(int selected_item, void * data)
 {
@@ -449,6 +576,12 @@ static int update_dir(void)
             changed = true;
         }
     }
+#ifdef HAVE_ALBUMART
+    /* the list's contents moved under us, so cached thumbnails (keyed by item
+     * index) no longer describe the rows they sit in */
+    if (changed)
+        tree_aa_reset();
+#endif
     /* if selected item is undefined */
     if (tc.selected_item == -1)
     {
@@ -529,9 +662,22 @@ static int update_dir(void)
     gui_synclist_set_nb_items(list, tc.filesindir);
     gui_synclist_set_icon_callback(list,
                             global_settings.show_icons?tree_get_fileicon:NULL);
-#ifdef HAVE_ALBUMART
-    gui_synclist_set_albumart_callback(list, tree_get_albumart);
+    /* Album art (cover callback + tall uniform rows) only on album lists, and
+     * only when the toggle is on -- so ordinary lists and the whole off path
+     * never touch the cover-resolution code. */
+    {
+        bool tall_rows = false;
+#if defined(HAVE_TAGCACHE) && defined(HAVE_ALBUMART)
+        tall_rows = global_settings.db_albumart &&
+                    *tc.dirfilter == SHOW_ID3DB && tagtree_is_album_list(&tc);
 #endif
+#ifdef HAVE_ALBUMART
+        gui_synclist_set_albumart_callback(list,
+                                    tall_rows ? tree_get_albumart : NULL);
+#endif
+        gui_synclist_set_item_height_callback(list,
+                                    tall_rows ? tree_get_item_height : NULL);
+    }
     gui_synclist_set_voice_callback(list, &tree_voice_cb);
 #ifdef HAVE_LCD_COLOR
     gui_synclist_set_color_callback(list, &tree_get_filecolor);
