@@ -47,6 +47,9 @@
 #include "jpeg_load.h"
 #endif
 #include "usb.h"
+#include "events.h"
+#include "appevents.h"
+#include "audio.h"
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
 #include "cpu.h"
 #endif
@@ -90,6 +93,20 @@ static char aa_artpath[MAX_PATH];
 static char aa_dir[MAX_PATH];
 static char aa_check_path[MAX_PATH];
 static char aa_out_path[MAX_PATH];
+
+/* Queue event id: the current track's embedded art was offered for caching. */
+#define AA_EVENT_OFFER 1
+
+/* Filled by the track-change hook (playback thread), consumed by the aa thread.
+ * Rockbox is cooperatively scheduled, so the two never run at once and no lock is
+ * needed; a newer offer simply supersedes one not yet processed. */
+static struct
+{
+    char          path[MAX_PATH];
+    off_t         pos;
+    unsigned long size;
+    int           flags;
+} aa_offer;
 
 bool albumart_cache_is_busy(void)
 {
@@ -300,15 +317,23 @@ static bool aa_seen(unsigned int *seen, unsigned int h)
     return true; /* table full -> treat as present */
 }
 
+/* Where an album-art image comes from: a file on disk (folder art), or a JPEG
+ * blob embedded in an audio file (emb_pos >= 0, reusing metadata already parsed
+ * by playback -- see albumart_cache_offer_current()). */
+struct aa_src
+{
+    const char   *path;      /* file to read: the folder image, or the track */
+    off_t         emb_pos;   /* embedded JPEG offset, or -1 for a whole file */
+    unsigned long emb_size;  /* embedded JPEG blob length (embedded only) */
+    int           emb_flags; /* embedded aa type/flags for clip_jpeg_fd */
+};
+
 /* Read the source image into `bm` with `fmt`, requesting a `w` x `h` target (the
  * readers treat that as the resize target, or overwrite it with the source's own
- * dimensions when `fmt` carries no FORMAT_RESIZE). `art_path`'s extension picks
- * the decoder, matching the rest of the cache. Returns the reader's result. */
-static int aa_read_source(const char *art_path, struct bitmap *bm, int fmt,
+ * dimensions when `fmt` carries no FORMAT_RESIZE). Returns the reader's result. */
+static int aa_read_source(const struct aa_src *src, struct bitmap *bm, int fmt,
                           int w, int h, void *workbuf, size_t workbuf_sz)
 {
-    size_t namelen = strlen(art_path);
-
     memset(bm, 0, sizeof(*bm));
     bm->data = workbuf;
     bm->width = w;
@@ -317,15 +342,35 @@ static int aa_read_source(const char *art_path, struct bitmap *bm, int fmt,
     bm->format = FORMAT_NATIVE;
 #endif
 
-    if (namelen >= 4 && strcmp(art_path + namelen - 4, ".bmp") != 0)
+    if (src->emb_pos >= 0)
     {
+        /* Embedded art -- always JPEG in Rockbox. lseek + clip_jpeg_fd is how
+         * the WPS decodes it, and it handles the ID3-unsync flag in emb_flags. */
 #ifdef HAVE_JPEG
-        return read_jpeg_file(art_path, bm, (int)workbuf_sz, fmt, NULL);
+        int fd = open(src->path, O_RDONLY);
+        int rc;
+        if (fd < 0)
+            return -1;
+        lseek(fd, src->emb_pos, SEEK_SET);
+        rc = clip_jpeg_fd(fd, src->emb_flags, src->emb_size, bm,
+                          (int)workbuf_sz, fmt, NULL);
+        close(fd);
+        return rc;
 #else
         return -1;
 #endif
     }
-    return read_bmp_file(art_path, bm, (int)workbuf_sz, fmt, NULL);
+
+    size_t namelen = strlen(src->path);
+    if (namelen >= 4 && strcmp(src->path + namelen - 4, ".bmp") != 0)
+    {
+#ifdef HAVE_JPEG
+        return read_jpeg_file(src->path, bm, (int)workbuf_sz, fmt, NULL);
+#else
+        return -1;
+#endif
+    }
+    return read_bmp_file(src->path, bm, (int)workbuf_sz, fmt, NULL);
 }
 
 /* Target size for an AA_FIT_COVER decode: scale so the SHORTER side lands on
@@ -409,7 +454,7 @@ static bool aa_write_aat(const char *out_path, const struct bitmap *bm)
  * back to CONTAIN rather than overrun the work buffer.
  *
  * Returns true on success. */
-static bool aa_generate_one(const char *art_path, int size_index,
+static bool aa_generate_one(const struct aa_src *src, int size_index,
                             const char *out_path, void *workbuf,
                             size_t workbuf_sz)
 {
@@ -425,7 +470,7 @@ static bool aa_generate_one(const char *art_path, int size_index,
         /* Header-only probe: with no FORMAT_RESIZE the readers report the
          * source's own dimensions, and FORMAT_RETURN_SIZE stops them decoding
          * any pixels. */
-        ret = aa_read_source(art_path, &bm, FORMAT_NATIVE | FORMAT_RETURN_SIZE,
+        ret = aa_read_source(src, &bm, FORMAT_NATIVE | FORMAT_RETURN_SIZE,
                              dim, dim, workbuf, workbuf_sz);
         if (ret <= 0 || !aa_cover_dim(bm.width, bm.height, dim, &tw, &th))
         {
@@ -440,7 +485,7 @@ static bool aa_generate_one(const char *art_path, int size_index,
     if (!cover)
         fmt |= FORMAT_KEEP_ASPECT;
 
-    ret = aa_read_source(art_path, &bm, fmt, tw, th, workbuf, workbuf_sz);
+    ret = aa_read_source(src, &bm, fmt, tw, th, workbuf, workbuf_sz);
 
     if (ret <= 0 || bm.width <= 0 || bm.height <= 0)
         return false;
@@ -648,6 +693,7 @@ static bool aa_run_pass(void)
         if (!search_albumart_files(&aa_id3, "", aa_artpath, sizeof(aa_artpath)))
             goto next;
 
+        struct aa_src src = { aa_artpath, -1, 0, 0 };  /* folder image on disk */
         for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
         {
             aa_cache_path(aa_check_path, sizeof(aa_check_path), s, dh);
@@ -661,7 +707,7 @@ static bool aa_run_pass(void)
                 break;
             }
             aa_cache_path(aa_out_path, sizeof(aa_out_path), s, dh);
-            aa_generate_one(aa_artpath, s, aa_out_path, workbuf, worksz);
+            aa_generate_one(&src, s, aa_out_path, workbuf, worksz);
             yield();
         }
         if (aborted)
@@ -688,6 +734,90 @@ out:
     return !aborted;
 }
 
+/* Cache the offered track's embedded art into any of its folder's thumbnails
+ * that don't exist yet. Fill-only: never overwrites art already cached (folder
+ * images are the preferred on-disk source) -- this just gives a coverless folder
+ * the art playback already had parsed for the WPS, at no decode cost to it. */
+static void aa_handle_offer(void)
+{
+    char path[MAX_PATH];
+    char dir[MAX_PATH];
+    unsigned int dh;
+    size_t worksz;
+    int s, wh;
+    void *workbuf;
+    struct aa_src src;
+    bool need = false;
+
+    if (aa_offer.path[0] == '\0' || !tagcache_is_usable())
+        return;
+
+    /* Copy the path out before any yield so a newer offer can't move it. */
+    strlcpy(path, aa_offer.path, sizeof(path));
+    src.path = path;
+    src.emb_pos = aa_offer.pos;
+    src.emb_size = aa_offer.size;
+    src.emb_flags = aa_offer.flags;
+
+    aa_dirname(path, dir, sizeof(dir));
+    dh = aa_hash(dir);
+
+    for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
+    {
+        aa_cache_path(aa_check_path, sizeof(aa_check_path), s, dh);
+        if (!file_exists(aa_check_path))
+        {
+            need = true;
+            break;
+        }
+    }
+    if (!need)
+        return;   /* already cached (folder art wins) */
+
+    worksz = BM_SCALED_SIZE(ALBUMART_CACHE_MAX_DIM *
+                                ALBUMART_CACHE_COVER_MAX_ASPECT,
+                            ALBUMART_CACHE_MAX_DIM, FORMAT_NATIVE, 0);
+#ifdef HAVE_JPEG
+    worksz += JPEG_DECODE_OVERHEAD;
+#endif
+    wh = core_alloc(worksz);
+    if (wh <= 0)
+        return;
+    workbuf = core_get_data_pinned(wh);
+
+    aa_ensure_dirs();
+    for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
+    {
+        aa_cache_path(aa_check_path, sizeof(aa_check_path), s, dh);
+        if (file_exists(aa_check_path))
+            continue;
+        aa_cache_path(aa_out_path, sizeof(aa_out_path), s, dh);
+        aa_generate_one(&src, s, aa_out_path, workbuf, worksz);
+        yield();
+    }
+
+    core_unpin(wh);
+    core_free(wh);
+}
+
+/* Playback thread: a track became current. If it carries embedded JPEG art, hand
+ * its location to the aa thread (reusing the metadata playback already parsed) --
+ * no decoding here. */
+static void aa_track_change_cb(unsigned short id, void *event_data)
+{
+    (void)id; (void)event_data;
+    struct mp3entry *id3 = audio_current_track();
+    if (!id3 || !id3->has_embedded_albumart ||
+        (id3->albumart.type & AA_CLEAR_FLAGS_MASK) != AA_TYPE_JPG)
+        return;
+
+    strlcpy(aa_offer.path, id3->path, sizeof(aa_offer.path));
+    aa_offer.pos = id3->albumart.pos;
+    aa_offer.size = id3->albumart.size;
+    aa_offer.flags = id3->albumart.type;
+    queue_post(&aa_queue, AA_EVENT_OFFER, 0);
+}
+
 static void aa_thread(void)
 {
     struct queue_event ev;
@@ -703,6 +833,10 @@ static void aa_thread(void)
             case SYS_USB_CONNECTED:
                 usb_acknowledge(SYS_USB_CONNECTED_ACK, ev.data);
                 usb_wait_for_disconnect(&aa_queue);
+                break;
+
+            case AA_EVENT_OFFER:
+                aa_handle_offer();
                 break;
 
             case SYS_TIMEOUT:
@@ -748,6 +882,10 @@ void albumart_cache_init(void)
                                  aa_thread_name IF_PRIO(, PRIORITY_BACKGROUND)
                                  IF_COP(, CPU));
     (void)aa_thread_id;
+
+    /* Opportunistically cache the embedded art of tracks as they play, for
+     * folders that have no on-disk cover (fill-only -- see aa_handle_offer). */
+    add_event(PLAYBACK_EVENT_TRACK_CHANGE, aa_track_change_cb);
 }
 
 #endif /* HAVE_ALBUMART */
