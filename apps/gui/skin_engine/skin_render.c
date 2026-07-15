@@ -70,6 +70,13 @@ struct skin_draw_info {
     size_t buf_size;
 
     int offset; /* used by the playlist viewer */
+
+    /* List album art (%La) is blitted like text tokens are, i.e. before the
+     * line's write_line() runs -- but write_line() clears the line background
+     * first, which would wipe the top of the cover. So stash it here and blit
+     * it AFTER write_line(), the same way real images are drawn after the line
+     * loop. NULL when the current line has no album art. */
+    const struct bitmap *pending_aa;
 };
 
 extern void sb_set_info_vp(enum screen_type screen, OFFSETTYPE(char*) label);
@@ -318,13 +325,10 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                 struct dim size = { skin_vp->vp.width, skin_vp->vp.height };
                 const struct bitmap *bmp =
                         skinlist_get_item_albumart(li->offset, li->wrap, &size);
+                /* Defer the blit to after write_line() (see pending_aa) so the
+                 * line-background clear can't wipe the cover's top. */
                 if (bmp)
-                {
-                    int width = MIN(bmp->width, skin_vp->vp.width);
-                    int height = MIN(bmp->height, skin_vp->vp.height);
-                    gwps->display->set_drawmode(DRMODE_SOLID);
-                    gwps->display->bmp_part(bmp, 0, 0, 0, 0, width, height);
-                }
+                    info->pending_aa = bmp;
             }
             break;
         }
@@ -841,6 +845,7 @@ void skin_render_viewport(struct skin_element* viewport, struct gui_wps *gwps,
         info.no_line_break = false;
         info.line_scrolls = false;
         info.force_redraw = false;
+        info.pending_aa = NULL;
 #if (LCD_DEPTH > 1)
         skin_viewport->fgbg_changed = false;
 #ifdef HAVE_LCD_COLOR
@@ -886,6 +891,15 @@ void skin_render_viewport(struct skin_element* viewport, struct gui_wps *gwps,
             }
             write_line(display, align, info.line_number,
                     info.line_scrolls, &info.line_desc);
+        }
+        /* Blit deferred list album art now, after write_line()'s background
+         * clear, so the cover's top row isn't wiped (see pending_aa). */
+        if (info.pending_aa)
+        {
+            int aw = MIN(info.pending_aa->width, skin_viewport->vp.width);
+            int ah = MIN(info.pending_aa->height, skin_viewport->vp.height);
+            display->set_drawmode(DRMODE_SOLID);
+            display->bmp_part(info.pending_aa, 0, 0, 0, 0, aw, ah);
         }
         if (!info.no_line_break)
             info.line_number++;
@@ -1102,6 +1116,7 @@ void skin_render_playlistviewer(struct playlistviewer* viewer,
         info.no_line_break = false;
         info.line_scrolls = false;
         info.force_redraw = false;
+        info.pending_aa = NULL;
 
         info.cur_align_start = info.buf;
         align->left = info.buf;
@@ -1128,6 +1143,13 @@ void skin_render_playlistviewer(struct playlistviewer* viewer,
             }
             write_line(display, align, info.line_number,
                     info.line_scrolls, &info.line_desc);
+        }
+        if (info.pending_aa)
+        {
+            int aw = MIN(info.pending_aa->width, skin_viewport->vp.width);
+            int ah = MIN(info.pending_aa->height, skin_viewport->vp.height);
+            display->set_drawmode(DRMODE_SOLID);
+            display->bmp_part(info.pending_aa, 0, 0, 0, 0, aw, ah);
         }
         info.line_number++;
         info.offset++;
