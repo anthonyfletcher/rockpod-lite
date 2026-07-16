@@ -464,6 +464,28 @@ int load_surface(int);
 static void draw_progressbar(int step, int count, char *msg);
 static void free_all_slide_prio(int prio);
 
+/* Carousel model: the seam between the generic coverflow engine and the data it
+ * shows. Stage 5a introduces it in place with a single album model, so the album
+ * path runs through the vtable with no behaviour change; later stages move the
+ * engine into its own module and add an artist-portrait model over the same
+ * interface. */
+struct carousel_model {
+    int  (*count)(void);                              /* number of slides */
+    bool (*slide_art)(int index, char *dir, int len); /* folder for the art cache */
+    int  (*enter)(int index);                         /* select: drill in; returns GO_TO_* */
+};
+
+static int  album_count(void);
+static bool get_slide_dir(const int slide_index, char *dir, int dirlen);
+static int  album_enter(int index);
+
+static const struct carousel_model album_model = {
+    .count     = album_count,
+    .slide_art = get_slide_dir,
+    .enter     = album_enter,
+};
+static const struct carousel_model *model = &album_model;
+
 static inline void buf_ctx_lock(void)
 {
     mutex_lock(&buf_ctx_mutex);
@@ -2408,6 +2430,12 @@ static bool get_slide_dir(const int slide_index, char *dir, int dirlen)
     return ret;
 }
 
+/* carousel_model.count for the album model. */
+static int album_count(void)
+{
+    return pf_idx.album_ct;
+}
+
 /* Read a shared-cache thumbnail (.aat: struct albumart_cache_header followed by
  * row-major native pixels) into a buflib surface, transposing to the
  * column-major layout render_slide() expects. Returns a buflib handle,
@@ -2480,7 +2508,7 @@ static inline bool load_and_prepare_surface(const int slide_index,
     {
         char dir[MAX_PATH];
         char aat_file[MAX_PATH];
-        if (get_slide_dir(slide_index, dir, sizeof(dir)) &&
+        if (model->slide_art(slide_index, dir, sizeof(dir)) &&
             albumart_cache_lookup(dir, pf_cover_size_idx, aat_file,
                                   sizeof(aat_file), NULL))
         {
@@ -3825,7 +3853,7 @@ static bool init(void)
     else if (ret == ERROR_USER_ABORT)
         return false;
 
-    number_of_slides = pf_idx.album_ct;
+    number_of_slides = model->count();
 
     /* Phase 3 v2: Cover Flow no longer generates its own thumbnails -- the
      * background album-art cache (albumart_cache.c) does. Mark inspection
@@ -3922,6 +3950,23 @@ static bool reinit(void)
         return true;
     }
     return false;
+}
+
+/* carousel_model.enter for the album model: drill into the selected album's
+ * track list. Identifies the album by its own tagcache seek, not by name --
+ * tagtree.c filters directly on this, so there's no name/sort matching involved
+ * (the earlier, much more fragile design that this replaced). */
+static int album_enter(int index)
+{
+    int album_idx = 0;
+    char *album = get_album_name_idx(index, &album_idx);
+    long album_seek = pf_idx.album_index[index].seek;
+
+    pf_cfg.last_album = index;
+    pf_resume_album_index = index;
+    pf_resume_last_album = true;
+    tagtree_enter_album_tracks_on_next_load(album_seek, album);
+    return GO_TO_ALBUM_COVERS_TRACKS;
 }
 
 static int album_covers_loop(void)
@@ -4075,22 +4120,11 @@ static int album_covers_loop(void)
         case PF_TRACKLIST:
         case PF_SELECT:
         {
-            int album_idx = 0;
-            char *album;
-            long album_seek;
+            /* Settle the animation onto the slide the user is looking at, so
+             * center_index is the one they picked, then let the model drill in. */
             if (pf_state == pf_scrolling)
                 set_current_slide(target);
-            album = get_album_name_idx(center_index, &album_idx);
-            /* Identify the album by its own tagcache seek, not by name --
-             * tagtree.c filters directly on this, so there's no name/sort
-             * matching involved at all (the earlier, much more fragile
-             * design that this replaced). */
-            album_seek = pf_idx.album_index[center_index].seek;
-            pf_cfg.last_album = center_index;
-            pf_resume_album_index = center_index;
-            pf_resume_last_album = true;
-            tagtree_enter_album_tracks_on_next_load(album_seek, album);
-            return GO_TO_ALBUM_COVERS_TRACKS;
+            return model->enter(center_index);
         }
         default:
             if (default_event_handler(button) == SYS_USB_CONNECTED)
