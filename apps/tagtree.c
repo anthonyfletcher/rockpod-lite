@@ -3029,17 +3029,36 @@ bool tagtree_is_album_list(struct tree_context* c)
     return csi->tagorder[c->currextra] == tag_album;
 }
 
-/* The folder of the album on browse row `item`. That folder path is the key the
- * album-art thumbnail cache hashes on, so this is what turns a database album
- * row into a cached cover. Resolved by asking the tagcache for the first track
- * filed under that album (with the ancestor levels -- artist, genre, ... -- still
- * filtered, so the right album wins when two share a name) and taking its
- * directory. False for a non-album row, or an album with no retrievable track.
+/* True when this browse level is listing artists -- the rows that can carry
+ * artist art, and so the ones worth a taller row. Covers every tag the default
+ * menus group artists by: canonicalartist (the "Artist" menu and the artist
+ * sublevels under Genre/Year), plus album-artist and plain artist. */
+bool tagtree_is_artist_list(struct tree_context* c)
+{
+    int tag;
+    if (c->currtable != TABLE_NAVIBROWSE || !csi)
+        return false;
+    if (c->currextra < 0 || c->currextra >= csi->tagorder_count)
+        return false;
+    tag = csi->tagorder[c->currextra];
+    return tag == tag_virt_canonicalartist ||
+           tag == tag_albumartist ||
+           tag == tag_artist;
+}
+
+/* Resolve browse row `item` to a folder on disk: ask the tagcache for the first
+ * track filed under that row's selection (ancestor levels -- genre, artist, ...
+ * -- still filtered, so the right entry wins when two share a name), then take
+ * its filename and climb `extra_parents` directory levels above the track's own
+ * folder. extra_parents == 0 yields the track's folder (the album); == 1 yields
+ * its parent (the artist), for <artist>/<album>/<track> layouts. Those folder
+ * paths are the keys the art thumbnail cache hashes on. False for a row with no
+ * retrievable track, or one too shallow for the requested level.
  *
  * This is a tagcache search, i.e. far too expensive to call per row per redraw;
  * callers are expected to cache the result. */
-bool tagtree_get_album_dir(struct tree_context* c, int item,
-                           char *buf, int buflen)
+static bool tagtree_get_track_dir(struct tree_context* c, int item,
+                                  char *buf, int buflen, int extra_parents)
 {
     struct tagcache_search tcs;
     char tcs_buf[TAGCACHE_BUFSZ];
@@ -3047,9 +3066,6 @@ bool tagtree_get_album_dir(struct tree_context* c, int item,
     int level = c->currextra;
     bool ok = false;
     int i;
-
-    if (!tagtree_is_album_list(c) || item < c->special_entry_count)
-        return false;
 
     entry = tagtree_get_entry(c, item);
     if (!entry)
@@ -3070,18 +3086,42 @@ bool tagtree_get_album_dir(struct tree_context* c, int item,
     {
         /* Copy first, then truncate the COPY. tcs.result can point into shared
          * tagcache memory, so writing a NUL into it would corrupt the cache. */
-        char *sep;
+        char *sep = NULL;
         strlcpy(buf, tcs.result, buflen);
-        sep = strrchr(buf, '/');
-        if (sep && sep != buf)
+        for (i = 0; i <= extra_parents; i++)
         {
-            *sep = '\0';    /* the folder, with no trailing slash: the cache key */
-            ok = true;
+            sep = strrchr(buf, '/');
+            if (!sep || sep == buf)
+            {
+                sep = NULL;     /* too shallow to climb to this folder level */
+                break;
+            }
+            *sep = '\0';        /* strip one component: no trailing slash */
         }
+        ok = (sep != NULL);
     }
 
     tagcache_search_finish(&tcs);
     return ok;
+}
+
+/* The album folder of browse row `item` -- the album-art cache key. */
+bool tagtree_get_album_dir(struct tree_context* c, int item,
+                           char *buf, int buflen)
+{
+    if (!tagtree_is_album_list(c) || item < c->special_entry_count)
+        return false;
+    return tagtree_get_track_dir(c, item, buf, buflen, 0);
+}
+
+/* The artist folder of browse row `item` -- the parent of the album folder for
+ * <artist>/<album>/<track> layouts, i.e. the artist-art cache key. */
+bool tagtree_get_artist_dir(struct tree_context* c, int item,
+                            char *buf, int buflen)
+{
+    if (!tagtree_is_artist_list(c) || item < c->special_entry_count)
+        return false;
+    return tagtree_get_track_dir(c, item, buf, buflen, 1);
 }
 
 int tagtree_get_attr(struct tree_context* c)

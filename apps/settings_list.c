@@ -1722,8 +1722,10 @@ const struct settings_list settings[] = {
      * with no cover in them). */
     OFFON_SETTING(F_THEMESETTING, db_albumart, -1, true, "database album art",
                   NULL),
-    {F_T_INT|F_THEMESETTING, &global_settings.db_albumart_height, -1,
-        INT(52), "database album art row height", UNUSED},
+    OFFON_SETTING(F_THEMESETTING, db_artistart, -1, true, "database artist art",
+                  NULL),
+    {F_T_INT|F_THEMESETTING, &global_settings.db_art_row_height, -1,
+        INT(52), "database art row height", UNUSED},
 #endif
 #endif /* HAVE_TAGCACHE */
 #ifndef HAVE_WHEEL_ACCELERATION

@@ -559,9 +559,12 @@ struct user_settings
      * by default; a theme sets it off in its .cfg for the stock/fast list. Off
      * also means faster scrolling (no cover decode). */
     bool db_albumart;
-    /* Uniform row height when db_albumart is on -- a little above the cover size
-     * so the square fits. Ignored when db_albumart is off. */
-    int  db_albumart_height;
+    /* Artist art (a photo in <artist>/folder.jpg) on artist browse rows, same
+     * mechanism as db_albumart. On by default. */
+    bool db_artistart;
+    /* Uniform row height when album or artist art is on -- a little above the
+     * cover size so the square fits. Ignored when both are off. */
+    int  db_art_row_height;
 #endif
 #endif
 

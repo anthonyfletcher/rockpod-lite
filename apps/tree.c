@@ -298,13 +298,33 @@ static const struct bitmap *tree_get_albumart(int selected_item, void * data,
         if (tree_aa_item[slot] == selected_item)
             goto hit;
 
-    /* is_fallback NULL: we want the placeholder returned transparently, so an
-     * album with no cover still fills its viewport (no bare "missing art" box). */
-    if (!tagtree_get_album_dir(local_tc, selected_item, dir, sizeof(dir)) ||
-        !albumart_cache_lookup(dir, tree_aa_size_idx, aat, sizeof(aat), NULL))
+    /* One list is either an album list or an artist list; resolve the row to the
+     * matching folder (album folder, or its parent artist folder). */
+    bool artist = !tagtree_is_album_list(local_tc);
+    bool is_fallback = false;
+    if (artist)
     {
-        return NULL;    /* no art and no placeholder generated yet */
+        if (!tagtree_get_artist_dir(local_tc, selected_item, dir, sizeof(dir)))
+            return NULL;
     }
+    else if (!tagtree_get_album_dir(local_tc, selected_item, dir, sizeof(dir)))
+        return NULL;
+
+    /* Album rows want the placeholder returned transparently, so an album with
+     * no cover still fills its viewport. Artist rows must NOT show the album "?"
+     * placeholder (wrong art on a person): when there is no real artist photo,
+     * substitute the dedicated artist silhouette instead. */
+    if (artist)
+    {
+        if (!albumart_cache_lookup(dir, tree_aa_size_idx, aat, sizeof(aat),
+                                   &is_fallback) || is_fallback)
+        {
+            if (!albumart_cache_artist_fallback(tree_aa_size_idx, aat, sizeof(aat)))
+                return NULL;    /* silhouette not generated yet */
+        }
+    }
+    else if (!albumart_cache_lookup(dir, tree_aa_size_idx, aat, sizeof(aat), NULL))
+        return NULL;    /* no art and no placeholder generated yet */
 
     slot = tree_aa_victim;
     tree_aa_victim = (tree_aa_victim + 1) % TREE_AA_SLOTS;
@@ -649,14 +669,19 @@ static int update_dir(void)
     gui_synclist_set_nb_items(list, tc.filesindir);
     gui_synclist_set_icon_callback(list,
                             global_settings.show_icons?tree_get_fileicon:NULL);
-    /* Album art (cover callback + tall uniform rows) only on album lists, and
-     * only when the toggle is on -- so ordinary lists and the whole off path
-     * never touch the cover-resolution code. */
+    /* Art (cover callback + tall uniform rows) on album lists (album art) and
+     * artist lists (artist art), each behind its own toggle -- so ordinary lists
+     * and the whole off path never touch the art-resolution code. */
     {
         bool tall_rows = false;
 #if defined(HAVE_TAGCACHE) && defined(HAVE_ALBUMART)
-        tall_rows = global_settings.db_albumart &&
-                    *tc.dirfilter == SHOW_ID3DB && tagtree_is_album_list(&tc);
+        if (*tc.dirfilter == SHOW_ID3DB)
+        {
+            if (global_settings.db_albumart && tagtree_is_album_list(&tc))
+                tall_rows = true;
+            else if (global_settings.db_artistart && tagtree_is_artist_list(&tc))
+                tall_rows = true;
+        }
 #endif
 #ifdef HAVE_ALBUMART
         gui_synclist_set_albumart_callback(list,
@@ -664,7 +689,7 @@ static int update_dir(void)
         /* Uniform tall rows so a cover fits (special rows included); 0 = the
          * skin's default height. */
         gui_synclist_set_row_height(list,
-                                    tall_rows ? global_settings.db_albumart_height : 0);
+                                    tall_rows ? global_settings.db_art_row_height : 0);
 #endif
     }
     gui_synclist_set_voice_callback(list, &tree_voice_cb);

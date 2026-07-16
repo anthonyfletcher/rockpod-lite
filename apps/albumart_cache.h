@@ -73,6 +73,12 @@ bool albumart_cache_is_busy(void);
 bool albumart_cache_lookup(const char *dir, int size_index,
                            char *out, int out_len, bool *is_fallback);
 
+/* Path to the shared "no artist photo" placeholder (a silhouette) for a size.
+ * True if it exists. Album rows get their placeholder folded into
+ * albumart_cache_lookup(); artist rows need a distinct one, so it is requested
+ * separately -- see the artist branch in tree.c's art callback. */
+bool albumart_cache_artist_fallback(int size_index, char *out, int out_len);
+
 /* Number of configured thumbnail sizes, and accessors for each. */
 int         albumart_cache_num_sizes(void);
 int         albumart_cache_size_dim(int size_index);

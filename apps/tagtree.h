@@ -44,8 +44,11 @@ int tagtree_add_to_playlist(const char* playlist, bool new_playlist);
 char *tagtree_get_title(struct tree_context* c);
 int tagtree_get_attr(struct tree_context* c);
 bool tagtree_is_album_list(struct tree_context* c);
+bool tagtree_is_artist_list(struct tree_context* c);
 bool tagtree_get_album_dir(struct tree_context* c, int item,
                            char *buf, int buflen);
+bool tagtree_get_artist_dir(struct tree_context* c, int item,
+                            char *buf, int buflen);
 int tagtree_get_icon(struct tree_context* c);
 /* Arms a one-shot jump: the next time tagtree_load() sees a fresh root load
  * (dirlevel 0, TABLE_ROOT), it enters the root menu's row whose first tag

@@ -43,6 +43,7 @@
 #include "lcd.h"
 #include "bmp.h"
 #include "bitmaps/no_album_cover.h" /* compiled-in placeholder for aa_ensure_fallback */
+#include "bitmaps/rockpodnoartistcover.h" /* artist placeholder (silhouette) */
 #ifdef HAVE_JPEG
 #include "jpeg_load.h"
 #endif
@@ -68,8 +69,10 @@
 
 /* Directory-dedup "seen" set: open-addressed table of directory-path hashes.
  * Sized generously; if a library exceeds this, extra directories simply get
- * re-resolved (still idempotent -- generation skips existing thumbnails). */
-#define AA_SEEN_SLOTS 8192  /* power of two */
+ * re-resolved (still idempotent -- generation skips existing thumbnails). Holds
+ * both album folders and their parent (artist) folders now, so it carries more
+ * entries per pass than album-only did. */
+#define AA_SEEN_SLOTS 16384  /* power of two */
 
 /* Generous stack: the JPEG decoder called from a pass has deep frames. */
 #define AA_STACK_SIZE (DEFAULT_STACK_SIZE + 0x2000)
@@ -91,6 +94,8 @@ static struct mp3entry aa_id3;
 static char aa_tcs_buf[TAGCACHE_BUFSZ];
 static char aa_artpath[MAX_PATH];
 static char aa_dir[MAX_PATH];
+static char aa_artist_dir[MAX_PATH];
+static char aa_probe[MAX_PATH];
 static char aa_check_path[MAX_PATH];
 static char aa_out_path[MAX_PATH];
 
@@ -175,6 +180,22 @@ static void aa_fallback_path(char *out, int out_len, int size_index)
 {
     snprintf(out, out_len, THUMBCACHE_DIR "/%s/_fallback.aat",
              albumart_sizes[size_index].name);
+}
+
+/* As aa_fallback_path, but the artist placeholder (a silhouette) -- a separate
+ * file so artist rows never show the album "?" art. */
+static void aa_artist_fallback_path(char *out, int out_len, int size_index)
+{
+    snprintf(out, out_len, THUMBCACHE_DIR "/%s/_artist_fallback.aat",
+             albumart_sizes[size_index].name);
+}
+
+bool albumart_cache_artist_fallback(int size_index, char *out, int out_len)
+{
+    if (size_index < 0 || size_index >= ALBUMART_CACHE_NUM_SIZES)
+        return false;
+    aa_artist_fallback_path(out, out_len, size_index);
+    return file_exists(out);
 }
 
 bool albumart_cache_lookup(const char *dir, int size_index,
@@ -535,29 +556,27 @@ static void aa_scale_native(const fb_data *src, int sw, int sh,
 }
 #endif
 
-/* Render the compiled-in placeholder (apps/bitmaps/native/no_album_cover.bmp,
- * linked in as no_album_cover) into each size's _fallback.aat, once. Cheap in
- * steady state (a file_exists per size); regenerated after a format bump because
- * the purge removes it. The source is square, so COVER == a plain downscale. */
-static void aa_ensure_fallback(void *workbuf, size_t workbuf_sz)
-{
 #if LCD_DEPTH > 1
+/* Downscale one compiled-in (square) placeholder bitmap into every size's
+ * placeholder .aat, once. `pathfn` picks the per-size destination file. Cheap in
+ * steady state (a file_exists per size); regenerated after a format bump because
+ * the purge removes it. */
+static void aa_render_placeholder(const fb_data *src, int sw, int sh,
+                                  void (*pathfn)(char *, int, int), void *workbuf)
+{
     int s;
     char path[MAX_PATH];
-    (void)workbuf_sz;
 
     for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
     {
         int dim = albumart_sizes[s].dim;
         struct bitmap bm;
 
-        aa_fallback_path(path, sizeof(path), s);
+        pathfn(path, sizeof(path), s);
         if (file_exists(path))
             continue;
 
-        aa_scale_native((const fb_data *)no_album_cover,
-                        BMPWIDTH_no_album_cover, BMPHEIGHT_no_album_cover,
-                        (fb_data *)workbuf, dim, dim);
+        aa_scale_native(src, sw, sh, (fb_data *)workbuf, dim, dim);
         bm.data = workbuf;
         bm.width = dim;
         bm.height = dim;
@@ -565,6 +584,24 @@ static void aa_ensure_fallback(void *workbuf, size_t workbuf_sz)
         aa_write_aat(path, &bm);
         yield();
     }
+}
+#endif
+
+/* Render the compiled-in placeholders (apps/bitmaps/native/) into each size's
+ * placeholder .aat: the album "?" (no_album_cover) and the artist silhouette
+ * (rockpodnoartistcover). Both sources are square, so COVER == a plain
+ * downscale. */
+static void aa_ensure_fallback(void *workbuf, size_t workbuf_sz)
+{
+#if LCD_DEPTH > 1
+    (void)workbuf_sz;
+    aa_render_placeholder((const fb_data *)no_album_cover,
+                          BMPWIDTH_no_album_cover, BMPHEIGHT_no_album_cover,
+                          aa_fallback_path, workbuf);
+    aa_render_placeholder((const fb_data *)rockpodnoartistcover,
+                          BMPWIDTH_rockpodnoartistcover,
+                          BMPHEIGHT_rockpodnoartistcover,
+                          aa_artist_fallback_path, workbuf);
 #else
     (void)workbuf; (void)workbuf_sz;
 #endif
@@ -588,10 +625,63 @@ static bool aa_check_abort(void)
     return false;
 }
 
+/* Resolve one folder's cover art and render any of its thumbnail sizes that
+ * don't exist yet. `probe_path` is a track filename under the folder (real for
+ * an album folder, synthetic "<dir>/_" for an artist folder) that
+ * search_albumart_files() strips down to the folder to locate cover.bmp /
+ * folder.jpg; `dh` is that folder's hash (the cache key). Sets *aborted if a
+ * USB/shutdown/DB-busy stop was hit mid-decode. A cheap no-op once every size
+ * already exists (dircache-served file_exists checks, no art re-resolution). */
+static void aa_cache_dir(const char *probe_path, unsigned int dh,
+                         void *workbuf, size_t worksz, bool *aborted)
+{
+    int s;
+    bool all_exist = true;
+
+    for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
+    {
+        aa_cache_path(aa_check_path, sizeof(aa_check_path), s, dh);
+        if (!file_exists(aa_check_path))
+        {
+            all_exist = false;
+            break;
+        }
+    }
+    if (all_exist)
+        return;
+
+    /* Only now (a thumbnail is missing) resolve this folder's cover art.
+     * album/albumartist left NULL: only folder-based art is searched
+     * (cover.bmp, folder.jpg, ../cover.bmp). */
+    memset(&aa_id3, 0, sizeof(aa_id3));
+    strlcpy(aa_id3.path, probe_path, sizeof(aa_id3.path));
+    if (!search_albumart_files(&aa_id3, "", aa_artpath, sizeof(aa_artpath)))
+        return;
+
+    struct aa_src src = { aa_artpath, -1, 0, 0 };  /* folder image on disk */
+    for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
+    {
+        aa_cache_path(aa_check_path, sizeof(aa_check_path), s, dh);
+        if (file_exists(aa_check_path))
+            continue;
+        /* Re-check right before a (potentially slow) decode so a USB
+         * connection is acknowledged with minimal delay. */
+        if (aa_check_abort() || tagcache_is_busy())
+        {
+            *aborted = true;
+            return;
+        }
+        aa_cache_path(aa_out_path, sizeof(aa_out_path), s, dh);
+        aa_generate_one(&src, s, aa_out_path, workbuf, worksz);
+        yield();
+    }
+}
+
 /* One full generation pass: walk every track filename, dedup by directory,
- * resolve folder art, and render any missing thumbnails. Returns true if the
- * pass ran to completion, false if it was aborted (USB/DB busy/no memory) and
- * should be retried later. */
+ * resolve folder art, and render any missing thumbnails -- both the track's own
+ * (album) folder and its parent (artist) folder, for libraries laid out as
+ * <artist>/<album>/<track>. Returns true if the pass ran to completion, false if
+ * it was aborted (USB/DB busy/no memory) and should be retried later. */
 static bool aa_run_pass(void)
 {
     struct tagcache_search tcs;
@@ -649,9 +739,7 @@ static bool aa_run_pass(void)
 
     while (tagcache_get_next(&tcs, aa_tcs_buf, sizeof(aa_tcs_buf)))
     {
-        int s;
-        unsigned int dh;
-        bool all_exist;
+        unsigned int dh, ah;
 
         /* Abort promptly on USB/shutdown (the thread loop then acknowledges)
          * or yield the disk to an incoming database commit, so a long pass
@@ -662,58 +750,33 @@ static bool aa_run_pass(void)
             break;
         }
 
+        /* The track's own folder (the album), keyed by its path hash. Skip the
+         * per-folder work entirely once this folder has been visited this pass
+         * (aa_seen records it), so later tracks of the same album are cheap. */
         aa_dirname(tcs.result, aa_dir, sizeof(aa_dir));
-        dh = aa_hash(aa_dir);            /* thumbnails are keyed by folder */
-        if (aa_seen(seen, dh))
-            goto next;
+        dh = aa_hash(aa_dir);
+        if (!aa_seen(seen, dh))
+            aa_cache_dir(tcs.result, dh, workbuf, worksz, &aborted);
+        if (aborted)
+            break;
 
-        /* Skip folders whose thumbnails already exist WITHOUT resolving the
-         * source art. Art resolution (search_albumart_files) is ~10 file
-         * probes; doing it for every folder on every pass is what made the
-         * engine churn the disk endlessly. These file_exists checks are
-         * served from dircache (RAM), so a steady-state pass is cheap. */
-        all_exist = true;
-        for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
+        /* The parent folder (the artist), cached from <artist>/folder.jpg etc.
+         * for <artist>/<album>/<track> layouts. Deduped independently of the
+         * album so an artist whose first album has no cover still gets resolved.
+         * Skipped when there is no distinct parent (flat/rooted layouts). */
+        aa_dirname(aa_dir, aa_artist_dir, sizeof(aa_artist_dir));
+        if (aa_artist_dir[0] && strcmp(aa_artist_dir, aa_dir) != 0)
         {
-            aa_cache_path(aa_check_path, sizeof(aa_check_path), s, dh);
-            if (!file_exists(aa_check_path))
+            ah = aa_hash(aa_artist_dir);
+            if (!aa_seen(seen, ah))
             {
-                all_exist = false;
-                break;
+                snprintf(aa_probe, sizeof(aa_probe), "%s/_", aa_artist_dir);
+                aa_cache_dir(aa_probe, ah, workbuf, worksz, &aborted);
             }
-        }
-        if (all_exist)
-            goto next;
-
-        /* Only now (a thumbnail is missing) resolve this folder's cover art.
-         * album/albumartist left NULL: only folder-based art is searched
-         * (cover.bmp, folder.jpg, ../cover.bmp). */
-        memset(&aa_id3, 0, sizeof(aa_id3));
-        strlcpy(aa_id3.path, tcs.result, sizeof(aa_id3.path));
-        if (!search_albumart_files(&aa_id3, "", aa_artpath, sizeof(aa_artpath)))
-            goto next;
-
-        struct aa_src src = { aa_artpath, -1, 0, 0 };  /* folder image on disk */
-        for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
-        {
-            aa_cache_path(aa_check_path, sizeof(aa_check_path), s, dh);
-            if (file_exists(aa_check_path))
-                continue;
-            /* Re-check right before a (potentially slow) decode so a USB
-             * connection is acknowledged with minimal delay. */
-            if (aa_check_abort() || tagcache_is_busy())
-            {
-                aborted = true;
-                break;
-            }
-            aa_cache_path(aa_out_path, sizeof(aa_out_path), s, dh);
-            aa_generate_one(&src, s, aa_out_path, workbuf, worksz);
-            yield();
         }
         if (aborted)
             break;
 
-next:
         if (++since_yield >= 16)
         {
             since_yield = 0;

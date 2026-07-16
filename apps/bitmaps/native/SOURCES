@@ -27,6 +27,9 @@ rockpodlogo.bmp
  * create_empty_slide() in apps/gui/album_covers.c */
 #ifdef HAVE_TAGCACHE
 no_album_cover.bmp
+/* "No artist photo" placeholder for database artist rows -- see
+ * aa_ensure_fallback() in apps/albumart_cache.c */
+rockpodnoartistcover.bmp
 #endif
 
 /* Full-screen custom USB (eject) screen for the 320x240 iPods */
