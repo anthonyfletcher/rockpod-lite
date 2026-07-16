@@ -477,6 +477,9 @@ struct carousel_model {
     int  (*jump_prev)(void);                           /* jump to prev section (letter/year) */
     int  (*jump_next)(void);                           /* jump to next section */
     void (*draw_text)(void);                           /* center-slide caption */
+    void (*sort_next)(void);                           /* cycle sort order forward + resort */
+    void (*sort_prev)(void);                           /* cycle sort order backward + resort */
+    void (*set_initial)(const char *selected_file);    /* position on entry (resume/now-playing) */
 };
 
 static int  album_count(void);
@@ -486,15 +489,21 @@ static int  album_enter(int index);
 static int  jmp_idx_prev(void);
 static int  jmp_idx_next(void);
 static void draw_album_text(void);
+static void album_sort_next(void);
+static void album_sort_prev(void);
+static void set_initial_slide(const char *selected_file);
 
 static const struct carousel_model album_model = {
-    .count      = album_count,
-    .slide_art  = get_slide_dir,
-    .legacy_art = album_legacy_art,
-    .enter      = album_enter,
-    .jump_prev  = jmp_idx_prev,
-    .jump_next  = jmp_idx_next,
-    .draw_text  = draw_album_text,
+    .count       = album_count,
+    .slide_art   = get_slide_dir,
+    .legacy_art  = album_legacy_art,
+    .enter       = album_enter,
+    .jump_prev   = jmp_idx_prev,
+    .jump_next   = jmp_idx_next,
+    .draw_text   = draw_album_text,
+    .sort_next   = album_sort_next,
+    .sort_prev   = album_sort_prev,
+    .set_initial = set_initial_slide,
 };
 static const struct carousel_model *model = &album_model;
 
@@ -3219,6 +3228,20 @@ static bool sort_albums(int new_sorting, bool from_settings)
     return true;
 }
 
+/* carousel_model.sort_next/sort_prev for the album model: cycle through the
+ * album sort orders and re-sort. */
+static void album_sort_next(void)
+{
+    sort_albums((global_settings.album_covers_sort_albums_by + 1)
+                % SORT_VALUES_SIZE, false);
+}
+
+static void album_sort_prev(void)
+{
+    sort_albums((global_settings.album_covers_sort_albums_by + (SORT_VALUES_SIZE - 1))
+                % SORT_VALUES_SIZE, false);
+}
+
 void album_covers_rebuild_cache(void)
 {
     pf_cfg.update_albumart = false;
@@ -4116,10 +4139,10 @@ static int album_covers_loop(void)
             break;
 
         case PF_SORTING_NEXT:
-            sort_albums((global_settings.album_covers_sort_albums_by + 1) % SORT_VALUES_SIZE, false);
+            model->sort_next();
             break;
         case PF_SORTING_PREV:
-            sort_albums((global_settings.album_covers_sort_albums_by + (SORT_VALUES_SIZE - 1)) % SORT_VALUES_SIZE, false);
+            model->sort_prev();
             break;
         case PF_JMP:
         {
@@ -4205,7 +4228,7 @@ int album_covers(const char *selected_file)
      * "Album covers" context-menu item on a specific track), otherwise the
      * currently-playing track's album, otherwise wherever was last viewed --
      * matching the old plugin's plugin_start() behavior exactly. */
-    set_initial_slide(selected_file);
+    model->set_initial(selected_file);
 
     ret = album_covers_loop();
 
