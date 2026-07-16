@@ -17140,13 +17140,27 @@
   desc: in the main menu
   user: core
   <source>
-    *: "Album covers"
+    *: "Album Covers"
   </source>
   <dest>
-    *: "Album covers"
+    *: "Album Covers"
   </dest>
   <voice>
-    *: "Album covers"
+    *: "Album Covers"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_ARTIST_PORTRAITS
+  desc: in the main menu
+  user: core
+  <source>
+    *: "Artist Portraits"
+  </source>
+  <dest>
+    *: "Artist Portraits"
+  </dest>
+  <voice>
+    *: "Artist Portraits"
   </voice>
 </phrase>
 <phrase>
