@@ -470,6 +470,7 @@ static void free_all_slide_prio(int prio);
  * engine into its own module and add an artist-portrait model over the same
  * interface. */
 struct carousel_model {
+    int  (*build_index)(void);                         /* build the slide data; SUCCESS/ERROR_* */
     int  (*count)(void);                               /* number of slides */
     bool (*slide_art)(int index, char *dir, int len);  /* folder for the art cache */
     bool (*legacy_art)(int index, char *path, int len);/* pre-cache fallback art, or false */
@@ -482,6 +483,7 @@ struct carousel_model {
     void (*set_initial)(const char *selected_file);    /* position on entry (resume/now-playing) */
 };
 
+static int  album_build_index(void);
 static int  album_count(void);
 static bool get_slide_dir(const int slide_index, char *dir, int dirlen);
 static bool album_legacy_art(int index, char *path, int len);
@@ -494,6 +496,7 @@ static void album_sort_prev(void);
 static void set_initial_slide(const char *selected_file);
 
 static const struct carousel_model album_model = {
+    .build_index = album_build_index,
     .count       = album_count,
     .slide_art   = get_slide_dir,
     .legacy_art  = album_legacy_art,
@@ -1627,6 +1630,29 @@ failure:
     pf_idx.album_ct = 0;
     return -1;
 
+}
+
+/* carousel_model.build_index for the album model: reuse the on-disk index when
+ * it matches the current cache version, otherwise rebuild it (and persist it).
+ * Returns SUCCESS or one of the ERROR_* codes. */
+static int album_build_index(void)
+{
+    int ret = SUCCESS;
+
+    /* Scan will trigger when no file is found or the option was activated */
+    if ((pf_cfg.cache_version != CACHE_VERSION) || (load_album_index() < 0))
+    {
+        ret = create_album_index();
+
+        if (ret == 0)
+        {
+            pf_cfg.cache_version = CACHE_REBUILD;
+            pf_config_save();
+            if (save_album_index() < 0)
+                splash(HZ, "Could not write index");
+        }
+    }
+    return ret;
 }
 
 /**
@@ -3873,19 +3899,7 @@ static bool init(void)
 
     init_scroll_lines();
 
-    /* Scan will trigger when no file is found or the option was activated */
-    if ((pf_cfg.cache_version != CACHE_VERSION) || (load_album_index() < 0))
-    {
-        ret = create_album_index();
-
-        if (ret == 0)
-        {
-            pf_cfg.cache_version = CACHE_REBUILD;
-            pf_config_save();
-            if (save_album_index() < 0)
-                splash(HZ, "Could not write index");
-        }
-    }
+    ret = model->build_index();
 
     if (ret == ERROR_BUFFER_FULL)
     {
@@ -3907,7 +3921,7 @@ static bool init(void)
      * complete so the idle-loop generator never runs and the navigation
      * "wait for cache" splashes don't appear; slides come from the shared
      * .aat cache (with the old pfraw / empty slide as fallback). */
-    aa_cache.inspected = pf_idx.album_ct;
+    aa_cache.inspected = model->count();
 
     size_t aa_min = DISPLAY_WIDTH * DISPLAY_HEIGHT * sizeof(pix_t);
     size_t aa_bufsz = ALIGN_DOWN(MAX(aa_min * 3, pf_idx.buf_sz / 8),
