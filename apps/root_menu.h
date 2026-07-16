@@ -84,6 +84,11 @@ enum {
      * this so that backing all the way out of that browse session lands on
      * Album covers instead of the generic root menu. */
     GO_TO_ALBUM_COVERS_TRACKS,
+    /* Artist portraits: the coverflow carousel over the album-artist list
+     * (apps/gui/album_covers.c's artist_portraits()). Selecting an artist
+     * reuses GO_TO_ALBUM_COVERS_TRACKS to open its album listing, and BACK
+     * from there returns here via the normal previous-screen tracking. */
+    GO_TO_ARTIST_PORTRAITS,
 #endif
 };
 #ifndef PLUGIN

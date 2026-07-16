@@ -32,6 +32,12 @@ enum year_sort_order_values {
  * playing track's album, or wherever was last viewed. */
 int album_covers(const char *selected_file);
 
+/* The same carousel over the album-artist list, showing artist photos
+ * (<artist>/folder.jpg). Selecting an artist opens that album-artist's album
+ * listing in the database browser. selected_file is currently unused (always
+ * starts at the first artist). */
+int artist_portraits(const char *selected_file);
+
 /* Forces the on-disk album art cache to be rebuilt (or filled in, in the
  * "update" case) the next time Album covers opens. Used both by the
  * in-screen main menu's own Rebuild/Update Cache actions and by the

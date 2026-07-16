@@ -507,6 +507,12 @@ static int pictureflow_scrn(void* param)
     (void)param;
     return album_covers(NULL);
 }
+
+static int artist_portraits_scrn(void* param)
+{
+    (void)param;
+    return artist_portraits(NULL);
+}
 #endif
 
 /* These are all static const'd from apps/menus/ *.c
@@ -540,6 +546,7 @@ static const struct root_items items[] = {
     [GO_TO_SHORTCUTMENU] = { do_shortcut_menu, NULL, NULL },
 #ifdef HAVE_TAGCACHE
     [GO_TO_PICTUREFLOW] = { pictureflow_scrn, NULL, NULL },
+    [GO_TO_ARTIST_PORTRAITS] = { artist_portraits_scrn, NULL, NULL },
     [GO_TO_ALBUM_COVERS_TRACKS] = { browser, (void*)GO_TO_ALBUM_COVERS_TRACKS, &tagcache_menu },
 /* One reserved slot per tagnavi.config root-menu tag-browse row (see
  * GO_TO_TAGNAVI_FIRST in root_menu.h); all share the same dispatch function
@@ -573,6 +580,8 @@ MENUITEM_RETURNVALUE(file_browser, ID2P(LANG_DIR_BROWSER), GO_TO_FILEBROWSER,
 MENUITEM_RETURNVALUE(db_browser, "Music", GO_TO_DBBROWSER,
                         NULL, Icon_Audio);
 MENUITEM_RETURNVALUE(pictureflow_item, ID2P(LANG_ALBUM_COVERS), GO_TO_PICTUREFLOW,
+                        NULL, Icon_Rockbox);
+MENUITEM_RETURNVALUE(artist_portraits_item, ID2P(LANG_ARTIST_PORTRAITS), GO_TO_ARTIST_PORTRAITS,
                         NULL, Icon_Rockbox);
 
 /* Dynamic-text menu items for the reserved GO_TO_TAGNAVI_FIRST.. slots: the
@@ -666,6 +675,7 @@ static struct menu_callback_with_desc root_menu_desc = {
 static struct menu_table menu_table[] = {
 #ifdef HAVE_TAGCACHE
     { "pictureflow", &pictureflow_item },
+    { "artistportraits", &artist_portraits_item },
     { "database", &db_browser },
 #endif
     { "files", &file_browser },
@@ -717,7 +727,7 @@ static void root_menu_apply_canonical_order(void)
     static const struct menu_item_ex * const before_tagnavi[] = {
         &wps_item,
 #ifdef HAVE_TAGCACHE
-        &db_browser, &pictureflow_item,
+        &db_browser, &pictureflow_item, &artist_portraits_item,
 #endif
     };
     static const struct menu_item_ex * const after_tagnavi[] = {

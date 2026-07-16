@@ -481,6 +481,8 @@ struct carousel_model {
     void (*sort_next)(void);                           /* cycle sort order forward + resort */
     void (*sort_prev)(void);                           /* cycle sort order backward + resort */
     void (*set_initial)(const char *selected_file);    /* position on entry (resume/now-playing) */
+    bool has_pfraw_cache;                              /* this screen's own pfraw thumbnail cache */
+    const char *title;                                 /* status-bar title */
 };
 
 static int  album_build_index(void);
@@ -507,7 +509,42 @@ static const struct carousel_model album_model = {
     .sort_next   = album_sort_next,
     .sort_prev   = album_sort_prev,
     .set_initial = set_initial_slide,
+    .has_pfraw_cache = true,
+    .title       = "Album Covers",
 };
+
+/* Artist portraits: the same carousel over the album-artist list, with photos
+ * from <artist>/folder.jpg (the shared art cache already caches artist folders
+ * at every size, including "coverflow"). No pfraw cache, no per-artist sort. */
+static int  artist_build_index(void);
+static int  artist_count(void);
+static bool artist_slide_dir(int index, char *dir, int dirlen);
+static bool no_legacy_art(int index, char *path, int len);
+static int  artist_enter(int index);
+static int  artist_jump_prev(void);
+static int  artist_jump_next(void);
+static void artist_draw_text(void);
+static void carousel_sort_noop(void);
+static void artist_set_initial(const char *selected_file);
+
+static const struct carousel_model artist_model = {
+    .build_index = artist_build_index,
+    .count       = artist_count,
+    .slide_art   = artist_slide_dir,
+    .legacy_art  = no_legacy_art,
+    .enter       = artist_enter,
+    .jump_prev   = artist_jump_prev,
+    .jump_next   = artist_jump_next,
+    .draw_text   = artist_draw_text,
+    .sort_next   = carousel_sort_noop,
+    .sort_prev   = carousel_sort_noop,
+    .set_initial = artist_set_initial,
+    .has_pfraw_cache = false,
+    .title       = "Artist Portraits",
+};
+
+/* The active model, selected by the entry point (album_covers / artist_portraits)
+ * before init() runs. */
 static const struct carousel_model *model = &album_model;
 
 static inline void buf_ctx_lock(void)
@@ -3923,6 +3960,9 @@ static bool init(void)
      * .aat cache (with the old pfraw / empty slide as fallback). */
     aa_cache.inspected = model->count();
 
+    /* Reserve the album-art scratch buffer. Both models need it: create_empty_slide()
+     * builds the placeholder into aa_cache.buf, and (album only) the pfraw
+     * generator caches thumbnails there. */
     size_t aa_min = DISPLAY_WIDTH * DISPLAY_HEIGHT * sizeof(pix_t);
     size_t aa_bufsz = ALIGN_DOWN(MAX(aa_min * 3, pf_idx.buf_sz / 8),
                                  sizeof(long));
@@ -3944,25 +3984,32 @@ static bool init(void)
     buflib_init(&buf_ctx, (void *)pf_idx.buf, pf_idx.buf_sz);
     initialize_slide_cache();
 
-    if (!create_empty_slide(pf_cfg.cache_version != CACHE_VERSION))
+    if (!create_empty_slide(model->has_pfraw_cache &&
+                            pf_cfg.cache_version != CACHE_VERSION))
     {
-        pf_cfg.cache_version = CACHE_REBUILD;
-        pf_config_save();
+        if (model->has_pfraw_cache)
+        {
+            pf_cfg.cache_version = CACHE_REBUILD;
+            pf_config_save();
+        }
         error_wait("Could not load the empty slide");
         return false;
     }
 
-    if ((pf_cfg.cache_version != CACHE_VERSION) && !create_albumart_cache())
+    if (model->has_pfraw_cache)
     {
-        pf_cfg.cache_version = CACHE_REBUILD;
-        pf_config_save();
-        error_wait("Could not create album art cache");
-    }
+        if ((pf_cfg.cache_version != CACHE_VERSION) && !create_albumart_cache())
+        {
+            pf_cfg.cache_version = CACHE_REBUILD;
+            pf_config_save();
+            error_wait("Could not create album art cache");
+        }
 
-    if (pf_cfg.cache_version != CACHE_VERSION)
-    {
-        pf_cfg.cache_version = CACHE_VERSION;
-        pf_config_save();
+        if (pf_cfg.cache_version != CACHE_VERSION)
+        {
+            pf_cfg.cache_version = CACHE_VERSION;
+            pf_config_save();
+        }
     }
 
     if ((empty_slide_hid = read_pfraw(EMPTY_SLIDE, 0)) < 0)
@@ -3999,15 +4046,27 @@ static bool init(void)
 
 static bool reinit(void)
 {
+    bool is_album = (model == &album_model);
+    unsigned int hash_album = 0, hash_artist = 0;
+
     return_to_idle_state();
 
-    unsigned int hash_album = mfnv(get_album_name(center_index));
-    unsigned int hash_artist = mfnv(get_album_artist(center_index));
+    /* reselect() restores the same album across the rebuild by name hash --
+     * album-model-only (it reads the album index). Other models just restart
+     * at the first slide. */
+    if (is_album)
+    {
+        hash_album = mfnv(get_album_name(center_index));
+        hash_artist = mfnv(get_album_artist(center_index));
+    }
 
     cleanup();
     if (init())
     {
-        reselect(hash_album, hash_artist); /* splash if not found */
+        if (is_album)
+            reselect(hash_album, hash_artist); /* splash if not found */
+        else
+            set_current_slide(0);
         return true;
     }
     return false;
@@ -4028,6 +4087,180 @@ static int album_enter(int index)
     pf_resume_last_album = true;
     tagtree_enter_album_tracks_on_next_load(album_seek, album);
     return GO_TO_ALBUM_COVERS_TRACKS;
+}
+
+/* ---- Artist portraits model ---------------------------------------------- */
+
+static char *artist_name(int index)
+{
+    return pf_idx.artist_names + pf_idx.artist_index[index].name_idx;
+}
+
+/* carousel_model.build_index: build the persistent album-artist list into the
+ * shared buffer (reuses build_artist_index, which create_album_index otherwise
+ * uses only as transient scaffolding). No on-disk cache -- artists are few, so a
+ * rebuild each open is cheap. */
+static int artist_build_index(void)
+{
+    void *buf = pf_idx.buf;
+    size_t buf_size = pf_idx.buf_sz;
+    int res;
+
+    ALIGN_BUFFER(buf, buf_size, sizeof(long));
+    res = build_artist_index(&tcs, &buf, &buf_size);
+    if (res < SUCCESS)
+        return res;
+
+    pf_idx.buf = buf;
+    pf_idx.buf_sz = buf_size;
+    pf_idx.album_ct = 0;   /* artist model has no album list */
+    return SUCCESS;
+}
+
+static int artist_count(void)
+{
+    return pf_idx.artist_ct;
+}
+
+/* The artist's folder, for the shared art cache: the first track filed under
+ * this album-artist, with its filename and album folder stripped away (the
+ * <artist>/<album>/<track> layout the whole artist-art feature assumes). */
+static bool artist_slide_dir(int index, char *dir, int dirlen)
+{
+    struct tagcache_search tcs_l;
+    char tcs_buf[TAGCACHE_BUFSZ];
+    bool ret = false;
+
+    if (!tagcache_search(&tcs_l, tag_filename))
+        return false;
+
+    tagcache_search_add_filter(&tcs_l, tag_albumartist,
+                               pf_idx.artist_index[index].seek);
+
+    if (tagcache_get_next(&tcs_l, tcs_buf, sizeof(tcs_buf)))
+    {
+        char *sep;
+        strlcpy(dir, tcs_l.result, dirlen);
+        sep = strrchr(dir, '/');
+        if (sep && sep != dir)
+        {
+            *sep = '\0';                 /* strip track file -> album folder */
+            sep = strrchr(dir, '/');
+            if (sep && sep != dir)
+            {
+                *sep = '\0';             /* strip album -> artist folder */
+                ret = true;
+            }
+        }
+    }
+    tagcache_search_finish(&tcs_l);
+    return ret;
+}
+
+/* Artists have no per-screen pfraw cache; a missing photo just shows the empty
+ * slide. */
+static bool no_legacy_art(int index, char *path, int len)
+{
+    (void)index; (void)path; (void)len;
+    return false;
+}
+
+/* Select an artist: open that album-artist's own album listing in the database
+ * browser (armed for the next load; BACK returns here). Records the slide to
+ * resume to (shared pf_resume_* state -- see set_initial_slide), so backing out
+ * lands on the artist just visited rather than the first one. */
+static int artist_enter(int index)
+{
+    pf_resume_album_index = index;
+    pf_resume_last_album = true;
+    tagtree_enter_artist_albums_on_next_load(pf_idx.artist_index[index].seek,
+                                             artist_name(index));
+    return GO_TO_ALBUM_COVERS_TRACKS;
+}
+
+/* Jump to the next/previous artist whose name starts with a different letter. */
+static int artist_jump_next(void)
+{
+    char *current = artist_name(center_index);
+    for (int i = center_index + 1; i < pf_idx.artist_ct; i++)
+        if (strncmp(artist_name(i), current, 1))
+            return i;
+    return pf_idx.artist_ct - 1;
+}
+
+static int artist_jump_prev(void)
+{
+    char *current = artist_name(center_index);
+    for (int i = center_index - 1; i > 0; i--)
+    {
+        if (strncmp(artist_name(i), current, 1))
+            current = artist_name(i);
+        while (i > 0)
+        {
+            if (strncmp(artist_name(i - 1), current, 1))
+                break;
+            i--;
+        }
+        return i;
+    }
+    return 0;
+}
+
+/* The artist name caption -- a single line, positioned like the album name line
+ * (album covers' second, artist/year line has no artist-mode equivalent). */
+static void artist_draw_text(void)
+{
+    static int prev_index = -1;
+    int char_height, txt_x, txt_y;
+    char *name;
+
+    if (global_settings.album_covers_show_album_name == ALBUM_NAME_HIDE)
+        return;
+
+    name = artist_name(center_index);
+    lcd_set_foreground(pf_fg_color);
+    lcd_setfont(pf_bold_font);
+    if (center_index != prev_index)
+    {
+        set_scroll_line(name, PF_SCROLL_ALBUM);
+        prev_index = center_index;
+    }
+
+    char_height = screens[SCREEN_MAIN].getcharheight();
+    switch (global_settings.album_covers_show_album_name)
+    {
+        case ALBUM_AND_ARTIST_TOP:
+            txt_y = 0;
+            break;
+        case ALBUM_NAME_BOTTOM:
+        case ALBUM_AND_ARTIST_BOTTOM:
+            txt_y = pf_height - (char_height * 9 / 4);
+            break;
+        case ALBUM_NAME_TOP:
+        default:
+            txt_y = char_height / 2;
+            break;
+    }
+
+    txt_x = get_scroll_line_offset(PF_SCROLL_ALBUM);
+    lcd_putsxy(txt_x, txt_y, name);
+    lcd_setfont(screens[SCREEN_MAIN].getuifont());
+}
+
+static void carousel_sort_noop(void)
+{
+}
+
+static void artist_set_initial(const char *selected_file)
+{
+    (void)selected_file;
+    if (pf_resume_last_album)
+    {
+        pf_resume_last_album = false;
+        set_current_slide(pf_resume_album_index);
+    }
+    else
+        set_current_slide(0);
 }
 
 static int album_covers_loop(void)
@@ -4114,19 +4347,24 @@ static int album_covers_loop(void)
              * as everywhere else in the firmware. */
             return GO_TO_PREVIOUS;
         case PF_MENU:
+            /* The in-screen menu is the album covers settings menu (sort, cache
+             * rebuild, ...); it operates on the album index, so it's album-only
+             * for now. Artist portraits just ignore MENU-hold. */
+            if (model != &album_model)
+                break;
             FOR_NB_SCREENS(i)
                 viewportmanager_theme_enable(i, true, NULL);
             ret = main_menu();
             FOR_NB_SCREENS(i)
                 viewportmanager_theme_undo(i, false);
-            sb_set_persistent_title("Album covers", Icon_NOICON, SCREEN_MAIN);
+            sb_set_persistent_title(model->title, Icon_NOICON, SCREEN_MAIN);
             lcd_set_viewport(&pf_vp);
 
             if (ret == -3)
             {
                 if (!reinit())
                     return GO_TO_PREVIOUS;
-                sb_set_persistent_title("Album covers", Icon_NOICON, SCREEN_MAIN);
+                sb_set_persistent_title(model->title, Icon_NOICON, SCREEN_MAIN);
                 lcd_set_viewport(&pf_vp);
                 lcd_set_background(pf_bg_color);
                 lcd_set_foreground(pf_fg_color);
@@ -4195,9 +4433,13 @@ static int album_covers_loop(void)
     }
 }
 
-int album_covers(const char *selected_file)
+/* Run the coverflow carousel over the given model. Both public entry points
+ * (album_covers / artist_portraits) are thin wrappers that select the model. */
+static int carousel_run(const struct carousel_model *m, const char *selected_file)
 {
     int ret;
+
+    model = m;
 
     /* Self-managed (rather than left to root_menu.c's load_screen(), which
      * only wraps the main-menu dispatch path) since this is also reachable
@@ -4235,8 +4477,8 @@ int album_covers(const char *selected_file)
     /* Was previously only set after returning from the in-screen menu (see
      * the PF_MENU case in album_covers_loop()) -- meaning the status bar
      * showed whatever title the previous screen left behind for the entire
-     * time between opening Album covers and the first MENU press. */
-    sb_set_persistent_title("Album covers", Icon_NOICON, SCREEN_MAIN);
+     * time between opening the carousel and the first MENU press. */
+    sb_set_persistent_title(model->title, Icon_NOICON, SCREEN_MAIN);
 
     /* Jump to selected_file's album if one was passed (e.g. onplay.c's
      * "Album covers" context-menu item on a specific track), otherwise the
@@ -4254,4 +4496,14 @@ int album_covers(const char *selected_file)
         pop_current_activity();
 
     return ret;
+}
+
+int album_covers(const char *selected_file)
+{
+    return carousel_run(&album_model, selected_file);
+}
+
+int artist_portraits(const char *selected_file)
+{
+    return carousel_run(&artist_model, selected_file);
 }
