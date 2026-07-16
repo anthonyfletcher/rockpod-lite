@@ -287,6 +287,15 @@ int main_menu_config(void)
     gui_synclist_set_icon_callback(&list, menu_get_icon);
     gui_synclist_set_nb_items(&list, menu_item_count);
     gui_synclist_set_title(&list, str(LANG_MAIN_MENU_SETTINGS), Icon_Rockbox);
+    /* Draw twice to settle the top row: entering from a list of a different
+     * row height (e.g. a tall album-art list) leaves the shared %?La album
+     * conditional transiently true on the first row, flashing its album-layout
+     * viewports for one frame -- the same issue tree.c's update_dir() fixes.
+     * The first pass is flush-inhibited so that transient frame never reaches
+     * the screen. */
+    gui_synclist_inhibit_flush(true);
+    gui_synclist_draw(&list);
+    gui_synclist_inhibit_flush(false);
     gui_synclist_draw(&list);
     gui_synclist_speak_item(&list);
 
@@ -294,8 +303,13 @@ int main_menu_config(void)
     while (!done)
     {
         cur_sel = gui_synclist_get_sel_pos(&list);
-        action = get_action(CONTEXT_LIST, HZ/10);
-        if (gui_synclist_do_button(&list, &action))
+        /* list_do_action (not a raw get_action) so the themed status bar's
+         * per-render viewport re-init is flush-inhibited during input polling.
+         * Without it those clears reach the display before the list repaints,
+         * showing as constant flicker under a heavy SBS (the failsafe SBS,
+         * which barely draws, doesn't trigger it). HZ so the status bar still
+         * redraws while idle, matching option_select.c's settings lists. */
+        if (list_do_action(CONTEXT_LIST, HZ, &list, &action))
             continue;
 
         switch (action)
