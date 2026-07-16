@@ -1,0 +1,129 @@
+/***************************************************************************
+ *             __________               __   ___.
+ *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
+ *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
+ *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
+ *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
+ *                     \/            \/     \/    \/            \/
+ * $Id$
+ *
+ * Copyright (C) 2026 Rockpod
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
+ * KIND, either express or implied.
+ *
+ ****************************************************************************/
+
+/* Coverflow "carousel" engine shared by Album Covers (apps/gui/album_covers.c)
+ * and Artist Portraits (apps/gui/artist_portraits.c). The engine (rendering,
+ * slide cache, scroll, input loop, thread) is generic; each screen supplies a
+ * carousel_model describing what the slides are. This header is the interface
+ * between the two: the model vtable, the shared index/rendering state the
+ * models read, and the engine helpers they call. */
+
+#ifndef _CAROUSEL_H_
+#define _CAROUSEL_H_
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include "config.h"
+#include "lcd.h"        /* fb_data */
+#include "tagcache.h"   /* struct tagcache_search */
+
+typedef fb_data pix_t;
+
+/* build_index / count return codes */
+#define SUCCESS              0
+#define ERROR_NO_ALBUMS     -1
+#define ERROR_BUFFER_FULL   -2
+#define ERROR_NO_ARTISTS    -3
+#define ERROR_USER_ABORT    -4
+
+/* Index data built into the shared buffer by a model's build_index(). Album
+ * covers fills album_index[]/album_names; artist portraits fills
+ * artist_index[]/artist_names via build_artist_index(). */
+struct album_data {
+    int name_idx;     /* offset to the album name */
+    int artist_idx;   /* offset to the artist name */
+    int year;         /* album year */
+    long artist_seek; /* artist taglist position */
+    long seek;        /* album taglist position */
+};
+
+struct artist_data {
+    int name_idx; /* offset to the artist name */
+    long seek;    /* artist taglist position */
+};
+
+struct pf_index_t {
+    uint32_t            header; /*INDEX_HDR*/
+    uint16_t            artist_ct;
+    uint16_t            album_ct;
+
+    char               *artist_names;
+    struct artist_data *artist_index;
+    size_t              artist_len;
+
+    unsigned int        album_untagged_idx;
+    char               *album_names;
+    struct album_data  *album_index;
+    size_t              album_len;
+    long                album_untagged_seek;
+
+    void * buf;
+    size_t buf_sz;
+};
+
+enum pf_scroll_line_type {
+    PF_SCROLL_TRACK = 0,
+    PF_SCROLL_ALBUM,
+    PF_SCROLL_ARTIST,
+    PF_MAX_SCROLL_LINES
+};
+
+/* The seam between the generic coverflow engine and the data it shows. */
+struct carousel_model {
+    int  (*build_index)(void);                         /* build the slide data; SUCCESS/ERROR_* */
+    int  (*count)(void);                               /* number of slides */
+    bool (*slide_art)(int index, char *dir, int len);  /* folder for the art cache */
+    bool (*legacy_art)(int index, char *path, int len);/* pre-cache fallback art, or false */
+    int  (*enter)(int index);                          /* select: drill in; returns GO_TO_* */
+    int  (*jump_prev)(void);                           /* jump to prev section (letter/year) */
+    int  (*jump_next)(void);                           /* jump to next section */
+    void (*draw_text)(void);                           /* center-slide caption */
+    void (*sort_next)(void);                           /* cycle sort order forward + resort */
+    void (*sort_prev)(void);                           /* cycle sort order backward + resort */
+    void (*set_initial)(const char *selected_file);    /* position on entry (resume/now-playing) */
+    bool has_pfraw_cache;                              /* this screen's own pfraw thumbnail cache */
+    const char *title;                                 /* status-bar title */
+};
+
+/* --- Shared engine state the models read/write (owned by the engine) -------- */
+extern struct pf_index_t pf_idx;   /* the current carousel's index buffer */
+extern int   center_index;         /* engine's current slide */
+extern int   pf_bold_font;         /* caption bold font (draw_text) */
+extern int   pf_height;            /* drawable viewport height (draw_text) */
+extern pix_t pf_fg_color;          /* caption colour (draw_text) */
+/* Transient "resume to this slide on next open" signal, set by a model's
+ * enter() and consumed by its set_initial(). */
+extern int   pf_resume_album_index;
+extern bool  pf_resume_last_album;
+
+/* --- Engine entry + helpers the models call -------------------------------- */
+/* Run the coverflow carousel over `m`. The thin public entry points
+ * album_covers()/artist_portraits() wrap this, selecting the model. */
+int  carousel_run(const struct carousel_model *m, const char *selected_file);
+void set_current_slide(int index);
+void set_scroll_line(const char *str, enum pf_scroll_line_type type);
+int  get_scroll_line_offset(enum pf_scroll_line_type type);
+/* Build the album-artist list into the shared buffer (used by both the album
+ * index build and the artist model). */
+int  build_artist_index(struct tagcache_search *tcs, void **buf, size_t *bufsz);
+
+#endif /* _CAROUSEL_H_ */
