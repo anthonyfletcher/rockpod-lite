@@ -2048,6 +2048,27 @@ void tagtree_enter_album_tracks_on_next_load(long album_seek,
     tagtree_enter_by_tag_on_next_load(tag_album);
 }
 
+/* Set by tagtree_enter_artist_albums_on_next_load(); consumed on the next fresh
+ * root load. -1 means none armed. */
+static long pending_artist_seek = -1;
+static char pending_artist_title[MENUENTRY_MAX_NAME];
+
+/* Arms a direct jump from the root into a specific album-artist's own album
+ * list -- the visual counterpart, for Artist portraits, of
+ * tagtree_enter_album_tracks_on_next_load(). Same seek-based approach: the
+ * carousel already knows the album-artist by tagcache seek, so no name/position
+ * matching is needed. Lands one level deep (the album listing) with dirlevel
+ * still 0, so a single BACK returns to the carousel while selecting an album
+ * still descends normally into its tracks. */
+void tagtree_enter_artist_albums_on_next_load(long albumartist_seek,
+                                              const char *artist_title)
+{
+    pending_artist_seek = albumartist_seek;
+    strlcpy(pending_artist_title, artist_title ? artist_title : "",
+            sizeof(pending_artist_title));
+    tagtree_enter_by_tag_on_next_load(tag_albumartist);
+}
+
 /* Finds the row in the currently-loaded root ("main") menu whose first tag
  * matches 'tag' (e.g. tag_album), independent of tagnavi.config's row order.
  * Returns the row index, or -1 if not found. Must be called after load_root()
@@ -2106,6 +2127,35 @@ static bool enter_album_tracks_directly(struct tree_context *c, long album_seek,
     c->currextra = 1;
     c->selected_item = 0;
     strmemccpy(current_title[c->currextra], album_title,
+               sizeof(current_title[0]));
+    return true;
+}
+
+/* Consumes pending_artist_seek: points csi at the root's "Album Artist" row's
+ * search_instruction and jumps straight to its album level, filtered by the
+ * album-artist's seek, without displaying the album-artist grouping itself. The
+ * album-artist row's chain is albumartist -> album -> title, so currextra 1 is
+ * the album listing. Leaves dirlevel at 0 (see enter_album_tracks_directly for
+ * why). Returns false if the root has no such albumartist -> album chain. */
+static bool enter_artist_albums_directly(struct tree_context *c,
+                                         long artist_seek, const char *artist_title)
+{
+    int idx = tagtree_find_root_entry_by_tag(tag_albumartist);
+    struct search_instruction *si;
+
+    if (idx < 0)
+        return false;
+
+    si = &menu->items[idx]->si;
+    if (si->tagorder_count < 3 || si->tagorder[1] != tag_album)
+        return false;
+
+    csi = si;
+    csi->result_seek[0] = artist_seek;
+    c->currtable = TABLE_NAVIBROWSE;
+    c->currextra = 1;
+    c->selected_item = 0;
+    strmemccpy(current_title[c->currextra], artist_title,
                sizeof(current_title[0]));
     return true;
 }
@@ -2216,6 +2266,19 @@ int tagtree_load(struct tree_context* c)
             /* Root has no plain tag_album row to anchor on (e.g. tagnavi
              * customized away from the shipped shape) -- fall through to
              * the root menu instead of a dead end. */
+        }
+        else if (target_tag == tag_albumartist && pending_artist_seek != -1)
+        {
+            /* Artist portraits' jump: straight to a specific album-artist's
+             * album listing, mirroring the tag_album case above. */
+            long artist_seek = pending_artist_seek;
+            char artist_title[MENUENTRY_MAX_NAME];
+            strlcpy(artist_title, pending_artist_title, sizeof(artist_title));
+            pending_artist_seek = -1;
+
+            if (enter_artist_albums_directly(c, artist_seek, artist_title))
+                return tagtree_load(c);
+            /* No albumartist -> album row to anchor on -- fall through. */
         }
         else
         {

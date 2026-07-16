@@ -64,6 +64,11 @@ void tagtree_enter_by_tag_on_next_load(int tag);
  * exiting straight back out (no intermediate level to unwind through). */
 void tagtree_enter_album_tracks_on_next_load(long album_seek,
                                              const char *album_title);
+/* As above, but jumps straight to a specific album-artist's album listing
+ * (identified by seek), for Artist portraits (apps/gui/album_covers.c). A single
+ * BACK returns to the carousel; selecting an album descends into its tracks. */
+void tagtree_enter_artist_albums_on_next_load(long albumartist_seek,
+                                              const char *artist_title);
 /* Number of direct tag-browse ("->") rows in the root ("main") menu -- rows
  * that load a nested sub-menu ("==>") or trigger an action (e.g. "~>"
  * shuffle) don't count. Used by root_menu.c to know how many of its reserved
