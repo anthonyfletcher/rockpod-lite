@@ -254,6 +254,19 @@ int gui_list_get_item_offset(struct gui_synclist * gui_list,
     return item_offset;
 }
 
+/* When set, the list draw renders to the framebuffer but skips the LCD flush.
+ * Used to do a "settling" first pass (e.g. the double draw on a row-height
+ * change) without the transient frame reaching the screen. */
+static bool list_flush_inhibited = false;
+void gui_synclist_inhibit_flush(bool inhibit)
+{
+    list_flush_inhibited = inhibit;
+}
+bool gui_synclist_flush_inhibited(void)
+{
+    return list_flush_inhibited;
+}
+
 /*
  * Force a full screen update.
  */

@@ -239,6 +239,9 @@ extern int gui_synclist_get_nb_items(struct gui_synclist * lists);
 extern int  gui_synclist_get_sel_pos(struct gui_synclist * lists);
 
 extern void gui_synclist_draw(struct gui_synclist * lists);
+/* Suppress the LCD flush of the next list draw(s) -- render only, no update. */
+void gui_synclist_inhibit_flush(bool inhibit);
+bool gui_synclist_flush_inhibited(void);
 extern bool list_need_full_update(void);
 extern void gui_synclist_scroll_stop(struct gui_synclist *lists);
 extern void gui_synclist_select_item(struct gui_synclist * lists,

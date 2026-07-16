@@ -416,14 +416,17 @@ void list_draw(struct screen *display, struct gui_synclist *list)
     parent->bg_pattern = dc_saved_list_bg;
 #endif
     display->set_viewport(parent);
-    if (list_need_full_update() | skin_render_pending_update())
+    if (!gui_synclist_flush_inhibited())
     {
-        display->set_viewport(NULL);
-        display->update();
-        sb_skin_force_next_update();
+        if (list_need_full_update() | skin_render_pending_update())
+        {
+            display->set_viewport(NULL);
+            display->update();
+            sb_skin_force_next_update();
+        }
+        else
+            display->update_viewport();
     }
-    else
-        display->update_viewport();
     display->set_viewport(last_vp);
 }
 
