@@ -470,19 +470,31 @@ static void free_all_slide_prio(int prio);
  * engine into its own module and add an artist-portrait model over the same
  * interface. */
 struct carousel_model {
-    int  (*count)(void);                              /* number of slides */
-    bool (*slide_art)(int index, char *dir, int len); /* folder for the art cache */
-    int  (*enter)(int index);                         /* select: drill in; returns GO_TO_* */
+    int  (*count)(void);                               /* number of slides */
+    bool (*slide_art)(int index, char *dir, int len);  /* folder for the art cache */
+    bool (*legacy_art)(int index, char *path, int len);/* pre-cache fallback art, or false */
+    int  (*enter)(int index);                          /* select: drill in; returns GO_TO_* */
+    int  (*jump_prev)(void);                           /* jump to prev section (letter/year) */
+    int  (*jump_next)(void);                           /* jump to next section */
+    void (*draw_text)(void);                           /* center-slide caption */
 };
 
 static int  album_count(void);
 static bool get_slide_dir(const int slide_index, char *dir, int dirlen);
+static bool album_legacy_art(int index, char *path, int len);
 static int  album_enter(int index);
+static int  jmp_idx_prev(void);
+static int  jmp_idx_next(void);
+static void draw_album_text(void);
 
 static const struct carousel_model album_model = {
-    .count     = album_count,
-    .slide_art = get_slide_dir,
-    .enter     = album_enter,
+    .count      = album_count,
+    .slide_art  = get_slide_dir,
+    .legacy_art = album_legacy_art,
+    .enter      = album_enter,
+    .jump_prev  = jmp_idx_prev,
+    .jump_next  = jmp_idx_next,
+    .draw_text  = draw_album_text,
 };
 static const struct carousel_model *model = &album_model;
 
@@ -2493,6 +2505,15 @@ static int read_aat_transposed(const char *filename, int prio)
     return hid;
 }
 
+/* carousel_model.legacy_art for the album model: this screen's own per-album
+ * pfraw cache, keyed by a hash of the album+artist names. Always available. */
+static bool album_legacy_art(int index, char *path, int len)
+{
+    snprintf(path, len, CACHE_PREFIX "/%x%x.pfraw",
+             mfnv(get_album_name(index)), mfnv(get_album_artist(index)));
+    return true;
+}
+
 /**
   Load the surface for the given slide_index into the cache at cache_index.
  */
@@ -2521,16 +2542,19 @@ static inline bool load_and_prepare_surface(const int slide_index,
 
     /* Fall back to this screen's own pfraw cache when a shared thumbnail
      * isn't available yet (e.g. background generation hasn't reached it),
-     * so nothing regresses versus before the shared cache existed. */
+     * so nothing regresses versus before the shared cache existed. A model
+     * without a legacy cache (returns false) just shows the empty slide. */
     if (!got_shared)
     {
         char pfraw_file[MAX_PATH];
-        snprintf(pfraw_file, sizeof(pfraw_file), CACHE_PREFIX "/%x%x.pfraw",
-                 mfnv(get_album_name(slide_index)),
-                 mfnv(get_album_artist(slide_index)));
-        hid = read_pfraw(pfraw_file, prio);
-        if (hid < 0)
-            return false; /* allocation failure: retry later */
+        if (model->legacy_art(slide_index, pfraw_file, sizeof(pfraw_file)))
+        {
+            hid = read_pfraw(pfraw_file, prio);
+            if (hid < 0)
+                return false; /* allocation failure: retry later */
+        }
+        else
+            hid = empty_slide_hid;
     }
 
     pf_sldcache.cache[cache_index].hid = hid;
@@ -4027,7 +4051,7 @@ static int album_covers_loop(void)
         if (pf_state == pf_scrolling)
             update_scroll_animation();
         render_all_slides();
-        draw_album_text();
+        model->draw_text();
 
         if (aa_cache.inspected < pf_idx.album_ct)
         {
@@ -4099,7 +4123,7 @@ static int album_covers_loop(void)
             break;
         case PF_JMP:
         {
-            int new_idx = jmp_idx_next();
+            int new_idx = model->jump_next();
             if (new_idx != center_index)
             {
                 pf_state = pf_idle;
@@ -4109,7 +4133,7 @@ static int album_covers_loop(void)
         }
         case PF_JMP_PREV:
         {
-            int new_idx = jmp_idx_prev();
+            int new_idx = model->jump_prev();
             if (new_idx != center_index)
             {
                 pf_state = pf_idle;
