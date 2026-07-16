@@ -141,9 +141,6 @@ static const struct tag_info legal_tags[] =
     TAG(SKIN_TOKEN_SOUND_SPEED,           "Ss", "", SKIN_REFRESH_DYNAMIC),
 
     TAG(SKIN_TOKEN_VLED_HDD,              "lh", "", SKIN_REFRESH_DYNAMIC),
-    TAG(SKIN_TOKEN_VLED_BUILDING,         "lb", "", SKIN_REFRESH_DYNAMIC),
-    TAG(SKIN_TOKEN_VLED_WORKING,          "lw", "", SKIN_REFRESH_DYNAMIC),
-    TAG(SKIN_TOKEN_LOADING_ANIM,          "la", "", SKIN_REFRESH_DYNAMIC),
 
     TAG(SKIN_TOKEN_MAIN_HOLD,             "mh", "", SKIN_REFRESH_DYNAMIC),
     TAG(SKIN_TOKEN_REMOTE_HOLD,           "mr", "", SKIN_REFRESH_DYNAMIC),
@@ -154,8 +151,6 @@ static const struct tag_info legal_tags[] =
     TAG(SKIN_TOKEN_PEAKMETER,             "pm", "", SKIN_REFRESH_PEAK_METER),
     TAG(SKIN_TOKEN_PEAKMETER_LEFT,        "pL", BAR_PARAMS, SKIN_REFRESH_PEAK_METER),
     TAG(SKIN_TOKEN_PEAKMETER_RIGHT,       "pR", BAR_PARAMS, SKIN_REFRESH_PEAK_METER),
-
-    TAG(SKIN_TOKEN_SPECTRUM_BARS,         "Sb", "i|S", SKIN_REFRESH_SPECTRUM),
 
     TAG(SKIN_TOKEN_PLAYER_PROGRESSBAR,    "pf", "", SKIN_REFRESH_DYNAMIC|SKIN_REFRESH_PLAYER_PROGRESS),
     TAG(SKIN_TOKEN_PROGRESSBAR,           "pb" , BAR_PARAMS, SKIN_REFRESH_PLAYER_PROGRESS),
@@ -218,7 +213,6 @@ static const struct tag_info legal_tags[] =
     TAG(SKIN_TOKEN_LIST_ITEM_NUMBER,      "LN", "",  SKIN_REFRESH_DYNAMIC),
     TAG(SKIN_TOKEN_LIST_TITLE_ICON,       "Li" , "", SKIN_REFRESH_DYNAMIC),
     TAG(SKIN_TOKEN_LIST_ITEM_ICON,        "LI", "|IS",  SKIN_REFRESH_DYNAMIC),
-    TAG(SKIN_TOKEN_LIST_ITEM_ALBUMART,    "La", "|IS",  SKIN_REFRESH_DYNAMIC),
     TAG(SKIN_TOKEN_LIST_ITEM_CFG,         "Lb" , "Sii|S", SKIN_REFRESH_DYNAMIC),
     TAG(SKIN_TOKEN_LIST_ITEM_IS_SELECTED, "Lc" , "", SKIN_REFRESH_DYNAMIC),
     TAG(SKIN_TOKEN_LIST_NEEDS_SCROLLBAR,  "LB", BAR_PARAMS, SKIN_REFRESH_DYNAMIC),
@@ -324,6 +318,11 @@ int find_escape_character(char lookup)
  * Finds a tag by name and returns its parameter list, or an empty
  * string if the tag is not found in the table
  */
+/* Optional extension: a build may supply extra tags in its own table without
+ * touching this (upstream) one. Weak so the parser still links standalone
+ * (e.g. the theme editor), where it resolves to NULL and is skipped. */
+const struct tag_info* find_custom_tag(const char *name) __attribute__((weak));
+
 const struct tag_info* find_tag(const char *name)
 {
     /* First we check three then two characters after the '%', then a single char */
@@ -334,6 +333,8 @@ const struct tag_info* find_tag(const char *name)
         tag = search_tag(name, i);
         i--;
     }
+    if (!tag && find_custom_tag)
+        tag = find_custom_tag(name);
     return tag;
 }
 

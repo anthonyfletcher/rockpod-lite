@@ -200,8 +200,6 @@ enum skin_token_type {
     SKIN_TOKEN_PEAKMETER_LEFTBAR,
     SKIN_TOKEN_PEAKMETER_RIGHT,
     SKIN_TOKEN_PEAKMETER_RIGHTBAR,
-    /* Spectrum bars */
-    SKIN_TOKEN_SPECTRUM_BARS,
 
     /* Current track */
     SKIN_TOKEN_TRACK_ELAPSED_PERCENT,
@@ -233,7 +231,6 @@ enum skin_token_type {
     SKIN_TOKEN_LIST_ITEM_COLUMN,
     SKIN_TOKEN_LIST_ITEM_NUMBER,
     SKIN_TOKEN_LIST_ITEM_ICON,
-    SKIN_TOKEN_LIST_ITEM_ALBUMART,
     SKIN_TOKEN_LIST_NEEDS_SCROLLBAR,
     SKIN_TOKEN_LIST_SCROLLBAR,
 
@@ -247,9 +244,6 @@ enum skin_token_type {
 
     /* Virtual LED */
     SKIN_TOKEN_VLED_HDD,
-    SKIN_TOKEN_VLED_BUILDING,
-    SKIN_TOKEN_VLED_WORKING,
-    SKIN_TOKEN_LOADING_ANIM,
     /* Volume level */
     SKIN_TOKEN_VOLUME,
     SKIN_TOKEN_VOLUMEBAR,
@@ -314,6 +308,15 @@ enum skin_token_type {
     SKIN_TOKEN_SUBSTRING,
 
     SKIN_TOKEN_DRAWRECTANGLE,
+
+    /* This build's extra tokens. The token type field is a short-enum (1 byte),
+     * so these must live in this enum to fit and to be stored/matched. Their
+     * tag-table rows are kept out of tag_table.c (see apps custom_tags.c). */
+    SKIN_TOKEN_SPECTRUM_BARS,
+    SKIN_TOKEN_LIST_ITEM_ALBUMART,
+    SKIN_TOKEN_VLED_BUILDING,
+    SKIN_TOKEN_VLED_WORKING,
+    SKIN_TOKEN_LOADING_ANIM,
 };
 
 /*

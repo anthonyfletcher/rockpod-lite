@@ -102,6 +102,7 @@ gui/album_covers.c
 gui/skin_engine/skin_backdrops.c
 gui/skin_engine/skin_display.c
 gui/skin_engine/skin_engine.c
+gui/skin_engine/custom_tags.c
 gui/skin_engine/skin_parser.c
 gui/skin_engine/skin_render.c
 gui/skin_engine/skin_tokens.c
