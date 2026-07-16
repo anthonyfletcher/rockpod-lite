@@ -4154,6 +4154,15 @@ void audio_flush_and_reload_tracks(void)
 /* Return which album art handle is current for the user in the given slot */
 int playback_current_aa_hid(int slot)
 {
+    /* Hold the last real handle per slot so a momentary "not found" during a
+     * track change doesn't drop the WPS album art for a frame -- which flips
+     * the %C conditional and flickers the art frame/glyphs even when the art
+     * itself is unchanged. Only held while a track is present but its art
+     * hasn't settled; a track that genuinely has no art (ERR_UNSUPPORTED_TYPE)
+     * clears it so the no-cover fallback still shows. */
+    static int last_good[MAX_MULTIPLE_AA] =
+        { [0 ... MAX_MULTIPLE_AA - 1] = ERR_HANDLE_NOT_FOUND };
+
     if ((unsigned)slot < MAX_MULTIPLE_AA)
     {
         struct track_info user_cur;
@@ -4166,7 +4175,22 @@ int playback_current_aa_hid(int slot)
         }
 
         if (have_info)
-            return user_cur.aa_hid[slot];
+        {
+            int hid = user_cur.aa_hid[slot];
+            if (hid >= 0)
+                last_good[slot] = hid;
+            else if (hid == ERR_UNSUPPORTED_TYPE)
+                last_good[slot] = ERR_HANDLE_NOT_FOUND;
+            else if (last_good[slot] >= 0)
+                return last_good[slot];   /* art still settling -- hold it */
+            return hid;
+        }
+
+        /* Track lookup momentarily unavailable mid-skip: keep the last cover
+         * while still playing so the frame doesn't flicker. A real stop
+         * (PLAY_STOPPED) falls through to "none" so no art is shown. */
+        if (play_status != PLAY_STOPPED && last_good[slot] >= 0)
+            return last_good[slot];
     }
 
     return ERR_HANDLE_NOT_FOUND;
