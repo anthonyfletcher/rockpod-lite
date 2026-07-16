@@ -640,12 +640,17 @@ static bool track_list_commit_buf_info(struct track_buf_info *tbip,
 #ifdef HAVE_ALBUMART
 static inline void clear_cached_aa_handles(int* aa_handles)
 {
-    if (last_folder_aa_path[0] == 0)
-        return;
-
+    /* When a track is freed, don't bufclose() a handle that's cached for reuse
+     * by a later same-folder/same-album track -- zero those slots so only
+     * genuinely per-track handles get closed. Both caches must be spared; the
+     * embedded-art one was not, so same-album tracks reused a handle that this
+     * freed, breaking WPS album art on the next track. */
     FOREACH_ALBUMART(i)
     {
-        if (aa_handles[i] == last_folder_aa_hid[i])
+        if (last_folder_aa_path[0] != 0 && aa_handles[i] == last_folder_aa_hid[i])
+            aa_handles[i] = 0;
+        else if (last_embedded_aa_hid[i] != 0 &&
+                 aa_handles[i] == last_embedded_aa_hid[i])
             aa_handles[i] = 0;
     }
 }
