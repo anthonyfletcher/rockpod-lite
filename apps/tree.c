@@ -643,6 +643,7 @@ static int update_dir(void)
 
     /* set title and icon, if nothing is set, clear the title
      * with NULL and icon as NOICON as the list is reused */
+    gui_synclist_scroll_stop(list); /*ADDED*/
     gui_synclist_set_title(list, P2STR((unsigned char*)title), icon);
 
     gui_synclist_set_nb_items(list, tc.filesindir);

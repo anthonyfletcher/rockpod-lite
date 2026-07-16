@@ -1056,6 +1056,8 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
     skin_backdrop_show(data->backdrop_id);
 #endif
 
+    if (inhibit_flush) /*ADDEDD*/
+        pending_full_update = true; /*ADDEDD*/
     if (((refresh_mode&SKIN_REFRESH_ALL) == SKIN_REFRESH_ALL))
     {
         /* If this is the UI viewport then let the UI know
@@ -1066,8 +1068,8 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
     display->set_viewport_ex(NULL, VP_FLAG_VP_SET_CLEAN);
     if (!inhibit_flush)
         display->update();
-    else
-        pending_full_update = true;
+    /*else
+        pending_full_update = true; REMOVED*/
 }
 
 static __attribute__((noinline))
