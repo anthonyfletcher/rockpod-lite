@@ -74,6 +74,12 @@ char* filetype_get_plugin(int attr, char *buffer, size_t buffer_len);
 /* returns true if the attr is supported */
 bool  filetype_supported(int attr);
 
+/* If the viewer viewers.config assigns to `attr` is core-linked rather than a
+ * .rock plugin, runs it on `file`, stores its GO_TO_* code in *rc and returns
+ * true. Returns false (leaving *rc alone) when the viewer is a plugin or there
+ * is none, so callers fall through to their usual plugin_load() path. */
+bool  filetype_open_core_viewer(int attr, const char *file, int *rc);
+
 /* List avialable viewers and start selected plugin with current_file as argument */
 int filetype_list_viewers(const char* current_file);
 

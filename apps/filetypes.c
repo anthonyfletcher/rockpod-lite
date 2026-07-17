@@ -32,6 +32,7 @@
 #include "kernel.h"
 #include "plugin.h"
 #include "filetypes.h"
+#include "text_viewer/text_viewer.h"
 #include "screens.h"
 #include "dir.h"
 #include "file.h"
@@ -595,6 +596,42 @@ char* filetype_get_plugin(int attr, char *buffer, size_t buffer_len)
 bool filetype_supported(int attr)
 {
     return find_attr(attr) >= 0;
+}
+
+/* Viewers that are linked into the core instead of loaded as a .rock.
+ * viewers.config names them exactly as it names plugins -- resolution happens
+ * here rather than in the config syntax, so that retiring a plugin in favour
+ * of a core screen never touches the user's config file. */
+struct core_viewer {
+    const char *name;
+    int (*run)(const char *file);   /* returns a GO_TO_* code */
+};
+
+static const struct core_viewer core_viewers[] = {
+    { "textviewer", text_viewer },
+};
+
+bool filetype_open_core_viewer(int attr, const char *file, int *rc)
+{
+    int index = filetype_get_plugin_index(attr);
+    const char *name;
+
+    if (index < 0)
+        return false;
+
+    name = filetypes[index].plugin;
+    if (!name)
+        return false;
+
+    for (size_t i = 0; i < ARRAY_SIZE(core_viewers); i++)
+    {
+        if (!strcmp(name, core_viewers[i].name))
+        {
+            *rc = core_viewers[i].run(file);
+            return true;
+        }
+    }
+    return false;
 }
 
 /**** Open With Screen ****/

@@ -87,6 +87,8 @@ struct tv_state
     size_t win_len;
     bool   eof;              /* extraction reached the end of the document */
 
+    off_t  file_size;        /* of the document on disk, for resume staleness */
+
     off_t  pos;              /* first byte of the page on screen */
     off_t  next;             /* first byte of the page after it */
 
@@ -398,12 +400,16 @@ static void tv_resume_to(off_t target)
 
 /* ---- resume ----------------------------------------------------------- */
 
-/* Lines are "<offset> <path>", newest first. The offset leads so the path can
- * hold spaces and still be the rest of the line. */
-static off_t tv_resume_load(const char *file)
+/* Lines are "<offset> <size> <path>", newest first. The path trails so it may
+ * hold spaces. `size` is the document's length when the offset was recorded:
+ * offsets index the extracted text, so a document that has changed on disk
+ * invalidates them, and the length is the cheap half of noticing. (It cannot
+ * catch an edit that preserves the length, nor a layout change -- page
+ * boundaries also move with the font and spacing.) */
+static off_t tv_resume_load(const char *file, off_t size)
 {
     int fd = open(TV_RESUME_FILE, O_RDONLY);
-    char line[MAX_PATH + 16];
+    char line[MAX_PATH + 32];
     off_t off = 0;
 
     if (fd < 0)
@@ -411,16 +417,22 @@ static off_t tv_resume_load(const char *file)
 
     while (read_line(fd, line, sizeof line) > 0)
     {
-        char *sep = strchr(line, ' ');
+        char *end_off = strchr(line, ' ');
+        char *end_size;
 
-        if (!sep)
+        if (!end_off)
             continue;
-        *sep = '\0';
-        if (!strcmp(sep + 1, file))
-        {
+        end_size = strchr(end_off + 1, ' ');
+        if (!end_size)
+            continue;
+
+        if (strcmp(end_size + 1, file))
+            continue;
+
+        *end_off = *end_size = '\0';
+        if ((off_t)atoi(end_off + 1) == size)
             off = (off_t)atoi(line);
-            break;
-        }
+        break;                               /* first hit is the newest */
     }
 
     close(fd);
@@ -429,30 +441,33 @@ static off_t tv_resume_load(const char *file)
 
 /* Rewrites the list with `file` at the front, streaming the old entries past
  * a single line buffer rather than holding them all on the stack. */
-static void tv_resume_save(const char *file, off_t off)
+static void tv_resume_save(const char *file, off_t off, off_t size)
 {
-    char line[MAX_PATH + 16];
+    char line[MAX_PATH + 32];
     int old, new_fd, kept = 1;
 
     new_fd = open(TV_RESUME_FILE ".tmp", O_CREAT|O_WRONLY|O_TRUNC, 0666);
     if (new_fd < 0)
         return;
 
-    fdprintf(new_fd, "%ld %s\n", (long)off, file);
+    fdprintf(new_fd, "%ld %ld %s\n", (long)off, (long)size, file);
 
     old = open(TV_RESUME_FILE, O_RDONLY);
     if (old >= 0)
     {
         while (kept < TV_RESUME_MAX && read_line(old, line, sizeof line) > 0)
         {
-            char *sep = strchr(line, ' ');
+            char *end_off = strchr(line, ' ');
+            char *end_size;
 
-            if (!sep)
+            if (!end_off)
                 continue;
-            *sep = '\0';
-            if (!strcmp(sep + 1, file))
+            end_size = strchr(end_off + 1, ' ');
+            if (!end_size)
+                continue;
+            if (!strcmp(end_size + 1, file))
                 continue;                    /* superseded by the new entry */
-            *sep = ' ';
+
             fdprintf(new_fd, "%s\n", line);
             kept++;
         }
@@ -501,6 +516,10 @@ static bool tv_open(const char *file)
 
     if (ts_io_core(&io, &tv.file, file) != TS_OK)
         return false;
+
+    /* Through the vtable rather than filesize(): coreio_size() restores the
+     * descriptor's position and keeps its cached copy honest. */
+    tv.file_size = io.size(io.ctx);
 
     rc = ts_open(&tv.src, &io, file, arena, TS_ARENA_RECOMMENDED, &cfg);
     if (rc != TS_OK)
@@ -571,7 +590,7 @@ int text_viewer(const char *file)
         return GO_TO_PREVIOUS;
     }
 
-    resume = tv_resume_load(file);
+    resume = tv_resume_load(file, tv.file_size);
     if (resume > 0)
         tv_resume_to(resume);
 
@@ -607,7 +626,7 @@ int text_viewer(const char *file)
     }
 
   done:
-    tv_resume_save(file, tv.pos);
+    tv_resume_save(file, tv.pos, tv.file_size);
     tv_close();
     viewportmanager_theme_undo(SCREEN_MAIN, false);
     pop_current_activity();

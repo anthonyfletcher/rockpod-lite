@@ -722,6 +722,11 @@ int ft_enter(struct tree_context* c)
                     return rc;
                 }
 
+                /* Core-linked viewers run in-process and hand back a GO_TO_*
+                 * code directly, so they never reach plugin_load(). */
+                if (filetype_open_core_viewer(file->attr, buf, &rc))
+                    break;
+
                 plugin = filetype_get_plugin(file->attr, plugin_path, sizeof(plugin_path));
                 if (plugin)
                 {
