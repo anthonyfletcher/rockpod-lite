@@ -115,6 +115,7 @@ text_viewer/ts_tags.c
 text_viewer/ts_text.c
 text_viewer/ts_zip.c
 text_viewer/ts_zipdoc.c
+text_viewer/text_viewer.c
 
 gui/skin_engine/skin_backdrops.c
 gui/skin_engine/skin_display.c

@@ -216,7 +216,8 @@ enum current_activity {
     ACTIVITY_SHORTCUTSMENU,
     ACTIVITY_ID3SCREEN,
     ACTIVITY_USBSCREEN,
-    ACTIVITY_ALBUMCOVERS
+    ACTIVITY_ALBUMCOVERS,
+    ACTIVITY_TEXTVIEWER
 };
 
 /* custom string representation of activity */
