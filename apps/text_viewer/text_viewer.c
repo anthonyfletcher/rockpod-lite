@@ -30,9 +30,11 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>          /* atoi */
 #include <string.h>
 #include "config.h"
-#include "file.h"            /* off_t */
+#include "file.h"            /* off_t, open/close/rename/remove, fdprintf */
+#include "rbpaths.h"         /* ROCKBOX_DIR */
 #include "action.h"
 #include "screen_access.h"   /* screens[] */
 #include "kernel.h"          /* HZ, SYS_USB_CONNECTED */
@@ -42,7 +44,7 @@
 #include "splash.h"
 #include "viewport.h"
 #include "font.h"
-#include "misc.h"            /* push_current_activity */
+#include "misc.h"            /* push_current_activity, read_line */
 #include "root_menu.h"       /* GO_TO_* */
 #include "txt_source.h"
 #include "ts_io_core.h"
@@ -60,6 +62,16 @@
  * window must reach before laying a page out. */
 #define TV_PAGE_MAX     (8 * 1024)
 
+/* Page starts visited going forward, so paging back is a pop rather than a
+ * re-layout from the start of the document (the only other known page
+ * boundary). At a few KiB per page this covers documents far larger than
+ * anything these targets will open; past it, paging back simply stops. */
+#define TV_MAX_PAGES    8192
+
+/* Most recently read documents and where the reader got to, newest first. */
+#define TV_RESUME_FILE  ROCKBOX_DIR "/textviewer.dat"
+#define TV_RESUME_MAX   16
+
 struct tv_state
 {
     struct ts_core_file file;
@@ -67,6 +79,7 @@ struct tv_state
 
     int arena_handle;
     int window_handle;
+    int stack_handle;
 
     /* window holds extracted bytes [win_start, win_start + win_len) */
     unsigned char *win;
@@ -75,6 +88,10 @@ struct tv_state
     bool   eof;              /* extraction reached the end of the document */
 
     off_t  pos;              /* first byte of the page on screen */
+    off_t  next;             /* first byte of the page after it */
+
+    off_t *stack;            /* page starts behind `pos`, oldest first */
+    int    sp;
 
     int font;
     int line_height;
@@ -301,9 +318,150 @@ static void tv_draw(void)
 
     last = display->set_viewport(&tv.vp);
     display->clear_viewport();
-    tv_page(tv.pos, true);
+    tv.next = tv_page(tv.pos, true);
     display->update_viewport();
     display->set_viewport(last);
+}
+
+/* ---- navigation ------------------------------------------------------- */
+
+/* True once the page on screen is the last one: nothing left to extract, and
+ * the page after it starts at or past the final byte. */
+static bool tv_at_end(void)
+{
+    return tv.eof && tv.next >= tv.win_start + (off_t)tv.win_len;
+}
+
+/* Brings `target` into the window and makes it the current page. The engine
+ * only rewinds to the start, so reaching a page that has fallen out the back
+ * of the window means re-extracting from byte zero. */
+static bool tv_reach(off_t target)
+{
+    if (target < tv.win_start)
+    {
+        splash(0, ID2P(LANG_WAIT));
+        if (ts_rewind(tv.src) != TS_OK)
+            return false;
+        tv.win_start = 0;
+        tv.win_len = 0;
+        tv.eof = false;
+    }
+
+    /* Set first: compaction keeps its margin behind tv.pos, so this is what
+     * stops the text we are heading for being discarded on the way. */
+    tv.pos = target;
+    tv_ensure(target, TV_PAGE_MAX);
+    return true;
+}
+
+static void tv_next_page(void)
+{
+    if (tv_at_end())
+        return;
+
+    if (tv.sp < TV_MAX_PAGES)
+        tv.stack[tv.sp++] = tv.pos;
+    tv.pos = tv.next;
+    tv_draw();
+}
+
+static void tv_prev_page(void)
+{
+    if (tv.sp == 0)
+        return;                              /* first page */
+
+    if (!tv_reach(tv.stack[tv.sp - 1]))
+        return;
+    tv.sp--;
+    tv_draw();
+}
+
+/* Pages forward from the start without drawing until `target` falls on the
+ * current page. Doubles as the stack rebuild: resuming leaves the history
+ * exactly as it would have been had the reader paged there by hand. */
+static void tv_resume_to(off_t target)
+{
+    splash(0, ID2P(LANG_WAIT));
+
+    while (1)
+    {
+        off_t next = tv_page(tv.pos, false);
+
+        if (next <= tv.pos || next > target)
+            break;                           /* end of document, or target is
+                                              * on the page we are on */
+        if (tv.sp < TV_MAX_PAGES)
+            tv.stack[tv.sp++] = tv.pos;
+        tv.pos = next;
+    }
+}
+
+/* ---- resume ----------------------------------------------------------- */
+
+/* Lines are "<offset> <path>", newest first. The offset leads so the path can
+ * hold spaces and still be the rest of the line. */
+static off_t tv_resume_load(const char *file)
+{
+    int fd = open(TV_RESUME_FILE, O_RDONLY);
+    char line[MAX_PATH + 16];
+    off_t off = 0;
+
+    if (fd < 0)
+        return 0;
+
+    while (read_line(fd, line, sizeof line) > 0)
+    {
+        char *sep = strchr(line, ' ');
+
+        if (!sep)
+            continue;
+        *sep = '\0';
+        if (!strcmp(sep + 1, file))
+        {
+            off = (off_t)atoi(line);
+            break;
+        }
+    }
+
+    close(fd);
+    return off;
+}
+
+/* Rewrites the list with `file` at the front, streaming the old entries past
+ * a single line buffer rather than holding them all on the stack. */
+static void tv_resume_save(const char *file, off_t off)
+{
+    char line[MAX_PATH + 16];
+    int old, new_fd, kept = 1;
+
+    new_fd = open(TV_RESUME_FILE ".tmp", O_CREAT|O_WRONLY|O_TRUNC, 0666);
+    if (new_fd < 0)
+        return;
+
+    fdprintf(new_fd, "%ld %s\n", (long)off, file);
+
+    old = open(TV_RESUME_FILE, O_RDONLY);
+    if (old >= 0)
+    {
+        while (kept < TV_RESUME_MAX && read_line(old, line, sizeof line) > 0)
+        {
+            char *sep = strchr(line, ' ');
+
+            if (!sep)
+                continue;
+            *sep = '\0';
+            if (!strcmp(sep + 1, file))
+                continue;                    /* superseded by the new entry */
+            *sep = ' ';
+            fdprintf(new_fd, "%s\n", line);
+            kept++;
+        }
+        close(old);
+    }
+    close(new_fd);
+
+    remove(TV_RESUME_FILE);
+    rename(TV_RESUME_FILE ".tmp", TV_RESUME_FILE);
 }
 
 /* ---- lifecycle -------------------------------------------------------- */
@@ -315,7 +473,7 @@ static bool tv_open(const char *file)
     void *arena;
     int rc;
 
-    tv.arena_handle = tv.window_handle = 0;
+    tv.arena_handle = tv.window_handle = tv.stack_handle = 0;
     tv.src = NULL;
 
     /* Every stage of the engine holds pointers into the arena and to its
@@ -334,6 +492,13 @@ static bool tv_open(const char *file)
     core_pin(tv.window_handle);
     tv.win = core_get_data(tv.window_handle);
 
+    tv.stack_handle = core_alloc(TV_MAX_PAGES * sizeof(off_t));
+    if (tv.stack_handle <= 0)
+        return false;
+    core_pin(tv.stack_handle);
+    tv.stack = core_get_data(tv.stack_handle);
+    tv.sp = 0;
+
     if (ts_io_core(&io, &tv.file, file) != TS_OK)
         return false;
 
@@ -350,6 +515,7 @@ static bool tv_open(const char *file)
     tv.win_len = 0;
     tv.eof = false;
     tv.pos = 0;
+    tv.next = 0;
     return true;
 }
 
@@ -359,6 +525,11 @@ static void tv_close(void)
         ts_close(tv.src);
     tv.src = NULL;
 
+    if (tv.stack_handle > 0)
+    {
+        core_unpin(tv.stack_handle);
+        tv.stack_handle = core_free(tv.stack_handle);
+    }
     if (tv.window_handle > 0)
     {
         core_unpin(tv.window_handle);
@@ -370,6 +541,7 @@ static void tv_close(void)
         tv.arena_handle = core_free(tv.arena_handle);
     }
     tv.win = NULL;
+    tv.stack = NULL;
 }
 
 static void tv_setup_screen(void)
@@ -386,6 +558,7 @@ static void tv_setup_screen(void)
 int text_viewer(const char *file)
 {
     int ret = GO_TO_PREVIOUS;
+    off_t resume;
 
     push_current_activity(ACTIVITY_TEXTVIEWER);
     tv_setup_screen();
@@ -398,22 +571,43 @@ int text_viewer(const char *file)
         return GO_TO_PREVIOUS;
     }
 
+    resume = tv_resume_load(file);
+    if (resume > 0)
+        tv_resume_to(resume);
+
     tv_draw();
 
     while (1)
     {
         int action = get_action(CONTEXT_STD, TIMEOUT_BLOCK);
 
-        if (action == ACTION_STD_CANCEL)
-            break;
-
-        if (default_event_handler(action) == SYS_USB_CONNECTED)
+        switch (action)
         {
-            ret = GO_TO_ROOT;
-            break;
+            case ACTION_STD_NEXT:
+            case ACTION_STD_NEXTREPEAT:
+                tv_next_page();
+                break;
+
+            case ACTION_STD_PREV:
+            case ACTION_STD_PREVREPEAT:
+                tv_prev_page();
+                break;
+
+            case ACTION_STD_CANCEL:
+                goto done;
+
+            default:
+                if (default_event_handler(action) == SYS_USB_CONNECTED)
+                {
+                    ret = GO_TO_ROOT;
+                    goto done;
+                }
+                break;
         }
     }
 
+  done:
+    tv_resume_save(file, tv.pos);
     tv_close();
     viewportmanager_theme_undo(SCREEN_MAIN, false);
     pop_current_activity();
