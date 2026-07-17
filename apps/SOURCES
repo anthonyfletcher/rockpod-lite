@@ -100,6 +100,22 @@ gui/album_covers.c
 gui/artist_portraits.c
 #endif
 
+/* Streaming text-extraction engine behind the core-linked text viewer. Turns
+ * plain/markdown/html/rtf/fb2/epub/docx/pdf into a stream of UTF-8. Platform
+ * coupling is confined to ts_io_core.c; ts_io_rockbox.c (plugin API) and
+ * ts_io_stdio.c (host test harness) are deliberately not built here. */
+text_viewer/ts_charset.c
+text_viewer/ts_core.c
+text_viewer/ts_inflate.c
+text_viewer/ts_io_core.c
+text_viewer/ts_markup.c
+text_viewer/ts_pdf.c
+text_viewer/ts_pdffont.c
+text_viewer/ts_tags.c
+text_viewer/ts_text.c
+text_viewer/ts_zip.c
+text_viewer/ts_zipdoc.c
+
 gui/skin_engine/skin_backdrops.c
 gui/skin_engine/skin_display.c
 gui/skin_engine/skin_engine.c
