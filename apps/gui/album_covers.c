@@ -13,7 +13,7 @@
 *
 * Original code: http://code.google.com/p/pictureflow/
 *
-* Formerly apps/plugins/pictureflow/pictureflow.c -- ported to core 
+* Formerly apps/plugins/pictureflow/pictureflow.c -- ported to core  - MIT License
 *
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -433,6 +433,9 @@ static void draw_album_text(void);
 static void album_sort_next(void);
 static void album_sort_prev(void);
 static void set_initial_slide(const char *selected_file);
+static int  album_on_menu(void);
+static void album_idle(void);
+static void album_prepare(void);
 
 static const struct carousel_model album_model = {
     .build_index = album_build_index,
@@ -446,6 +449,9 @@ static const struct carousel_model album_model = {
     .sort_next   = album_sort_next,
     .sort_prev   = album_sort_prev,
     .set_initial = set_initial_slide,
+    .on_menu     = album_on_menu,
+    .idle        = album_idle,
+    .prepare     = album_prepare,
     .has_pfraw_cache = true,
     .title       = "Album Covers",
 };
@@ -3904,21 +3910,10 @@ static bool init(void)
         return false;
     }
 
-    if (model->has_pfraw_cache)
-    {
-        if ((pf_cfg.cache_version != CACHE_VERSION) && !create_albumart_cache())
-        {
-            pf_cfg.cache_version = CACHE_REBUILD;
-            pf_config_save();
-            error_wait("Could not create album art cache");
-        }
-
-        if (pf_cfg.cache_version != CACHE_VERSION)
-        {
-            pf_cfg.cache_version = CACHE_VERSION;
-            pf_config_save();
-        }
-    }
+    /* Model-specific one-off setup after the slide cache is up (album covers
+     * generates its pfraw fallback thumbnails here; artist portraits has none). */
+    if (model->prepare)
+        model->prepare();
 
     if ((empty_slide_hid = read_pfraw(EMPTY_SLIDE, 0)) < 0)
     {
@@ -3997,6 +3992,61 @@ static int album_enter(int index)
     return GO_TO_ALBUM_COVERS_TRACKS;
 }
 
+/* carousel_model.on_menu: the Album Covers in-screen settings menu. Returns a
+ * GO_TO_* to exit the carousel, or a CAROUSEL_MENU_* sentinel to stay (the
+ * engine loop restores the carousel's display for the sentinel cases). */
+static int album_on_menu(void)
+{
+    int ret;
+
+    FOR_NB_SCREENS(i)
+        viewportmanager_theme_enable(i, true, NULL);
+    ret = main_menu();
+    FOR_NB_SCREENS(i)
+        viewportmanager_theme_undo(i, false);
+
+    if (ret == -3)
+        return reinit() ? CAROUSEL_MENU_RELOADED : GO_TO_PREVIOUS;
+    if (ret == -2)
+        return GO_TO_WPS;
+    if (ret == -1)
+        return GO_TO_PREVIOUS;
+    if (ret == MENU_ATTACHED_USB)
+        return GO_TO_ROOT;
+    return CAROUSEL_MENU_STAY;
+}
+
+/* carousel_model.idle: opportunistic pfraw thumbnail generation. Only does work
+ * while the pfraw cache is still incomplete (aa_cache.inspected < album_ct);
+ * normally inspected == album_ct after init, so this is a cheap no-op. */
+static void album_idle(void)
+{
+    if (aa_cache.inspected < pf_idx.album_ct)
+    {
+        buf_ctx_lock();
+        incremental_albumart_cache(false);
+        buf_ctx_unlock();
+    }
+}
+
+/* carousel_model.prepare: generate the pfraw fallback thumbnails after init,
+ * when the on-disk cache version has changed. */
+static void album_prepare(void)
+{
+    if ((pf_cfg.cache_version != CACHE_VERSION) && !create_albumart_cache())
+    {
+        pf_cfg.cache_version = CACHE_REBUILD;
+        pf_config_save();
+        error_wait("Could not create album art cache");
+    }
+
+    if (pf_cfg.cache_version != CACHE_VERSION)
+    {
+        pf_cfg.cache_version = CACHE_VERSION;
+        pf_config_save();
+    }
+}
+
 static int album_covers_loop(void)
 {
     int ret;
@@ -4057,12 +4107,8 @@ static int album_covers_loop(void)
         render_all_slides();
         model->draw_text();
 
-        if (aa_cache.inspected < pf_idx.album_ct)
-        {
-            buf_ctx_lock();
-            incremental_albumart_cache(false);
-            buf_ctx_unlock();
-        }
+        if (model->idle)
+            model->idle();
 
         /* Copy offscreen buffer to LCD and give time to other threads */
         lcd_update();
@@ -4081,37 +4127,24 @@ static int album_covers_loop(void)
              * as everywhere else in the firmware. */
             return GO_TO_PREVIOUS;
         case PF_MENU:
-            /* The in-screen menu is the album covers settings menu (sort, cache
-             * rebuild, ...); it operates on the album index, so it's album-only
-             * for now. Artist portraits just ignore MENU-hold. */
-            if (model != &album_model)
+            /* The in-screen menu is model-specific (album covers has its settings
+             * menu; artist portraits has none -> on_menu is NULL). It returns a
+             * GO_TO_* to exit, or a CAROUSEL_MENU_* sentinel to stay. */
+            if (!model->on_menu)
                 break;
-            FOR_NB_SCREENS(i)
-                viewportmanager_theme_enable(i, true, NULL);
-            ret = main_menu();
-            FOR_NB_SCREENS(i)
-                viewportmanager_theme_undo(i, false);
+            ret = model->on_menu();
+            if (ret >= 0)
+                return ret;   /* a GO_TO_* screen code */
+            /* Handled in place -- restore the carousel's own status bar/viewport
+             * after the menu overlay, and (on a rebuild) its colours. */
             sb_set_persistent_title(model->title, Icon_NOICON, SCREEN_MAIN);
             lcd_set_viewport(&pf_vp);
-
-            if (ret == -3)
+            if (ret == CAROUSEL_MENU_RELOADED)
             {
-                if (!reinit())
-                    return GO_TO_PREVIOUS;
-                sb_set_persistent_title(model->title, Icon_NOICON, SCREEN_MAIN);
-                lcd_set_viewport(&pf_vp);
                 lcd_set_background(pf_bg_color);
                 lcd_set_foreground(pf_fg_color);
-                lcd_set_drawmode(DRMODE_FG);
             }
-            else if (ret == -2)
-                return GO_TO_WPS;
-            else if (ret == -1)
-                return GO_TO_PREVIOUS;
-            else if (ret == MENU_ATTACHED_USB)
-                return GO_TO_ROOT;
-            else
-                lcd_set_drawmode(DRMODE_FG);
+            lcd_set_drawmode(DRMODE_FG);
             break;
 
         case PF_NEXT:

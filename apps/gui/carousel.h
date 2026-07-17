@@ -87,6 +87,13 @@ enum pf_scroll_line_type {
     PF_MAX_SCROLL_LINES
 };
 
+/* on_menu() return values. Non-negative values are GO_TO_* screen codes the
+ * engine loop returns (exits the carousel); these two sentinels mean "handled,
+ * stay in the carousel". They are negative so they never collide with a
+ * (non-negative) GO_TO_* enum value. */
+#define CAROUSEL_MENU_STAY     (-1)  /* menu closed; just resume drawing */
+#define CAROUSEL_MENU_RELOADED (-2)  /* index was rebuilt; engine resets its display */
+
 /* The seam between the generic coverflow engine and the data it shows. */
 struct carousel_model {
     int  (*build_index)(void);                         /* build the slide data; SUCCESS/ERROR_* */
@@ -100,6 +107,11 @@ struct carousel_model {
     void (*sort_next)(void);                           /* cycle sort order forward + resort */
     void (*sort_prev)(void);                           /* cycle sort order backward + resort */
     void (*set_initial)(const char *selected_file);    /* position on entry (resume/now-playing) */
+    /* Optional (NULL = not provided). Keep the engine loop/init free of any
+     * direct calls into a specific model's code. */
+    int  (*on_menu)(void);   /* MENU-hold: run the in-screen menu; GO_TO_* or CAROUSEL_MENU_* */
+    void (*idle)(void);      /* per-frame background work (e.g. incremental cache) */
+    void (*prepare)(void);   /* one-off post-init setup (e.g. pfraw cache generation) */
     bool has_pfraw_cache;                              /* this screen's own pfraw thumbnail cache */
     const char *title;                                 /* status-bar title */
 };
