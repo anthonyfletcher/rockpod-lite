@@ -31,32 +31,10 @@
 #include "icons.h"
 #include "gui/album_covers.h"
 
-static int album_covers_resize_callback(int action,
-                                        const struct menu_item_ex *this_item,
-                                        struct gui_synclist *this_list)
-{
-    (void)this_item;
-    (void)this_list;
-    static bool old_resize;
-    switch (action)
-    {
-        case ACTION_ENTER_MENUITEM:
-            old_resize = global_settings.album_covers_resize;
-            break;
-        case ACTION_EXIT_MENUITEM:
-            if (old_resize != global_settings.album_covers_resize)
-                album_covers_rebuild_cache();
-            break;
-    }
-    return ACTION_REDRAW;
-}
-
 MENUITEM_SETTING(album_covers_center_margin, &global_settings.album_covers_center_margin, NULL);
 MENUITEM_SETTING(album_covers_slide_tuck, &global_settings.album_covers_slide_tuck, NULL);
 MENUITEM_SETTING(album_covers_zoom, &global_settings.album_covers_zoom, NULL);
 MENUITEM_SETTING(album_covers_parallel_slides, &global_settings.album_covers_parallel_slides, NULL);
-MENUITEM_SETTING(album_covers_resize, &global_settings.album_covers_resize,
-                  album_covers_resize_callback);
 MENUITEM_SETTING(album_covers_scroll_speed, &global_settings.album_covers_scroll_speed, NULL);
 MENUITEM_SETTING(album_covers_transition_speed, &global_settings.album_covers_transition_speed, NULL);
 MENUITEM_SETTING(album_covers_show_album_name, &global_settings.album_covers_show_album_name, NULL);
@@ -91,7 +69,6 @@ MAKE_MENU(album_covers_menu, ID2P(LANG_ALBUM_COVER_SETTINGS), NULL, Icon_Audio,
             &album_covers_slide_tuck,
             &album_covers_zoom,
             &album_covers_parallel_slides,
-            &album_covers_resize,
             &album_covers_scroll_speed,
             &album_covers_transition_speed,
             &album_covers_rebuild_item,

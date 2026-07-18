@@ -1685,13 +1685,14 @@ const struct settings_list settings[] = {
     INT_SETTING(0, album_covers_slide_tuck, LANG_NUMBER_OF_SLIDES, 32,
                 "album covers slide tuck", UNIT_INT, 0, 64, 1,
                 NULL, NULL, NULL),
+    /* Max 100%: the coverflow art cache is 128px square, which equals
+     * DISPLAY_WIDTH on this target, so 100% zoom already renders the centre
+     * cover at native resolution -- higher values would just upscale it. */
     INT_SETTING(0, album_covers_zoom, LANG_ZOOM, 100,
-                "album covers zoom", UNIT_PERCENT, 10, 300, 1,
+                "album covers zoom", UNIT_PERCENT, 10, 100, 1,
                 NULL, NULL, NULL),
     OFFON_SETTING(0, album_covers_parallel_slides, LANG_SPACING, true,
                   "album covers parallel slides", NULL),
-    OFFON_SETTING(0, album_covers_resize, LANG_RESIZE_COVERS, true,
-                  "album covers resize", NULL),
     INT_SETTING(0, album_covers_scroll_speed, LANG_SCROLL_SPEED, 200,
                 "album covers scroll speed", UNIT_PERCENT, 100, 400, 25,
                 NULL, NULL, NULL),

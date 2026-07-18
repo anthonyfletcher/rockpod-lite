@@ -547,7 +547,6 @@ struct user_settings
     int  album_covers_slide_tuck;
     int  album_covers_zoom;
     bool album_covers_parallel_slides;
-    bool album_covers_resize;
     int  album_covers_scroll_speed;
     int  album_covers_transition_speed;
     int  album_covers_show_album_name;
