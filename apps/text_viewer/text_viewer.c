@@ -339,6 +339,10 @@ static off_t tv_page(off_t start, bool render)
  * margin border and any loading splash before the page is drawn inset. */
 static void tv_fullscreen_vp(struct viewport *vp)
 {
+    /* viewport_set_fullscreen() runs lcd_init_viewport() before it writes the
+     * struct, and that reads vp->buffer -- so it must be cleared first, exactly
+     * as viewport_set_defaults() does. Skipping it dereferences stack garbage. */
+    vp->buffer = NULL;
     viewport_set_fullscreen(vp, SCREEN_MAIN);
 #ifdef HAVE_LCD_COLOR
     vp->bg_pattern = tv.vp.bg_pattern;
@@ -392,6 +396,8 @@ static void tv_splash_loading(void)
 
     name = name ? name + 1 : tv.path;
 
+    vp.buffer = NULL;            /* see tv_fullscreen_vp(): cleared before
+                                 * viewport_set_fullscreen reads it */
     viewport_set_fullscreen(&vp, SCREEN_MAIN);
     last = d->set_viewport(&vp);
     d->clear_viewport();
