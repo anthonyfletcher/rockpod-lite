@@ -115,7 +115,18 @@ struct carousel_model {
     const char *title;                                 /* status-bar title */
 };
 
+/* Engine-owned persistent config for the album carousel (cache version + resume
+ * slide). Not user settings -- those live in global_settings; this is internal
+ * cache/resume state the engine persists and the album model reads/writes. */
+struct pf_config_t
+{
+     int cache_version;
+     bool update_albumart;
+     int last_album;
+};
+
 /* --- Shared engine state the models read/write (owned by the engine) -------- */
+extern struct pf_config_t pf_cfg;  /* engine's persistent cache/resume config */
 extern struct pf_index_t pf_idx;   /* the current carousel's index buffer */
 extern int   center_index;         /* engine's current slide */
 extern int   pf_bold_font;         /* caption bold font (draw_text) */
@@ -136,6 +147,13 @@ int  get_scroll_line_offset(enum pf_scroll_line_type type);
 /* Build the album-artist list into the shared buffer (used by both the album
  * index build and the artist model). */
 int  build_artist_index(struct tagcache_search *tcs, void **buf, size_t *bufsz);
+/* Persist the engine's pf_cfg to its config file (album model calls this after
+ * changing last_album / triggering a cache rebuild). */
+void pf_config_save(void);
+/* True once the current index's art has all been inspected (background art
+ * cache fully populated); the album model gates its "please wait" splashes on
+ * this instead of touching engine buffer state directly. */
+bool carousel_cache_ready(void);
 
 /* Engine restart operations the album model drives (re-sort, in-screen rebuild).
  * These wrap the render thread / slide cache / buffer lifecycle so model code

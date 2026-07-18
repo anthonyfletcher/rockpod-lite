@@ -96,6 +96,7 @@ gui/viewport.c
  * Gated on HAVE_TAGCACHE like the rest of the tag-database UI it replaces
  * the old plugin's entry point for -- see root_menu.c's GO_TO_PICTUREFLOW. */
 #ifdef HAVE_TAGCACHE
+gui/carousel.c
 gui/album_covers.c
 gui/artist_portraits.c
 #endif
