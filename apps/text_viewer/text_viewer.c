@@ -92,13 +92,6 @@ enum {
     TV_COLOUR_WOB            /* white on black */
 };
 
-/* text_viewer_page_location values. */
-enum {
-    TV_LOC_OFF = 0,
-    TV_LOC_PAGE,             /* current page number */
-    TV_LOC_FILE              /* percent of the way through the file */
-};
-
 struct tv_state
 {
     struct ts_core_file file;
@@ -304,11 +297,10 @@ static size_t tv_line_break(unsigned char *s, size_t avail, int width,
 
 /* Lays out one page from `start`, drawing it when `render` is set. Returns the
  * offset of the next page. */
-/* One line is reserved at the foot of the page for the location indicator. */
+/* One line is reserved at the foot of the page for the page number. */
 static int tv_footer_height(void)
 {
-    return (global_settings.text_viewer_page_location != TV_LOC_OFF)
-           ? tv.line_height : 0;
+    return global_settings.text_viewer_page_number ? tv.line_height : 0;
 }
 
 static off_t tv_page(off_t start, bool render)
@@ -363,35 +355,18 @@ static void tv_fullscreen_vp(struct viewport *vp)
 #endif
 }
 
-/* The page-location indicator, right-aligned on the reserved bottom line.
- * Drawn with tv.vp current (so it uses the reading font and colours). */
+/* The page number, right-aligned on the reserved bottom line. Drawn with
+ * tv.vp current, so it uses the reading font and colours. */
 static void tv_draw_footer(void)
 {
     struct screen *d = &screens[SCREEN_MAIN];
     char buf[16];
     int tw, th;
 
-    switch (global_settings.text_viewer_page_location)
-    {
-        case TV_LOC_PAGE:
-            snprintf(buf, sizeof buf, "%d", tv.sp + 1);
-            break;
-        case TV_LOC_FILE:
-        {
-            /* Last byte on the page (tv.next) over the file size. Byte offsets
-             * index the extracted text, so this tracks the file exactly for
-             * plain text and understates it for the container formats. */
-            long pct = (tv.file_size > 0)
-                     ? (long)(tv.next * 100 / tv.file_size) : 0;
-            if (pct > 100)
-                pct = 100;
-            snprintf(buf, sizeof buf, "%ld%%", pct);
-            break;
-        }
-        default:
-            return;
-    }
+    if (!global_settings.text_viewer_page_number)
+        return;
 
+    snprintf(buf, sizeof buf, "%d", tv.sp + 1);
     d->getstringsize((unsigned char *)buf, &tw, &th);
     d->putsxy(tv.vp.width - tw, tv.vp.height - tv.line_height,
               (unsigned char *)buf);

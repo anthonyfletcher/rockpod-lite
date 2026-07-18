@@ -17411,22 +17411,8 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_TEXT_VIEWER_PAGE_LOCATION
-  desc: core text viewer page location indicator setting
-  user: core
-  <source>
-    *: "Page Location"
-  </source>
-  <dest>
-    *: "Page Location"
-  </dest>
-  <voice>
-    *: "Page Location"
-  </voice>
-</phrase>
-<phrase>
   id: LANG_TEXT_VIEWER_PAGE_NUMBER
-  desc: core text viewer page location option
+  desc: core text viewer, show the page number at the foot
   user: core
   <source>
     *: "Page Number"
@@ -17436,19 +17422,5 @@
   </dest>
   <voice>
     *: "Page Number"
-  </voice>
-</phrase>
-<phrase>
-  id: LANG_TEXT_VIEWER_FILE_LOCATION
-  desc: core text viewer page location option
-  user: core
-  <source>
-    *: "File Location"
-  </source>
-  <dest>
-    *: "File Location"
-  </dest>
-  <voice>
-    *: "File Location"
   </voice>
 </phrase>

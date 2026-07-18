@@ -35,8 +35,8 @@ MENUITEM_SETTING(text_viewer_margin,
                  &global_settings.text_viewer_margin, NULL);
 MENUITEM_SETTING(text_viewer_line_spacing,
                  &global_settings.text_viewer_line_spacing, NULL);
-MENUITEM_SETTING(text_viewer_page_location,
-                 &global_settings.text_viewer_page_location, NULL);
+MENUITEM_SETTING(text_viewer_page_number,
+                 &global_settings.text_viewer_page_number, NULL);
 
 /* Pick a .fnt from the fonts folder, storing just its name in the setting;
  * unlike the theme's own font item this does not touch the global UI font. */
@@ -85,6 +85,6 @@ MAKE_MENU(text_viewer_menu, ID2P(LANG_TEXT_VIEWER), NULL, Icon_Menu_setting,
           &text_viewer_colour_mode,
           &text_viewer_margin,
           &text_viewer_line_spacing,
-          &text_viewer_page_location,
+          &text_viewer_page_number,
           &text_viewer_font_item,
           &text_viewer_font_reset_item);
