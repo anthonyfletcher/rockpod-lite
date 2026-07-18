@@ -17289,13 +17289,13 @@
   desc: core text viewer settings menu title
   user: core
   <source>
-    *: "Text viewer"
+    *: "Text Viewer"
   </source>
   <dest>
-    *: "Text viewer"
+    *: "Text Viewer"
   </dest>
   <voice>
-    *: "Text viewer"
+    *: "Text Viewer"
   </voice>
 </phrase>
 <phrase>
@@ -17303,13 +17303,13 @@
   desc: core text viewer colour mode setting
   user: core
   <source>
-    *: "Colour mode"
+    *: "Colour Mode"
   </source>
   <dest>
-    *: "Colour mode"
+    *: "Colour Mode"
   </dest>
   <voice>
-    *: "Colour mode"
+    *: "Colour Mode"
   </voice>
 </phrase>
 <phrase>
@@ -17331,13 +17331,13 @@
   desc: core text viewer colour mode option
   user: core
   <source>
-    *: "Theme inverted"
+    *: "Theme Inverted"
   </source>
   <dest>
-    *: "Theme inverted"
+    *: "Theme Inverted"
   </dest>
   <voice>
-    *: "Theme inverted"
+    *: "Theme Inverted"
   </voice>
 </phrase>
 <phrase>
@@ -17345,13 +17345,13 @@
   desc: core text viewer colour mode option
   user: core
   <source>
-    *: "Black on white"
+    *: "Black on White"
   </source>
   <dest>
-    *: "Black on white"
+    *: "Black on White"
   </dest>
   <voice>
-    *: "Black on white"
+    *: "Black on White"
   </voice>
 </phrase>
 <phrase>
@@ -17359,13 +17359,13 @@
   desc: core text viewer colour mode option
   user: core
   <source>
-    *: "White on black"
+    *: "White on Black"
   </source>
   <dest>
-    *: "White on black"
+    *: "White on Black"
   </dest>
   <voice>
-    *: "White on black"
+    *: "White on Black"
   </voice>
 </phrase>
 <phrase>
@@ -17387,13 +17387,13 @@
   desc: core text viewer line spacing setting
   user: core
   <source>
-    *: "Line spacing"
+    *: "Line Spacing"
   </source>
   <dest>
-    *: "Line spacing"
+    *: "Line Spacing"
   </dest>
   <voice>
-    *: "Line spacing"
+    *: "Line Spacing"
   </voice>
 </phrase>
 <phrase>
@@ -17401,12 +17401,54 @@
   desc: core text viewer, revert font override to the UI font
   user: core
   <source>
-    *: "Use UI font"
+    *: "Use UI Font"
   </source>
   <dest>
-    *: "Use UI font"
+    *: "Use UI Font"
   </dest>
   <voice>
-    *: "Use UI font"
+    *: "Use UI Font"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_TEXT_VIEWER_PAGE_LOCATION
+  desc: core text viewer page location indicator setting
+  user: core
+  <source>
+    *: "Page Location"
+  </source>
+  <dest>
+    *: "Page Location"
+  </dest>
+  <voice>
+    *: "Page Location"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_TEXT_VIEWER_PAGE_NUMBER
+  desc: core text viewer page location option
+  user: core
+  <source>
+    *: "Page Number"
+  </source>
+  <dest>
+    *: "Page Number"
+  </dest>
+  <voice>
+    *: "Page Number"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_TEXT_VIEWER_FILE_LOCATION
+  desc: core text viewer page location option
+  user: core
+  <source>
+    *: "File Location"
+  </source>
+  <dest>
+    *: "File Location"
+  </dest>
+  <voice>
+    *: "File Location"
   </voice>
 </phrase>

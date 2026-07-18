@@ -92,6 +92,13 @@ enum {
     TV_COLOUR_WOB            /* white on black */
 };
 
+/* text_viewer_page_location values. */
+enum {
+    TV_LOC_OFF = 0,
+    TV_LOC_PAGE,             /* current page number */
+    TV_LOC_FILE              /* percent of the way through the file */
+};
+
 struct tv_state
 {
     struct ts_core_file file;
@@ -297,12 +304,19 @@ static size_t tv_line_break(unsigned char *s, size_t avail, int width,
 
 /* Lays out one page from `start`, drawing it when `render` is set. Returns the
  * offset of the next page. */
+/* One line is reserved at the foot of the page for the location indicator. */
+static int tv_footer_height(void)
+{
+    return (global_settings.text_viewer_page_location != TV_LOC_OFF)
+           ? tv.line_height : 0;
+}
+
 static off_t tv_page(off_t start, bool render)
 {
     off_t off = start;
     int y = 0;
 
-    while (y + tv.line_height <= tv.vp.height)
+    while (y + tv.line_height <= tv.vp.height - tv_footer_height())
     {
         unsigned char *s;
         size_t avail, draw, used;
@@ -349,6 +363,40 @@ static void tv_fullscreen_vp(struct viewport *vp)
 #endif
 }
 
+/* The page-location indicator, right-aligned on the reserved bottom line.
+ * Drawn with tv.vp current (so it uses the reading font and colours). */
+static void tv_draw_footer(void)
+{
+    struct screen *d = &screens[SCREEN_MAIN];
+    char buf[16];
+    int tw, th;
+
+    switch (global_settings.text_viewer_page_location)
+    {
+        case TV_LOC_PAGE:
+            snprintf(buf, sizeof buf, "%d", tv.sp + 1);
+            break;
+        case TV_LOC_FILE:
+        {
+            /* Last byte on the page (tv.next) over the file size. Byte offsets
+             * index the extracted text, so this tracks the file exactly for
+             * plain text and understates it for the container formats. */
+            long pct = (tv.file_size > 0)
+                     ? (long)(tv.next * 100 / tv.file_size) : 0;
+            if (pct > 100)
+                pct = 100;
+            snprintf(buf, sizeof buf, "%ld%%", pct);
+            break;
+        }
+        default:
+            return;
+    }
+
+    d->getstringsize((unsigned char *)buf, &tw, &th);
+    d->putsxy(tv.vp.width - tw, tv.vp.height - tv.line_height,
+              (unsigned char *)buf);
+}
+
 static void tv_draw(void)
 {
     struct screen *display = &screens[SCREEN_MAIN];
@@ -360,6 +408,7 @@ static void tv_draw(void)
 
     display->set_viewport(&tv.vp);
     tv.next = tv_page(tv.pos, true);         /* the page, inset by the margin */
+    tv_draw_footer();
 
     display->set_viewport(&full);
     display->update_viewport();              /* push the whole screen */
@@ -392,7 +441,7 @@ static void tv_splash_loading(void)
     struct viewport vp, *last;
     const unsigned char *msg = str(LANG_WAIT);
     const char *name = strrchr(tv.path, '/');
-    int tw, th;
+    int tw, th, bh;
 
     name = name ? name + 1 : tv.path;
 
@@ -403,17 +452,21 @@ static void tv_splash_loading(void)
     d->clear_viewport();
     d->bmp(&bm_rockpodtext, 0, 0);
 
-    /* Caption over the art in the theme's bold UI font, Themify_2's dark
-     * colour, centred: the wait line at y=180 with the name just beneath. */
-    vp.font = font_get_ui_bold();
+    /* Caption over the art in Themify_2's dark colour, centred: the wait line
+     * in the bold UI font at y=180, the file name just beneath it in the plain
+     * UI font. */
     vp.drawmode = DRMODE_FG;
     vp.fg_pattern = LCD_RGBPACK(0x00, 0x0c, 0x21);
-    d->set_viewport(&vp);
 
-    d->getstringsize(msg, &tw, &th);
+    vp.font = font_get_ui_bold();
+    d->set_viewport(&vp);
+    d->getstringsize(msg, &tw, &bh);
     d->putsxy((d->lcdwidth - tw) / 2, 180, msg);
+
+    vp.font = screens[SCREEN_MAIN].getuifont();
+    d->set_viewport(&vp);
     d->getstringsize((const unsigned char *)name, &tw, &th);
-    d->putsxy((d->lcdwidth - tw) / 2, 180 + th, (const unsigned char *)name);
+    d->putsxy((d->lcdwidth - tw) / 2, 180 + bh, (const unsigned char *)name);
 
     d->update_viewport();
     d->set_viewport(last);

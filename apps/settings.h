@@ -639,6 +639,7 @@ struct user_settings
     bool text_viewer_margin;      /* inset the page by a small border */
     int text_viewer_line_spacing; /* extra pixels between lines */
     unsigned char text_viewer_font_file[MAX_FILENAME+1]; /* "" = UI font */
+    int text_viewer_page_location; /* 0 off, 1 page number, 2 file percent */
     unsigned char kbd_file[MAX_FILENAME+1];  /* last keyboard */
     int  backlight_timeout;  /* backlight off timeout:  -1=never,
                                 0=always, or time in seconds */
