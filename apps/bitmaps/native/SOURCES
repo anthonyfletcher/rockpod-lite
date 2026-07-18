@@ -42,6 +42,11 @@ rockpodusb.bmp
 rockpodtext.bmp
 #endif
 
+/* Left-hand artwork panel for the core credits screen (320x240 iPods) */
+#if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
+rockpodcredits.bmp
+#endif
+
 /* USB logo */
 #ifdef HAVE_LCD_COLOR
 #if LCD_WIDTH > 176

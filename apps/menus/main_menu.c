@@ -47,6 +47,9 @@
 #include "skin_buffer.h"
 #include "disk.h"
 #include "dialog_test.h"
+#include "credits.h"
+#include "root_menu.h"
+#include "text_viewer/text_viewer.h"
 
 static const struct browse_folder_info config = {ROCKBOX_DIR, SHOW_CFG};
 static int show_info(void);
@@ -130,18 +133,19 @@ MENUITEM_FUNCTION(lastfm_scrobbler_item, 0, ID2P(LANG_AUDIOSCROBBLER),
 
 static int show_credits(void)
 {
-    if (plugin_load(PLUGIN_DIR "/credits.rock", NULL) != PLUGIN_OK)
-        show_info();
-    return 0;
+    return credits_screen();
 }
 
-static int show_legal(void)
+static int show_license(void)
 {
-    if (plugin_load(PLUGIN_DIR "/text_viewer.rock", ROCKBOX_DIR "/docs/COPYING.txt") != PLUGIN_OK)
-        show_info();
-    if (plugin_load(PLUGIN_DIR "/text_viewer.rock", ROCKBOX_DIR "/docs/LICENSES.txt") != PLUGIN_OK)
-        show_info();
-    return 0;
+    return text_viewer(ROCKBOX_DIR "/docs/COPYING.txt") == GO_TO_ROOT
+           ? SYS_USB_CONNECTED : 0;
+}
+
+static int show_third_party_licenses(void)
+{
+    return text_viewer(ROCKBOX_DIR "/docs/LICENSES.txt") == GO_TO_ROOT
+           ? SYS_USB_CONNECTED : 0;
 }
 
 #define SIZE_FMT "%s %s"
@@ -450,12 +454,17 @@ MENUITEM_FUNCTION(show_runtime_item, 0, ID2P(LANG_RUNNING_TIME),
 MENUITEM_FUNCTION(debug_menu_item, 0, ID2P(LANG_DEBUG),
                   debug_menu, NULL, Icon_NOICON);
 
-MENUITEM_FUNCTION(show_legal_item, 0, ID2P(LANG_LEGAL_NOTICES),
-                  show_legal, NULL, Icon_NOICON);
+MENUITEM_FUNCTION(show_license_item, 0, ID2P(LANG_LICENSE),
+                  show_license, NULL, Icon_NOICON);
+
+MENUITEM_FUNCTION(show_third_party_licenses_item, 0,
+                  ID2P(LANG_THIRD_PARTY_LICENSES),
+                  show_third_party_licenses, NULL, Icon_NOICON);
 
 MAKE_MENU(info_menu, ID2P(LANG_SYSTEM), 0, Icon_System_menu,
           &show_info_item, &show_credits_item,
-          &show_runtime_item, &show_legal_item, &debug_menu_item);
+          &show_runtime_item, &show_license_item,
+          &show_third_party_licenses_item, &debug_menu_item);
 /*      INFO MENU                  */
 /***********************************/
 

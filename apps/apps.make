@@ -34,4 +34,9 @@ $(BUILDDIR)/apps/features: $(APPSDIR)/features.txt  $(BUILDDIR)/firmware/common/
 $(BUILDDIR)/apps/genlang-features:  $(BUILDDIR)/apps/features
 	$(call PRINTS,GEN $(subst $(BUILDDIR)/,,$@))tr \\n : < $< > $@
 
+# credits.c pulls in the generated name list. The rule that builds credits.raw
+# lives in apps/plugins/plugins.make (still shared with docs/CREDITS); this just
+# makes the core object wait for it on a clean build.
+$(BUILDDIR)/apps/credits.o: $(BUILDDIR)/credits.raw
+
 ASMDEFS_SRC += $(APPSDIR)/core_asmdefs.c

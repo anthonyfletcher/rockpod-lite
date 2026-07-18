@@ -15,9 +15,8 @@
  *     entries and the HOTKEY_PROPERTIES hotkey all load this via
  *     viewers.config's "*,properties,-" mapping; without it, File
  *     Properties/Track Info silently fail to open.
- *   - credits.c: apps/menus/main_menu.c's show_credits() does fall back
- *     to a plain info screen if this is missing, so it's not load-bearing
- *     the same way, but keeping it anyway.
+ * credits.c moved into the core (apps/credits.c), launched directly from
+ * apps/menus/main_menu.c's show_credits() -- no longer a plugin.
  * lastfm_scrobbler_viewer.c (lastfm_scrobbler's "View Playback Log"
  * companion) removed entirely -- buggy, not worth keeping; the menu item
  * and view_playback_log() that called it are gone from lastfm_scrobbler.c
@@ -35,7 +34,6 @@
 #ifdef HAVE_TAGCACHE
 db_folder_select.c
 #endif
-credits.c
 lastfm_scrobbler.c
 playing_time.c
 properties.c
