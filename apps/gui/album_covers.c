@@ -3140,6 +3140,31 @@ static void reselect(unsigned int hash_album, unsigned int hash_artist)
     set_initial_slide(NULL);
 }
 
+/* carousel_settle: settle an in-progress scroll animation to idle. */
+void carousel_settle(void)
+{
+    return_to_idle_state();
+}
+
+/* carousel_reload: restart the render pipeline over the current index buffer.
+ * The loader thread is stopped first (so `compare`, if given, can re-sort the
+ * album index without racing it), then the slide cache is rebuilt and the
+ * loader restarted. */
+void carousel_reload(int (*compare)(const void *, const void *))
+{
+    end_pf_thread(); /* stop loading of covers */
+
+    if (compare)
+        qsort(pf_idx.album_index, pf_idx.album_ct,
+              sizeof(struct album_data), compare);
+
+    /* Empty cache and restart cover loading thread */
+    buflib_init(&buf_ctx, (void *)pf_idx.buf, pf_idx.buf_sz);
+    empty_slide_hid = read_pfraw(EMPTY_SLIDE, 0);
+    initialize_slide_cache();
+    create_pf_thread();
+}
+
 static bool sort_albums(int new_sorting, bool from_settings)
 {
     unsigned int hash_album, hash_artist;
@@ -3165,7 +3190,7 @@ static bool sort_albums(int new_sorting, bool from_settings)
         return false;
     }
 
-    return_to_idle_state();
+    carousel_settle();
 
     global_settings.album_covers_sort_albums_by = new_sorting;
     if (!from_settings)
@@ -3185,16 +3210,7 @@ static bool sort_albums(int new_sorting, bool from_settings)
     hash_album = mfnv(get_album_name(center_index));
     hash_artist = mfnv(get_album_artist(center_index));
 
-    end_pf_thread(); /* stop loading of covers  */
-
-    qsort(pf_idx.album_index, pf_idx.album_ct,
-                  sizeof(struct album_data), compare_albums);
-
-    /* Empty cache and restart cover loading thread */
-    buflib_init(&buf_ctx, (void *)pf_idx.buf, pf_idx.buf_sz);
-    empty_slide_hid = read_pfraw(EMPTY_SLIDE, 0);
-    initialize_slide_cache();
-    create_pf_thread();
+    carousel_reload(compare_albums);
 
     reselect(hash_album, hash_artist); /* splash if not found */
 
@@ -3947,12 +3963,19 @@ static bool init(void)
     return true;
 }
 
+/* carousel_reinit: full teardown + rebuild of the engine. */
+bool carousel_reinit(void)
+{
+    cleanup();
+    return init();
+}
+
 static bool reinit(void)
 {
     bool is_album = (model == &album_model);
     unsigned int hash_album = 0, hash_artist = 0;
 
-    return_to_idle_state();
+    carousel_settle();
 
     /* reselect() restores the same album across the rebuild by name hash --
      * album-model-only (it reads the album index). Other models just restart
@@ -3963,8 +3986,7 @@ static bool reinit(void)
         hash_artist = mfnv(get_album_artist(center_index));
     }
 
-    cleanup();
-    if (init())
+    if (carousel_reinit())
     {
         if (is_album)
             reselect(hash_album, hash_artist); /* splash if not found */

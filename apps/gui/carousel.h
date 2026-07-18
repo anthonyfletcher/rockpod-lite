@@ -138,4 +138,19 @@ int  get_scroll_line_offset(enum pf_scroll_line_type type);
  * index build and the artist model). */
 int  build_artist_index(struct tagcache_search *tcs, void **buf, size_t *bufsz);
 
+/* Engine restart operations the album model drives (re-sort, in-screen rebuild).
+ * These wrap the render thread / slide cache / buffer lifecycle so model code
+ * never touches those internals directly. */
+/* Settle any in-progress scroll animation to the idle state. Call before
+ * capturing the current slide, since a mid-scroll settle changes which slide is
+ * current. */
+void carousel_settle(void);
+/* Restart the render pipeline over the current index buffer. If `compare` is
+ * non-NULL, the album index is re-sorted with it in the safe window after the
+ * loader thread is stopped and before the slide cache is rebuilt. */
+void carousel_reload(int (*compare)(const void *, const void *));
+/* Full teardown (cleanup) + rebuild (init) of the engine. Returns false if the
+ * rebuild failed. */
+bool carousel_reinit(void);
+
 #endif /* _CAROUSEL_H_ */
