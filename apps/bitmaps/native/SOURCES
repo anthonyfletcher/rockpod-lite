@@ -37,6 +37,11 @@ rockpodnoartistcover.bmp
 rockpodusb.bmp
 #endif
 
+/* Full-screen loading splash for the core text viewer (320x240 iPods) */
+#if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
+rockpodtext.bmp
+#endif
+
 /* USB logo */
 #ifdef HAVE_LCD_COLOR
 #if LCD_WIDTH > 176

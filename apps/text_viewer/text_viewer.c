@@ -50,6 +50,12 @@
 #include "ts_io_core.h"
 #include "text_viewer.h"
 
+/* Full-screen loading splash art, shipped for the 320x240 iPods only. */
+#if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
+#include "bitmaps/rockpodtext.h"
+#define TV_HAVE_SPLASH_BMP
+#endif
+
 /* Extracted text kept resident, and how much of it sits behind the current
  * page. The margin is the backward reach: at a typical few KiB per page it
  * covers dozens of pages, which is more than enough for the way people
@@ -76,6 +82,7 @@ struct tv_state
 {
     struct ts_core_file file;
     ts_source *src;
+    const char *path;        /* caller's file path, for the loading splash */
 
     int arena_handle;
     int window_handle;
@@ -325,6 +332,79 @@ static void tv_draw(void)
     display->set_viewport(last);
 }
 
+/* ---- loading splash --------------------------------------------------- */
+
+/* The container formats decompress and index before the first byte of text
+ * appears, and reaching a page behind the window re-extracts from zero; both
+ * are slow enough to want a "hold on" screen rather than a frozen page. */
+static bool tv_heavy_format(const char *file)
+{
+    const char *ext = strrchr(file, '.');
+
+    if (!ext)
+        return false;
+    ext++;
+    return !strcasecmp(ext, "pdf")  || !strcasecmp(ext, "epub")
+        || !strcasecmp(ext, "docx");
+}
+
+/* Full-screen "loading" splash: the branded bitmap with the wait string and
+ * the file's name over it, mirroring the custom USB screen (usb_screen.c).
+ * Falls back to the plain text splash where the art is not built. */
+static void tv_splash_loading(void)
+{
+#ifdef TV_HAVE_SPLASH_BMP
+    struct screen *d = &screens[SCREEN_MAIN];
+    struct viewport vp, *last;
+    const unsigned char *msg = str(LANG_WAIT);
+    const char *name = strrchr(tv.path, '/');
+    int tw, th;
+
+    name = name ? name + 1 : tv.path;
+
+    viewport_set_fullscreen(&vp, SCREEN_MAIN);
+    last = d->set_viewport(&vp);
+    d->clear_viewport();
+    d->bmp(&bm_rockpodtext, 0, 0);
+
+    /* Caption over the art in the theme's bold UI font, Themify_2's dark
+     * colour, centred: the wait line at y=180 with the name just beneath. */
+    vp.font = font_get_ui_bold();
+    vp.drawmode = DRMODE_FG;
+    vp.fg_pattern = LCD_RGBPACK(0x00, 0x0c, 0x21);
+    d->set_viewport(&vp);
+
+    d->getstringsize(msg, &tw, &th);
+    d->putsxy((d->lcdwidth - tw) / 2, 180, msg);
+    d->getstringsize((const unsigned char *)name, &tw, &th);
+    d->putsxy((d->lcdwidth - tw) / 2, 180 + th, (const unsigned char *)name);
+
+    d->update_viewport();
+    d->set_viewport(last);
+#else
+    splash(0, ID2P(LANG_WAIT));
+#endif
+}
+
+/* Clears the reading area before the slow open so nothing shows through, and
+ * puts up the branded splash for the slow (container) formats. */
+static void tv_show_loading(void)
+{
+    struct screen *d = &screens[SCREEN_MAIN];
+    struct viewport *last;
+
+    if (tv_heavy_format(tv.path))
+    {
+        tv_splash_loading();
+        return;
+    }
+
+    last = d->set_viewport(&tv.vp);
+    d->clear_viewport();
+    d->update_viewport();
+    d->set_viewport(last);
+}
+
 /* ---- navigation ------------------------------------------------------- */
 
 /* True once the page on screen is the last one: nothing left to extract, and
@@ -341,7 +421,7 @@ static bool tv_reach(off_t target)
 {
     if (target < tv.win_start)
     {
-        splash(0, ID2P(LANG_WAIT));
+        tv_splash_loading();
         if (ts_rewind(tv.src) != TS_OK)
             return false;
         tv.win_start = 0;
@@ -383,7 +463,7 @@ static void tv_prev_page(void)
  * exactly as it would have been had the reader paged there by hand. */
 static void tv_resume_to(off_t target)
 {
-    splash(0, ID2P(LANG_WAIT));
+    tv_splash_loading();
 
     while (1)
     {
@@ -598,20 +678,21 @@ int text_viewer(const char *file)
     off_t resume;
 
     push_current_activity(ACTIVITY_TEXTVIEWER);
+    tv.path = file;
 
-    /* Open the document before enabling the theme. The arena allocation and
-     * ts_open() probe can take a moment, and doing that work while the browser
-     * is still on screen keeps the themed status bar -- which viewportmanager_
-     * theme_enable() renders through the skin engine -- from being drawn and
-     * then left standing in the reading area until the first page paints. */
+    /* Take the screen (theme off) and put up a clean loading frame before the
+     * slow open -- the branded splash for the container formats, a cleared
+     * reading area otherwise -- so the browser never shows through it. */
+    tv_setup_screen();
+    tv_show_loading();
+
     if (!tv_open(file))
     {
         tv_close();
+        viewportmanager_theme_undo(SCREEN_MAIN, false);
         pop_current_activity();
         return GO_TO_PREVIOUS;
     }
-
-    tv_setup_screen();
 
     resume = tv_resume_load(file, tv.file_size);
     if (resume > 0)
