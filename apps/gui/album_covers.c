@@ -1580,7 +1580,13 @@ static int album_on_menu(void)
 
     FOR_NB_SCREENS(i)
         viewportmanager_theme_enable(i, true, NULL);
+    /* do_menu() only auto-switches to a menu-styling activity for
+     * ACTIVITY_PLUGIN; the carousel runs as ACTIVITY_ALBUMCOVERS, which the
+     * theme's SBS likewise excludes from menu chrome -- switch it ourselves so
+     * the menu is themed the same as it is from Settings. */
+    push_current_activity(ACTIVITY_CONTEXTMENU);
     ret = do_menu(&album_covers_menu, &selected, NULL, false);
+    pop_current_activity();
     FOR_NB_SCREENS(i)
         viewportmanager_theme_undo(i, false);
 

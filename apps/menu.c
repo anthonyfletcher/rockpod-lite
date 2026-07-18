@@ -384,6 +384,20 @@ void do_setting_from_menu(const struct menu_item_ex *temp,
 }
 
 /* display a menu */
+/* Draw the menu list "settled": the first pass has flush inhibited so it never
+ * reaches the screen, then a second pass flushes the final layout. This hides a
+ * transient first frame -- e.g. the shared %?La album-art conditional left true
+ * on the top row when entering from a tall album-art list -- that would
+ * otherwise flash for one frame. Same fix as tree.c's update_dir() and
+ * main_menu_config.c, applied here so every do_menu() menu benefits. */
+static void menu_draw_settled(struct gui_synclist *lists)
+{
+    gui_synclist_inhibit_flush(true);
+    gui_synclist_draw(lists);
+    gui_synclist_inhibit_flush(false);
+    gui_synclist_draw(lists);
+}
+
 int do_menu(const struct menu_item_ex *start_menu, int *start_selected,
             struct viewport parent[NB_SCREENS], bool hide_theme)
 {
@@ -434,7 +448,7 @@ int do_menu(const struct menu_item_ex *start_menu, int *start_selected,
     /* load the callback, and only reload it if menu changes */
     get_menu_callback(menu, &menu_callback);
 
-    gui_synclist_draw(&lists);
+    menu_draw_settled(&lists);
     gui_synclist_speak_item(&lists);
 
     while (!done)
@@ -771,7 +785,7 @@ int do_menu(const struct menu_item_ex *start_menu, int *start_selected,
 
 
             gui_synclist_set_title(&lists, lists.title, lists.title_icon);
-            gui_synclist_draw(&lists);
+            menu_draw_settled(&lists);
             gui_synclist_speak_item(&lists);
         }
     }
