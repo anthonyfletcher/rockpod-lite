@@ -980,7 +980,9 @@ static int album_build_index(void)
     /* Scan will trigger when no file is found or the option was activated */
     if ((pf_cfg.cache_version != CACHE_VERSION) || (load_album_index() < 0))
     {
+        ui_set_working(true);   /* show the "working" LED while (re)building */
         ret = create_album_index();
+        ui_set_working(false);
 
         if (ret == 0)
         {
@@ -1179,9 +1181,14 @@ bool retrieve_id3(struct mp3entry *id3, const char* file)
   index-building looks like every other long-running operation (e.g. the
   Album art cache builder) instead of a bespoke full-screen bar.
  */
+/* Index building shows the theme's generic "working" indicator (the %lw
+ * virtual LED / %la spinner, gated on ui_working()) instead of a covering
+ * progress splash. Forcing a status-bar refresh here advances the spinner as
+ * the build progresses; the step/count/msg args are no longer used. */
 static void draw_progressbar(int step, int count, char *msg)
 {
-    splash_progress(step, count, "%s", msg);
+    (void)step; (void)count; (void)msg;
+    sb_skin_update(SCREEN_MAIN, true);
 }
 
 /* Calculate modified FNV hash of string
