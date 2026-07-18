@@ -169,5 +169,9 @@ void carousel_reload(int (*compare)(const void *, const void *));
 /* Full teardown (cleanup) + rebuild (init) of the engine. Returns false if the
  * rebuild failed. */
 bool carousel_reinit(void);
+/* Re-apply the geometry settings (zoom / margins / tilt) to the slide layout
+ * in place, keeping the current slide -- for a visual settings change that
+ * doesn't need an index rebuild. */
+void carousel_refresh(void);
 
 #endif /* _CAROUSEL_H_ */

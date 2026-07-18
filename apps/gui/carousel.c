@@ -1722,6 +1722,15 @@ static void recalc_offsets(void)
     }
 }
 
+/* Re-apply the geometry settings (zoom / centre margin / slide tuck / tilt) to
+ * the slide layout without rebuilding the index -- used after the in-screen
+ * settings menu changes a purely visual setting. Preserves the current slide. */
+void carousel_refresh(void)
+{
+    recalc_offsets();
+    reset_slides();
+}
+
 /**
    Fade the given color toward the theme background color.
    a = 256 means fully opaque (original color), a = 0 means fully bg.

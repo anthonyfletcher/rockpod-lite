@@ -61,7 +61,8 @@
 #include "lcd.h"
 #include "font.h"
 #include "icons.h"
-#include "menu.h"             /* MENUITEM_STRINGLIST, do_menu */
+#include "menu.h"             /* do_menu */
+#include "menus/exported_menus.h" /* album_covers_menu (shared settings menu) */
 #include "bmp.h"              /* read_bmp_file */
 #ifdef HAVE_JPEG
 #include "jpeg_load.h"        /* read_jpeg_file */
@@ -1415,80 +1416,6 @@ void album_covers_update_cache(void)
     pf_config_save();
 }
 
-enum {
-    PF_SORT_ALBUMS_BY,
-    PF_GOTO_LAST_ALBUM,
-    PF_GOTO_WPS,
-    PF_REBUILD_CACHE,
-    PF_UPDATE_CACHE,
-    PF_MENU_QUIT,
-};
-
-static int main_menu(void)
-{
-    int selection = 0;
-    int curr_album, old_val;
-
-    lcd_set_foreground(pf_fg_color);
-
-    MENUITEM_STRINGLIST(main_menu, "Album covers", NULL,
-                        ID2P(LANG_SORT_ALBUMS_BY),
-                        ID2P(LANG_GOTO_LAST_ALBUM),
-                        ID2P(LANG_GOTO_WPS),
-                        ID2P(LANG_REBUILD_CACHE),
-                        ID2P(LANG_UPDATE_CACHE),
-                        ID2P(LANG_MENU_QUIT));
-
-    static const struct opt_items sort_options[] = {
-        { ID2P(LANG_ARTIST_PLUS_NAME) },
-        { ID2P(LANG_ARTIST_PLUS_YEAR) },
-        { ID2P(LANG_ID3_YEAR) },
-        { ID2P(LANG_NAME) }};
-
-    while (1)  {
-        switch (do_menu(&main_menu, &selection, NULL, false)) {
-            case PF_SORT_ALBUMS_BY:
-                old_val = global_settings.album_covers_sort_albums_by;
-                set_option(str(LANG_SORT_ALBUMS_BY),
-                      &global_settings.album_covers_sort_albums_by, RB_INT,
-                      sort_options, 4, NULL);
-                if (old_val != global_settings.album_covers_sort_albums_by &&
-                    !sort_albums(global_settings.album_covers_sort_albums_by, true))
-                    global_settings.album_covers_sort_albums_by = old_val;
-                if (old_val == global_settings.album_covers_sort_albums_by)
-                    break;
-                settings_save();
-                return 0;
-            case PF_GOTO_LAST_ALBUM:
-                carousel_settle(); /* land on the album currently shown */
-                curr_album = center_index;
-                set_current_slide(pf_cfg.last_album);
-                pf_cfg.last_album = curr_album;
-                return 0;
-            case PF_GOTO_WPS:
-                return -2;
-            case PF_REBUILD_CACHE:
-                if (!yesno_pop_confirm(ID2P(LANG_REBUILD_CACHE)))
-                    break;
-                album_covers_rebuild_cache();
-                return -3; /* re-init */
-            case PF_UPDATE_CACHE:
-                if (!yesno_pop_confirm(ID2P(LANG_UPDATE_CACHE)))
-                    break;
-                album_covers_update_cache();
-                return -3; /* re-init */
-            case PF_MENU_QUIT:
-                return -1;
-
-            case MENU_ATTACHED_USB:
-                return MENU_ATTACHED_USB;
-
-            default:
-                return 0;
-        }
-    }
-}
-
 /* Restored to (almost) exactly how the original plugin's draw_album_text()
  * worked: drawn directly inside pf_vp -- the same viewport the coverflow
  * itself uses, not a separate panel -- overlaid near the top or bottom of
@@ -1627,28 +1554,52 @@ static int album_enter(int index)
     return GO_TO_ALBUM_COVERS_TRACKS;
 }
 
-/* carousel_model.on_menu: the Album Covers in-screen settings menu. Returns a
- * GO_TO_* to exit the carousel, or a CAROUSEL_MENU_* sentinel to stay (the
- * engine loop restores the carousel's display for the sentinel cases). */
+/* carousel_model.on_menu: open the shared Album Covers settings menu
+ * (apps/menus/album_covers_menu.c -- the same one under Settings) and apply
+ * whatever changed on the way out. Returns a GO_TO_* to exit the carousel, or a
+ * CAROUSEL_MENU_* sentinel to stay (the engine loop restores the display).
+ *
+ * (The old hand-rolled menu's navigation items are gone: Go-To-WPS is the Play
+ * button, and Go-To-Last-Album was dropped.) */
 static int album_on_menu(void)
 {
+    int selected = 0;
     int ret;
+    /* Snapshot the settings whose change needs more than a cheap layout redraw. */
+    int old_sort       = global_settings.album_covers_sort_albums_by;
+    int old_year_order = global_settings.album_covers_year_sort_order;
+    int old_show_name  = global_settings.album_covers_show_album_name;
+    int old_cache_ver  = pf_cfg.cache_version;
 
     FOR_NB_SCREENS(i)
         viewportmanager_theme_enable(i, true, NULL);
-    ret = main_menu();
+    ret = do_menu(&album_covers_menu, &selected, NULL, false);
     FOR_NB_SCREENS(i)
         viewportmanager_theme_undo(i, false);
 
-    if (ret == -3)
-        return reinit() ? CAROUSEL_MENU_RELOADED : GO_TO_PREVIOUS;
-    if (ret == -2)
-        return GO_TO_WPS;
-    if (ret == -1)
-        return GO_TO_PREVIOUS;
     if (ret == MENU_ATTACHED_USB)
         return GO_TO_ROOT;
-    return CAROUSEL_MENU_STAY;
+
+    /* A cache rebuild/update (those items bump cache_version) or a caption-layout
+     * change needs a full rebuild -- init() recomputes the text margin and, when
+     * the cache was invalidated, regenerates the index. */
+    if (pf_cfg.cache_version != old_cache_ver
+        || global_settings.album_covers_show_album_name != old_show_name)
+    {
+        if (!reinit())
+            return GO_TO_PREVIOUS;
+    }
+
+    /* A sort-order change must be applied explicitly: reinit()'s normal path
+     * reloads the cached index in its saved order, so it wouldn't re-sort. */
+    if (global_settings.album_covers_sort_albums_by != old_sort
+        || global_settings.album_covers_year_sort_order != old_year_order)
+        sort_albums(global_settings.album_covers_sort_albums_by, true);
+
+    /* Re-apply the live geometry settings (zoom / margins / tilt). Cheap and
+     * keeps the current slide; harmless after the above. */
+    carousel_refresh();
+    return CAROUSEL_MENU_RELOADED;
 }
 
 /* carousel_model.prepare: after init(), mark this cache format as current so
