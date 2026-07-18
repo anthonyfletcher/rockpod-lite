@@ -565,13 +565,31 @@ static void tv_close(void)
 
 static void tv_setup_screen(void)
 {
-    /* Fills tv.vp with the themed text area (below the status bar) and its
-     * colours -- see viewport_set_defaults(). */
-    viewportmanager_theme_enable(SCREEN_MAIN, true, &tv.vp);
+    /* This screen owns the whole display. Disabling the theme drops the
+     * status-bar skin and its backdrop and hands back a full-screen viewport
+     * (viewport_set_defaults -> viewport_set_fullscreen). With the theme off,
+     * the skin engine's status-bar re-render is gated out for this screen --
+     * viewportmanager_redraw only pumps sb_skin_update while the theme is
+     * enabled -- so nothing repaints over the page between our own draws. That
+     * race is what made the reading area flicker with status-bar content while
+     * paging under a themed (SBS) status bar. */
+    viewportmanager_theme_enable(SCREEN_MAIN, false, &tv.vp);
 
-    tv.font = FONT_UI;
-    tv.vp.font = tv.font;
+    /* viewport_set_fullscreen() has already put the resolved UI font id into
+     * tv.vp.font (screens[].getuifont() -> global_status.font_id). Use that,
+     * not the FONT_UI sentinel (== MAXFONTS): the sentinel only resolves inside
+     * a font_get() call, whereas the LCD text path indexes the viewport font
+     * directly, so leaving MAXFONTS in it draws glyphs from out of bounds. */
+    tv.font = tv.vp.font;
     tv.line_height = font_get(tv.font)->height;
+
+#ifdef HAVE_LCD_COLOR
+    /* Take the theme's own fg/bg (the eventual default of the Stage 5 colour
+     * modes); a full-screen viewport otherwise comes up on the fallback
+     * palette rather than the colours the reader has configured. */
+    tv.vp.fg_pattern = global_settings.fg_color;
+    tv.vp.bg_pattern = global_settings.bg_color;
+#endif
 }
 
 int text_viewer(const char *file)
@@ -580,15 +598,20 @@ int text_viewer(const char *file)
     off_t resume;
 
     push_current_activity(ACTIVITY_TEXTVIEWER);
-    tv_setup_screen();
 
+    /* Open the document before enabling the theme. The arena allocation and
+     * ts_open() probe can take a moment, and doing that work while the browser
+     * is still on screen keeps the themed status bar -- which viewportmanager_
+     * theme_enable() renders through the skin engine -- from being drawn and
+     * then left standing in the reading area until the first page paints. */
     if (!tv_open(file))
     {
         tv_close();
-        viewportmanager_theme_undo(SCREEN_MAIN, false);
         pop_current_activity();
         return GO_TO_PREVIOUS;
     }
+
+    tv_setup_screen();
 
     resume = tv_resume_load(file, tv.file_size);
     if (resume > 0)
@@ -602,20 +625,21 @@ int text_viewer(const char *file)
 
         switch (action)
         {
-            case ACTION_STD_NEXT:
-            case ACTION_STD_NEXTREPEAT:
+            case ACTION_STD_OK:          /* forward button (>>|) */
                 tv_next_page();
                 break;
 
-            case ACTION_STD_PREV:
-            case ACTION_STD_PREVREPEAT:
+            case ACTION_STD_CANCEL:      /* back button (|<<) */
                 tv_prev_page();
                 break;
 
-            case ACTION_STD_CANCEL:
+            case ACTION_STD_MENU:        /* Menu leaves the viewer */
                 goto done;
 
             default:
+                /* The scroll wheel (ACTION_STD_NEXT/PREV) is deliberately
+                 * ignored -- paging is on the forward/back buttons. Still let
+                 * the framework handle USB and other system events. */
                 if (default_event_handler(action) == SYS_USB_CONNECTED)
                 {
                     ret = GO_TO_ROOT;
