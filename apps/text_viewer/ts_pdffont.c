@@ -15,6 +15,7 @@
  */
 
 #include "ts_internal.h"
+#include "string-extra.h"   /* strlcpy (strncpy isn't linkable in -nostdlib core) */
 
 /* Caps, not allocations: exceeded means the extra fonts fall back to the
  * single-byte path rather than the whole document failing. */
@@ -196,8 +197,7 @@ static void add_res(ts_pdffonts *F, const char *name, int fobj)
     res_t *e;
     if (F->nr >= MAX_RES) return;
     e = &F->r[F->nr++];
-    strncpy(e->name, name, NAMELEN - 1);
-    e->name[NAMELEN - 1] = 0;
+    strlcpy(e->name, name, NAMELEN);
     e->fobj = fobj;
 }
 
@@ -222,8 +222,7 @@ static int scan_structure(ts_pdffonts *F, const ts_io *io)
 
         case TK_NAME:
             if (in_font) {                       /* inside /Font << ... >> */
-                strncpy(pend, t.name, NAMELEN - 1);
-                pend[NAMELEN - 1] = 0;
+                strlcpy(pend, t.name, NAMELEN);
                 continue;
             }
             if (key == K_TYPE) {
