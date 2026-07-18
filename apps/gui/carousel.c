@@ -405,7 +405,7 @@ static void free_all_slide_prio(int prio);
 /* The artist-portraits model lives in artist_portraits.c (over the same
  * carousel engine). The active model is selected by the entry point
  * (album_covers / artist_portraits) before init() runs. */
-const struct carousel_model *model = NULL;
+static const struct carousel_model *model = NULL;
 
 static inline void buf_ctx_lock(void)
 {
