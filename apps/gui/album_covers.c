@@ -434,7 +434,6 @@ static void album_sort_next(void);
 static void album_sort_prev(void);
 static void set_initial_slide(const char *selected_file);
 static int  album_on_menu(void);
-static void album_idle(void);
 static void album_prepare(void);
 
 static const struct carousel_model album_model = {
@@ -450,7 +449,6 @@ static const struct carousel_model album_model = {
     .sort_prev   = album_sort_prev,
     .set_initial = set_initial_slide,
     .on_menu     = album_on_menu,
-    .idle        = album_idle,
     .prepare     = album_prepare,
     .has_pfraw_cache = true,
     .title       = "Album Covers",
@@ -1788,36 +1786,6 @@ bool retrieve_id3(struct mp3entry *id3, const char* file)
 }
 
 /**
-  Determine filename of the album art for the given slide_index and
-  store the result in buf.
-  The algorithm looks for the first track of the given album uses
-  find_albumart to find the filename.
- */
-static bool get_albumart_for_index_from_db(const int slide_index, char *buf,
-                                    int buflen)
-{
-    bool ret;
-    char tcs_buf[TAGCACHE_BUFSZ];
-    const long tcs_bufsz = sizeof(tcs_buf);
-    if (tcs.valid || !tagcache_search(&tcs, tag_filename))
-        return false;
-
-    /* find the first track of the album */
-    tagcache_search_add_filter(&tcs, tag_album,
-                                   pf_idx.album_index[slide_index].seek);
-
-    tagcache_search_add_filter(&tcs, tag_albumartist,
-                                   pf_idx.album_index[slide_index].artist_seek);
-
-    ret = tagcache_get_next(&tcs, tcs_buf, tcs_bufsz) &&
-          retrieve_id3(&id3, tcs.result) &&
-          search_albumart_files(&id3, ":", buf, buflen);
-
-    tagcache_search_finish(&tcs);
-    return ret;
-}
-
-/**
   Draw a progress popup using the shared firmware progress widget, so
   index-building looks like every other long-running operation (e.g. the
   Album art cache builder) instead of a bespoke full-screen bar.
@@ -1861,143 +1829,6 @@ static bool save_pfraw(char* filename, struct bitmap *bm)
     write( fh, &bmph, sizeof( struct pfraw_header ) );
     write( fh, bm->data , sizeof( pix_t ) * bm->width *  bm->height );
     close( fh );
-    return true;
-}
-
-/* Inlined equivalent of apps/plugins/lib/read_image.c's read_image_file() --
- * that plugin-lib helper isn't linkable from core code, but the two core
- * functions it wraps are ordinary core functions. */
-static int pf_read_image_file(const char *filename, struct bitmap *bm,
-                              int maxsize, int format,
-                              const struct custom_format *cformat)
-{
-    size_t namelen = strlen(filename);
-    if (strcmp(filename + namelen - 4, ".bmp"))
-#ifdef HAVE_JPEG
-        return read_jpeg_file(filename, bm, maxsize, format, cformat);
-#else
-        return 0;
-#endif
-    else
-        return read_bmp_file(filename, bm, maxsize, format, cformat);
-}
-
-static bool incremental_albumart_cache(bool verbose)
-{
-    if (!aa_cache.buf)
-        goto aa_failure;
-
-    if (aa_cache.inspected >= pf_idx.album_ct)
-        return false;
-
-    /* Prevent idle poweroff */
-    reset_poweroff_timer();
-
-    int idx, ret;
-    unsigned int hash_artist, hash_album;
-    unsigned int format = FORMAT_NATIVE | FORMAT_DITHER;
-
-    if (global_settings.album_covers_resize)
-        format |= FORMAT_RESIZE|FORMAT_KEEP_ASPECT;
-
-    idx = aa_cache.idx;
-    if (idx >= pf_idx.album_ct || idx < 0) { idx = 0; } /* Rollover */
-
-
-    aa_cache.idx++;
-    aa_cache.inspected++;
-    if (aa_cache.idx >= pf_idx.album_ct) { aa_cache.idx = 0; } /* Rollover */
-
-
-    hash_artist = mfnv(get_album_artist(idx));
-    hash_album = mfnv(get_album_name(idx));
-
-    snprintf(aa_cache.pfraw_file, sizeof(aa_cache.pfraw_file),
-                 CACHE_PREFIX "/%x%x.pfraw", hash_album, hash_artist);
-
-    if(pf_cfg.update_albumart && file_exists(aa_cache.pfraw_file)) {
-        aa_cache.slides++;
-        goto aa_success;
-    }
-
-    if (!get_albumart_for_index_from_db(idx, aa_cache.file, sizeof(aa_cache.file)))
-        goto aa_failure;
-
-
-    aa_cache.input_bmp.data = aa_cache.buf;
-    aa_cache.input_bmp.width = DISPLAY_WIDTH;
-    aa_cache.input_bmp.height = DISPLAY_HEIGHT;
-
-    ret = pf_read_image_file(aa_cache.file, &aa_cache.input_bmp,
-                          aa_cache.buf_sz, format, &format_transposed);
-    if (ret <= 0) {
-        if (verbose) {
-            splashf(HZ, "Album art is bad: %s", get_album_name(idx));
-        }
-
-        goto aa_failure;
-    }
-    remove(aa_cache.pfraw_file);
-
-    if (!save_pfraw(aa_cache.pfraw_file, &aa_cache.input_bmp))
-    {
-        if (verbose) { splash(HZ, "Could not write bmp"); }
-        goto aa_failure;
-    }
-    aa_cache.slides++;
-
-aa_failure:
-    if (verbose)
-    {
-        if (aa_cache.inspected >= pf_idx.album_ct)
-            pf_config_save();
-        return false;
-    }
-
-aa_success:
-    if (aa_cache.inspected >= pf_idx.album_ct)
-    {
-        pf_config_save();
-        free_all_slide_prio(0);
-        if (pf_state == pf_idle)
-            queue_post(&thread_q, EV_WAKEUP, 0);
-    }
-
-    if(verbose)/* direct interaction with user */
-        return true;
-
-    return false;
-}
-
-/**
- Precomupte the album art images and store them in CACHE_PREFIX.
- Use the "?" bitmap if image is not found.
- */
-static bool create_albumart_cache(void)
-{
-    /* Phase 3 v2: generation moved to the background album-art cache; Cover
-     * Flow no longer builds its own pfraw thumbnails. Do nothing. The code
-     * below is intentionally left in place (unreached) so the generation
-     * helpers it references stay referenced rather than triggering a large,
-     * risky removal cascade -- it can be deleted outright later. */
-    return true;
-
-    splash_progress_set_delay(HZ / 2);
-    draw_progressbar(0, pf_idx.album_ct, STR_STEP_PREPARING_ARTWORK);
-    aa_cache.inspected = 0;
-    for (int i=0; i < pf_idx.album_ct; i++)
-    {
-        incremental_albumart_cache(true);
-        draw_progressbar(aa_cache.inspected, pf_idx.album_ct,
-                          STR_STEP_PREPARING_ARTWORK);
-        if (button_get(false) > BUTTON_NONE)
-            return true;
-    }
-    if ( aa_cache.slides == 0 ) {
-        /* Warn the user that we couldn't find any albumart */
-        splash(2*HZ, ID2P(LANG_NO_ALBUMART_FOUND));
-        return false;
-    }
     return true;
 }
 
@@ -4038,30 +3869,11 @@ static int album_on_menu(void)
     return CAROUSEL_MENU_STAY;
 }
 
-/* carousel_model.idle: opportunistic pfraw thumbnail generation. Only does work
- * while the pfraw cache is still incomplete (aa_cache.inspected < album_ct);
- * normally inspected == album_ct after init, so this is a cheap no-op. */
-static void album_idle(void)
-{
-    if (aa_cache.inspected < pf_idx.album_ct)
-    {
-        buf_ctx_lock();
-        incremental_albumart_cache(false);
-        buf_ctx_unlock();
-    }
-}
-
-/* carousel_model.prepare: generate the pfraw fallback thumbnails after init,
- * when the on-disk cache version has changed. */
+/* carousel_model.prepare: after init(), mark this cache format as current so
+ * create_empty_slide()'s force-regenerate (gated on cache_version) only fires
+ * on the first launch following a format change, not every launch. */
 static void album_prepare(void)
 {
-    if ((pf_cfg.cache_version != CACHE_VERSION) && !create_albumart_cache())
-    {
-        pf_cfg.cache_version = CACHE_REBUILD;
-        pf_config_save();
-        error_wait("Could not create album art cache");
-    }
-
     if (pf_cfg.cache_version != CACHE_VERSION)
     {
         pf_cfg.cache_version = CACHE_VERSION;
@@ -4128,9 +3940,6 @@ static int album_covers_loop(void)
             update_scroll_animation();
         render_all_slides();
         model->draw_text();
-
-        if (model->idle)
-            model->idle();
 
         /* Copy offscreen buffer to LCD and give time to other threads */
         lcd_update();

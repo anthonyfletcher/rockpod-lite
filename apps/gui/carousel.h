@@ -110,8 +110,7 @@ struct carousel_model {
     /* Optional (NULL = not provided). Keep the engine loop/init free of any
      * direct calls into a specific model's code. */
     int  (*on_menu)(void);   /* MENU-hold: run the in-screen menu; GO_TO_* or CAROUSEL_MENU_* */
-    void (*idle)(void);      /* per-frame background work (e.g. incremental cache) */
-    void (*prepare)(void);   /* one-off post-init setup (e.g. pfraw cache generation) */
+    void (*prepare)(void);   /* one-off post-init setup (e.g. cache-version bookkeeping) */
     bool has_pfraw_cache;                              /* this screen's own pfraw thumbnail cache */
     const char *title;                                 /* status-bar title */
 };
