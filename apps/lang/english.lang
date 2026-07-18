@@ -17284,3 +17284,129 @@
     *: "Eject before disconnecting"
   </voice>
 </phrase>
+<phrase>
+  id: LANG_TEXT_VIEWER
+  desc: core text viewer settings menu title
+  user: core
+  <source>
+    *: "Text viewer"
+  </source>
+  <dest>
+    *: "Text viewer"
+  </dest>
+  <voice>
+    *: "Text viewer"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_TEXT_VIEWER_COLOUR
+  desc: core text viewer colour mode setting
+  user: core
+  <source>
+    *: "Colour mode"
+  </source>
+  <dest>
+    *: "Colour mode"
+  </dest>
+  <voice>
+    *: "Colour mode"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_TEXT_VIEWER_COLOUR_THEME
+  desc: core text viewer colour mode option
+  user: core
+  <source>
+    *: "Theme"
+  </source>
+  <dest>
+    *: "Theme"
+  </dest>
+  <voice>
+    *: "Theme"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_TEXT_VIEWER_COLOUR_INVERTED
+  desc: core text viewer colour mode option
+  user: core
+  <source>
+    *: "Theme inverted"
+  </source>
+  <dest>
+    *: "Theme inverted"
+  </dest>
+  <voice>
+    *: "Theme inverted"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_TEXT_VIEWER_COLOUR_BOW
+  desc: core text viewer colour mode option
+  user: core
+  <source>
+    *: "Black on white"
+  </source>
+  <dest>
+    *: "Black on white"
+  </dest>
+  <voice>
+    *: "Black on white"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_TEXT_VIEWER_COLOUR_WOB
+  desc: core text viewer colour mode option
+  user: core
+  <source>
+    *: "White on black"
+  </source>
+  <dest>
+    *: "White on black"
+  </dest>
+  <voice>
+    *: "White on black"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_TEXT_VIEWER_MARGIN
+  desc: core text viewer margin setting
+  user: core
+  <source>
+    *: "Margin"
+  </source>
+  <dest>
+    *: "Margin"
+  </dest>
+  <voice>
+    *: "Margin"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_TEXT_VIEWER_LINE_SPACING
+  desc: core text viewer line spacing setting
+  user: core
+  <source>
+    *: "Line spacing"
+  </source>
+  <dest>
+    *: "Line spacing"
+  </dest>
+  <voice>
+    *: "Line spacing"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_TEXT_VIEWER_FONT_DEFAULT
+  desc: core text viewer, revert font override to the UI font
+  user: core
+  <source>
+    *: "Use UI font"
+  </source>
+  <dest>
+    *: "Use UI font"
+  </dest>
+  <voice>
+    *: "Use UI font"
+  </voice>
+</phrase>

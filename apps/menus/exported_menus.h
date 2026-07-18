@@ -39,10 +39,9 @@ extern const struct menu_item_ex
 #endif
         theme_menu                  /* theme_menu.c     */
 #ifdef HAVE_TAGCACHE
-        , album_covers_menu;        /* album_covers_menu.c */
-#else
-        ;
+        , album_covers_menu         /* album_covers_menu.c */
 #endif
+        , text_viewer_menu;         /* text_viewer_menu.c */
 
 struct browse_folder_info {
     const char* dir;

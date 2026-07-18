@@ -20,6 +20,7 @@ menus/theme_menu.c
 #ifdef HAVE_TAGCACHE
 menus/album_covers_menu.c
 #endif
+menus/text_viewer_menu.c
 #ifdef HAVE_WM8978
 menus/audiohw_eq_menu.c
 #endif

@@ -633,6 +633,12 @@ struct user_settings
      * concept like font_file, just a per-feature opt-in. */
     unsigned char bold_font_file[MAX_FILENAME+1];
     int glyphs_to_cache; /* default font allocation size in glyphs */
+    /* Core text viewer (apps/text_viewer). */
+    int text_viewer_colour_mode;  /* 0 theme, 1 inverted, 2 black-on-white,
+                                     3 white-on-black */
+    bool text_viewer_margin;      /* inset the page by a small border */
+    int text_viewer_line_spacing; /* extra pixels between lines */
+    unsigned char text_viewer_font_file[MAX_FILENAME+1]; /* "" = UI font */
     unsigned char kbd_file[MAX_FILENAME+1];  /* last keyboard */
     int  backlight_timeout;  /* backlight off timeout:  -1=never,
                                 0=always, or time in seconds */

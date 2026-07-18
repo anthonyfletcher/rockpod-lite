@@ -479,6 +479,7 @@ MAKE_MENU(main_menu_, ID2P(LANG_SETTINGS), NULL,
 #ifdef HAVE_TAGCACHE
         &album_covers_menu,
 #endif
+        &text_viewer_menu,
         &lastfm_scrobbler_item,
 #if CONFIG_RTC
         &timedate_item,

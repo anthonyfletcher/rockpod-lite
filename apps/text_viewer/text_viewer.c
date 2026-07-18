@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>          /* atoi */
+#include <stdio.h>           /* snprintf */
 #include <string.h>
 #include "config.h"
 #include "file.h"            /* off_t, open/close/rename/remove, fdprintf */
@@ -45,7 +46,9 @@
 #include "viewport.h"
 #include "font.h"
 #include "misc.h"            /* push_current_activity, read_line */
-#include "root_menu.h"       /* GO_TO_* */
+#include "root_menu.h"       /* GO_TO_*, MENU_ATTACHED_USB */
+#include "menu.h"            /* do_menu */
+#include "menus/exported_menus.h" /* text_viewer_menu */
 #include "txt_source.h"
 #include "ts_io_core.h"
 #include "text_viewer.h"
@@ -78,6 +81,17 @@
 #define TV_RESUME_FILE  ROCKBOX_DIR "/textviewer.dat"
 #define TV_RESUME_MAX   16
 
+/* Inset on each edge when the margin setting is on. */
+#define TV_MARGIN       15
+
+/* text_viewer_colour_mode values. */
+enum {
+    TV_COLOUR_THEME = 0,
+    TV_COLOUR_INVERTED,
+    TV_COLOUR_BOW,           /* black on white */
+    TV_COLOUR_WOB            /* white on black */
+};
+
 struct tv_state
 {
     struct ts_core_file file;
@@ -103,6 +117,7 @@ struct tv_state
     int    sp;
 
     int font;
+    int user_font;           /* loaded font override, or -1 for the UI font */
     int line_height;
     struct viewport vp;
 };
@@ -320,15 +335,30 @@ static off_t tv_page(off_t start, bool render)
     return off;
 }
 
+/* A whole-screen viewport filled with the reading background. Used to wipe the
+ * margin border and any loading splash before the page is drawn inset. */
+static void tv_fullscreen_vp(struct viewport *vp)
+{
+    viewport_set_fullscreen(vp, SCREEN_MAIN);
+#ifdef HAVE_LCD_COLOR
+    vp->bg_pattern = tv.vp.bg_pattern;
+#endif
+}
+
 static void tv_draw(void)
 {
     struct screen *display = &screens[SCREEN_MAIN];
-    struct viewport *last;
+    struct viewport full, *last;
 
-    last = display->set_viewport(&tv.vp);
-    display->clear_viewport();
-    tv.next = tv_page(tv.pos, true);
-    display->update_viewport();
+    tv_fullscreen_vp(&full);
+    last = display->set_viewport(&full);
+    display->clear_viewport();               /* whole screen -> background */
+
+    display->set_viewport(&tv.vp);
+    tv.next = tv_page(tv.pos, true);         /* the page, inset by the margin */
+
+    display->set_viewport(&full);
+    display->update_viewport();              /* push the whole screen */
     display->set_viewport(last);
 }
 
@@ -391,7 +421,7 @@ static void tv_splash_loading(void)
 static void tv_show_loading(void)
 {
     struct screen *d = &screens[SCREEN_MAIN];
-    struct viewport *last;
+    struct viewport full, *last;
 
     if (tv_heavy_format(tv.path))
     {
@@ -399,7 +429,8 @@ static void tv_show_loading(void)
         return;
     }
 
-    last = d->set_viewport(&tv.vp);
+    tv_fullscreen_vp(&full);
+    last = d->set_viewport(&full);
     d->clear_viewport();
     d->update_viewport();
     d->set_viewport(last);
@@ -620,6 +651,12 @@ static bool tv_open(const char *file)
 
 static void tv_close(void)
 {
+    if (tv.user_font >= 0)
+    {
+        font_unload(tv.user_font);
+        tv.user_font = -1;
+    }
+
     if (tv.src)
         ts_close(tv.src);
     tv.src = NULL;
@@ -643,6 +680,79 @@ static void tv_close(void)
     tv.stack = NULL;
 }
 
+/* Loads the font override if one is set, else falls back to the UI font.
+ * Unload-then-load keeps re-applying the same file leak-free (font_load is
+ * refcounted). Uses the resolved UI font id (getuifont()), never the FONT_UI
+ * sentinel (== MAXFONTS): that only resolves inside a font_get() call, while
+ * the LCD text path indexes the viewport font directly, so leaving MAXFONTS in
+ * it would draw glyphs from out of bounds. */
+static void tv_apply_font(void)
+{
+    int fid = -1;
+
+    if (tv.user_font >= 0)
+    {
+        font_unload(tv.user_font);
+        tv.user_font = -1;
+    }
+
+    if (global_settings.text_viewer_font_file[0])
+    {
+        char buf[MAX_PATH];
+        snprintf(buf, sizeof buf, FONT_DIR "/%s.fnt",
+                 global_settings.text_viewer_font_file);
+        fid = font_load(buf);
+    }
+
+    tv.user_font = fid;
+    tv.font = (fid >= 0) ? fid : screens[SCREEN_MAIN].getuifont();
+    tv.vp.font = tv.font;
+}
+
+/* (Re)reads the viewer settings into the viewport: font, colours, page margin
+ * and line height. Page starts are byte offsets into the extracted text, which
+ * are stable across all of these, so a page just re-flows from tv.pos -- no
+ * resume or page-stack invalidation is needed when a setting changes. */
+static void tv_apply_settings(void)
+{
+    struct screen *d = &screens[SCREEN_MAIN];
+    int margin;
+
+    tv_apply_font();
+
+#ifdef HAVE_LCD_COLOR
+    switch (global_settings.text_viewer_colour_mode)
+    {
+        case TV_COLOUR_INVERTED:
+            tv.vp.fg_pattern = global_settings.bg_color;
+            tv.vp.bg_pattern = global_settings.fg_color;
+            break;
+        case TV_COLOUR_BOW:
+            tv.vp.fg_pattern = LCD_BLACK;
+            tv.vp.bg_pattern = LCD_WHITE;
+            break;
+        case TV_COLOUR_WOB:
+            tv.vp.fg_pattern = LCD_WHITE;
+            tv.vp.bg_pattern = LCD_BLACK;
+            break;
+        case TV_COLOUR_THEME:
+        default:
+            tv.vp.fg_pattern = global_settings.fg_color;
+            tv.vp.bg_pattern = global_settings.bg_color;
+            break;
+    }
+#endif
+
+    margin = global_settings.text_viewer_margin ? TV_MARGIN : 0;
+    tv.vp.x = margin;
+    tv.vp.y = margin;
+    tv.vp.width  = d->lcdwidth  - 2 * margin;
+    tv.vp.height = d->lcdheight - 2 * margin;
+
+    tv.line_height = font_get(tv.font)->height
+                   + global_settings.text_viewer_line_spacing;
+}
+
 static void tv_setup_screen(void)
 {
     /* This screen owns the whole display. Disabling the theme drops the
@@ -654,22 +764,25 @@ static void tv_setup_screen(void)
      * race is what made the reading area flicker with status-bar content while
      * paging under a themed (SBS) status bar. */
     viewportmanager_theme_enable(SCREEN_MAIN, false, &tv.vp);
+    tv_apply_settings();
+}
 
-    /* viewport_set_fullscreen() has already put the resolved UI font id into
-     * tv.vp.font (screens[].getuifont() -> global_status.font_id). Use that,
-     * not the FONT_UI sentinel (== MAXFONTS): the sentinel only resolves inside
-     * a font_get() call, whereas the LCD text path indexes the viewport font
-     * directly, so leaving MAXFONTS in it draws glyphs from out of bounds. */
-    tv.font = tv.vp.font;
-    tv.line_height = font_get(tv.font)->height;
+/* Hold-Menu settings menu, shared with Settings > Text viewer. Re-enables the
+ * theme just for the menu chrome, then drops back to our own full-screen
+ * drawing and re-applies whatever the reader changed. */
+static int tv_menu(void)
+{
+    int sel = 0, ret;
 
-#ifdef HAVE_LCD_COLOR
-    /* Take the theme's own fg/bg (the eventual default of the Stage 5 colour
-     * modes); a full-screen viewport otherwise comes up on the fallback
-     * palette rather than the colours the reader has configured. */
-    tv.vp.fg_pattern = global_settings.fg_color;
-    tv.vp.bg_pattern = global_settings.bg_color;
-#endif
+    viewportmanager_theme_enable(SCREEN_MAIN, true, NULL);
+    push_current_activity(ACTIVITY_CONTEXTMENU);
+    ret = do_menu(&text_viewer_menu, &sel, NULL, false);
+    pop_current_activity();
+    viewportmanager_theme_undo(SCREEN_MAIN, false);
+
+    tv_apply_settings();
+    tv_draw();
+    return ret;
 }
 
 int text_viewer(const char *file)
@@ -679,6 +792,7 @@ int text_viewer(const char *file)
 
     push_current_activity(ACTIVITY_TEXTVIEWER);
     tv.path = file;
+    tv.user_font = -1;           /* no font override loaded yet */
 
     /* Take the screen (theme off) and put up a clean loading frame before the
      * slow open -- the branded splash for the container formats, a cleared
@@ -716,6 +830,14 @@ int text_viewer(const char *file)
 
             case ACTION_STD_MENU:        /* Menu leaves the viewer */
                 goto done;
+
+            case ACTION_STD_QUICKSCREEN: /* hold Menu opens the settings */
+                if (tv_menu() == MENU_ATTACHED_USB)
+                {
+                    ret = GO_TO_ROOT;
+                    goto done;
+                }
+                break;
 
             default:
                 /* The scroll wheel (ACTION_STD_NEXT/PREV) is deliberately
