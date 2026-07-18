@@ -507,6 +507,15 @@ sub buildzip {
     foreach my $line (@viewers) {
         if ($line =~ /([^,]*),([^,]*),/) {
             my ($ext, $plugin)=($1, $2);
+
+            # Core-linked viewers (e.g. the text viewer) are built into the
+            # binary and have no .rock, so the rock-existence check below
+            # would drop their lines. Keep them verbatim.
+            if ($plugin eq "textviewer") {
+                print VIEWERS $line;
+                next;
+            }
+
             my $r = "${plugin}.rock";
             my $oname;
 
