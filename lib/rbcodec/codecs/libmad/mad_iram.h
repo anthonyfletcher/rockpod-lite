@@ -29,23 +29,7 @@
 
 #include "config.h"
 
-#if defined(MPEGPLAYER)
-/* Core-linked video viewer: libmad is linked into the main binary, so it must
- * not compete for the core's (small, shared) IRAM bank the way the plugin's
- * own IRAM did. Keep all of libmad in DRAM. */
-#undef ICODE_ATTR
-#define ICODE_ATTR
-#undef ICONST_ATTR
-#define ICONST_ATTR
-#undef IDATA_ATTR
-#define IDATA_ATTR
-#undef IBSS_ATTR
-#define IBSS_ATTR
-#define ICODE_SECTION_MPA_ARM .text
-#define IBSS_SECTION_MPA_ARM .bss
-#define ICODE_ATTR_MPA_SYNTH
-#define ICONST_ATTR_MPA_HUFFMAN
-#elif (CONFIG_PLATFORM&PLATFORM_HOSTED)
+#if (CONFIG_PLATFORM&PLATFORM_HOSTED)
 #define ICODE_SECTION_MPA_ARM .text
 #define IBSS_SECTION_MPA_ARM .bss
 #define ICODE_ATTR_MPA_SYNTH

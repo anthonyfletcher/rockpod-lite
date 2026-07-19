@@ -218,8 +218,7 @@ enum current_activity {
     ACTIVITY_USBSCREEN,
     ACTIVITY_ALBUMCOVERS,
     ACTIVITY_TEXTVIEWER,
-    ACTIVITY_IMAGEVIEWER,
-    ACTIVITY_VIDEOVIEWER
+    ACTIVITY_IMAGEVIEWER
 };
 
 /* custom string representation of activity */

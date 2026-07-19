@@ -511,8 +511,7 @@ sub buildzip {
             # Core-linked viewers (e.g. the text and image viewers) are built
             # into the binary and have no .rock, so the rock-existence check
             # below would drop their lines. Keep them verbatim.
-            if ($plugin eq "textviewer" || $plugin eq "imageviewer" ||
-                $plugin eq "mpegplayer") {
+            if ($plugin eq "textviewer" || $plugin eq "imageviewer") {
                 print VIEWERS $line;
                 next;
             }

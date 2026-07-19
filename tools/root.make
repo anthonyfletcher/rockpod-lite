@@ -129,7 +129,6 @@ else # core
   include $(APPSDIR)/lang/lang.make
   include $(APPSDIR)/apps.make
   include $(ROOTDIR)/lib/rbcodec/rbcodec.make
-  include $(APPSDIR)/video_viewer/video_viewer.make
 
   ifeq ($(ENABLEDPLUGINS),yes)
     include $(APPSDIR)/plugins/bitmaps/pluginbitmaps.make
