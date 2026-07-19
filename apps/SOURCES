@@ -50,6 +50,7 @@ screens.c
 view_text.c
 properties.c
 mul_id3.c
+playing_time.c
 settings.c
 settings_list.c
 shortcuts.c

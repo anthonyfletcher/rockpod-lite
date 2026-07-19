@@ -1,9 +1,6 @@
-/* plugins common to all models -- trimmed to lastfm_scrobbler plus five
- * more that turned out to be load-bearing for other features, not just
- * standalone utilities, so they're staying:
- *   - playing_time.c: apps/onplay.c's "Playing Time" current-playlist menu
- *     item plugin_load()s this directly; without it that item silently
- *     fails to open.
+/* plugins common to all models -- trimmed to lastfm_scrobbler plus one
+ * more that turned out to be load-bearing for other features, not just a
+ * standalone utility, so it's staying:
  *   - db_folder_select.c: apps/menus/settings_menu.c's "Directories to
  *     Scan" database setting and the AUTORESUME_NEXTTRACK_CUSTOM folder
  *     picker both plugin_load() this directly; without it those two
@@ -11,6 +8,9 @@
  * properties.c moved into the core (apps/properties.c, plus apps/mul_id3.c),
  * reached directly from apps/onplay.c's properties_item/track_info_item menu
  * entries and the HOTKEY_PROPERTIES hotkey -- no longer a plugin.
+ * playing_time.c moved into the core (apps/playing_time.c), reached directly
+ * from apps/onplay.c's "Playing Time" current-playlist menu item -- no longer
+ * a plugin.
  * credits.c moved into the core (apps/credits.c), launched directly from
  * apps/menus/main_menu.c's show_credits() -- no longer a plugin.
  * lastfm_scrobbler_viewer.c (lastfm_scrobbler's "View Playback Log"
@@ -31,4 +31,3 @@
 db_folder_select.c
 #endif
 lastfm_scrobbler.c
-playing_time.c

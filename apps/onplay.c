@@ -44,6 +44,7 @@
 #include "filetypes.h"
 #include "image_viewer/image_viewer_pub.h"
 #include "properties.h"
+#include "playing_time.h"
 #include "fileop.h"
 #include "open_plugin.h"
 #include "plugin.h"
@@ -214,7 +215,7 @@ static int wps_view_cur_playlist(void)
 
 static void playing_time(void)
 {
-    plugin_load(PLUGIN_DIR"/playing_time.rock", NULL);
+    playing_time_screen();
 }
 
 #ifdef HAVE_ALBUMART
