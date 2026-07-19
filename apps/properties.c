@@ -61,7 +61,6 @@ enum props_types {
     PROPS_DIR
 };
 
-static struct gui_synclist properties_lists;
 static struct mp3entry id3;
 static struct tm tm;
 static unsigned long display_size;
@@ -129,24 +128,43 @@ static const unsigned char* p2str(const unsigned char* p)
     return (id != -1) ? str(id) : p;
 }
 
+/* props_file[]/props_dir[] hold header/value pairs; a single-line list item i
+ * maps to the pair at index i*2 (label) and i*2+1 (value). */
+static const unsigned char* const *props_table(int *nb_entries)
+{
+    if (props_type == PROPS_DIR)
+    {
+        if (nb_entries)
+            *nb_entries = (int)ARRAYLEN(props_dir);
+        return props_dir;
+    }
+    if (nb_entries)
+        *nb_entries = (int)ARRAYLEN(props_file);
+    return props_file;
+}
+
 static const char * get_props(int selected_item, void* data,
                               char *buffer, size_t buffer_len)
 {
     (void)data;
-    if (PROPS_DIR == props_type)
-        strlcpy(buffer, selected_item >= (int)(ARRAYLEN(props_dir)) ?
-                "ERROR" : (char *) p2str(props_dir[selected_item]), buffer_len);
+    int nb_entries;
+    const unsigned char* const *props = props_table(&nb_entries);
+    int i = selected_item * 2;
+
+    if (i + 1 >= nb_entries)
+        strlcpy(buffer, "ERROR", buffer_len);
     else
-        strlcpy(buffer, selected_item >= (int)(ARRAYLEN(props_file)) ?
-                "ERROR" : (char *) p2str(props_file[selected_item]), buffer_len);
+        snprintf(buffer, buffer_len, "%s: %s",
+                 (char *) p2str(props[i]), (char *) props[i + 1]);
     return buffer;
 }
 
 static int speak_property_selection(int selected_item, void *data)
 {
     struct dir_stats *stats = data;
-    int32_t id = P2ID((props_type == PROPS_DIR ?
-                       props_dir : props_file)[selected_item]);
+    const unsigned char* const *props = props_table(NULL);
+    int i = selected_item * 2;
+    int32_t id = P2ID(props[i]);
     talk_id(id, false);
     switch (id)
     {
@@ -173,87 +191,76 @@ static int speak_property_selection(int selected_item, void *data)
         talk_number(stats->file_count, true);
         break;
     default:
-        talk_spell(props_file[selected_item + 1], true);
+        talk_spell(props[i + 1], true);
         break;
     }
     return 0;
 }
 
-static void setup_properties_list(struct dir_stats *stats)
+/* Index of the "Show Track Info..." row, or -1 if this list doesn't have one
+ * (only playlists and directories with audio do). */
+static int track_info_row(struct dir_stats *stats)
 {
-    int nb_props;
-    if (props_type == PROPS_FILE)
-        nb_props = NUM_FILE_PROPERTIES;
-    else if (props_type == PROPS_PLAYLIST)
-        nb_props = NUM_PLAYLIST_PROPERTIES;
-    else
-        nb_props = NUM_DIR_PROPERTIES;
+    if (props_type == PROPS_PLAYLIST)
+        return NUM_PLAYLIST_PROPERTIES - 1;
+    if (props_type == PROPS_DIR && stats->audio_file_count)
+        return NUM_AUDIODIR_PROPERTIES - 1;
+    return -1;
+}
 
-    /* selected_size 2: each property is a header row + a value row, selected as
-     * a pair (the same layout as the Track Info screen, browse_id3). */
-    gui_synclist_init(&properties_lists, &get_props, stats, false, 2, NULL);
-    gui_synclist_set_title(&properties_lists,
-                           str(props_type == PROPS_DIR ?
-                               LANG_PROPERTIES_DIRECTORY_PROPERTIES :
-                               LANG_PROPERTIES_FILE_PROPERTIES),
-                           NOICON);
-    if (global_settings.talk_menu)
-        gui_synclist_set_voice_callback(&properties_lists, speak_property_selection);
-    gui_synclist_set_nb_items(&properties_lists, nb_props*2);
+/* Action handler for the properties list. On select, either exit so the caller
+ * can open Track Info, or show the field's full value full-screen. */
+static struct dir_stats *cb_stats;
+static int props_action_cb(int action, struct gui_synclist *lists)
+{
+    if (action != ACTION_STD_OK)
+        return action;
+
+    int sel = gui_synclist_get_sel_pos(lists);
+    if (sel == track_info_row(cb_stats))
+        return ACTION_STD_CANCEL;   /* exit; properties() opens Track Info */
+
+    int nb_entries;
+    const unsigned char* const *props = props_table(&nb_entries);
+    int i = sel * 2;
+
+    FOR_NB_SCREENS(j)
+        viewportmanager_theme_enable(j, false, NULL);
+    view_text((char *) p2str(props[i]), (char *) props[i + 1]);
+    FOR_NB_SCREENS(j)
+        viewportmanager_theme_undo(j, false);
+
+    return ACTION_REDRAW;
 }
 
 static int browse_file_or_dir(struct dir_stats *stats)
 {
-    if (props_type == PROPS_DIR && stats->audio_file_count)
-        gui_synclist_set_nb_items(&properties_lists, NUM_AUDIODIR_PROPERTIES*2);
-    gui_synclist_draw(&properties_lists);
-    gui_synclist_speak_item(&properties_lists);
-    while(true)
-    {
-        int button = get_action(CONTEXT_LIST, HZ);
-        /* HZ so the status bar redraws correctly */
-        if (gui_synclist_do_button(&properties_lists, &button))
-            continue;
-        switch(button)
-        {
-            case ACTION_STD_OK:;
-                int sel_pos = gui_synclist_get_sel_pos(&properties_lists);
+    int nb_props;
+    if (props_type == PROPS_PLAYLIST)
+        nb_props = NUM_PLAYLIST_PROPERTIES;
+    else if (props_type == PROPS_DIR)
+        nb_props = stats->audio_file_count ? NUM_AUDIODIR_PROPERTIES
+                                           : NUM_DIR_PROPERTIES;
+    else
+        nb_props = NUM_FILE_PROPERTIES;
 
-                /* "Show Track Info..." selected? */
-                if ((props_type == PROPS_PLAYLIST || props_type == PROPS_DIR) &&
-                    sel_pos == (int)(props_type == PROPS_DIR ?
-                                ARRAYLEN(props_dir) : ARRAYLEN(props_file)) - 2)
-                    return -1;
-                else
-                {
-                    /* Display field in fullscreen */
-                    FOR_NB_SCREENS(i)
-                        viewportmanager_theme_enable(i, false, NULL);
-                    if (props_type == PROPS_DIR)
-                        view_text((char *) p2str(props_dir[sel_pos]),
-                                  (char *)       props_dir[sel_pos + 1]);
-                    else
-                        view_text((char *) p2str(props_file[sel_pos]),
-                                  (char *)       props_file[sel_pos + 1]);
-                    FOR_NB_SCREENS(i)
-                        viewportmanager_theme_undo(i, false);
+    cb_stats = stats;
 
-                    gui_synclist_set_title(&properties_lists,
-                               str(props_type == PROPS_DIR ?
-                                   LANG_PROPERTIES_DIRECTORY_PROPERTIES :
-                                   LANG_PROPERTIES_FILE_PROPERTIES),
-                               NOICON);
-                    gui_synclist_draw(&properties_lists);
-                }
-                break;
-            case ACTION_STD_CANCEL:
-                return 0;
-            default:
-                if (default_event_handler(button) == SYS_USB_CONNECTED)
-                    return 1;
-                break;
-        }
-    }
+    struct simplelist_info info;
+    simplelist_info_init(&info,
+        str(props_type == PROPS_DIR ? LANG_PROPERTIES_DIRECTORY_PROPERTIES :
+                                      LANG_PROPERTIES_FILE_PROPERTIES),
+        nb_props, stats);
+    info.get_name = get_props;
+    if (global_settings.talk_menu)
+        info.get_talk = speak_property_selection;
+    info.action_callback = props_action_cb;
+
+    if (simplelist_show_list(&info))
+        return 1;                   /* USB */
+    if (info.selection >= 0)        /* "Show Track Info..." chosen */
+        return -1;
+    return 0;
 }
 
 static bool determine_props_type(const char *file)
@@ -382,20 +389,10 @@ int properties(const char *file)
         return GO_TO_PREVIOUS;
     }
 
-    /* Draw with the theme on: as a plugin this screen kept the themed status
-     * bar via plugin.c's special-casing of properties.rock; the core has no
-     * such hook, so enable it explicitly (like playing_time_screen()). */
-    FOR_NB_SCREENS(i)
-        viewportmanager_theme_enable(i, true, NULL);
-
     if (props_type == PROPS_MUL_ID3)
         ret = assemble_track_info(NULL, NULL);
-    else if (props_type != PROPS_ID3)
-    {
-        setup_properties_list(&stats);               /* Show title during dir scan */
-        if (props_type == PROPS_DIR)
-            ret = dir_properties(file, &stats);
-    }
+    else if (props_type == PROPS_DIR)
+        ret = dir_properties(file, &stats);
     if (!ret)
     {
         if (!stats.canceled)
@@ -415,9 +412,6 @@ int properties(const char *file)
               /* playlist or folder tracks */
               browse_id3(&id3, 0, 0, NULL, mul_id3_count, &view_text) :
               (stats.canceled ? 0 : -1);
-
-    FOR_NB_SCREENS(i)
-        viewportmanager_theme_undo(i, false);
 
     return ret == 1 ? GO_TO_ROOT : GO_TO_PREVIOUS;
 }
