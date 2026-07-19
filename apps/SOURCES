@@ -120,6 +120,76 @@ text_viewer/ts_zip.c
 text_viewer/ts_zipdoc.c
 text_viewer/text_viewer.c
 
+/* Core-linked image viewer (ported from the imageviewer plugin). Colour
+ * targets only -- the greylib paths of the original are gone. Reuses the core
+ * read_bmp_fd (recorder/bmp.c) and format_native/recalc_dimension
+ * (recorder/resize.c); ships its own scaler, panning, decoders, and a vendored
+ * TLSF pool for giflib. */
+#ifdef HAVE_LCD_COLOR
+image_viewer/image_viewer.c
+image_viewer/image_decoder.c
+image_viewer/resize.c
+image_viewer/xlcd.c
+image_viewer/tlsf.c
+image_viewer/decoders/bmp.c
+image_viewer/decoders/ppm.c
+image_viewer/decoders/ppm_decoder.c
+image_viewer/decoders/png.c
+image_viewer/decoders/png_decoder.c
+image_viewer/decoders/tinflate.c
+image_viewer/decoders/tinfzlib.c
+image_viewer/decoders/crc32.c
+image_viewer/decoders/gif.c
+image_viewer/decoders/gif_decoder.c
+image_viewer/decoders/dgif_lib.c
+image_viewer/decoders/gifalloc.c
+image_viewer/decoders/gif_err.c
+image_viewer/decoders/jpeg.c
+image_viewer/decoders/jpeg_decoder.c
+image_viewer/decoders/yuv2rgb.c
+image_viewer/decoders/jpegp.c
+image_viewer/decoders/jpeg81.c
+image_viewer/decoders/idct.c
+image_viewer/decoders/mempool.c
+image_viewer/decoders/BUFFILEGETC.c
+#endif
+
+/* Core-linked video viewer (ported from the mpegplayer plugin). iPod 320x240
+ * colour targets only -- the greylib/portrait paths and non-iPod keymaps of
+ * the original are gone. MP2/MP3 audio uses libmad; libmad-mpeg.a is linked
+ * into the core binary via apps/video_viewer/video_viewer.make. */
+#if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240) \
+    && (CONFIG_KEYPAD == IPOD_4G_PAD)
+video_viewer/libmpeg2/decode.c
+video_viewer/libmpeg2/header.c
+video_viewer/libmpeg2/idct.c
+video_viewer/libmpeg2/motion_comp.c
+video_viewer/libmpeg2/slice.c
+#if defined(CPU_ARM)
+#if ARM_ARCH >= 6
+video_viewer/libmpeg2/idct_armv6.S
+#else
+video_viewer/libmpeg2/idct_arm.S
+#endif
+video_viewer/libmpeg2/motion_comp_arm_c.c
+video_viewer/libmpeg2/motion_comp_arm_s.S
+#else  /* SIM or other CPU */
+video_viewer/libmpeg2/motion_comp_c.c
+#endif
+video_viewer/alloc.c
+video_viewer/configfile.c
+video_viewer/video_out_rockbox.c
+video_viewer/video_thread.c
+video_viewer/pcm_output.c
+video_viewer/audio_thread.c
+video_viewer/disk_buf.c
+video_viewer/mpeg_settings.c
+video_viewer/stream_mgr.c
+video_viewer/video_viewer.c
+video_viewer/mpeg_parser.c
+video_viewer/mpeg_misc.c
+#endif
+
 gui/skin_engine/skin_backdrops.c
 gui/skin_engine/skin_display.c
 gui/skin_engine/skin_engine.c

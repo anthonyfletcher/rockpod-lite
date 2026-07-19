@@ -33,6 +33,8 @@
 #include "plugin.h"
 #include "filetypes.h"
 #include "text_viewer/text_viewer.h"
+#include "image_viewer/image_viewer_pub.h"
+#include "video_viewer/video_viewer.h"
 #include "screens.h"
 #include "dir.h"
 #include "file.h"
@@ -609,6 +611,8 @@ struct core_viewer {
 
 static const struct core_viewer core_viewers[] = {
     { "textviewer", text_viewer },
+    { "imageviewer", image_viewer },
+    { "mpegplayer", video_viewer },
 };
 
 bool filetype_open_core_viewer(int attr, const char *file, int *rc)

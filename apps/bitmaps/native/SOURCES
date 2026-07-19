@@ -42,6 +42,15 @@ rockpodusb.bmp
 rockpodtext.bmp
 #endif
 
+#if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
+rockpodpicture.bmp
+#endif
+
+/* Full-screen loading splash for the core video viewer (320x240 iPods) */
+#if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
+rockpodvideo.bmp
+#endif
+
 /* Left-hand artwork panel for the core credits screen (320x240 iPods) */
 #if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
 rockpodcredits.bmp

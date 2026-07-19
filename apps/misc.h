@@ -217,7 +217,9 @@ enum current_activity {
     ACTIVITY_ID3SCREEN,
     ACTIVITY_USBSCREEN,
     ACTIVITY_ALBUMCOVERS,
-    ACTIVITY_TEXTVIEWER
+    ACTIVITY_TEXTVIEWER,
+    ACTIVITY_IMAGEVIEWER,
+    ACTIVITY_VIDEOVIEWER
 };
 
 /* custom string representation of activity */

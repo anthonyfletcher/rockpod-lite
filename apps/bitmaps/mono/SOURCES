@@ -3,3 +3,12 @@ default_icons.bmp
 #if (CONFIG_PLATFORM & PLATFORM_HOSTED) && defined(__APPLE__)
 osx_dummy.bmp
 #endif
+
+/* OSD playback-status icons for the core video viewer (320x240 iPods). Each is
+ * a 5-wide strip: stopped, paused, playing, ff, rw. */
+#if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240) \
+    && (CONFIG_KEYPAD == IPOD_4G_PAD)
+mpegplayer_status_icons_8x8x1.bmp
+mpegplayer_status_icons_12x12x1.bmp
+mpegplayer_status_icons_16x16x1.bmp
+#endif
