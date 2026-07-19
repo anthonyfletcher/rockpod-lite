@@ -315,48 +315,35 @@ static const char * pt_get_or_speak_info(int selected_item, void * data,
     return buf;
 }
 
+/* One row per stat: "Label: Value". pt_get_or_speak_info() returns the value
+ * for an odd index (the data branch); prepend the header for a single line. */
 static const char * pt_get_info(int selected_item, void * data,
                                 char *buffer, size_t buffer_len)
 {
-    return pt_get_or_speak_info(selected_item, data,
-                                buffer, buffer_len, false);
+    char value[64];
+    pt_get_or_speak_info(selected_item * 2 + 1, data, value, sizeof(value), false);
+    snprintf(buffer, buffer_len, "%s: %s",
+             str(menu_items[selected_item]), value);
+    return buffer;
 }
 
 static int pt_speak_info(int selected_item, void * data)
 {
     static char buffer[MAX_PATH];
-    pt_get_or_speak_info(selected_item, data, buffer, sizeof(buffer), true);
+    pt_get_or_speak_info(selected_item * 2, data, buffer, sizeof(buffer), true);
     return 0;
 }
 
 static bool pt_display_stats(struct playing_time_info *pti)
 {
-    struct gui_synclist pt_lists;
-    gui_synclist_init(&pt_lists, &pt_get_info, pti, true, 2, NULL);
+    struct simplelist_info info;
+    simplelist_info_init(&info,
+        *pti->single_mode_tag ? str(single_mode_lang()) : str(LANG_PLAYLIST),
+        pti->remaining_only ? 1 : 8, pti);
+    info.get_name = pt_get_info;
     if (global_settings.talk_menu)
-        gui_synclist_set_voice_callback(&pt_lists, pt_speak_info);
-    gui_synclist_set_nb_items(&pt_lists, pti->remaining_only ? 2 : 8*2);
-    gui_synclist_set_title(&pt_lists, *pti->single_mode_tag ?
-                                      str(single_mode_lang()) :
-                                      str(LANG_PLAYLIST), NOICON);
-    gui_synclist_draw(&pt_lists);
-    gui_synclist_speak_item(&pt_lists);
-    while (true)
-    {
-        int action = get_action(CONTEXT_LIST, HZ/2);
-        if (gui_synclist_do_button(&pt_lists, &action) == 0
-            && action != ACTION_NONE && action != ACTION_UNKNOWN)
-        {
-            bool usb = default_event_handler(action) == SYS_USB_CONNECTED;
-
-            if (!usb && IS_SYSEVENT(action))
-                continue;
-
-            talk_force_shutup();
-            return usb;
-        }
-    }
-    return false;
+        info.get_talk = pt_speak_info;
+    return simplelist_show_list(&info);   /* true == USB connected */
 }
 
 static const char *pt_options_name(int selected_item, void * data,
@@ -381,38 +368,23 @@ static int pt_options_speak(int selected_item, void * data)
 
 static int pt_options(struct playing_time_info *pti)
 {
-    struct gui_synclist pt_options;
-    gui_synclist_init(&pt_options, &pt_options_name, NULL, true, 1, NULL);
+    struct simplelist_info info;
+    simplelist_info_init(&info, str(LANG_PLAYING_TIME),
+                         *pti->single_mode_tag ? 3 : 2, pti);
+    info.get_name = pt_options_name;
     if (global_settings.talk_menu)
-        gui_synclist_set_voice_callback(&pt_options, pt_options_speak);
-    gui_synclist_set_nb_items(&pt_options, *pti->single_mode_tag ? 3 : 2);
-    gui_synclist_set_title(&pt_options, str(LANG_PLAYING_TIME), NOICON);
-    gui_synclist_draw(&pt_options);
-    gui_synclist_speak_item(&pt_options);
+        info.get_talk = pt_options_speak;
 
-    while(true)
-    {
-        int button = get_action(CONTEXT_LIST, HZ);
-        if (gui_synclist_do_button(&pt_options, &button))
-            continue;
-        switch(button)
-        {
-            case ACTION_STD_OK:
-            {
-                int sel = gui_synclist_get_sel_pos(&pt_options);
-                if (sel < 2)
-                    *pti->single_mode_tag = 0;
-                if (sel == 1)
-                    pti->remaining_only = true;
-                return -1;
-            }
-            case ACTION_STD_CANCEL:
-                return 0;
-            default:
-                if (default_event_handler(button) == SYS_USB_CONNECTED)
-                    return 1;
-        }
-    }
+    if (simplelist_show_list(&info))
+        return 1;                   /* USB */
+    if (info.selection < 0)
+        return 0;                   /* cancelled */
+
+    if (info.selection < 2)
+        *pti->single_mode_tag = 0;
+    if (info.selection == 1)
+        pti->remaining_only = true;
+    return -1;                      /* proceed to the stats screen */
 }
 
 static void pt_store_converted_totals(struct playing_time_info *pti)
