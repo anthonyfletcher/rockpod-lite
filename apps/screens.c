@@ -489,8 +489,7 @@ static const char * id3_get_or_speak_info(int selected_item, void* data,
     {/* header */
         if(say_it)
             talk_id(id3_headers[info->info_id[info_no]], false);
-        snprintf(buffer, buffer_len,
-                 info->info_id[info_no] > 0 ? "[%s]" : "%s",
+        snprintf(buffer, buffer_len, "%s",
                  str(id3_headers[info->info_id[info_no]]));
         return buffer;
     }
@@ -738,22 +737,26 @@ static const char * id3_get_or_speak_info(int selected_item, void* data,
     }
 }
 
-/* gui_synclist callback */
+/* gui_synclist callback -- one row per field, "Label: Value". The odd index
+ * selects id3_get_or_speak_info()'s value branch; the header is prepended. */
 static const char* id3_get_name_cb(int selected_item, void* data,
                                    char *buffer, size_t buffer_len)
 {
-    return id3_get_or_speak_info(selected_item, data, buffer,
-                                 buffer_len, false) ? : "";
+    struct id3view_info *info = (struct id3view_info*)data;
+    char value[MAX_PATH];
+    const char *val = id3_get_or_speak_info(selected_item * 2 + 1, data,
+                                            value, sizeof(value), false);
+    snprintf(buffer, buffer_len, "%s: %s",
+             str(id3_headers[info->info_id[selected_item]]), val ? val : "");
+    return buffer;
 }
 
 static int id3_speak_item(int selected_item, void* data)
 {
     char buffer[MAX_PATH];
-    selected_item &= ~1; /* Make sure it's even, to indicate the header */
-    /* say field name */
-    id3_get_or_speak_info(selected_item, data, buffer, MAX_PATH, true);
-    /* and field value */
-    id3_get_or_speak_info(selected_item+1, data, buffer, MAX_PATH, true);
+    /* say field name (even index) then value (odd index) for this row */
+    id3_get_or_speak_info(selected_item * 2, data, buffer, MAX_PATH, true);
+    id3_get_or_speak_info(selected_item * 2 + 1, data, buffer, MAX_PATH, true);
     return 0;
 }
 
@@ -775,9 +778,13 @@ bool browse_id3_ex(struct mp3entry *id3, struct playlist_info *playlist,
     info.playlist = playlist;
     info.playlist_amount = playlist_amount;
     bool ret = false;
-    int curr_activity = get_current_activity();
-    bool is_curr_track_info = curr_activity != ACTIVITY_PLUGIN &&
-                              curr_activity != ACTIVITY_PLAYLISTVIEWER;
+    /* "Live" mode -- exit when playback stops and re-read on track change -- only
+     * when we're actually showing the currently playing track's id3. The live
+     * callers (wps.c, onplay.c) pass audio_current_track(); static viewers
+     * (properties, playlist viewer) pass their own id3. Deciding by identity is
+     * robust; the old activity check treated any non-plugin caller as live,
+     * which flashed-and-closed the core Properties -> Track Info view. */
+    bool is_curr_track_info = (id3 != NULL && id3 == audio_current_track());
     if (is_curr_track_info)
         push_current_activity(ACTIVITY_ID3SCREEN);
 refresh_info:
@@ -791,10 +798,10 @@ refresh_info:
             info.info_id[info.count++] = i;
     }
 
-    gui_synclist_init(&id3_lists, &id3_get_name_cb, &info, true, 2, NULL);
+    gui_synclist_init(&id3_lists, &id3_get_name_cb, &info, false, 1, NULL);
     if(global_settings.talk_menu)
         gui_synclist_set_voice_callback(&id3_lists, id3_speak_item);
-    gui_synclist_set_nb_items(&id3_lists, info.count*2);
+    gui_synclist_set_nb_items(&id3_lists, info.count);
     gui_synclist_set_title(&id3_lists, str(LANG_TRACK_INFO), NOICON);
     gui_synclist_draw(&id3_lists);
     gui_synclist_speak_item(&id3_lists);
@@ -804,12 +811,12 @@ refresh_info:
         {
             if (key == ACTION_STD_OK)
             {
-                int header_id = id3_headers[info.info_id[id3_lists.selected_item/2]];
+                int header_id = id3_headers[info.info_id[id3_lists.selected_item]];
                 char* title_and_text[2];
                 title_and_text[0] = str(header_id);
 
                 char buffer[MAX_PATH];
-                title_and_text[1] = (char*)id3_get_or_speak_info(id3_lists.selected_item+1,&info, buffer, sizeof(buffer), false);
+                title_and_text[1] = (char*)id3_get_or_speak_info(id3_lists.selected_item*2+1,&info, buffer, sizeof(buffer), false);
 
                 if (view_text)
                 {
