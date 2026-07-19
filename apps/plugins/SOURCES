@@ -8,9 +8,6 @@
  *     Scan" database setting and the AUTORESUME_NEXTTRACK_CUSTOM folder
  *     picker both plugin_load() this directly; without it those two
  *     settings silently fail to open.
- *   - view_text.c: apps/screens.c's Track Info screen opens this to show
- *     a long field (e.g. file path/comment) in a scrollable full-text
- *     view.
  *   - properties.c: apps/onplay.c's properties_item/track_info_item menu
  *     entries and the HOTKEY_PROPERTIES hotkey all load this via
  *     viewers.config's "*,properties,-" mapping; without it, File
@@ -37,4 +34,3 @@ db_folder_select.c
 lastfm_scrobbler.c
 playing_time.c
 properties.c
-view_text.c

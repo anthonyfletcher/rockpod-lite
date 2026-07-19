@@ -42,6 +42,7 @@
 #include "talk.h"
 #include "onplay.h"
 #include "filetypes.h"
+#include "image_viewer/image_viewer_pub.h"
 #include "fileop.h"
 #include "open_plugin.h"
 #include "plugin.h"
@@ -218,7 +219,7 @@ static void playing_time(void)
 #ifdef HAVE_ALBUMART
 static void view_album_art(void)
 {
-    plugin_load(PLUGIN_DIR"/imageviewer.rock", NULL);
+    image_viewer(NULL);
 }
 #endif
 
@@ -702,7 +703,7 @@ static int browse_id3_wrapper(void)
 
     if (browse_id3(audio_current_track(),
             playlist_get_display_index(),
-            playlist_amount(), NULL, 1, NULL))
+            playlist_amount(), NULL, 1, view_text))
         return GO_TO_ROOT;
     return GO_TO_PREVIOUS;
 }

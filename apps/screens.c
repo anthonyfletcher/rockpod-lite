@@ -819,8 +819,6 @@ refresh_info:
                     FOR_NB_SCREENS(i)
                         viewportmanager_theme_undo(i, false);
                 }
-                else
-                    plugin_load(PLUGIN_DIR"/view_text.rock", title_and_text);
                 gui_synclist_set_title(&id3_lists, str(LANG_TRACK_INFO), NOICON);
                 gui_synclist_draw(&id3_lists);
                 continue;

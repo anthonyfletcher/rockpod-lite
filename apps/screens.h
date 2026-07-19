@@ -53,6 +53,10 @@ bool browse_id3(struct mp3entry *id3, int playlist_display_index, int playlist_a
                 int (*view_text)(const char *title, const char *text));
 int  view_runtime(void);
 
+/* Core full-screen scrollable text viewer (apps/view_text.c). Passed as the
+ * browse_id3 view_text callback; replaces the old view_text plugin. */
+int view_text(const char *title, const char *text);
+
 
 #endif
 
