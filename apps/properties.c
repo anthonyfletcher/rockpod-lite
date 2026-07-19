@@ -385,6 +385,12 @@ int properties(const char *file)
         return GO_TO_PREVIOUS;
     }
 
+    /* Draw with the theme on: as a plugin this screen kept the themed status
+     * bar via plugin.c's special-casing of properties.rock; the core has no
+     * such hook, so enable it explicitly (like playing_time_screen()). */
+    FOR_NB_SCREENS(i)
+        viewportmanager_theme_enable(i, true, NULL);
+
     if (props_type == PROPS_MUL_ID3)
         ret = assemble_track_info(NULL, NULL);
     else if (props_type != PROPS_ID3)
@@ -412,6 +418,9 @@ int properties(const char *file)
               /* playlist or folder tracks */
               browse_id3(&id3, 0, 0, NULL, mul_id3_count, &view_text) :
               (stats.canceled ? 0 : -1);
+
+    FOR_NB_SCREENS(i)
+        viewportmanager_theme_undo(i, false);
 
     return ret == 1 ? GO_TO_ROOT : GO_TO_PREVIOUS;
 }
