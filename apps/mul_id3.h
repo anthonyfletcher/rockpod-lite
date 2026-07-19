@@ -9,6 +9,9 @@
  *
  * Copyright (C) 2023 Christian Soffke
  *
+ * Ported from apps/plugins/lib/mul_id3.h to the core; used only by the
+ * core Properties screen (apps/properties.c).
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -20,6 +23,11 @@
  ****************************************************************************/
 #ifndef MUL_ID3_H
 #define MUL_ID3_H
+
+#include <stdbool.h>
+#include <stdint.h>
+#include "file.h"      /* MAX_PATH */
+#include "metadata.h"  /* struct mp3entry */
 
 struct dir_stats {
     char dirname[MAX_PATH];
@@ -53,6 +61,9 @@ void finalize_id3(struct mp3entry *id3);
  * nor is the playlist, image, video or max file in dir count displayed.
  */
 bool collect_dir_stats(struct dir_stats *stats, bool (*id3_cb)(const char*));
+/* Zero collect_dir_stats()'s persistent progress/throttle state; call once
+ * before a fresh top-level scan. */
+void collect_dir_stats_reset(void);
 void display_dir_stats(struct dir_stats *stats);
 unsigned long human_size(unsigned long long byte_count, int32_t *unit_lang_id);
 

@@ -8,10 +8,9 @@
  *     Scan" database setting and the AUTORESUME_NEXTTRACK_CUSTOM folder
  *     picker both plugin_load() this directly; without it those two
  *     settings silently fail to open.
- *   - properties.c: apps/onplay.c's properties_item/track_info_item menu
- *     entries and the HOTKEY_PROPERTIES hotkey all load this via
- *     viewers.config's "*,properties,-" mapping; without it, File
- *     Properties/Track Info silently fail to open.
+ * properties.c moved into the core (apps/properties.c, plus apps/mul_id3.c),
+ * reached directly from apps/onplay.c's properties_item/track_info_item menu
+ * entries and the HOTKEY_PROPERTIES hotkey -- no longer a plugin.
  * credits.c moved into the core (apps/credits.c), launched directly from
  * apps/menus/main_menu.c's show_credits() -- no longer a plugin.
  * lastfm_scrobbler_viewer.c (lastfm_scrobbler's "View Playback Log"
@@ -33,4 +32,3 @@ db_folder_select.c
 #endif
 lastfm_scrobbler.c
 playing_time.c
-properties.c

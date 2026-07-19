@@ -43,6 +43,7 @@
 #include "onplay.h"
 #include "filetypes.h"
 #include "image_viewer/image_viewer_pub.h"
+#include "properties.h"
 #include "fileop.h"
 #include "open_plugin.h"
 #include "plugin.h"
@@ -877,24 +878,24 @@ static bool prepare_database_sel(void *param)
 }
 #endif
 
-static bool onplay_load_plugin(void *param)
+/* Properties is core-linked, not a loadable plugin, so it can't go through
+ * filetype_load_plugin() -- mirror onplay_album_covers()'s structure
+ * (prepare_database_sel() to resolve selected_file.path in a database browse
+ * context, the onplay_result side-channel) with properties()'s GO_TO_* return
+ * values. */
+static bool onplay_properties(void *param)
 {
+    (void)param;
 #ifdef HAVE_TAGCACHE
-    if (!prepare_database_sel(param))
+    if (!prepare_database_sel((void *)"properties"))
         return false;
 #endif
 
     if (get_current_activity() == ACTIVITY_CONTEXTMENU)  /* get rid of parent activity */
         pop_current_activity_without_refresh();          /* when called from ctxt menu */
 
-    int ret = filetype_load_plugin((const char*)param, selected_file.path);
-    if (ret == PLUGIN_USB_CONNECTED)
-        onplay_result = ONPLAY_RELOAD_DIR;
-    else if (ret == PLUGIN_GOTO_PLUGIN)
-        onplay_result = ONPLAY_PLUGIN;
-    else if (ret == PLUGIN_GOTO_WPS)
-        onplay_result = ONPLAY_START_PLAY;
-    else if (ret == PLUGIN_GOTO_ROOT)
+    int ret = properties(selected_file.path);
+    if (ret == GO_TO_ROOT)
         onplay_result = ONPLAY_MAINMENU;
     return false;
 }
@@ -902,15 +903,15 @@ static bool onplay_load_plugin(void *param)
 MENUITEM_FUNCTION(list_viewers_item, 0, ID2P(LANG_ONPLAY_OPEN_WITH),
                   list_viewers, clipboard_callback, Icon_NOICON);
 MENUITEM_FUNCTION_W_PARAM(properties_item, 0, ID2P(LANG_PROPERTIES),
-                  onplay_load_plugin, (void *)"properties",
+                  onplay_properties, NULL,
                   clipboard_callback, Icon_NOICON);
 MENUITEM_FUNCTION_W_PARAM(track_info_item, 0, ID2P(LANG_MENU_SHOW_ID3_INFO),
-                  onplay_load_plugin, (void *)"properties",
+                  onplay_properties, NULL,
                   clipboard_callback, Icon_NOICON);
 #ifdef HAVE_TAGCACHE
 /* Album covers is core-linked, not a loadable plugin, so this can't go
- * through onplay_load_plugin()/filetype_load_plugin() like its siblings --
- * mirrors that function's structure (prepare_database_sel() to resolve
+ * through filetype_load_plugin() like its siblings --
+ * mirrors onplay_properties()'s structure (prepare_database_sel() to resolve
  * selected_file.path when launched from a database browse context, the
  * onplay_result side-channel since do_menu() ignores this function's own
  * return value without MENU_FUNC_CHECK_RETVAL) with album_covers()'s
@@ -1264,21 +1265,25 @@ static int hotkey_tree_pl_insert_shuffled(void)
     return ONPLAY_RELOAD_DIR;
 }
 
-static int hotkey_tree_run_plugin(void *param)
+/* Properties equivalent of hotkey_album_covers() below -- see
+ * onplay_properties()'s comment for why this can't share a generic
+ * plugin-loading helper. */
+static int hotkey_properties(void *param)
 {
+    (void)param;
 #ifdef HAVE_TAGCACHE
-    if (!prepare_database_sel(param))
+    if (!prepare_database_sel((void *)"properties"))
         return ONPLAY_RELOAD_DIR;
 #endif
-    if (filetype_load_plugin((const char*)param, selected_file.path) == PLUGIN_GOTO_WPS)
-        return ONPLAY_START_PLAY;
+    if (properties(selected_file.path) == GO_TO_ROOT)
+        return ONPLAY_MAINMENU;
 
     return ONPLAY_RELOAD_DIR;
 }
 
 #ifdef HAVE_TAGCACHE
-/* Album covers equivalent of hotkey_tree_run_plugin() above -- see
- * onplay_album_covers()'s comment for why this can't share that generic
+/* Album covers equivalent of hotkey_properties() above -- see
+ * onplay_album_covers()'s comment for why this can't share a generic
  * plugin-loading helper. */
 static int hotkey_album_covers(void *param)
 {
@@ -1362,7 +1367,7 @@ static const struct hotkey_assignment hotkey_items[] = {
       .flags = HOTKEY_FLAG_WPS },
     { .action = HOTKEY_PROPERTIES,
       .lang_id = LANG_PROPERTIES,
-      .func = HOTKEY_FUNC(hotkey_tree_run_plugin, (void *)"properties"),
+      .func = HOTKEY_FUNC(hotkey_properties, NULL),
       .return_code = ONPLAY_FUNC_RETURN,
       .flags = HOTKEY_FLAG_TREE },
 #ifdef HAVE_TAGCACHE

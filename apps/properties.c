@@ -9,6 +9,12 @@
  *
  * Copyright (C) 2006 Peter D'Hoye
  *
+ * Core File/Directory/Track Properties screen, ported from the properties
+ * plugin. It is a plain core screen entered as properties(file) and returning
+ * a GO_TO_* code, and renders as a normal themed core list (the theme stays
+ * enabled, unlike the full-screen viewers) -- individual fields are still shown
+ * full-screen via the core view_text().
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -18,13 +24,34 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#include "plugin.h"
-#include "lib/mul_id3.h"
-#include "lib/simple_viewer.h"
-
-#if !defined(ARRAY_SIZE)
-    #define ARRAY_SIZE(x) (sizeof((x)) / sizeof((x)[0]))
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include "string-extra.h"    /* strlcpy */
+#include "system.h"          /* ARRAYLEN */
+#include "kernel.h"          /* TIMEOUT_BLOCK */
+#include "lang.h"            /* LANG_*, str */
+#include "settings.h"        /* global_settings, ID2P/P2ID/P2STR */
+#include "action.h"          /* get_action, action_userabort */
+#include "splash.h"          /* splash, splashf, splash_progress_set_delay */
+#include "dir.h"             /* opendir/readdir/closedir, dir_get_info */
+#include "file.h"            /* MAX_PATH, MAX_FILENAME */
+#include "pathfuncs.h"       /* PATH_SEPCH */
+#include "filetypes.h"       /* filetype_get_attr, FILE_ATTR_* */
+#include "metadata.h"        /* struct mp3entry, get_metadata */
+#include "playlist.h"        /* playlist_entries_iterate */
+#include "tagtree.h"         /* tagtree_subentries_do_action */
+#include "viewport.h"        /* viewportmanager_theme_enable/undo */
+#include "misc.h"            /* default_event_handler, MAKE_ACT_STR */
+#include "talk.h"
+#include "screens.h"         /* browse_id3, view_text */
+#include "root_menu.h"       /* GO_TO_* */
+#include "gui/list.h"        /* gui_synclist */
+#ifdef HAVE_TOUCHSCREEN
+#include "touchscreen.h"
 #endif
+#include "mul_id3.h"
+#include "properties.h"
 
 enum props_types {
     PROPS_FILE = 0,
@@ -73,33 +100,33 @@ static const unsigned char* const props_dir[] =
 
 static bool dir_properties(const char* selected_file, struct dir_stats *stats)
 {
-    rb->strlcpy(stats->dirname, selected_file, sizeof(stats->dirname));
+    strlcpy(stats->dirname, selected_file, sizeof(stats->dirname));
 
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
-        rb->cpu_boost(true);
+        cpu_boost(true);
 #endif
     bool success = collect_dir_stats(stats, NULL);
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
-        rb->cpu_boost(false);
+        cpu_boost(false);
 #endif
     if (!success)
         return false;
 
-    rb->strlcpy(str_dirname, selected_file, sizeof(str_dirname));
-    rb->snprintf(str_dircount, sizeof str_dircount, "%d", stats->dir_count);
-    rb->snprintf(str_filecount, sizeof str_filecount, "%d", stats->file_count);
-    rb->snprintf(str_audio_filecount, sizeof str_filecount, "%d",
-                 stats->audio_file_count);
+    strlcpy(str_dirname, selected_file, sizeof(str_dirname));
+    snprintf(str_dircount, sizeof str_dircount, "%d", stats->dir_count);
+    snprintf(str_filecount, sizeof str_filecount, "%d", stats->file_count);
+    snprintf(str_audio_filecount, sizeof str_filecount, "%d",
+             stats->audio_file_count);
     display_size = human_size(stats->byte_count, &lang_size_unit);
-    rb->snprintf(str_size, sizeof str_size, "%lu %s", display_size,
-                 rb->str(lang_size_unit));
+    snprintf(str_size, sizeof str_size, "%lu %s", display_size,
+             str(lang_size_unit));
     return true;
 }
 
 static const unsigned char* p2str(const unsigned char* p)
 {
     int id = P2ID(p);
-    return (id != -1) ? rb->str(id) : p;
+    return (id != -1) ? str(id) : p;
 }
 
 static const char * get_props(int selected_item, void* data,
@@ -107,11 +134,11 @@ static const char * get_props(int selected_item, void* data,
 {
     (void)data;
     if (PROPS_DIR == props_type)
-        rb->strlcpy(buffer, selected_item >= (int)(ARRAY_SIZE(props_dir)) ?
-                    "ERROR" : (char *) p2str(props_dir[selected_item]), buffer_len);
+        strlcpy(buffer, selected_item >= (int)(ARRAYLEN(props_dir)) ?
+                "ERROR" : (char *) p2str(props_dir[selected_item]), buffer_len);
     else
-        rb->strlcpy(buffer, selected_item >= (int)(ARRAY_SIZE(props_file)) ?
-                    "ERROR" : (char *) p2str(props_file[selected_item]), buffer_len);
+        strlcpy(buffer, selected_item >= (int)(ARRAYLEN(props_file)) ?
+                "ERROR" : (char *) p2str(props_file[selected_item]), buffer_len);
     return buffer;
 }
 
@@ -120,33 +147,33 @@ static int speak_property_selection(int selected_item, void *data)
     struct dir_stats *stats = data;
     int32_t id = P2ID((props_type == PROPS_DIR ?
                        props_dir : props_file)[selected_item]);
-    rb->talk_id(id, false);
+    talk_id(id, false);
     switch (id)
     {
     case LANG_PROPERTIES_PATH:
-        rb->talk_fullpath(str_dirname, true);
+        talk_fullpath(str_dirname, true);
         break;
     case LANG_PROPERTIES_FILENAME:
-        rb->talk_file_or_spell(str_dirname, str_filename, NULL, true);
+        talk_file_or_spell(str_dirname, str_filename, NULL, true);
         break;
     case LANG_PROPERTIES_SIZE:
-        rb->talk_number(display_size, true);
-        rb->talk_id(lang_size_unit, true);
+        talk_number(display_size, true);
+        talk_id(lang_size_unit, true);
         break;
     case LANG_PROPERTIES_DATE:
-        rb->talk_date(&tm, true);
+        talk_date(&tm, true);
         break;
     case LANG_PROPERTIES_TIME:
-        rb->talk_time(&tm, true);
+        talk_time(&tm, true);
         break;
     case LANG_PROPERTIES_SUBDIRS:
-        rb->talk_number(stats->dir_count, true);
+        talk_number(stats->dir_count, true);
         break;
     case LANG_PROPERTIES_FILES:
-        rb->talk_number(stats->file_count, true);
+        talk_number(stats->file_count, true);
         break;
     default:
-        rb->talk_spell(props_file[selected_item + 1], true);
+        talk_spell(props_file[selected_item + 1], true);
         break;
     }
     return 0;
@@ -162,44 +189,44 @@ static void setup_properties_list(struct dir_stats *stats)
     else
         nb_props = NUM_DIR_PROPERTIES;
 
-    rb->gui_synclist_init(&properties_lists, &get_props, stats, false, 2, NULL);
-    rb->gui_synclist_set_title(&properties_lists,
-                               rb->str(props_type == PROPS_DIR ?
-                                       LANG_PROPERTIES_DIRECTORY_PROPERTIES :
-                                       LANG_PROPERTIES_FILE_PROPERTIES),
-                               NOICON);
-    if (rb->global_settings->talk_menu)
-        rb->gui_synclist_set_voice_callback(&properties_lists, speak_property_selection);
-    rb->gui_synclist_set_nb_items(&properties_lists, nb_props*2);
+    gui_synclist_init(&properties_lists, &get_props, stats, false, 2, NULL);
+    gui_synclist_set_title(&properties_lists,
+                           str(props_type == PROPS_DIR ?
+                               LANG_PROPERTIES_DIRECTORY_PROPERTIES :
+                               LANG_PROPERTIES_FILE_PROPERTIES),
+                           NOICON);
+    if (global_settings.talk_menu)
+        gui_synclist_set_voice_callback(&properties_lists, speak_property_selection);
+    gui_synclist_set_nb_items(&properties_lists, nb_props*2);
 }
 
 static int browse_file_or_dir(struct dir_stats *stats)
 {
     if (props_type == PROPS_DIR && stats->audio_file_count)
-        rb->gui_synclist_set_nb_items(&properties_lists, NUM_AUDIODIR_PROPERTIES*2);
-    rb->gui_synclist_draw(&properties_lists);
-    rb->gui_synclist_speak_item(&properties_lists);
+        gui_synclist_set_nb_items(&properties_lists, NUM_AUDIODIR_PROPERTIES*2);
+    gui_synclist_draw(&properties_lists);
+    gui_synclist_speak_item(&properties_lists);
     while(true)
     {
-        int button = rb->get_action(CONTEXT_LIST, HZ);
+        int button = get_action(CONTEXT_LIST, HZ);
         /* HZ so the status bar redraws corectly */
-        if (rb->gui_synclist_do_button(&properties_lists, &button))
+        if (gui_synclist_do_button(&properties_lists, &button))
             continue;
         switch(button)
         {
             case ACTION_STD_OK:;
-                int sel_pos = rb->gui_synclist_get_sel_pos(&properties_lists);
+                int sel_pos = gui_synclist_get_sel_pos(&properties_lists);
 
                 /* "Show Track Info..." selected? */
                 if ((props_type == PROPS_PLAYLIST || props_type == PROPS_DIR) &&
-                    sel_pos == (props_type == PROPS_DIR ?
-                                ARRAY_SIZE(props_dir) : ARRAY_SIZE(props_file)) - 2)
+                    sel_pos == (int)(props_type == PROPS_DIR ?
+                                ARRAYLEN(props_dir) : ARRAYLEN(props_file)) - 2)
                     return -1;
                 else
                 {
                     /* Display field in fullscreen */
                     FOR_NB_SCREENS(i)
-                        rb->viewportmanager_theme_enable(i, false, NULL);
+                        viewportmanager_theme_enable(i, false, NULL);
                     if (props_type == PROPS_DIR)
                         view_text((char *) p2str(props_dir[sel_pos]),
                                   (char *)       props_dir[sel_pos + 1]);
@@ -207,20 +234,20 @@ static int browse_file_or_dir(struct dir_stats *stats)
                         view_text((char *) p2str(props_file[sel_pos]),
                                   (char *)       props_file[sel_pos + 1]);
                     FOR_NB_SCREENS(i)
-                        rb->viewportmanager_theme_undo(i, false);
+                        viewportmanager_theme_undo(i, false);
 
-                    rb->gui_synclist_set_title(&properties_lists,
-                               rb->str(props_type == PROPS_DIR ?
-                                       LANG_PROPERTIES_DIRECTORY_PROPERTIES :
-                                       LANG_PROPERTIES_FILE_PROPERTIES),
+                    gui_synclist_set_title(&properties_lists,
+                               str(props_type == PROPS_DIR ?
+                                   LANG_PROPERTIES_DIRECTORY_PROPERTIES :
+                                   LANG_PROPERTIES_FILE_PROPERTIES),
                                NOICON);
-                    rb->gui_synclist_draw(&properties_lists);
+                    gui_synclist_draw(&properties_lists);
                 }
                 break;
             case ACTION_STD_CANCEL:
                 return 0;
             default:
-                if (rb->default_event_handler(button) == SYS_USB_CONNECTED)
+                if (default_event_handler(button) == SYS_USB_CONNECTED)
                     return 1;
                 break;
         }
@@ -231,47 +258,47 @@ static bool determine_props_type(const char *file)
 {
     if (file[0] == PATH_SEPCH)
     {
-        const char* basename = rb->strrchr(file, PATH_SEPCH) + 1;
+        const char* basename = strrchr(file, PATH_SEPCH) + 1;
         const int dir_len = (basename - file);
         if ((int) sizeof(str_dirname) <= dir_len)
             return false;
-        rb->strlcpy(str_dirname, file, dir_len + 1);
-        rb->strlcpy(str_filename, basename, sizeof str_filename);
+        strlcpy(str_dirname, file, dir_len + 1);
+        strlcpy(str_filename, basename, sizeof str_filename);
         struct dirent* entry;
-        DIR* dir = rb->opendir(str_dirname);
+        DIR* dir = opendir(str_dirname);
         if (!dir)
             return false;
-        while(0 != (entry = rb->readdir(dir)))
+        while(0 != (entry = readdir(dir)))
         {
-            if(rb->strcmp(entry->d_name, str_filename))
+            if(strcmp(entry->d_name, str_filename))
                 continue;
 
-            struct dirinfo info = rb->dir_get_info(dir, entry);
+            struct dirinfo info = dir_get_info(dir, entry);
             if (info.attribute & ATTR_DIRECTORY)
                 props_type = PROPS_DIR;
             else
             {
                 display_size = human_size(info.size, &lang_size_unit);
-                rb->snprintf(str_size, sizeof str_size, "%lu %s",
-                             display_size, rb->str(lang_size_unit));
-                rb->gmtime_r(&info.mtime, &tm);
-                rb->snprintf(str_date, sizeof str_date, "%04d/%02d/%02d",
-                             tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
-                rb->snprintf(str_time, sizeof str_time, "%02d:%02d:%02d",
-                             tm.tm_hour, tm.tm_min, tm.tm_sec);
+                snprintf(str_size, sizeof str_size, "%lu %s",
+                         display_size, str(lang_size_unit));
+                gmtime_r(&info.mtime, &tm);
+                snprintf(str_date, sizeof str_date, "%04d/%02d/%02d",
+                         tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+                snprintf(str_time, sizeof str_time, "%02d:%02d:%02d",
+                         tm.tm_hour, tm.tm_min, tm.tm_sec);
 
-                if (rb->filetype_get_attr(entry->d_name) == FILE_ATTR_M3U)
+                if (filetype_get_attr(entry->d_name) == FILE_ATTR_M3U)
                     props_type = PROPS_PLAYLIST;
                 else
-                    props_type = rb->get_metadata(&id3, -1, file) ?
+                    props_type = get_metadata(&id3, -1, file) ?
                                  PROPS_ID3 : PROPS_FILE;
             }
-            rb->closedir(dir);
+            closedir(dir);
             return true;
         }
-        rb->closedir(dir);
+        closedir(dir);
     }
-    else if (!rb->strcmp(file, MAKE_ACT_STR(ACTIVITY_DATABASEBROWSER)))
+    else if (!strcmp(file, MAKE_ACT_STR(ACTIVITY_DATABASEBROWSER)))
     {
         props_type = PROPS_MUL_ID3;
         return true;
@@ -279,9 +306,9 @@ static bool determine_props_type(const char *file)
     return false;
 }
 
-bool mul_id3_add(const char *file_name)
+static bool mul_id3_add(const char *file_name)
 {
-    if (!file_name || !rb->get_metadata(&id3, -1, file_name))
+    if (!file_name || !get_metadata(&id3, -1, file_name))
         skipped_count++;
     else
     {
@@ -297,53 +324,60 @@ static bool assemble_track_info(const char *filename, struct dir_stats *stats)
     if (props_type == PROPS_DIR)
     {
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
-        rb->cpu_boost(true);
+        cpu_boost(true);
 #endif
-        rb->strlcpy(stats->dirname, filename, sizeof(stats->dirname));
-        rb->splash_progress_set_delay(HZ/2); /* hide progress bar for 0.5s */
+        strlcpy(stats->dirname, filename, sizeof(stats->dirname));
+        splash_progress_set_delay(HZ/2); /* hide progress bar for 0.5s */
         bool success = collect_dir_stats(stats, &mul_id3_add);
 #ifdef HAVE_ADJUSTABLE_CPU_FREQ
-        rb->cpu_boost(false);
+        cpu_boost(false);
 #endif
         if (!success)
             return false;
     }
     else if(props_type == PROPS_PLAYLIST &&
-            !rb->playlist_entries_iterate(filename, NULL, &mul_id3_add))
+            !playlist_entries_iterate(filename, NULL, &mul_id3_add))
         return false;
 #ifdef HAVE_TAGCACHE
     else if (props_type == PROPS_MUL_ID3 &&
-             !rb->tagtree_subentries_do_action(&mul_id3_add))
+             !tagtree_subentries_do_action(&mul_id3_add))
         return false;
 #endif
 
     if (mul_id3_count == 0)
     {
-        rb->splashf(HZ*2, "None found");
+        splashf(HZ*2, "None found");
         return false;
     }
     else if (mul_id3_count > 1) /* otherwise, the retrieved id3 can be used as-is */
         finalize_id3(&id3);
 
     if (skipped_count > 0)
-        rb->splashf(HZ*2, "Skipped %d", skipped_count);
+        splashf(HZ*2, "Skipped %d", skipped_count);
 
     return true;
 }
 
-enum plugin_status plugin_start(const void* parameter)
+int properties(const char *file)
 {
     static struct dir_stats stats;
-    const char *file = parameter;
+
+    /* The core keeps these statics between invocations (the plugin got a fresh
+     * BSS each launch), so start every run from a clean slate. */
+    memset(&stats, 0, sizeof(stats));
+    mul_id3_count = 0;
+    skipped_count = 0;
+    collect_dir_stats_reset();
+
 #ifdef HAVE_TOUCHSCREEN
-    rb->touchscreen_set_mode(rb->global_settings->touch_mode);
+    touchscreen_set_mode(global_settings.touch_mode);
 #endif
     int ret = file && determine_props_type(file);
     if (!ret)
     {
-        rb->splashf(0, "Could not find: %s", file ?: "(NULL)");
-        rb->action_userabort(TIMEOUT_BLOCK);
-        return PLUGIN_OK;
+        splashf(0, "Could not find: %s", file ?: "(NULL)");
+        action_userabort(TIMEOUT_BLOCK);
+        return GO_TO_PREVIOUS;
     }
 
     if (props_type == PROPS_MUL_ID3)
@@ -358,21 +392,21 @@ enum plugin_status plugin_start(const void* parameter)
     {
         if (!stats.canceled)
         {
-            rb->splash(0, ID2P(LANG_PROPERTIES_FAIL));    /* TODO: describe error */
-            rb->action_userabort(TIMEOUT_BLOCK);
+            splash(0, ID2P(LANG_PROPERTIES_FAIL));    /* TODO: describe error */
+            action_userabort(TIMEOUT_BLOCK);
         }
     }
     else if (props_type == PROPS_ID3)
         /* Track Info for single file */
-        ret = rb->browse_id3(&id3, 0, 0, &tm, 1, &view_text);
+        ret = browse_id3(&id3, 0, 0, &tm, 1, &view_text);
     else if (props_type == PROPS_MUL_ID3)
         /* database tracks */
-        ret = rb->browse_id3(&id3, 0, 0, NULL, mul_id3_count, &view_text);
+        ret = browse_id3(&id3, 0, 0, NULL, mul_id3_count, &view_text);
     else if ((ret = browse_file_or_dir(&stats)) < 0)
         ret = assemble_track_info(file, &stats) ?
               /* playlist or folder tracks */
-              rb->browse_id3(&id3, 0, 0, NULL, mul_id3_count, &view_text) :
+              browse_id3(&id3, 0, 0, NULL, mul_id3_count, &view_text) :
               (stats.canceled ? 0 : -1);
 
-    return ret == -1 ? PLUGIN_ERROR : ret == 1 ? PLUGIN_USB_CONNECTED : PLUGIN_OK;
+    return ret == 1 ? GO_TO_ROOT : GO_TO_PREVIOUS;
 }

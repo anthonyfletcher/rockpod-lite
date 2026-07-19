@@ -48,6 +48,8 @@ plugin.c
 root_menu.c
 screens.c
 view_text.c
+properties.c
+mul_id3.c
 settings.c
 settings_list.c
 shortcuts.c

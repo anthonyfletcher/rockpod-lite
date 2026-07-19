@@ -9,6 +9,9 @@
  *
  * Copyright (C) 2023 Christian Soffke
  *
+ * Ported from apps/plugins/lib/mul_id3.c to the core; used only by the
+ * core Properties screen (apps/properties.c).
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -18,7 +21,18 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#include "plugin.h"
+#include <stdio.h>
+#include <string.h>
+#include <limits.h>
+#include "system.h"          /* ARRAYLEN */
+#include "kernel.h"          /* current_tick, yield, HZ, TIME_AFTER */
+#include "lang.h"            /* LANG_*, str */
+#include "action.h"          /* get_action */
+#include "splash.h"          /* splashf, splash_progress */
+#include "dir.h"             /* opendir/readdir/closedir, dir_get_info */
+#include "filetypes.h"       /* filetype_get_attr, FILE_ATTR_* */
+#include "viewport.h"        /* viewport_set_defaults */
+#include "screen_access.h"   /* screens[], FOR_NB_SCREENS */
 #include "mul_id3.h"
 
 struct multiple_tracks_id3 {
@@ -54,7 +68,7 @@ static const int32_t units[] =
 static unsigned int mfnv(char *str)
 {
     const unsigned int p = 16777619;
-    unsigned int hash = 0x811C9DC5; // 2166136261;
+    unsigned int hash = 0x811C9DC5; /* 2166136261 */
 
     if (!str)
         return 0;
@@ -196,6 +210,19 @@ static const char *image_exts[] = {"bmp","jpg","jpe","jpeg","png","ppm"};
 /* and videos */
 static const char *video_exts[] = {"mpg","mpeg","mpv","m2v"};
 
+/* Progress/throttle state for collect_dir_stats(). File-scoped so a fresh
+ * top-level scan can zero it: as a plugin these were function statics reset by
+ * BSS on each launch, but the core caller persists across invocations. */
+static unsigned int cds_id3_count;
+static unsigned long cds_last_displayed, cds_last_get_action;
+
+void collect_dir_stats_reset(void)
+{
+    cds_id3_count = 0;
+    cds_last_displayed = 0;
+    cds_last_get_action = 0;
+}
+
 static void display_dir_stats_vp(struct dir_stats *stats, struct viewport *vp,
                                  struct screen *display)
 {
@@ -204,7 +231,7 @@ static void display_dir_stats_vp(struct dir_stats *stats, struct viewport *vp,
     struct viewport *last_vp = display->set_viewport(vp);
     display->clear_viewport();
     display->putsf(0, 0, "Files: %d (%lu %s)", stats->file_count,
-                   display_size, rb->str(lang_size_unit));
+                   display_size, str(lang_size_unit));
     display->putsf(0, 1, "Audio: %d", stats->audio_file_count);
     if (stats->count_all)
     {
@@ -226,8 +253,8 @@ void display_dir_stats(struct dir_stats *stats)
     struct viewport vps[NB_SCREENS];
     FOR_NB_SCREENS(i)
     {
-        rb->viewport_set_defaults(&vps[i], i);
-        display_dir_stats_vp(stats, &vps[i], rb->screens[i]);
+        viewport_set_defaults(&vps[i], i);
+        display_dir_stats_vp(stats, &vps[i], &screens[i]);
     }
 }
 
@@ -238,39 +265,37 @@ bool collect_dir_stats(struct dir_stats *stats, bool (*id3_cb)(const char*))
 {
     bool result = true;
     unsigned int files_in_dir = 0;
-    static unsigned int id3_count;
-    static unsigned long last_displayed, last_get_action;
     struct dirent* entry;
-    int dirlen = rb->strlen(stats->dirname);
-    DIR* dir =  rb->opendir(stats->dirname);
+    int dirlen = strlen(stats->dirname);
+    DIR* dir =  opendir(stats->dirname);
     if (!dir)
     {
-        rb->splashf(HZ*2, "open error: %s", stats->dirname);
+        splashf(HZ*2, "open error: %s", stats->dirname);
         return false;
     }
     else if (!stats->dirname[1]) /* root dir */
         stats->dirname[0] = dirlen = 0;
 
     /* walk through the directory content */
-    while(result && (0 != (entry = rb->readdir(dir))))
+    while(result && (0 != (entry = readdir(dir))))
     {
-        struct dirinfo info = rb->dir_get_info(dir, entry);
+        struct dirinfo info = dir_get_info(dir, entry);
         if (info.attribute & ATTR_DIRECTORY)
         {
-            if (!rb->strcmp((char *)entry->d_name, ".") ||
-                !rb->strcmp((char *)entry->d_name, ".."))
+            if (!strcmp((char *)entry->d_name, ".") ||
+                !strcmp((char *)entry->d_name, ".."))
                 continue; /* skip these */
 
-            rb->snprintf(stats->dirname + dirlen, sizeof(stats->dirname) - dirlen,
-                         "/%s", entry->d_name); /* append name to current directory */
+            snprintf(stats->dirname + dirlen, sizeof(stats->dirname) - dirlen,
+                     "/%s", entry->d_name); /* append name to current directory */
             if (!id3_cb)
             {
                 stats->dir_count++; /* new directory */
-                if (*rb->current_tick - last_displayed > (HZ/2))
+                if (current_tick - cds_last_displayed > (HZ/2))
                 {
-                    if (last_displayed)
+                    if (cds_last_displayed)
                         display_dir_stats(stats);
-                    last_displayed = *(rb->current_tick);
+                    cds_last_displayed = current_tick;
                 }
             }
             result = collect_dir_stats(stats, id3_cb); /* recursion */
@@ -282,20 +307,20 @@ bool collect_dir_stats(struct dir_stats *stats, bool (*id3_cb)(const char*))
             files_in_dir++;
             stats->byte_count += info.size;
 
-            int attr = rb->filetype_get_attr(entry->d_name);
+            int attr = filetype_get_attr(entry->d_name);
             if (attr == FILE_ATTR_AUDIO)
                 stats->audio_file_count++;
             else if (attr == FILE_ATTR_M3U)
                 stats->m3u_file_count++;
             /* image or video file attributes have to be compared manually */
             else if (stats->count_all &&
-                     (ptr = rb->strrchr(entry->d_name,'.')))
+                     (ptr = strrchr(entry->d_name,'.')))
             {
                 unsigned int i;
                 ptr++;
                 for(i = 0; i < ARRAYLEN(image_exts); i++)
                 {
-                    if(!rb->strcasecmp(ptr, image_exts[i]))
+                    if(!strcasecmp(ptr, image_exts[i]))
                     {
                         stats->img_file_count++;
                         break;
@@ -303,7 +328,7 @@ bool collect_dir_stats(struct dir_stats *stats, bool (*id3_cb)(const char*))
                 }
                 if (i >= ARRAYLEN(image_exts)) {
                     for(i = 0; i < ARRAYLEN(video_exts); i++) {
-                        if(!rb->strcasecmp(ptr, video_exts[i])) {
+                        if(!strcasecmp(ptr, video_exts[i])) {
                             stats->vid_file_count++;
                             break;
                         }
@@ -311,28 +336,28 @@ bool collect_dir_stats(struct dir_stats *stats, bool (*id3_cb)(const char*))
                 }
             }
         }
-        else if (rb->filetype_get_attr(entry->d_name) == FILE_ATTR_AUDIO)
+        else if (filetype_get_attr(entry->d_name) == FILE_ATTR_AUDIO)
         {
-            rb->splash_progress(id3_count++, stats->audio_file_count,
-                                "%s (%s)",
-                                rb->str(LANG_WAIT), rb->str(LANG_OFF_ABORT));
-            rb->snprintf(stats->dirname + dirlen, sizeof(stats->dirname) - dirlen,
-                         "/%s", entry->d_name); /* append name to current directory */
+            splash_progress(cds_id3_count++, stats->audio_file_count,
+                            "%s (%s)",
+                            str(LANG_WAIT), str(LANG_OFF_ABORT));
+            snprintf(stats->dirname + dirlen, sizeof(stats->dirname) - dirlen,
+                     "/%s", entry->d_name); /* append name to current directory */
             id3_cb(stats->dirname); /* allow metadata to be collected */
         }
 
-        if (TIME_AFTER(*(rb->current_tick), last_get_action + HZ/8))
+        if (TIME_AFTER(current_tick, cds_last_get_action + HZ/8))
         {
-            if(ACTION_STD_CANCEL == rb->get_action(CONTEXT_STD,TIMEOUT_NOBLOCK))
+            if(ACTION_STD_CANCEL == get_action(CONTEXT_STD,TIMEOUT_NOBLOCK))
             {
                 stats->canceled = true;
                 result = false;
             }
-            last_get_action = *(rb->current_tick);
+            cds_last_get_action = current_tick;
         }
-        rb->yield();
+        yield();
     }
-    rb->closedir(dir);
+    closedir(dir);
     if (stats->max_files_in_dir < files_in_dir)
         stats->max_files_in_dir = files_in_dir;
     return result;

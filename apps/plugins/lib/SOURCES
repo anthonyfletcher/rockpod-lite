@@ -69,5 +69,3 @@ kbd_helper.c
 #ifdef HAVE_TOUCHSCREEN
 pluginlib_touchscreen.c
 #endif
-
-mul_id3.c
