@@ -210,12 +210,9 @@ static int browse_file_or_dir(struct dir_stats *stats)
     gui_synclist_speak_item(&properties_lists);
     while(true)
     {
-        int button;
-        /* list_do_action (not a raw get_action loop) so the list is redrawn in
-         * step with the themed status bar -- otherwise the SBS repaints its own
-         * scrollbar over a list that never refreshes, giving two mismatched
-         * scrollbars. Matches the Track Info screen (browse_id3). */
-        if (list_do_action(CONTEXT_LIST, HZ, &properties_lists, &button))
+        int button = get_action(CONTEXT_LIST, HZ);
+        /* HZ so the status bar redraws correctly */
+        if (gui_synclist_do_button(&properties_lists, &button))
             continue;
         switch(button)
         {
