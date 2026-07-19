@@ -1,12 +1,9 @@
-/* Both load-bearing (a real plugin_load() call site elsewhere in core,
- * not just reachable through the generic Plugins browser):
- *   - text_viewer: apps/menus/main_menu.c's show_legal() opens this to
- *     display the GPL/licenses text.
- *   - imageviewer: apps/onplay.c's view_album_art() opens this for
- *     "View Album Art".
- * shortcuts/clock/tagcache (the plugin, distinct from the core
- * apps/shortcuts.c and apps/tagcache.c files of the same name) had no
- * such call site anywhere -- only reachable through the generic Plugins
- * browser, so removed along with the rest of that trim. */
-text_viewer
-imageviewer
+/* No subdirectory plugins remain. The viewers were all retired in favour of
+ * core apps:
+ *   - text_viewer -> apps/text_viewer/ (the license/legal screens in
+ *     apps/menus/main_menu.c call the core text_viewer() directly, and the
+ *     file browser reaches it via filetype_open_core_viewer()).
+ *   - imageviewer -> apps/image_viewer/ (album art + file browser).
+ *   - mpegplayer / shortcuts / clock / tagcache: removed.
+ * The remaining root-level utility plugins (properties, playing_time,
+ * view_text, lastfm_scrobbler, db_folder_select) are listed in SOURCES. */
