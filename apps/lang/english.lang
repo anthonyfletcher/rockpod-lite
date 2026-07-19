@@ -14291,10 +14291,10 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "[Path]"
+    *: "Path"
   </source>
   <dest>
-    *: "[Path]"
+    *: "Path"
   </dest>
   <voice>
     *: "Path"
@@ -14305,10 +14305,10 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "[Filename]"
+    *: "Filename"
   </source>
   <dest>
-    *: "[Filename]"
+    *: "Filename"
   </dest>
   <voice>
     *: "Filename"
@@ -14319,10 +14319,10 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "[Size]"
+    *: "Size"
   </source>
   <dest>
-    *: "[Size]"
+    *: "Size"
   </dest>
   <voice>
     *: "Size"
@@ -14333,10 +14333,10 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "[Date]"
+    *: "Date"
   </source>
   <dest>
-    *: "[Date]"
+    *: "Date"
   </dest>
   <voice>
     *: "Date"
@@ -14347,10 +14347,10 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "[Time]"
+    *: "Time"
   </source>
   <dest>
-    *: "[Time]"
+    *: "Time"
   </dest>
   <voice>
     *: "Time"
@@ -14361,10 +14361,10 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "[Subdirs]"
+    *: "Subdirs"
   </source>
   <dest>
-    *: "[Subdirs]"
+    *: "Subdirs"
   </dest>
   <voice>
     *: "Subdirs"
@@ -14375,10 +14375,10 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "[Files]"
+    *: "Files"
   </source>
   <dest>
-    *: "[Files]"
+    *: "Files"
   </dest>
   <voice>
     *: "Files"
