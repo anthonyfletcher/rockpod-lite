@@ -1905,7 +1905,9 @@ const struct settings_list settings[] = {
     OFFON_SETTING(0, clear_settings_on_hold, LANG_CLEAR_SETTINGS_ON_HOLD,
                   false, "clear settings on hold", NULL),
 #endif
-    OFFON_SETTING(0, playback_log, LANG_LOGGING, false, "play log", NULL),
+    CHOICE_SETTING(0, playback_log, LANG_LOGGING, 0, "play log",
+                   "off,on,last.fm", NULL, 3,
+                   ID2P(LANG_OFF), ID2P(LANG_ON), ID2P(LANG_AUDIOSCROBBLER)),
 };
 
 const int nb_settings = sizeof(settings)/sizeof(*settings);

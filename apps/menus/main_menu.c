@@ -113,22 +113,6 @@ MAKE_MENU(manage_settings, ID2P(LANG_MANAGE_MENU), NULL, Icon_Config,
 /**********************************/
 
 /***********************************/
-/*    LAST.FM SCROBBLER            */
-
-/* Only user-facing plugin left once the generic Plugins browser was
- * removed (see root_menu.c) -- surfaced directly here rather than
- * requiring a file browse to rocks/lastfm_scrobbler.rock. */
-static int show_lastfm_scrobbler(void)
-{
-    plugin_load(PLUGIN_DIR "/lastfm_scrobbler.rock", NULL);
-    return 0;
-}
-MENUITEM_FUNCTION(lastfm_scrobbler_item, 0, ID2P(LANG_AUDIOSCROBBLER),
-                  show_lastfm_scrobbler, NULL, Icon_NOICON);
-/*    LAST.FM SCROBBLER            */
-/***********************************/
-
-/***********************************/
 /*      INFO MENU                  */
 
 static int show_credits(void)
@@ -489,7 +473,6 @@ MAKE_MENU(main_menu_, ID2P(LANG_SETTINGS), NULL,
         &album_covers_menu,
 #endif
         &text_viewer_menu,
-        &lastfm_scrobbler_item,
 #if CONFIG_RTC
         &timedate_item,
 #endif

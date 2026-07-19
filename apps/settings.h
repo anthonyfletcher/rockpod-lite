@@ -796,7 +796,8 @@ struct user_settings
 #if (CONFIG_KEYPAD == IPOD_4G_PAD)
     bool clear_settings_on_hold;
 #endif
-    bool playback_log; /* ROCKBOX_DIR/playback.log for tracks played */
+    int playback_log; /* 0=off, 1=generic (ROCKBOX_DIR/playback.log),
+                         2=Audioscrobbler (/.scrobbler.log) */
 };
 
 /* global settings */

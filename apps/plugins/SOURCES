@@ -1,6 +1,5 @@
-/* plugins common to all models -- trimmed to lastfm_scrobbler plus one
- * more that turned out to be load-bearing for other features, not just a
- * standalone utility, so it's staying:
+/* plugins common to all models -- trimmed to just db_folder_select, which
+ * turned out to be load-bearing for other features, not a standalone utility:
  *   - db_folder_select.c: apps/menus/settings_menu.c's "Directories to
  *     Scan" database setting and the AUTORESUME_NEXTTRACK_CUSTOM folder
  *     picker both plugin_load() this directly; without it those two
@@ -11,12 +10,11 @@
  * playing_time.c moved into the core (apps/playing_time.c), reached directly
  * from apps/onplay.c's "Playing Time" current-playlist menu item -- no longer
  * a plugin.
+ * lastfm_scrobbler.c removed entirely: play logging is core (apps/playback.c),
+ * and the "play log" setting is now a 3-way Off / On / Audioscrobbler choice
+ * that writes /.scrobbler.log directly -- no plugin, no export step.
  * credits.c moved into the core (apps/credits.c), launched directly from
  * apps/menus/main_menu.c's show_credits() -- no longer a plugin.
- * lastfm_scrobbler_viewer.c (lastfm_scrobbler's "View Playback Log"
- * companion) removed entirely -- buggy, not worth keeping; the menu item
- * and view_playback_log() that called it are gone from lastfm_scrobbler.c
- * too, not just this listing.
  * Everything else previously here (games, demos, emulators, remaining
  * viewers/utilities only ever reachable through the generic Plugins
  * browser) has been removed. main_menu_config.c and pictureflow.c
@@ -30,4 +28,3 @@
 #ifdef HAVE_TAGCACHE
 db_folder_select.c
 #endif
-lastfm_scrobbler.c

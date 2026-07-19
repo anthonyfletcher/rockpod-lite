@@ -368,6 +368,54 @@ static unsigned int position_key = 0;
 static int playback_log_handle = 0; /* core_alloc handle for playback log buffer */
 #endif
 
+/* global_settings.playback_log values */
+#define PLAYBACK_LOG_OFF     0
+#define PLAYBACK_LOG_GENERIC 1 /* playback.log: timestamp:elapsed:length:path   */
+#define PLAYBACK_LOG_LASTFM  2 /* /.scrobbler.log in Audioscrobbler .log format */
+
+#if CONFIG_RTC
+#define SCROBBLER_LOG_PATH   "/.scrobbler.log"
+#define SCROBBLER_TIMELESS   ""
+#else
+#define SCROBBLER_LOG_PATH   "/.scrobbler-timeless.log"
+#define SCROBBLER_TIMELESS   " Timeless"
+#endif
+#define SCROBBLER_LISTENED_PCT 50   /* played >= this % of a track => rating 'L' */
+#define SCROBBLER_UNTAGGED     "<UNTAGGED>"
+
+static const char *playbacklog_path(void)
+{
+    return global_settings.playback_log == PLAYBACK_LOG_LASTFM ?
+           SCROBBLER_LOG_PATH : PLAYBACK_LOG_PATH;
+}
+
+/* Format one log line for the current mode. Returns snprintf's return value. */
+static int format_playbacklog(char *buf, size_t sz, struct mp3entry *id3,
+                              unsigned long timestamp)
+{
+    if (global_settings.playback_log == PLAYBACK_LOG_LASTFM)
+    {
+        char rating = (id3->elapsed >= id3->length / 100 * SCROBBLER_LISTENED_PCT)
+                      ? 'L' : 'S';
+        const char *artist = (id3->artist && id3->artist[0]) ? id3->artist
+                                                             : id3->albumartist;
+        const char *slash = strrchr(id3->path, '/');
+        const char *name = slash ? slash + 1 : id3->path;
+        int track = id3->tracknum;
+        if (track < -1)
+            track = -1;
+        return snprintf(buf, sz, "%s\t%s\t%s\t%d\t%ld\t%c\t%lu\t%s\n",
+                        (artist && artist[0]) ? artist : SCROBBLER_UNTAGGED,
+                        id3->album ? id3->album : "",
+                        (id3->title && id3->title[0]) ? id3->title : name,
+                        track, (long)(id3->length / 1000),
+                        rating, timestamp,
+                        id3->mb_track_id ? id3->mb_track_id : "");
+    }
+    return snprintf(buf, sz, "%lu:%ld:%ld:%s\n",
+                    timestamp, (long)id3->elapsed, (long)id3->length, id3->path);
+}
+
 /* Forward declarations */
 enum audio_start_playback_flags
 {
@@ -1287,12 +1335,30 @@ void allocate_playback_log(void)
         playback_log_handle = core_alloc(PLAYBACK_LOG_BUFSZ);
         if (playback_log_handle > 0)
         {
-            DEBUGF("%s Allocated %d bytes\n", __func__, PLAYBACK_LOG_BUFSZ); 
+            DEBUGF("%s Allocated %d bytes\n", __func__, PLAYBACK_LOG_BUFSZ);
             char *buf = core_get_data(playback_log_handle);
             buf[0] = '\0';
         }
     }
 #endif
+
+    if (global_settings.playback_log == PLAYBACK_LOG_LASTFM)
+    {
+        /* Audioscrobbler .log: the spec header goes in once, when the file is
+         * first created; afterwards we only ever append entries (no rotation). */
+        fd = open(SCROBBLER_LOG_PATH, O_WRONLY|O_CREAT|O_APPEND, 0666);
+        if (fd >= 0)
+        {
+            if (lseek(fd, 0, SEEK_END) == 0)
+                fdprintf(fd,
+                    "#AUDIOSCROBBLER/1.1\n#TZ/UNKNOWN\n"
+                    "#CLIENT/Rockbox " TARGET_NAME SCROBBLER_TIMELESS "\n"
+                    "#ARTIST\t#ALBUM\t#TITLE\t#TRACKNUM\t#LENGTH\t#RATING\t"
+                    "#TIMESTAMP\t#MUSICBRAINZ_TRACKID\n");
+            close(fd);
+        }
+        return;
+    }
 
     while (1)
     {
@@ -1360,9 +1426,7 @@ void add_playbacklog(struct mp3entry *id3)
 #if (CONFIG_STORAGE & STORAGE_ATA)
         if (buf)  /* we have a buffer allocd from core */
         {
-            /*10:10:10:MAX_PATH\n*/
-            ssize_t entrylen = snprintf(buf, bufsz,"%lu:%ld:%ld:%s\n",
-                    timestamp, (long)id3->elapsed, (long)id3->length, id3->path);
+            ssize_t entrylen = format_playbacklog(buf, bufsz, id3, timestamp);
 
             if (entrylen < bufsz)
             {
@@ -1380,8 +1444,9 @@ void add_playbacklog(struct mp3entry *id3)
 
     if (id3 || used > 0) /* flush */
     {
-        DEBUGF("Opening %s \n", PLAYBACK_LOG_PATH);
-        int fd = open(PLAYBACK_LOG_PATH, O_WRONLY|O_CREAT|O_APPEND, 0666);
+        const char *path = playbacklog_path();
+        DEBUGF("Opening %s \n", path);
+        int fd = open(path, O_WRONLY|O_CREAT|O_APPEND, 0666);
         if (fd < 0)
         {
             return; /* failure */
@@ -1399,10 +1464,12 @@ void add_playbacklog(struct mp3entry *id3)
         if (id3)
         {
             /* we have the timestamp from when we tried to add to buffer */
-            DEBUGF("LOGGED: time: %lu elapsed %ld/%ld saving file: %s\n",
-                    timestamp, (long)id3->elapsed, (long)id3->length, id3->path);
-            fdprintf(fd, "%lu:%ld:%ld:%s\n",
-                    timestamp, (long)id3->elapsed, (long)id3->length, id3->path);
+            char entry[MAX_PATH + 128];
+            int len = format_playbacklog(entry, sizeof(entry), id3, timestamp);
+            if (len > (int)sizeof(entry) - 1) /* snprintf returns untruncated len */
+                len = sizeof(entry) - 1;
+            if (len > 0)
+                write(fd, entry, len);
         }
 
         close(fd);
