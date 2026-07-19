@@ -343,8 +343,10 @@ static bool pt_display_stats(struct playing_time_info *pti)
     gui_synclist_speak_item(&pt_lists);
     while (true)
     {
-        int action = get_action(CONTEXT_LIST, HZ/2);
-        if (gui_synclist_do_button(&pt_lists, &action) == 0
+        int action;
+        /* list_do_action keeps the list redrawn in step with the themed status
+         * bar (see the note in apps/properties.c). */
+        if (list_do_action(CONTEXT_LIST, HZ/2, &pt_lists, &action) == 0
             && action != ACTION_NONE && action != ACTION_UNKNOWN)
         {
             bool usb = default_event_handler(action) == SYS_USB_CONNECTED;
@@ -392,8 +394,8 @@ static int pt_options(struct playing_time_info *pti)
 
     while(true)
     {
-        int button = get_action(CONTEXT_LIST, HZ);
-        if (gui_synclist_do_button(&pt_options, &button))
+        int button;
+        if (list_do_action(CONTEXT_LIST, HZ, &pt_options, &button))
             continue;
         switch(button)
         {

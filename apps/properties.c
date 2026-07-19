@@ -145,10 +145,8 @@ static const char * get_props(int selected_item, void* data,
 static int speak_property_selection(int selected_item, void *data)
 {
     struct dir_stats *stats = data;
-    /* header/value pairs: voice the whole pair from either of its rows */
-    int item = selected_item & ~1;
     int32_t id = P2ID((props_type == PROPS_DIR ?
-                       props_dir : props_file)[item]);
+                       props_dir : props_file)[selected_item]);
     talk_id(id, false);
     switch (id)
     {
@@ -175,7 +173,7 @@ static int speak_property_selection(int selected_item, void *data)
         talk_number(stats->file_count, true);
         break;
     default:
-        talk_spell(props_file[item + 1], true);
+        talk_spell(props_file[selected_item + 1], true);
         break;
     }
     return 0;
@@ -191,11 +189,9 @@ static void setup_properties_list(struct dir_stats *stats)
     else
         nb_props = NUM_DIR_PROPERTIES;
 
-    /* selected_size 1 (one row per header/value): keeps this a single-line
-     * list, so a theme's skinned list renders it -- themed rows and a single
-     * themed scrollbar, matching the file browser. The header/value pairing is
-     * handled by the callers below rounding the selection down to its pair. */
-    gui_synclist_init(&properties_lists, &get_props, stats, false, 1, NULL);
+    /* selected_size 2: each property is a header row + a value row, selected as
+     * a pair (the same layout as the Track Info screen, browse_id3). */
+    gui_synclist_init(&properties_lists, &get_props, stats, false, 2, NULL);
     gui_synclist_set_title(&properties_lists,
                            str(props_type == PROPS_DIR ?
                                LANG_PROPERTIES_DIRECTORY_PROPERTIES :
@@ -214,20 +210,21 @@ static int browse_file_or_dir(struct dir_stats *stats)
     gui_synclist_speak_item(&properties_lists);
     while(true)
     {
-        int button = get_action(CONTEXT_LIST, HZ);
-        /* HZ so the status bar redraws corectly */
-        if (gui_synclist_do_button(&properties_lists, &button))
+        int button;
+        /* list_do_action (not a raw get_action loop) so the list is redrawn in
+         * step with the themed status bar -- otherwise the SBS repaints its own
+         * scrollbar over a list that never refreshes, giving two mismatched
+         * scrollbars. Matches the Track Info screen (browse_id3). */
+        if (list_do_action(CONTEXT_LIST, HZ, &properties_lists, &button))
             continue;
         switch(button)
         {
             case ACTION_STD_OK:;
-                /* Rows are header/value pairs; act on the pair the cursor is
-                 * on, whichever of its two rows is selected. */
-                int pair = gui_synclist_get_sel_pos(&properties_lists) & ~1;
+                int sel_pos = gui_synclist_get_sel_pos(&properties_lists);
 
                 /* "Show Track Info..." selected? */
                 if ((props_type == PROPS_PLAYLIST || props_type == PROPS_DIR) &&
-                    pair == (int)(props_type == PROPS_DIR ?
+                    sel_pos == (int)(props_type == PROPS_DIR ?
                                 ARRAYLEN(props_dir) : ARRAYLEN(props_file)) - 2)
                     return -1;
                 else
@@ -236,11 +233,11 @@ static int browse_file_or_dir(struct dir_stats *stats)
                     FOR_NB_SCREENS(i)
                         viewportmanager_theme_enable(i, false, NULL);
                     if (props_type == PROPS_DIR)
-                        view_text((char *) p2str(props_dir[pair]),
-                                  (char *)       props_dir[pair + 1]);
+                        view_text((char *) p2str(props_dir[sel_pos]),
+                                  (char *)       props_dir[sel_pos + 1]);
                     else
-                        view_text((char *) p2str(props_file[pair]),
-                                  (char *)       props_file[pair + 1]);
+                        view_text((char *) p2str(props_file[sel_pos]),
+                                  (char *)       props_file[sel_pos + 1]);
                     FOR_NB_SCREENS(i)
                         viewportmanager_theme_undo(i, false);
 
