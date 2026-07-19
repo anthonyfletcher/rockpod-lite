@@ -10,10 +10,13 @@
  * Copyright (C) 2012 Thomas Martitz
  * Copyright (C) 2021 William Wilgus
  *
- * Core folder-tree picker, ported from the db_folder_select plugin. Used by
- * the database "Directories to Scan" setting and the custom autoresume folder
- * list (both in apps/menus/settings_menu.c), which call folder_select()
- * directly instead of loading a .rock.
+ * Core folder-tree picker, ported from the db_folder_select plugin and then
+ * reworked: expansion and inclusion are independent. Scroll to move, Select to
+ * expand/collapse a folder, hold Select to include/exclude it. Including a
+ * folder includes all its subdirectories unless a subdirectory is individually
+ * excluded. Included folders are shown bracketed, e.g. [Music]. Used by the
+ * database "Directories to Scan" setting and the custom autoresume folder list
+ * (both in apps/menus/settings_menu.c), which call folder_select() directly.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -43,25 +46,21 @@
 #include "logf.h"
 #include "folder_select.h"
 
-/*
- * Order for changing child states:
- * 1) expand folder (skip to 3 if empty, skip to 4 if cannot be opened)
- * 2) collapse and select
- * 3) unselect (skip to 1)
- * 4) do nothing
- */
-
-enum child_state {
-    EXPANDED,
-    SELECTED,
-    COLLAPSED,
-    EACCESS,
+/* Inclusion is a tri-state: a folder inherits from its nearest explicitly
+ * included/excluded ancestor (default: excluded). Selecting a folder to include
+ * it therefore includes all descendants, until one is explicitly excluded. */
+enum sel_state {
+    SEL_INHERIT,
+    SEL_INCLUDE,
+    SEL_EXCLUDE,
 };
 
 struct child {
     char* name;
-    struct folder *folder;
-    enum child_state state;
+    struct folder *folder;   /* loaded sub-folder, NULL until first expand */
+    enum sel_state sel;
+    bool expanded;           /* children shown in the list */
+    bool eaccess;            /* could not be opened */
 };
 
 struct folder {
@@ -221,7 +220,9 @@ static struct folder* load_folder(struct folder* parent, char *folder)
         struct child *child = &this->children[this->children_count++];
         child->name = first_child;
         child->folder = NULL;
-        child->state = COLLAPSED;
+        child->sel = SEL_INHERIT;
+        child->expanded = false;
+        child->eaccess = false;
         while(*first_child++ != '\0'){};/* move to next name entry */
         child_count--;
     }
@@ -238,7 +239,9 @@ static struct folder* load_root(void)
     /* reset the root for each call */
     root_child.name = "/";
     root_child.folder = NULL;
-    root_child.state = COLLAPSED;
+    root_child.sel = SEL_INHERIT;
+    root_child.expanded = false;
+    root_child.eaccess = false;
 
     static struct folder root = {
         .name = "",
@@ -251,17 +254,59 @@ static struct folder* load_root(void)
     return &root;
 }
 
+/* Load a child's sub-folder if not already loaded. Returns the folder or NULL
+ * (marking eaccess on failure). */
+static struct folder* child_load(struct child *this, struct folder *parent)
+{
+    if (this->folder == NULL && !this->eaccess)
+    {
+        this->folder = load_folder(parent, this->name);
+        if (this->folder == NULL)
+            this->eaccess = true;
+    }
+    return this->folder;
+}
+
+/* The child in `f`'s parent folder that owns `f` (its ->folder == f). */
+static struct child* folder_owner(struct folder *f)
+{
+    struct folder *parent = f->previous;
+    if (!parent)
+        return NULL;
+    for (int i = 0; i < parent->children_count; i++)
+        if (parent->children[i].folder == f)
+            return &parent->children[i];
+    return NULL;
+}
+
+/* Whether `this` (a child of `parent`) is included, resolving inheritance up
+ * the tree to the nearest explicit include/exclude. */
+static bool effective_included(struct child *this, struct folder *parent)
+{
+    struct child *node = this;
+    struct folder *f = parent;
+    while (node)
+    {
+        if (node->sel == SEL_INCLUDE)
+            return true;
+        if (node->sel == SEL_EXCLUDE)
+            return false;
+        node = folder_owner(f);
+        f = f->previous;
+    }
+    return false; /* nothing explicit up to the root: excluded */
+}
+
 static int count_items(struct folder *start)
 {
     int count = 0;
-    int i;
 
-    for (i=0; i<start->children_count; i++)
+    for (int i = 0; i < start->children_count; i++)
     {
         struct child *foo = &start->children[i];
-        if (foo->state == EXPANDED)
-            count += count_items(foo->folder);
         count++;
+        if (foo->expanded && foo->folder)
+            count += count_items(foo->folder);
     }
     return count;
 }
@@ -280,7 +325,7 @@ static struct child* find_index(struct folder *start, int index, struct folder *
             return foo;
         }
         i++;
-        if (foo->state == EXPANDED)
+        if (foo->expanded && foo->folder)
         {
             struct child *bar = find_index(foo->folder, index - i, parent);
             if (bar)
@@ -300,24 +345,28 @@ static const char * folder_get_name(int selected_item, void * data,
     struct folder *parent;
     struct child *this = find_index(root, selected_item , &parent);
 
-    char *buf = buffer;
-    if ((int)buffer_len > parent->depth)
+    if (this == NULL)
     {
-        int i = parent->depth;
-        while(--i > 0) /* don't indent the parent /folders */
-            *buf++ = '\t';
+        buffer[0] = '\0';
+        return buffer;
     }
-    *buf = '\0';
-    strlcat(buffer, this->name, buffer_len);
 
-    if (this->state == EACCESS)
-    {   /* append error message to the entry if unaccessible */
-        size_t len = strlcat(buffer, " ( ", buffer_len);
-        if (buffer_len > len)
-        {
-            snprintf(&buffer[len], buffer_len - len, str(LANG_READ_FAILED), ")");
-        }
+    /* two spaces of indent per tree level */
+    size_t pos = 0;
+    for (int i = 0; i < parent->depth && pos + 2 < buffer_len; i++)
+    {
+        buffer[pos++] = ' ';
+        buffer[pos++] = ' ';
     }
+    buffer[pos] = '\0';
+
+    if (effective_included(this, parent))
+        snprintf(&buffer[pos], buffer_len - pos, "[%s]", this->name);
+    else
+        strlcpy(&buffer[pos], this->name, buffer_len - pos);
+
+    if (this->eaccess)
+        strlcat(buffer, " (?)", buffer_len);
 
     return buffer;
 }
@@ -328,102 +377,42 @@ static enum themable_icons folder_get_icon(int selected_item, void * data)
     struct folder *parent;
     struct child *this = find_index(root, selected_item, &parent);
 
-    switch (this->state)
-    {
-        case SELECTED:
-            return Icon_Cursor;
-        case COLLAPSED:
-            return Icon_Folder;
-        case EXPANDED:
-            return Icon_Submenu;
-        case EACCESS:
-            return Icon_Questionmark;
-    }
-    return Icon_NOICON;
-}
-
-static int child_set_state_expand(struct child *this, struct folder *parent)
-{
-    int newstate = EACCESS;
-    if (this->folder == NULL)
-        this->folder = load_folder(parent, this->name);
-
-    if (this->folder != NULL)
-    {
-        if(this->folder->children_count == 0)
-            newstate = SELECTED;
-        else
-            newstate = EXPANDED;
-    }
-    this->state = newstate;
-    return newstate;
+    if (this == NULL)
+        return Icon_NOICON;
+    if (this->eaccess)
+        return Icon_Questionmark;
+    if (this->expanded)
+        return Icon_Submenu;
+    return Icon_Folder;
 }
 
 static int folder_action_callback(int action, struct gui_synclist *list)
 {
     struct folder *root = (struct folder*)list->data;
     struct folder *parent;
-    struct child *this = find_index(root, list->selected_item, &parent), *child;
-    int i;
+    struct child *this = find_index(root, list->selected_item, &parent);
 
-    if (action == ACTION_STD_OK)
+    if (this == NULL)
+        return action;
+
+    if (action == ACTION_STD_OK) /* expand / collapse */
     {
-        switch (this->state)
+        if (this->eaccess)
+            return action;
+        if (child_load(this, parent) == NULL)
+            action = ACTION_REDRAW; /* became eaccess */
+        else if (this->folder->children_count > 0)
         {
-            case EXPANDED:
-                this->state = SELECTED;
-                break;
-            case SELECTED:
-                this->state = COLLAPSED;
-                break;
-            case COLLAPSED:
-                child_set_state_expand(this, parent);
-                break;
-            case EACCESS:
-                /* cannot open, do nothing */
-                return action;
+            this->expanded = !this->expanded;
+            action = ACTION_REDRAW;
         }
+    }
+    else if (action == ACTION_STD_CONTEXT) /* include / exclude */
+    {
+        this->sel = effective_included(this, parent) ? SEL_EXCLUDE : SEL_INCLUDE;
         action = ACTION_REDRAW;
     }
-    else if (action == ACTION_STD_CONTEXT)
-    {
-        switch (this->state)
-        {
-            case EXPANDED:
-                for (i = 0; i < this->folder->children_count; i++)
-                {
-                    child = &this->folder->children[i];
-                    switch (child->state)
-                    {
-                        case SELECTED:
-                        case EXPANDED:
-                            child->state = COLLAPSED;
-                            break;
-                        case COLLAPSED:
-                            child->state = SELECTED;
-                            break;
-                        case EACCESS:
-                            break;
-                    }
-                }
-                break;
-            case SELECTED:
-            case COLLAPSED:
-                if (child_set_state_expand(this, parent) != EACCESS)
-                {
-                    for (i = 0; i < (this->folder->children_count); i++)
-                    {
-                        child = &this->folder->children[i];
-                        child->state = SELECTED;
-                    }
-                }
-                break;
-            case EACCESS:
-                /* cannot open, do nothing */
-                return action;
-        }
-        action = ACTION_REDRAW;
-    }
+
     if (action == ACTION_REDRAW)
         list->nb_items = count_items(root);
     return action;
@@ -470,8 +459,10 @@ static struct child* find_from_filename(const char* filename, struct folder *roo
     return NULL;
 
 cascade:
-    /* filename == XXX/YYY. cascade down */
-    child_set_state_expand(this, root);
+    /* filename == XXX/YYY. cascade down: load and expand so the saved
+     * selection is visible when the picker opens */
+    if (child_load(this, root) && this->folder->children_count > 0)
+        this->expanded = true;
     while (slash[0] == '/') slash++; /* eat slashes */
     return find_from_filename(slash, this->folder);
 }
@@ -511,63 +502,67 @@ static int select_paths(struct folder* root, const char* filenames)
         strlcpy(buf, sstr, len + 1);
         struct child *item = find_from_filename(buf, root);
         if (item)
-            item->state = SELECTED;
+            item->sel = SEL_INCLUDE;
     }
 
     return 0;
 }
 
-static void save_folders_r(struct folder *root, char* dst, size_t maxlen, size_t buflen)
+/* Whether any node in the (loaded part of the) subtree is explicitly excluded,
+ * i.e. we can't collapse the whole subtree to its root path. */
+static bool has_exclude(struct folder *f)
 {
-    size_t len;
-    struct folder *curfolder;
-    char* name;
-
-    for (int i = 0; i < root->children_count; i++)
+    for (int i = 0; i < f->children_count; i++)
     {
-        struct child *this = &root->children[i];
-        if (this->state == SELECTED)
+        struct child *this = &f->children[i];
+        if (this->sel == SEL_EXCLUDE)
+            return true;
+        if (this->folder && has_exclude(this->folder))
+            return true;
+    }
+    return false;
+}
+
+static void emit_path(struct folder *parent, const char *name,
+                      char* dst, size_t maxlen, size_t buflen)
+{
+    size_t len = get_full_path(parent, buffer_front, buflen);
+    if (len + strlen(name) + 2 >= buflen)
+        return;
+    len += snprintf(&buffer_front[len], buflen - len, "%s:", name);
+    logf("emit_path: [%s]", buffer_front);
+    if (dst != hashed.buf)
+    {
+        int dlen = strlen(dst);
+        if (dlen + len >= maxlen)
+            return;
+        strlcpy(&dst[dlen], buffer_front, maxlen - dlen);
+    }
+    else
+    {
+        if (hashed.len + len >= maxlen)
         {
-            if (this->folder == NULL)
-            {
-                curfolder = root;
-                name = this->name;
-                logf("save_folders_r: this->name[%s]", name);
-            }
-            else
-            {
-                curfolder = this->folder->previous;
-                name = this->folder->name;
-                logf("save_folders_r: this->folder->name[%s]", name);
-            }
-
-            len = get_full_path(curfolder, buffer_front, buflen);
-
-            if (len + 2 >= buflen)
-                continue;
-
-            len += snprintf(&buffer_front[len], buflen - len, "%s:", name);
-            logf("save_folders_r: [%s]", buffer_front);
-            if (dst != hashed.buf)
-            {
-                int dlen = strlen(dst);
-                if (dlen + len >= maxlen)
-                    continue;
-                strlcpy(&dst[dlen], buffer_front, maxlen - dlen);
-            }
-            else
-            {
-                if (hashed.len + len >= maxlen)
-                {
-                    hashed.maxlen_exceeded = 1;
-                    continue;
-                }
-                get_hash(buffer_front, &hashed.val, len);
-                hashed.len += len;
-            }
+            hashed.maxlen_exceeded = 1;
+            return;
         }
-        else if (this->state == EXPANDED)
-            save_folders_r(this->folder, dst, maxlen, buflen);
+        get_hash(buffer_front, &hashed.val, len);
+        hashed.len += len;
+    }
+}
+
+/* Walk the tree writing the minimal set of paths whose recursive scan equals
+ * the selection: a cleanly-included folder emits just its own path; one with
+ * excluded descendants recurses so the included sub-parts are emitted instead. */
+static void save_node(struct folder *f, char* dst, size_t maxlen, size_t buflen)
+{
+    for (int i = 0; i < f->children_count; i++)
+    {
+        struct child *this = &f->children[i];
+        if (effective_included(this, f) &&
+            (this->folder == NULL || !has_exclude(this->folder)))
+            emit_path(f, this->name, dst, maxlen, buflen);
+        else if (this->folder != NULL)
+            save_node(this->folder, dst, maxlen, buflen);
     }
 }
 
@@ -578,7 +573,7 @@ static uint32_t save_folders(struct folder *root, char* dst, size_t maxlen)
     hashed.maxlen_exceeded = 0;
     size_t len = buffer_end - buffer_front;
     dst[0] = '\0';
-    save_folders_r(root, dst, maxlen, len);
+    save_node(root, dst, maxlen, len);
     len = strlen(dst);
     /* fix trailing ':' */
     if (len > 1) dst[len-1] = '\0';
@@ -608,17 +603,15 @@ bool folder_select(char * header_text, char* setting, int setting_len)
     logf("folders in: %s", setting);
     /* Load previous selection(s) */
     select_paths(root, setting);
+    /* open the root so the top-level folders show right away */
+    if (child_load(&root->children[0], root))
+        root->children[0].expanded = true;
     /* get current hash to check for changes later */
     uint32_t hash = save_folders(root, hashed.buf, setting_len);
     simplelist_info_init(&info, header_text, count_items(root), root);
     info.get_name = folder_get_name;
     info.action_callback = folder_action_callback;
     info.get_icon = folder_get_icon;
-    /* Draw with the core list renderer, not the theme's skinned list: this
-     * picker relies on per-item state icons (folder/expanded/selected) and on
-     * '\t' indentation to show the tree, neither of which a skinned list
-     * renders. The plugin got this for free (it loaded with the theme off). */
-    info.hide_theme = true;
     bool show_icons = global_settings.show_icons;
     global_settings.show_icons = true;
     simplelist_show_list(&info);
