@@ -8,7 +8,12 @@
  *
  * Copyright (C) 2012 Jonathan Gordon
  * Copyright (C) 2012 Thomas Martitz
-* * Copyright (C) 2021 William Wilgus
+ * Copyright (C) 2021 William Wilgus
+ *
+ * Core folder-tree picker, ported from the db_folder_select plugin. Used by
+ * the database "Directories to Scan" setting and the custom autoresume folder
+ * list (both in apps/menus/settings_menu.c), which call folder_select()
+ * directly instead of loading a .rock.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,12 +24,24 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#include "plugin.h"
-#ifdef ROCKBOX_HAS_LOGF
-#define logf rb->logf
-#else
-#define logf(...) do { } while(0)
-#endif
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "string-extra.h"    /* strlcpy, strlcat */
+#include "system.h"          /* ALIGN_UP */
+#include "core_alloc.h"
+#include "crc32.h"
+#include "dir.h"
+#include "file.h"            /* MAX_PATH */
+#include "lang.h"
+#include "settings.h"
+#include "splash.h"
+#include "yesno.h"
+#include "icon.h"
+#include "gui/list.h"
+/*#define LOGF_ENABLE*/
+#include "logf.h"
+#include "folder_select.h"
 
 /*
  * Order for changing child states:
@@ -67,7 +84,7 @@ static struct
 
 static inline void get_hash(const char *key, uint32_t *hash, int len)
 {
-    *hash = rb->crc_32(key, len, *hash);
+    *hash = crc_32(key, len, *hash);
 }
 
 static char* folder_alloc(size_t size)
@@ -93,28 +110,12 @@ static char* folder_alloc_from_end(size_t size)
     buffer_end -= size;
     return buffer_end;
 }
-#if 0
-/* returns the buffer size required to store the path + \0 */
-static int get_full_pathsz(struct folder *start)
-{
-    int reql = 0;
-    struct folder *next = start;
-    do
-    {
-        reql += rb->strlen(next->name) + 1;
-    } while ((next = next->previous));
-
-    if (start->name[0] != '/') reql--;
-    if (--reql < 0) reql = 0;
-    return reql;
-}
-#endif
 
 static size_t get_full_path(struct folder *start, char *dst, size_t dst_sz)
 {
     size_t pos = 0;
     struct folder *prev, *cur = NULL, *next = start;
-    dst[0] = '\0'; /* for rb->strlcat to do its thing */
+    dst[0] = '\0'; /* for strlcat to do its thing */
     /* First traversal R->L mutate nodes->previous to point at child */
     while (next->previous != NULL) /* stop at the root */
     {
@@ -136,22 +137,22 @@ static size_t get_full_path(struct folder *start, char *dst, size_t dst_sz)
     while (next != NULL)
     {
         PATHMUTATE();
-        pos = rb->strlcat(dst, cur->name, dst_sz);
+        pos = strlcat(dst, cur->name, dst_sz);
         /* do not append slash to paths starting with slash */
         if (cur->name[0] != '/')
-            pos = rb->strlcat(dst, "/", dst_sz);
+            pos = strlcat(dst, "/", dst_sz);
     }
     logf("get_full_path: (%d)[%s]", (int)pos, dst);
     return pos;
 #undef PATHMUTATE
 }
 
-/* support function for rb->qsort() */
+/* support function for qsort() */
 static int compare(const void* p1, const void* p2)
 {
     struct child *left = (struct child*)p1;
     struct child *right = (struct child*)p2;
-    return rb->strcasecmp(left->name, right->name);
+    return strcasecmp(left->name, right->name);
 }
 
 static struct folder* load_folder(struct folder* parent, char *folder)
@@ -174,10 +175,10 @@ static struct folder* load_folder(struct folder* parent, char *folder)
         if (len >= sizeof(fullpath))
             goto fail;
     }
-    rb->strlcpy(&fullpath[len], folder, sizeof(fullpath) - len);
+    strlcpy(&fullpath[len], folder, sizeof(fullpath) - len);
     logf("load_folder: [%s]", fullpath);
 
-    dir = rb->opendir(fullpath);
+    dir = opendir(fullpath);
     if (dir == NULL)
         goto fail;
     this->previous = parent;
@@ -187,9 +188,9 @@ static struct folder* load_folder(struct folder* parent, char *folder)
     if (parent)
         this->depth = parent->depth + 1;
 
-    while ((entry = rb->readdir(dir))) {
+    while ((entry = readdir(dir))) {
         /* skip anything not a directory */
-        if ((rb->dir_get_info(dir, entry).attribute & ATTR_DIRECTORY) == 0) {
+        if ((dir_get_info(dir, entry).attribute & ATTR_DIRECTORY) == 0) {
             continue;
         }
         /* skip . and .. */
@@ -197,18 +198,18 @@ static struct folder* load_folder(struct folder* parent, char *folder)
         if ((dn[0] == '.') && (dn[1] == '\0' || (dn[1] == '.' && dn[2] == '\0')))
             continue;
         /* copy entry name to end of buffer, save pointer */
-        int len = rb->strlen((char *)entry->d_name);
+        int len = strlen((char *)entry->d_name);
         char *name = folder_alloc_from_end(len+1); /*for NULL*/
         if (name == NULL)
         {
-            rb->closedir(dir);
+            closedir(dir);
             goto fail;
         }
         memcpy(name, (char *)entry->d_name, len+1);
         child_count++;
         first_child = name;
     }
-    rb->closedir(dir);
+    closedir(dir);
     /* now put the names in the array */
     this->children = (struct child*)folder_alloc(sizeof(struct child) * child_count);
 
@@ -224,14 +225,14 @@ static struct folder* load_folder(struct folder* parent, char *folder)
         while(*first_child++ != '\0'){};/* move to next name entry */
         child_count--;
     }
-    rb->qsort(this->children, this->children_count, sizeof(struct child), compare);
+    qsort(this->children, this->children_count, sizeof(struct child), compare);
 
     return this;
 fail:
     return NULL;
 }
 
-struct folder* load_root(void)
+static struct folder* load_root(void)
 {
     static struct child root_child;
     /* reset the root for each call */
@@ -307,14 +308,14 @@ static const char * folder_get_name(int selected_item, void * data,
             *buf++ = '\t';
     }
     *buf = '\0';
-    rb->strlcat(buffer, this->name, buffer_len);
+    strlcat(buffer, this->name, buffer_len);
 
     if (this->state == EACCESS)
     {   /* append error message to the entry if unaccessible */
-        size_t len = rb->strlcat(buffer, " ( ", buffer_len);
+        size_t len = strlcat(buffer, " ( ", buffer_len);
         if (buffer_len > len)
         {
-            rb->snprintf(&buffer[len], buffer_len - len, rb->str(LANG_READ_FAILED), ")");
+            snprintf(&buffer[len], buffer_len - len, str(LANG_READ_FAILED), ")");
         }
     }
 
@@ -432,7 +433,7 @@ static struct child* find_from_filename(const char* filename, struct folder *roo
 {
     if (!root)
         return NULL;
-    const char *slash = rb->strchr(filename, '/');
+    const char *slash = strchr(filename, '/');
     struct child *this;
 
     /* filenames beginning with a / are specially treated as the
@@ -456,7 +457,7 @@ static struct child* find_from_filename(const char* filename, struct folder *roo
     {
         this = &root->children[i];
         /* when slash == NULL n will be really large but \0 stops the compare */
-        if (rb->strncasecmp(this->name, filename, slash - filename) == 0)
+        if (strncasecmp(this->name, filename, slash - filename) == 0)
         {
             if (slash == NULL)
             {   /* filename == XXX */
@@ -494,20 +495,20 @@ static int select_paths(struct folder* root, const char* filenames)
 
     while (fnp)
     {
-        fnp = rb->strchr(fnp, ':');
+        fnp = strchr(fnp, ':');
         if (fnp)
         {
             len = fnp - lastfnp;
             fnp++;
         }
         else /* no ':' get the rest of the string */
-            len = rb->strlen(lastfnp);
+            len = strlen(lastfnp);
 
         sstr = lastfnp;
         lastfnp = fnp;
         if (len <= 0 || len > buflen)
             continue;
-        rb->strlcpy(buf, sstr, len + 1);
+        strlcpy(buf, sstr, len + 1);
         struct child *item = find_from_filename(buf, root);
         if (item)
             item->state = SELECTED;
@@ -545,14 +546,14 @@ static void save_folders_r(struct folder *root, char* dst, size_t maxlen, size_t
             if (len + 2 >= buflen)
                 continue;
 
-            len += rb->snprintf(&buffer_front[len], buflen - len, "%s:", name);
+            len += snprintf(&buffer_front[len], buflen - len, "%s:", name);
             logf("save_folders_r: [%s]", buffer_front);
             if (dst != hashed.buf)
             {
-                int dlen = rb->strlen(dst);
+                int dlen = strlen(dst);
                 if (dlen + len >= maxlen)
                     continue;
-                rb->strlcpy(&dst[dlen], buffer_front, maxlen - dlen);
+                strlcpy(&dst[dlen], buffer_front, maxlen - dlen);
             }
             else
             {
@@ -578,11 +579,11 @@ static uint32_t save_folders(struct folder *root, char* dst, size_t maxlen)
     size_t len = buffer_end - buffer_front;
     dst[0] = '\0';
     save_folders_r(root, dst, maxlen, len);
-    len = rb->strlen(dst);
+    len = strlen(dst);
     /* fix trailing ':' */
     if (len > 1) dst[len-1] = '\0';
     /*Notify - user will probably not see save dialog if nothing new got added*/
-    if (hashed.maxlen_exceeded > 0) rb->splash(HZ *2, ID2P(LANG_SHOWDIR_BUFFER_FULL));
+    if (hashed.maxlen_exceeded > 0) splash(HZ *2, ID2P(LANG_SHOWDIR_BUFFER_FULL));
     return hashed.val;
 }
 
@@ -591,8 +592,15 @@ bool folder_select(char * header_text, char* setting, int setting_len)
     struct folder *root;
     struct simplelist_info info;
     size_t buf_size;
+    bool changed = false;
 
-    buffer_front = rb->plugin_get_buffer(&buf_size);
+    int buf_handle = core_alloc_maximum(&buf_size, NULL);
+    if (buf_handle <= 0)
+    {
+        splash(HZ, "Out of memory");
+        return false;
+    }
+    buffer_front = core_get_data(buf_handle);
     buffer_end = buffer_front + buf_size;
     logf("folder_select %d bytes free", (int)(buffer_end - buffer_front));
     root = load_root();
@@ -602,54 +610,27 @@ bool folder_select(char * header_text, char* setting, int setting_len)
     select_paths(root, setting);
     /* get current hash to check for changes later */
     uint32_t hash = save_folders(root, hashed.buf, setting_len);
-    rb->simplelist_info_init(&info, header_text,
-            count_items(root), root);
+    simplelist_info_init(&info, header_text, count_items(root), root);
     info.get_name = folder_get_name;
     info.action_callback = folder_action_callback;
     info.get_icon = folder_get_icon;
-    bool show_icons = rb->global_settings->show_icons;
-    rb->global_settings->show_icons = true;
-    rb->simplelist_show_list(&info);
-    rb->global_settings->show_icons = show_icons;
+    bool show_icons = global_settings.show_icons;
+    global_settings.show_icons = true;
+    simplelist_show_list(&info);
+    global_settings.show_icons = show_icons;
     logf("folder_select %d bytes free", (int)(buffer_end - buffer_front));
     /* done editing. check for changes */
     if (hash != save_folders(root, hashed.buf, setting_len))
     {  /* prompt for saving changes and commit if yes */
-        if (rb->yesno_pop(ID2P(LANG_SAVE_CHANGES)))
+        if (yesno_pop(ID2P(LANG_SAVE_CHANGES)))
         {
             save_folders(root, setting, setting_len);
-            rb->settings_save();
+            settings_save();
             logf("folders out: %s", setting);
-            return true;
+            changed = true;
         }
     }
-    return false;
-}
 
-/* plugin entry point */
-enum plugin_status plugin_start(const void* parameter)
-{
-    (void) parameter;
-
-    if(parameter)
-    {
-
-        if (rb->strcmp(parameter, rb->str(LANG_AUTORESUME)) == 0)
-        {
-            if (folder_select(rb->str(LANG_AUTORESUME),
-                              rb->global_settings->autoresume_paths,
-                              MAX_PATHNAME+1))
-            {
-                return 1;
-            }
-        }
-    }
-    else if (folder_select(rb->str(LANG_SELECT_FOLDER),
-                           rb->global_settings->tagcache_scan_paths,
-                           sizeof(rb->global_settings->tagcache_scan_paths)))
-    {
-        return 1;
-    }
-
-    return PLUGIN_OK;
+    core_free(buf_handle);
+    return changed;
 }

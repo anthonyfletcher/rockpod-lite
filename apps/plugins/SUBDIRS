@@ -5,5 +5,6 @@
  *     file browser reaches it via filetype_open_core_viewer()).
  *   - imageviewer -> apps/image_viewer/ (album art + file browser).
  *   - mpegplayer / shortcuts / clock / tagcache: removed.
- * The only remaining root-level utility plugin (db_folder_select) is
- * listed in SOURCES. */
+ * db_folder_select -> apps/folder_select.c (the DB "Directories to Scan"
+ * setting and the custom autoresume folder picker call folder_select()
+ * directly). No plugins remain; SOURCES lists none. */

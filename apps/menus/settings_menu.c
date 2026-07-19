@@ -52,6 +52,7 @@
 #include "mask_select.h"
 #endif
 #include "plugin.h"
+#include "folder_select.h"
 #include "onplay.h"
 #include "misc.h"
 
@@ -128,7 +129,9 @@ static void tagcache_update_with_splash(void)
 
 static int dirs_to_scan(void)
 {
-    if(plugin_load(PLUGIN_DIR"/db_folder_select.rock", NULL) > PLUGIN_OK)
+    if (folder_select(str(LANG_SELECT_FOLDER),
+                      (char *)global_settings.tagcache_scan_paths,
+                      sizeof(global_settings.tagcache_scan_paths)))
     {
         static const char *lines[] = {ID2P(LANG_TAGCACHE_BUSY),
                                       ID2P(LANG_TAGCACHE_FORCE_UPDATE)};
@@ -588,8 +591,9 @@ static int autoresume_nexttrack_callback(int action,
             break;
         case ACTION_EXIT_MENUITEM:
             if (global_settings.autoresume_automatic == AUTORESUME_NEXTTRACK_CUSTOM
-                && plugin_load(PLUGIN_DIR"/db_folder_select.rock",
-                               str(LANG_AUTORESUME)) == PLUGIN_OK)
+                && !folder_select(str(LANG_AUTORESUME),
+                                  (char *)global_settings.autoresume_paths,
+                                  sizeof(global_settings.autoresume_paths)))
             {
                 global_settings.autoresume_automatic = oldval;
             }

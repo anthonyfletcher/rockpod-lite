@@ -60,6 +60,7 @@ talk.c
 tree.c
 #ifdef HAVE_TAGCACHE
 tagtree.c
+folder_select.c
 #endif
 filetree.c
 #ifdef IPOD_ACCESSORY_PROTOCOL
@@ -82,7 +83,6 @@ gui/pitchscreen.c
 #ifdef HAVE_QUICKSCREEN
 gui/quickscreen.c
 #endif
-gui/folder_select.c
 #if defined(HAVE_BACKLIGHT) || !defined(HAS_BUTTON_HOLD)
 gui/mask_select.c
 #endif

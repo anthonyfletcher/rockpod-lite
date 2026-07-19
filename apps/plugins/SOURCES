@@ -1,9 +1,10 @@
-/* plugins common to all models -- trimmed to just db_folder_select, which
- * turned out to be load-bearing for other features, not a standalone utility:
- *   - db_folder_select.c: apps/menus/settings_menu.c's "Directories to
- *     Scan" database setting and the AUTORESUME_NEXTTRACK_CUSTOM folder
- *     picker both plugin_load() this directly; without it those two
- *     settings silently fail to open.
+/* No plugins remain -- everything here was either a standalone utility only
+ * reachable through the removed Plugins browser, or has been folded into the
+ * core:
+ * db_folder_select.c moved into the core (apps/folder_select.c), called
+ * directly from apps/menus/settings_menu.c's "Directories to Scan" database
+ * setting and the AUTORESUME_NEXTTRACK_CUSTOM folder picker -- no longer a
+ * plugin.
  * properties.c moved into the core (apps/properties.c, plus apps/mul_id3.c),
  * reached directly from apps/onplay.c's properties_item/track_info_item menu
  * entries and the HOTKEY_PROPERTIES hotkey -- no longer a plugin.
@@ -25,6 +26,3 @@
  * keyremap.c removed too: it was only ever reachable through the generic
  * Plugins browser, same as the games/demos/emulators above -- no core
  * call site ever plugin_load()ed it directly. */
-#ifdef HAVE_TAGCACHE
-db_folder_select.c
-#endif

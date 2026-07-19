@@ -6,7 +6,8 @@
  *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
  *                     \/            \/     \/    \/            \/
  *
- * Copyright (C) 2011 Jonathan Gordon
+ * Public entry point for the core folder-tree picker (apps/folder_select.c),
+ * ported from the db_folder_select plugin.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,18 +19,14 @@
  *
  ****************************************************************************/
 
-#ifndef __FOLDER_SELECT_H__
-#define __FOLDER_SELECT_H__
+#ifndef _FOLDER_SELECT_H_
+#define _FOLDER_SELECT_H_
 
-/**
- * A GUI browser to select folders from the file system
- *
- * It reads a list of folders, separated by colons (:) from setting
- * and pre-selects them in the UI. If the user is done  it writes the new
- * list back to setting (again separated by colons), assuming the
- * user confirms the yesno dialog.
- *
- * Returns true if the the folder list has changed, otherwise false */
-bool folder_select(char* setting, int setting_len);
+#include <stdbool.h>
 
-#endif /* __FOLDER_SELECT_H__ */
+/* Show a folder tree under `header_text`; `setting` is a ':'-delimited list of
+ * selected paths, loaded on entry and (after a "save changes?" prompt) written
+ * back, up to `setting_len` bytes. Returns true if the setting was changed. */
+bool folder_select(char *header_text, char *setting, int setting_len);
+
+#endif /* _FOLDER_SELECT_H_ */
