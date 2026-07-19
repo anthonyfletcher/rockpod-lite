@@ -614,6 +614,11 @@ bool folder_select(char * header_text, char* setting, int setting_len)
     info.get_name = folder_get_name;
     info.action_callback = folder_action_callback;
     info.get_icon = folder_get_icon;
+    /* Draw with the core list renderer, not the theme's skinned list: this
+     * picker relies on per-item state icons (folder/expanded/selected) and on
+     * '\t' indentation to show the tree, neither of which a skinned list
+     * renders. The plugin got this for free (it loaded with the theme off). */
+    info.hide_theme = true;
     bool show_icons = global_settings.show_icons;
     global_settings.show_icons = true;
     simplelist_show_list(&info);
