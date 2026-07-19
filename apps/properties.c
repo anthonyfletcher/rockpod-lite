@@ -145,8 +145,10 @@ static const char * get_props(int selected_item, void* data,
 static int speak_property_selection(int selected_item, void *data)
 {
     struct dir_stats *stats = data;
+    /* header/value pairs: voice the whole pair from either of its rows */
+    int item = selected_item & ~1;
     int32_t id = P2ID((props_type == PROPS_DIR ?
-                       props_dir : props_file)[selected_item]);
+                       props_dir : props_file)[item]);
     talk_id(id, false);
     switch (id)
     {
@@ -173,7 +175,7 @@ static int speak_property_selection(int selected_item, void *data)
         talk_number(stats->file_count, true);
         break;
     default:
-        talk_spell(props_file[selected_item + 1], true);
+        talk_spell(props_file[item + 1], true);
         break;
     }
     return 0;
@@ -189,7 +191,11 @@ static void setup_properties_list(struct dir_stats *stats)
     else
         nb_props = NUM_DIR_PROPERTIES;
 
-    gui_synclist_init(&properties_lists, &get_props, stats, false, 2, NULL);
+    /* selected_size 1 (one row per header/value): keeps this a single-line
+     * list, so a theme's skinned list renders it -- themed rows and a single
+     * themed scrollbar, matching the file browser. The header/value pairing is
+     * handled by the callers below rounding the selection down to its pair. */
+    gui_synclist_init(&properties_lists, &get_props, stats, false, 1, NULL);
     gui_synclist_set_title(&properties_lists,
                            str(props_type == PROPS_DIR ?
                                LANG_PROPERTIES_DIRECTORY_PROPERTIES :
@@ -215,11 +221,13 @@ static int browse_file_or_dir(struct dir_stats *stats)
         switch(button)
         {
             case ACTION_STD_OK:;
-                int sel_pos = gui_synclist_get_sel_pos(&properties_lists);
+                /* Rows are header/value pairs; act on the pair the cursor is
+                 * on, whichever of its two rows is selected. */
+                int pair = gui_synclist_get_sel_pos(&properties_lists) & ~1;
 
                 /* "Show Track Info..." selected? */
                 if ((props_type == PROPS_PLAYLIST || props_type == PROPS_DIR) &&
-                    sel_pos == (int)(props_type == PROPS_DIR ?
+                    pair == (int)(props_type == PROPS_DIR ?
                                 ARRAYLEN(props_dir) : ARRAYLEN(props_file)) - 2)
                     return -1;
                 else
@@ -228,11 +236,11 @@ static int browse_file_or_dir(struct dir_stats *stats)
                     FOR_NB_SCREENS(i)
                         viewportmanager_theme_enable(i, false, NULL);
                     if (props_type == PROPS_DIR)
-                        view_text((char *) p2str(props_dir[sel_pos]),
-                                  (char *)       props_dir[sel_pos + 1]);
+                        view_text((char *) p2str(props_dir[pair]),
+                                  (char *)       props_dir[pair + 1]);
                     else
-                        view_text((char *) p2str(props_file[sel_pos]),
-                                  (char *)       props_file[sel_pos + 1]);
+                        view_text((char *) p2str(props_file[pair]),
+                                  (char *)       props_file[pair + 1]);
                     FOR_NB_SCREENS(i)
                         viewportmanager_theme_undo(i, false);
 
