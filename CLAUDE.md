@@ -94,16 +94,9 @@ Rockbox requires out-of-tree builds. Cross-compiler toolchains are built via `to
 cd build-hw-ipod6g && make -j$(sysctl -n hw.ncpu) && make zip && ../bundle-theme.sh
 cd build-hw-ipodvideo && make -j$(sysctl -n hw.ncpu) && make zip && ../bundle-theme.sh
 
-# Simulator build (6G)
-./build-sim.sh               # configure if needed + make + make install
-# Or incrementally:
-cd build-sim && make -j$(sysctl -n hw.ncpu)
-cd build-sim && ./rockboxui  # run simulator (uses simdisk/ as virtual FS)
-
 # Non-interactive configure (reference)
 ../tools/configure --target=ipod6g --type=n     # 6G hardware
 ../tools/configure --target=ipodvideo --type=n  # 5G hardware
-../tools/configure --target=ipod6g --type=s     # simulator
 
 # Other make targets
 make rocks                  # plugins only
@@ -166,13 +159,14 @@ Audio codecs live in `lib/rbcodec/` and are loaded as `.codec` files with their 
 
 ### Platform Types
 
-1. **Native** (`PLATFORM_NATIVE`) — bare-metal firmware on real hardware
-2. **Hosted** (`PLATFORM_HOSTED`) — runs atop Linux/Android (Sony NWZ, HiBy, iBasso, etc.)
-3. **Simulator** (`SIMULATOR`) — SDL-based desktop simulator
+This fork builds bare-metal native firmware only (`PLATFORM_NATIVE`). The
+simulator and its `uisimulator/` tree have been removed, and `apps/` no longer
+carries `SIMULATOR` or `PLATFORM_HOSTED` conditionals. `tools/configure` still
+offers `--type=s`, but it will not build.
 
 ### Threading
 
-Multiple backends: native assembler threads (ARM, m68k, MIPS) with cooperative multitasking, sigaltstack threads (Linux/macOS), Win32 Fibers, SDL threads (simulator fallback).
+Native assembler threads (ARM) with cooperative multitasking.
 
 ## Code Style
 
