@@ -52,79 +52,32 @@
 /*#define USE_SBRK        (0) */
 /*#define USE_MMAP        (0) */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif //HAVE_CONFIG_H
 
-#ifdef HAVE_STDIO_H
-#include <stdio.h>
-#endif
 
 #include <stdint.h>
 
 void abort(void);
 
 
-#if defined(ROCKBOX)
 #include "panic.h"
-#endif
 
-#ifndef USE_PRINTF
-#define USE_PRINTF      (0)
-#endif
 
 #include <string.h>
 
-#ifndef TLSF_USE_LOCKS
-#define TLSF_USE_LOCKS  (0)
-#endif
-
-#ifndef TLSF_STATISTIC
-#define TLSF_STATISTIC  (0)
-#endif
-
-#ifndef USE_MMAP
-#define USE_MMAP        (0)
-#endif
-
-#ifndef USE_SBRK
-#define USE_SBRK        (0)
-#endif
 
 
-#if TLSF_USE_LOCKS
-#include "target.h"
-#else
+
+
+
 #define TLSF_CREATE_LOCK(_unused_)   do{}while(0)
 #define TLSF_DESTROY_LOCK(_unused_)  do{}while(0)
 #define TLSF_ACQUIRE_LOCK(_unused_)  do{}while(0)
 #define TLSF_RELEASE_LOCK(_unused_)  do{}while(0)
-#endif
 
-#if TLSF_STATISTIC
-#define TLSF_ADD_SIZE(tlsf, b)                                          \
-    do {                                                                \
-        tlsf->used_size += (b->size & BLOCK_SIZE) + BHDR_OVERHEAD;      \
-        if (tlsf->used_size > tlsf->max_size)                           \
-            tlsf->max_size = tlsf->used_size;                           \
-    } while(0)
-
-#define TLSF_REMOVE_SIZE(tlsf, b)                                       \
-    do {                                                                \
-        tlsf->used_size -= (b->size & BLOCK_SIZE) + BHDR_OVERHEAD;      \
-    } while(0)
-#else
 #define TLSF_ADD_SIZE(tlsf, b)       do{}while(0)
 #define TLSF_REMOVE_SIZE(tlsf, b)    do{}while(0)
-#endif
 
-#if USE_MMAP || USE_SBRK
-#include <unistd.h>
-#endif
 
-#if USE_MMAP
-#include <sys/mman.h>
-#endif
 
 #include "tlsf.h"
 
@@ -135,9 +88,6 @@ void abort(void);
 #endif
 
 /* The  debug functions  only can  be used  when _DEBUG_TLSF_  is set. */
-#ifndef _DEBUG_TLSF_
-#define _DEBUG_TLSF_  (0)
-#endif
 
 /*************************************************************************/
 /* Definition of the structures used by TLSF */
@@ -194,22 +144,10 @@ void abort(void);
 
 #define DEFAULT_AREA_SIZE (1024*10)
 
-#ifdef USE_MMAP
 #define PAGE_SIZE (getpagesize())
-#endif
 
-#if USE_PRINTF
-#include <stdio.h>
-# define PRINT_MSG(fmt, args...) printf(fmt, ## args)
-# define ERROR_MSG(fmt, args...) printf(fmt, ## args)
-#else
-# if !defined(PRINT_MSG)
 #  define PRINT_MSG(fmt, args...)
-# endif
-# if !defined(ERROR_MSG)
 #  define ERROR_MSG(fmt, args...)
-# endif
-#endif
 
 typedef unsigned int u32_t;     /* NOTE: Make sure that this type is 4 bytes long on your computer */
 typedef unsigned char u8_t;     /* NOTE: Make sure that this type is 1 byte on your computer */
@@ -243,16 +181,7 @@ typedef struct TLSF_struct {
     /* the TLSF's structure signature */
     u32_t tlsf_signature;
 
-#if TLSF_USE_LOCKS
-    TLSF_MLOCK_T lock;
-#endif
 
-#if TLSF_STATISTIC
-    /* These can not be calculated outside tlsf because we
-     * do not know the sizes when freeing/reallocing memory. */
-    size_t used_size;
-    size_t max_size;
-#endif
 
     /* A linked list holding all the existing areas */
     area_info_t *area_head;
@@ -280,13 +209,8 @@ static __inline__ void MAPPING_SEARCH(size_t * _r, int *_fl, int *_sl);
 static __inline__ void MAPPING_INSERT(size_t _r, int *_fl, int *_sl);
 static __inline__ bhdr_t *FIND_SUITABLE_BLOCK(tlsf_t * _tlsf, int *_fl, int *_sl);
 static __inline__ bhdr_t *process_area(void *area, size_t size);
-#if USE_SBRK || USE_MMAP
-static __inline__ void *get_new_area(size_t * size);
-#endif
 
-#if defined(ROCKBOX)
 void *get_new_area(size_t * size);
-#endif
 
 static __inline__ bhdr_t *encode_prev_block( bhdr_t *prev, size_t size ) {
     return (bhdr_t*) ( ((intptr_t)prev | STATE_MASK) & ~(size & STATE_MASK) );
@@ -398,7 +322,6 @@ static __inline__ bhdr_t *FIND_SUITABLE_BLOCK(tlsf_t * _tlsf, int *_fl, int *_sl
     return _b;
 }
 
-#if defined(ROCKBOX)
 static __inline__ void corrupt(const char *msg) {
     panicf("* Heap Corruption: %s", msg);
 }
@@ -409,14 +332,6 @@ void __attribute__((weak)) panicf( const char *fmt, ... )
   (void)fmt;
   do { } while (1);
 }
-#else
-static __inline__ void corrupt(const char *msg) {
-    static const char *k =  "* Heap corruption detected: *\n";
-    write( STDERR_FILENO, k, strlen(k) );
-    write( STDERR_FILENO, msg, strlen(msg) );
-    abort();
-}
-#endif
 
 #define EXTRACT_BLOCK_HDR(_b, _tlsf, _fl, _sl)                          \
     do {                                                                \
@@ -462,39 +377,12 @@ static __inline__ void corrupt(const char *msg) {
         set_bit (_fl, &_tlsf -> fl_bitmap);                             \
     } while(0)
 
-#if defined(ROCKBOX)
 void * __attribute__((weak)) get_new_area(size_t * size)
 {
     (void)size;
     return ((void *) ~0u);
 }
-#endif
 
-#if USE_SBRK || USE_MMAP
-static __inline__ void *get_new_area(size_t * size)
-{
-    void *area;
-
-#if USE_SBRK
-    area = (void *)sbrk(0);
-    if (((void *)sbrk(*size)) != ((void *) -1))
-        return area;
-#endif
-
-#ifndef MAP_ANONYMOUS
-/* https://dev.openwrt.org/ticket/322 */
-# define MAP_ANONYMOUS MAP_ANON
-#endif
-
-
-#if USE_MMAP
-    *size = ROUNDUP(*size, PAGE_SIZE);
-    if ((area = mmap(0, *size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)) != MAP_FAILED)
-        return area;
-#endif
-    return ((void *) ~0u);
-}
-#endif
 
 static __inline__ bhdr_t *process_area(void *area, size_t size)
 {
@@ -564,10 +452,6 @@ size_t init_memory_pool(size_t mem_pool_size, void *mem_pool)
     free_ex(b->ptr.buffer, tlsf);
     tlsf->area_head = TYPE_PUN(area_info_t, u8_t, ib->ptr.buffer);
 
-#if TLSF_STATISTIC
-    tlsf->used_size = mem_pool_size - (b->size & BLOCK_SIZE);
-    tlsf->max_size = tlsf->used_size;
-#endif
 
     return (b->size & BLOCK_SIZE);
 }
@@ -655,24 +539,16 @@ size_t add_new_area(void *area, size_t area_size, void *mem_pool)
 size_t get_used_size(void *mem_pool)
 {
 /******************************************************************/
-#if TLSF_STATISTIC
-    return ((tlsf_t *) mem_pool)->used_size;
-#else
     (void)mem_pool;
     return 0;
-#endif
 }
 
 /******************************************************************/
 size_t get_max_size(void *mem_pool)
 {
 /******************************************************************/
-#if TLSF_STATISTIC
-    return ((tlsf_t *) mem_pool)->max_size;
-#else
     (void)mem_pool;
     return 0;
-#endif
 }
 
 /******************************************************************/
@@ -694,7 +570,6 @@ void *tlsf_malloc(size_t size)
 /******************************************************************/
     void *ret = NULL;
 
-#if USE_MMAP || USE_SBRK || defined(ROCKBOX)
     if (!mp) {
         size_t area_size;
         void *area;
@@ -706,7 +581,6 @@ void *tlsf_malloc(size_t size)
             return NULL;        /* Not enough system memory */
         init_memory_pool(area_size, area);
     }
-#endif
     if (mp)
     {
         TLSF_ACQUIRE_LOCK(&((tlsf_t *)mp)->lock);
@@ -738,11 +612,9 @@ void *tlsf_realloc(void *ptr, size_t size)
 /******************************************************************/
     void *ret;
 
-#if USE_MMAP || USE_SBRK || defined(ROCKBOX)
         if (!mp) {
                 return tlsf_malloc(size);
         }
-#endif
 
     TLSF_ACQUIRE_LOCK(&((tlsf_t *)mp)->lock);
 
@@ -785,7 +657,6 @@ void *malloc_ex(size_t size, void *mem_pool)
     /* Searching a free block, recall that this function changes the values of fl and sl,
        so they are not longer valid when the function fails */
     b = FIND_SUITABLE_BLOCK(tlsf, &fl, &sl);
-#if USE_MMAP || USE_SBRK || defined(ROCKBOX)
     if (!b) {
         size_t area_size;
         void *area;
@@ -801,7 +672,6 @@ void *malloc_ex(size_t size, void *mem_pool)
         /* Searching a free block */
         b = FIND_SUITABLE_BLOCK(tlsf, &fl, &sl);
     }
-#endif
     if (!b)
         return NULL;            /* Not found */
 
@@ -997,118 +867,3 @@ void *calloc_ex(size_t nelem, size_t elem_size, void *mem_pool)
 
 
 
-#if _DEBUG_TLSF_
-
-/***************  DEBUG FUNCTIONS   **************/
-
-/* The following functions have been designed to ease the debugging of */
-/* the TLSF  structure.  For non-developing  purposes, it may  be they */
-/* haven't too much worth.  To enable them, _DEBUG_TLSF_ must be set.  */
-
-extern void dump_memory_region(unsigned char *mem_ptr, unsigned int size);
-extern void print_block(bhdr_t * b);
-extern void print_tlsf(tlsf_t * tlsf);
-void print_all_blocks(tlsf_t * tlsf);
-
-void dump_memory_region(unsigned char *mem_ptr, unsigned int size)
-{
-
-    unsigned long begin = (unsigned long) mem_ptr;
-    unsigned long end = (unsigned long) mem_ptr + size;
-    int column = 0;
-
-    begin >>= 2;
-    begin <<= 2;
-
-    end >>= 2;
-    end++;
-    end <<= 2;
-
-    PRINT_MSG("\nMemory region dumped: 0x%lx - 0x%lx\n\n", begin, end);
-
-    column = 0;
-    PRINT_MSG("0x%lx ", begin);
-
-    while (begin < end) {
-        if (((unsigned char *) begin)[0] == 0)
-            PRINT_MSG("00");
-        else
-            PRINT_MSG("%02x", ((unsigned char *) begin)[0]);
-        if (((unsigned char *) begin)[1] == 0)
-            PRINT_MSG("00 ");
-        else
-            PRINT_MSG("%02x ", ((unsigned char *) begin)[1]);
-        begin += 2;
-        column++;
-        if (column == 8) {
-            PRINT_MSG("\n0x%lx ", begin);
-            column = 0;
-        }
-
-    }
-    PRINT_MSG("\n\n");
-}
-
-void print_block(bhdr_t * b)
-{
-    if (!b)
-        return;
-    PRINT_MSG(">> [%p] (", b);
-    if ((b->size & BLOCK_SIZE))
-        PRINT_MSG("%lu bytes, ", (unsigned long) (b->size & BLOCK_SIZE));
-    else
-        PRINT_MSG("sentinel, ");
-    if ((b->size & BLOCK_STATE) == FREE_BLOCK)
-        PRINT_MSG("free [%p, %p], ", b->ptr.free_ptr.prev, b->ptr.free_ptr.next);
-    else
-        PRINT_MSG("used, ");
-    if ((b->size & PREV_STATE) == PREV_FREE)
-        PRINT_MSG("prev. free [%p])\n", b->prev_hdr & BLOCK_SIZE);
-    else
-        PRINT_MSG("prev used)\n");
-}
-
-void print_tlsf(tlsf_t * tlsf)
-{
-    bhdr_t *next;
-    int i, j;
-
-    PRINT_MSG("\nTLSF at %p\n", tlsf);
-
-    PRINT_MSG("FL bitmap: 0x%x\n\n", (unsigned) tlsf->fl_bitmap);
-
-    for (i = 0; i < REAL_FLI; i++) {
-        if (tlsf->sl_bitmap[i])
-            PRINT_MSG("SL bitmap 0x%x\n", (unsigned) tlsf->sl_bitmap[i]);
-        for (j = 0; j < MAX_SLI; j++) {
-            next = tlsf->matrix[i][j];
-            if (next)
-                PRINT_MSG("-> [%d][%d]\n", i, j);
-            while (next) {
-                print_block(next);
-                next = next->ptr.free_ptr.next;
-            }
-        }
-    }
-}
-
-void print_all_blocks(tlsf_t * tlsf)
-{
-    area_info_t *ai;
-    bhdr_t *next;
-    PRINT_MSG("\nTLSF at %p\nALL BLOCKS\n\n", tlsf);
-    ai = tlsf->area_head;
-    while (ai) {
-        next = (bhdr_t *) ((char *) ai - BHDR_OVERHEAD);
-        while (next) {
-            print_block(next);
-            if ((next->size & BLOCK_SIZE))
-                next = GET_NEXT_BLOCK(next->ptr.buffer, next->size & BLOCK_SIZE);
-            else
-                next = NULL;
-        }
-        ai = ai->next;
-    }
-}
-
-#endif

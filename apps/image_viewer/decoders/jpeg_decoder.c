@@ -369,7 +369,6 @@ static void idct8x8(unsigned char* p_byte, int* inptr, int* quantptr, int skip_l
         * may be commented out.
         */
 
-#ifndef NO_ZERO_ROW_TEST
         if ((wsptr[1] | wsptr[2] | wsptr[3]
            | wsptr[4] | wsptr[5] | wsptr[6] | wsptr[7]) == 0)
         {
@@ -389,7 +388,6 @@ static void idct8x8(unsigned char* p_byte, int* inptr, int* quantptr, int skip_l
             wsptr += 8; /* advance pointer to next row */
             continue;
         }
-#endif
 
         /* Even part: reverse the even part of the forward DCT. */
         /* The rotator is sqrt(2)*c(-6). */
