@@ -679,7 +679,7 @@ struct user_settings
 
     int afr_enabled;
 
-#if (defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR))
+#if (defined(HAVE_USB_POWER))
     int usb_mode;
 #endif
 #if (CONFIG_KEYPAD == IPOD_4G_PAD)

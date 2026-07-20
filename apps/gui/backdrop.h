@@ -22,7 +22,7 @@
 #ifndef _BACKDROP_H
 #define _BACKDROP_H
 
-#if LCD_DEPTH > 1 && !defined(__PCTOOL__)
+#if LCD_DEPTH > 1
 
 #include "lcd.h"
 #include "bmp.h"

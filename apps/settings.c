@@ -981,7 +981,7 @@ void settings_apply(bool read_disk)
     usb_charging_enable(global_settings.usb_charging);
 
 
-#if defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR)
+#if defined(HAVE_USB_POWER)
     usb_set_mode(global_settings.usb_mode);
 #endif
 

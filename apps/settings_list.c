@@ -776,7 +776,7 @@ const struct settings_list settings[] = {
 /* use this setting for user code even if there's no exchangable battery
  * support enabled */
 #if BATTERY_CAPACITY_INC > 0
-#if defined(IPOD_VIDEO) && !defined(SIMULATOR)
+#if defined(IPOD_VIDEO)
     /* its easier to leave this one un-macro()ed for the time being */
     { F_T_INT|F_DEF_ISFUNC|F_INT_SETTING, &global_settings.battery_capacity,
         LANG_BATTERY_CAPACITY, FUNCTYPE(battery_default_capacity),
@@ -1549,7 +1549,7 @@ const struct settings_list settings[] = {
                   root_menu_load_from_cfg, root_menu_write_to_cfg,
                   root_menu_is_changed, root_menu_set_default),
 
-#if (defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR))
+#if (defined(HAVE_USB_POWER))
     CHOICE_SETTING(0,
                    usb_mode,
                    LANG_USB_MODE,

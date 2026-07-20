@@ -290,7 +290,7 @@ static void gui_statusbar_icon_battery(struct screen * display, int percent,
         fill = endfill = (percent * (STATUSBAR_BATTERY_WIDTH-3) + 50) / 100;
     }
 
-#if CONFIG_CHARGING == CHARGING_MONITOR && !defined(SIMULATOR)
+#if CONFIG_CHARGING == CHARGING_MONITOR
     /* Certain charge controlled targets */
     /* show graphical animation when charging instead of numbers */
     if ((global_settings.battery_display) &&

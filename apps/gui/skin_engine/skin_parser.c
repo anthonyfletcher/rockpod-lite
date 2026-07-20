@@ -418,7 +418,7 @@ static int parse_font_load(struct skin_element *element,
         DEBUGF("font id must be >= 2 (%d)\n", id);
         return -1;
     }
-#if defined(DEBUG) || defined(SIMULATOR)
+#if defined(DEBUG)
     if (skinfonts[id-2].name != NULL)
     {
         DEBUGF("font id %d already being used\n", id);
@@ -2081,7 +2081,7 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
         skin_data_reset(wps_data);
         return false;
     }
-#if defined(HAVE_ALBUMART) && !defined(__PCTOOL__)
+#if defined(HAVE_ALBUMART)
     /* last_albumart_{width,height} is either both 0 or valid AA dimensions */
     struct skin_albumart *aa = SKINOFFSETTOPTR(skin_buffer, wps_data->albumart);
     if (aa && (aa->state != WPS_ALBUMART_NONE ||

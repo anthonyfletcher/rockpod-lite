@@ -751,7 +751,7 @@ struct plugin_api {
     time_t (*mktime)(struct tm *t);
     const char* (*format_time_auto)(char *buffer, int buf_len, long value,
                                     int unit_idx, bool supress_unit);
-#if defined(DEBUG) || defined(SIMULATOR)
+#if defined(DEBUG)
     void (*debugf)(const char *fmt, ...) ATTRIBUTE_PRINTF(1, 2);
 #endif
 #ifdef ROCKBOX_HAS_LOGF

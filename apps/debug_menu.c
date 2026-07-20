@@ -87,7 +87,7 @@
 #include "talk.h"
 
 
-#if defined(IPOD_6G) && !defined(SIMULATOR)
+#if defined(IPOD_6G)
 #include "norboot-target.h"
 #endif
 
@@ -569,7 +569,7 @@ static bool dbg_cpufreq(void)
     return false;
 }
 
-#if (CONFIG_BATTERY_MEASURE != 0) && !defined(SIMULATOR)
+#if (CONFIG_BATTERY_MEASURE != 0)
 /*
  * view_battery() shows a automatically scaled graph of the battery voltage
  * over time. Usable for estimating battery life / charging rate.
@@ -1556,7 +1556,7 @@ static bool dbg_usb_audio(void)
 
 
 
-#if defined(IPOD_6G) && !defined(SIMULATOR)
+#if defined(IPOD_6G)
 static bool dbg_syscfg(void) {
     struct simplelist_info info;
     struct SysCfg syscfg;
@@ -1681,7 +1681,7 @@ static const struct {
 #ifdef __linux__
         { "View CPU stats", dbg_cpuinfo },
 #endif
-#if (CONFIG_BATTERY_MEASURE != 0) && !defined(SIMULATOR)
+#if (CONFIG_BATTERY_MEASURE != 0)
         { "View battery", view_battery },
 #endif
         { "Screendump", dbg_screendump },
@@ -1719,7 +1719,7 @@ static const struct {
         {"Debug IAP", dbg_iap },
         {"Talk engine stats", dbg_talk },
 
-#if defined(IPOD_6G) && !defined(SIMULATOR)
+#if defined(IPOD_6G)
         {"View SysCfg", dbg_syscfg },
         {"Dump bootflash to file", dbg_bootflash_dump },
 #endif

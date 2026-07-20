@@ -21,7 +21,7 @@
 #ifndef _ICONS_H_
 #define _ICONS_H_
 
-#if !defined(PLUGIN) && !defined(__PCTOOL__)
+#if !defined(PLUGIN)
 
 #include <lcd.h>
 #include "metadata.h"
