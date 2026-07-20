@@ -624,19 +624,6 @@ static enum pv_context_result
     }
 }
 
-#ifdef HAVE_HOTKEY
-static int list_viewers(const char* plugin, const char* file)
-{
-    /* dummy function to match prototype with filetype_load_plugin */
-    (void)plugin;
-    return filetype_list_viewers(file);
-}
-static enum pv_context_result open_with(const struct playlist_entry *current_track)
-{
-    return open_with_plugin(current_track, "", &list_viewers);
-}
-#endif /* HAVE_HOTKEY */
-
 #ifdef HAVE_TAGCACHE
 /* Album covers is core-linked, not a loadable plugin, so it doesn't match
  * open_with_plugin()'s loadplugin(plugin_name, file) callback shape or its
@@ -1121,9 +1108,6 @@ enum playlist_viewer_result playlist_viewer_ex(const char* filename,
                 if (global_settings.hotkey_tree == HOTKEY_PICTUREFLOW)
                     do_plugin = &open_pictureflow;
 #endif
-                if (global_settings.hotkey_tree == HOTKEY_OPEN_WITH)
-                    do_plugin = &open_with;
-
                 if (do_plugin != NULL)
                 {
                     int plugin_result = do_plugin(current_track);

@@ -23,7 +23,9 @@
 
 int gui_syncpitchscreen_run(void)
 {
-    return (plugin_load(VIEWERS_DIR"/pitch_screen.rock", NULL) == PLUGIN_USB_CONNECTED);
+    /* The pitch screen UI was a plugin (pitch_screen.rock); with the plugin
+     * system gone it is not available. reset_pitch() below still works. */
+    return 0;
 }
 
 int reset_pitch(void)

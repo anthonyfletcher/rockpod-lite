@@ -68,26 +68,14 @@ int filetype_get_attr(const char* file);
 int filetype_get_color(const char* name, int attr);
 #endif
 int filetype_get_icon(int attr);
-/* return the plugin filename associated with the file */
-char* filetype_get_plugin(int attr, char *buffer, size_t buffer_len);
 
 /* returns true if the attr is supported */
 bool  filetype_supported(int attr);
 
-/* If the viewer viewers.config assigns to `attr` is core-linked rather than a
- * .rock plugin, runs it on `file`, stores its GO_TO_* code in *rc and returns
- * true. Returns false (leaving *rc alone) when the viewer is a plugin or there
- * is none, so callers fall through to their usual plugin_load() path. */
+/* If the viewer viewers.config assigns to `attr` is core-linked (text/image),
+ * runs it on `file`, stores its GO_TO_* code in *rc and returns true. Returns
+ * false (leaving *rc alone) when there is no core viewer for the type. */
 bool  filetype_open_core_viewer(int attr, const char *file, int *rc);
-
-/* List avialable viewers and start selected plugin with current_file as argument */
-int filetype_list_viewers(const char* current_file);
-
-/* return the plugin filename the user selected for the file Returns NULL if canceled */
-char* filetype_get_viewer(char *buffer, size_t buffer_len, const char* current_file);
-
-/* start a plugin with file as the argument (called from onplay.c) */
-int filetype_load_plugin(const char* plugin, const char* file);
 
 
 #endif

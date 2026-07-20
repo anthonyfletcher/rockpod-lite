@@ -325,13 +325,9 @@ uint32_t open_plugin_add_path(const char *key, const char *plugin, const char *p
         }
         else if(!parameter && lang_id != LANG_SHORTCUTS)
         {
-            strmemccpy(op_entry->param, plugin, OPEN_PLUGIN_BUFSZ);
-            plugin = filetype_get_viewer(op_entry->path, OPEN_PLUGIN_BUFSZ, plugin);
-            if (!plugin)
-            {
-                logf("OP no plugin found to run %s", op_entry->param);
-                break;
-            }
+            /* choosing a viewer plugin for a file is gone with the plugin
+             * system (this whole module is being removed) */
+            break;
         }
         else
         {

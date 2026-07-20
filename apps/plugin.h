@@ -407,7 +407,6 @@ struct plugin_api {
     uint32_t (*crc_32r)(const void *src, uint32_t len, uint32_t crc32);
 
     int (*filetype_get_attr)(const char* file);
-    char* (*filetype_get_plugin)(int attr, char *buffer, size_t buffer_len);
 #ifdef HAVE_DIRCACHE
     void (*dircache_wait)(void);
 #endif

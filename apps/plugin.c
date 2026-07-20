@@ -346,7 +346,6 @@ static const struct plugin_api rockbox_api = {
     crc_32,
     crc_32r,
     filetype_get_attr,
-    filetype_get_plugin,
 #ifdef HAVE_DIRCACHE
     dircache_wait,
 #endif

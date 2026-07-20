@@ -662,54 +662,8 @@ int ft_enter(struct tree_context* c)
                 display_cuesheet_content(buf);
                 break;
 
-                /* plugin file */
-            case FILE_ATTR_ROCK:
-            {
-                char *plugin = buf, *argument = NULL;
-                if (global_settings.party_mode && audio_status()) {
-                    splash(HZ, ID2P(LANG_PARTY_MODE));
-                    break;
-                }
-
-#ifdef PLUGINS_RUN_IN_BROWSER /* Stay in the filetree to run a plugin */
-                switch (plugin_load(plugin, argument))
-                {
-                    case PLUGIN_GOTO_WPS:
-                        play = true;
-                        break;
-                    case PLUGIN_GOTO_PLUGIN:
-                        rc = GO_TO_PLUGIN;
-                        break;
-                    case PLUGIN_USB_CONNECTED:
-                        if(*c->dirfilter > NUM_FILTER_MODES)
-                            /* leave sub-browsers after usb, doing
-                               otherwise might be confusing to the user */
-                            rc = GO_TO_ROOT;
-                        else
-                            rc = GO_TO_FILEBROWSER;
-                        break;
-                    case PLUGIN_GOTO_ROOT:
-                        rc = GO_TO_ROOT;
-                        break;
-                    /*
-                    case PLUGIN_ERROR:
-                    case PLUGIN_OK:
-                    */
-                    default:
-                        break;
-                }
-#else /* Exit the filetree to run a plugin */
-                plugin_open(plugin, argument);
-                rc = GO_TO_PLUGIN;
-#endif
-                break;
-            }
-
             default:
             {
-                const char* plugin;
-                char plugin_path[MAX_PATH];
-                const char *argument = buf;
                 if (global_settings.party_mode && audio_status()) {
                     splash(HZ, ID2P(LANG_PARTY_MODE));
                     break;
@@ -722,38 +676,9 @@ int ft_enter(struct tree_context* c)
                     return rc;
                 }
 
-                /* Core-linked viewers run in-process and hand back a GO_TO_*
-                 * code directly, so they never reach plugin_load(). */
-                if (filetype_open_core_viewer(file->attr, buf, &rc))
-                    break;
-
-                plugin = filetype_get_plugin(file->attr, plugin_path, sizeof(plugin_path));
-                if (plugin)
-                {
-#ifdef PLUGINS_RUN_IN_BROWSER /* Stay in the filetree to run a plugin */
-                    switch (plugin_load(plugin, argument))
-                    {
-                        case PLUGIN_USB_CONNECTED:
-                            rc = GO_TO_FILEBROWSER;
-                            break;
-                        case PLUGIN_GOTO_PLUGIN:
-                            rc = GO_TO_PLUGIN;
-                            break;
-                        case PLUGIN_GOTO_WPS:
-                            rc = GO_TO_WPS;
-                            break;
-                        /*
-                        case PLUGIN_OK:
-                        case PLUGIN_ERROR:
-                        */
-                        default:
-                            break;
-                    }
-#else /* Exit the filetree to run a plugin */
-                    plugin_open(plugin, argument);
-                    rc = GO_TO_PLUGIN;
-#endif
-                }
+                /* Core-linked viewers (text/image) run in-process and hand back
+                 * a GO_TO_* code directly. Other file types have no handler. */
+                filetype_open_core_viewer(file->attr, buf, &rc);
                 break;
             }
         }

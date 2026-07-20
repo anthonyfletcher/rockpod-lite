@@ -832,15 +832,6 @@ MENUITEM_FUNCTION(delete_dir_item, 0, ID2P(LANG_DELETE_DIR),
 MENUITEM_FUNCTION(create_dir_item, 0, ID2P(LANG_CREATE_DIR),
                   clipboard_create_dir, clipboard_callback, Icon_NOICON);
 
-/* other items */
-static bool list_viewers(void)
-{
-    int ret = filetype_list_viewers(selected_file.path);
-    if (ret == PLUGIN_USB_CONNECTED)
-        onplay_result = ONPLAY_RELOAD_DIR;
-    return false;
-}
-
 #ifdef HAVE_TAGCACHE
 static bool prepare_database_sel(void *param)
 {
@@ -901,8 +892,6 @@ static bool onplay_properties(void *param)
     return false;
 }
 
-MENUITEM_FUNCTION(list_viewers_item, 0, ID2P(LANG_ONPLAY_OPEN_WITH),
-                  list_viewers, clipboard_callback, Icon_NOICON);
 MENUITEM_FUNCTION_W_PARAM(properties_item, 0, ID2P(LANG_PROPERTIES),
                   onplay_properties, NULL,
                   clipboard_callback, Icon_NOICON);
@@ -1039,8 +1028,7 @@ static int clipboard_callback(int action,
             if ((selected_file.attr & ATTR_VOLUME) &&
                 (this_item == &rename_file_item ||
                  this_item == &delete_dir_item ||
-                 this_item == &clipboard_cut_item ||
-                 this_item == &list_viewers_item))
+                 this_item == &clipboard_cut_item))
                 return ACTION_EXIT_MENUITEM;
 #endif
 #ifdef HAVE_TAGCACHE
@@ -1093,12 +1081,6 @@ static int clipboard_callback(int action,
                         )
                         return action;
                 }
-                    /* only for files */
-                else if (this_item == &list_viewers_item)
-                {
-                    if (*tree_get_context()->dirfilter != SHOW_M3U)
-                        return action;
-                }
                 else if (this_item == &delete_file_item)
                     return action;
 #if LCD_DEPTH > 1
@@ -1135,7 +1117,7 @@ MAKE_ONPLAYMENU( wps_onplay_menu, ID2P(LANG_ONPLAY_MENU_TITLE),
 #endif
            &bookmark_menu,
            &plugin_item,
-           &browse_id3_item, &list_viewers_item,
+           &browse_id3_item,
            &delete_file_item, &view_cue_item,
 #ifdef HAVE_PITCHCONTROL
            &pitch_menu,
@@ -1172,7 +1154,7 @@ MAKE_ONPLAYMENU( tree_onplay_menu, ID2P(LANG_ONPLAY_MENU_TITLE),
            &view_playlist_item, &tree_playlist_menu, &cat_playlist_menu,
            &rename_file_item, &clipboard_cut_item, &clipboard_copy_item,
            &clipboard_paste_item, &delete_file_item, &delete_dir_item,
-           &list_viewers_item, &create_dir_item, &properties_item, &track_info_item,
+           &create_dir_item, &properties_item, &track_info_item,
 #ifdef HAVE_TAGCACHE
            &pictureflow_item,
 #endif
@@ -1239,21 +1221,6 @@ static bool hotkey_delete_item(void)
     return clipboard_delete_selected_fileobject();
 }
 
-static bool hotkey_open_with(void)
-{
-    /* only open files */
-    if (selected_file.attr & ATTR_DIRECTORY)
-        return false;
-#ifdef HAVE_MULTIVOLUME
-    if (selected_file.attr & ATTR_VOLUME)
-        return false;
-#endif
-#ifdef HAVE_TAGCACHE
-    if (!prepare_database_sel(NULL))
-        return false;
-#endif
-    return list_viewers();
-}
 
 static int hotkey_tree_pl_insert_shuffled(void)
 {
@@ -1331,11 +1298,6 @@ static const struct hotkey_assignment hotkey_items[] = {
       .return_code = ONPLAY_RELOAD_DIR,
       .flags = HOTKEY_FLAG_WPS | HOTKEY_FLAG_NOSBS },
 #endif
-    { .action = HOTKEY_OPEN_WITH,
-      .lang_id = LANG_ONPLAY_OPEN_WITH,
-      .func = HOTKEY_FUNC(hotkey_open_with, NULL),
-      .return_code = ONPLAY_RELOAD_DIR,
-      .flags = HOTKEY_FLAG_WPS | HOTKEY_FLAG_TREE },
     { .action = HOTKEY_DELETE,
       .lang_id = LANG_DELETE,
       .func = HOTKEY_FUNC(hotkey_delete_item, NULL),
