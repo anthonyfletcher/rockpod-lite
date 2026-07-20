@@ -732,7 +732,8 @@ static void output_row_32_native(uint32_t row, void * row_in,
 }
 #endif
 
-#if defined(PLUGIN) && LCD_DEPTH > 1
+/* Also built for the core image viewer (colour targets), not just plugins. */
+#if (defined(PLUGIN) || defined(HAVE_LCD_COLOR)) && LCD_DEPTH > 1
 unsigned int get_size_native(struct bitmap *bm)
 {
     return BM_SIZE(bm->width,bm->height,FORMAT_NATIVE,0);
