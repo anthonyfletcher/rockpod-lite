@@ -166,14 +166,12 @@ enum wps_parse_error {
     PARSE_FAIL_COND_INVALID_PARAM,
     PARSE_FAIL_LIMITS_EXCEEDED,
 };
-#ifdef HAVE_LCD_COLOR
 struct gradient_config {
     unsigned start;
     unsigned end;
     unsigned text;
     int lines_count;
 };
-#endif
 
 #define VP_DRAW_HIDEABLE    0x1
 #define VP_DRAW_HIDDEN      0x2
@@ -192,12 +190,10 @@ struct skin_viewport {
 #if (LCD_DEPTH > 1)
     bool output_to_backdrop_buffer;
     bool fgbg_changed;
-#ifdef HAVE_LCD_COLOR
     struct gradient_config start_gradient;
 #ifdef HAVE_ALBUMART
     unsigned int dc_orig_fg; /* original parsed fg for dynamic colors */
     unsigned int dc_orig_bg; /* original parsed bg for dynamic colors */
-#endif
 #endif
 #endif
 };

@@ -131,7 +131,6 @@ int dialog_test_run(void)
         style.box_border_width     = 2;
         style.box_margin           = 12;
         style.button_border_radius = 6;
-#ifdef HAVE_LCD_COLOR
         style.box_bg                        = LCD_RGBPACK(30, 30, 40);
         style.box_fg                        = LCD_RGBPACK(240, 240, 240);
         style.box_border_color              = LCD_RGBPACK(255, 80, 40);
@@ -139,7 +138,6 @@ int dialog_test_run(void)
         style.button_bg_selected            = LCD_RGBPACK(255, 80, 40);
         style.button_fg_selected            = LCD_RGBPACK(255, 255, 255);
         style.button_border_color_selected  = LCD_RGBPACK(255, 80, 40);
-#endif
         dialog_set_default_style(&style);
 
         /* the popup is framed by the same style: rounded, recoloured */

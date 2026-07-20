@@ -300,11 +300,7 @@ void splash_progress(int current, int total, const char *fmt, ...)
             int y = vp.height - size - RECT_SPACING;
             int w = vp.width - RECT_SPACING * 2;
             int h = size;
-#ifdef HAVE_LCD_COLOR
             const int sb_flags = HORIZONTAL | FOREGROUND;
-#else
-            const int sb_flags = HORIZONTAL;
-#endif
             gui_scrollbar_draw(screen, x, y, w, h, total, 0, current, sb_flags);
 
             screen->update_viewport();

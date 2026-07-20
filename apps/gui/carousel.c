@@ -778,7 +778,6 @@ static void output_row_32_transposed(uint32_t row, void * row_in,
 #endif
 }
 
-#ifdef HAVE_LCD_COLOR
 static void output_row_32_transposed_fromyuv(uint32_t row, void * row_in,
                                        struct scaler_context *ctx)
 {
@@ -802,7 +801,6 @@ static void output_row_32_transposed_fromyuv(uint32_t row, void * row_in,
         *dest = FB_RGBPACK_LCD(r, g, b);
     }
 }
-#endif
 
 static unsigned int get_size(struct bitmap *bm)
 {
@@ -811,14 +809,10 @@ static unsigned int get_size(struct bitmap *bm)
 
 const struct custom_format format_transposed = {
     .output_row_8 = output_row_8_transposed,
-#ifdef HAVE_LCD_COLOR
     .output_row_32 = {
         output_row_32_transposed,
         output_row_32_transposed_fromyuv
     },
-#else
-    .output_row_32 = output_row_32_transposed,
-#endif
     .get_size = get_size
 };
 

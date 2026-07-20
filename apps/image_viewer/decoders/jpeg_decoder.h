@@ -64,13 +64,8 @@ void build_lut(struct jpeg* p_jpeg);
 int process_markers(unsigned char* p_src, long size, struct jpeg* p_jpeg);
 
 /* the main decode function */
-#ifdef HAVE_LCD_COLOR
 int jpeg_decode(struct jpeg* p_jpeg, unsigned char* p_pixel[3],
                 int downscale, void (*pf_progress)(int current, int total));
-#else
-int jpeg_decode(struct jpeg* p_jpeg, unsigned char* p_pixel[1], int downscale,
-                void (*pf_progress)(int current, int total));
-#endif
 
 
 #endif /* _JPEG_JPEG_DECODER_H */

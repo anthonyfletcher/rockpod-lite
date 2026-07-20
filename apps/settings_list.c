@@ -258,7 +258,6 @@ static const char graphic_numeric[] = "graphic,numeric";
 #define DEFAULT_FONTNAME _EXPAND(DEFAULT_FONT_HEIGHT) "-Adobe-Helvetica"
 #endif
 
-#ifdef HAVE_LCD_COLOR
   #if DEFAULT_FONT_HEIGHT >= 31
     #define DEFAULT_ICONSET "tango_icons.32x32"
     #define DEFAULT_VIEWERS_ICONSET "tango_icons_viewers.32x32"
@@ -275,13 +274,6 @@ static const char graphic_numeric[] = "graphic,numeric";
     #define DEFAULT_ICONSET "tango_icons.8x8"
     #define DEFAULT_VIEWERS_ICONSET "tango_icons_viewers.8x8"
   #endif
-#elif LCD_DEPTH > 1 /* greyscale */
-  #define DEFAULT_ICONSET "tango_small_mono"
-  #define DEFAULT_VIEWERS_ICONSET "tango_small_viewers_mono"
-#else /* monochrome */
-  #define DEFAULT_ICONSET ""
-  #define DEFAULT_VIEWERS_ICONSET ""
-#endif
 
 
 /* Themify_2 palette, so a colours reset falls back to the shipped theme. */
@@ -884,18 +876,12 @@ const struct settings_list settings[] = {
 #endif /* HAVE_BACKLIGHT */
     /* display */
      CHOICE_SETTING(F_TEMPVAR|F_THEMESETTING, cursor_style, LANG_INVERT_CURSOR,
- #ifdef HAVE_LCD_COLOR
                     3, "selector type",
                     "pointer,bar (inverse),bar (color),bar (gradient)", NULL, 4,
                     ID2P(LANG_INVERT_CURSOR_POINTER),
                     ID2P(LANG_INVERT_CURSOR_BAR),
                     ID2P(LANG_INVERT_CURSOR_COLOR),
                     ID2P(LANG_INVERT_CURSOR_GRADIENT)),
- #else
-                    1, "selector type", "pointer,bar (inverse)", NULL, 2,
-                    ID2P(LANG_INVERT_CURSOR_POINTER),
-                    ID2P(LANG_INVERT_CURSOR_BAR)),
- #endif
     CHOICE_SETTING(F_THEMESETTING|F_TEMPVAR|F_NEEDAPPLY, statusbar,
                   LANG_STATUS_BAR, STATUSBAR_TOP, "statusbar","off,top,bottom",
                   NULL, 3, ID2P(LANG_OFF), ID2P(LANG_STATUSBAR_TOP),
@@ -911,10 +897,8 @@ const struct settings_list settings[] = {
                   0, "list separator height", "auto,off", UNIT_PIXEL,
                   list_pad_formatter, list_pad_getlang, NULL, 15,
                   -1,0,1,2,3,4,5,7,9,11,13,16,20,25,30),
-#ifdef HAVE_LCD_COLOR
     {F_T_INT|F_RGB|F_THEMESETTING ,&global_settings.list_separator_color,-1,
         INT(DEFAULT_THEME_SEPARATOR),"list separator color",UNUSED},
-#endif
 #endif
     CHOICE_SETTING(F_THEMESETTING, volume_type, LANG_VOLUME_DISPLAY, 0,
                    "volume display", graphic_numeric, NULL, 2,
@@ -1081,7 +1065,6 @@ const struct settings_list settings[] = {
                    /* values are defined by the enum in option_select.h */
                    "list order", "descending,ascending",
                    NULL, 2, ID2P(LANG_DESCENDING), ID2P(LANG_ASCENDING)),
-#ifdef HAVE_LCD_COLOR
 
     {F_T_INT|F_RGB|F_THEMESETTING ,&global_settings.fg_color,-1,
         INT(DEFAULT_THEME_FOREGROUND),"foreground color",UNUSED},
@@ -1094,7 +1077,6 @@ const struct settings_list settings[] = {
     {F_T_INT|F_RGB|F_THEMESETTING ,&global_settings.lst_color,-1,
         INT(DEFAULT_THEME_SELECTOR_TEXT),"line selector text color",UNUSED},
 
-#endif
 
     /* Modal dialog chrome. Config-file only (no menu entries): lang_id -1, so
      * these are edited in a theme .cfg. The defaults reproduce
@@ -1107,7 +1089,6 @@ const struct settings_list settings[] = {
         INT(1), "dialog button border width", UNUSED},
     {F_T_INT|F_THEMESETTING, &global_settings.dialog_btn_border_radius, -1,
         INT(0), "dialog button border radius", UNUSED},
-#ifdef HAVE_LCD_COLOR
     /* off: every dialog colour is inherited from the theme (the default look).
      * on: the nine colours below are used instead. */
     OFFON_SETTING(F_THEMESETTING, dialog_colors, -1, false, "dialog colours",
@@ -1134,7 +1115,6 @@ const struct settings_list settings[] = {
     {F_T_INT|F_RGB|F_THEMESETTING, &global_settings.dialog_btn_border_sel, -1,
         INT(DEFAULT_THEME_FOREGROUND), "dialog button border colour selected",
         UNUSED},
-#endif
 
     /* more playback */
     OFFON_SETTING(0,play_selected,LANG_PLAY_SELECTED,true,"play selected",NULL),
@@ -1674,13 +1654,11 @@ const struct settings_list settings[] = {
     TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY, viewers_icon_file, "viewers iconset",
                      DEFAULT_VIEWERS_ICONSET,
                      ICON_DIR "/", ".bmp"),
-#ifdef HAVE_LCD_COLOR
     TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY, colors_file, "filetype colours", "-",
                      THEME_DIR "/", ".colours"),
 #ifdef HAVE_ALBUMART
     OFFON_SETTING(0, dynamic_colors, LANG_DYNAMIC_COLORS, true,
                   "dynamic colors", NULL),
-#endif
 #endif
 #ifdef HAVE_TAGCACHE
     INT_SETTING(0, album_covers_center_margin, LANG_CENTRE_MARGIN, 0,

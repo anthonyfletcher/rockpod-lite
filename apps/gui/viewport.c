@@ -30,13 +30,8 @@
 #include "list.h"
 
 /*some short cuts for fg/bg/line selector handling */
-#ifdef HAVE_LCD_COLOR
 #define FG_FALLBACK global_settings.fg_color
 #define BG_FALLBACK global_settings.bg_color
-#else
-#define FG_FALLBACK LCD_DEFAULT_FG
-#define BG_FALLBACK LCD_DEFAULT_BG
-#endif
 
 /* all below isn't needed for pc tools (i.e. checkwps/wps editor)
  * only viewport_parse_viewport() is */

@@ -459,7 +459,6 @@ static int parse_playlistview(struct skin_element *element,
     return 0;
 }
 
-#ifdef HAVE_LCD_COLOR
 static int parse_viewport_gradient_setup(struct skin_element *element,
                                    struct wps_token *token,
                                    struct wps_data *wps_data)
@@ -487,7 +486,6 @@ static int parse_viewport_gradient_setup(struct skin_element *element,
     token->value.data = PTRTOSKINOFFSET(skin_buffer, cfg);
     return 0;
 }
-#endif
 
 static int parse_listitem(struct skin_element *element,
                         struct wps_token *token,
@@ -590,7 +588,6 @@ static int parse_viewporttextstyle(struct skin_element *element,
         line->style = STYLE_COLORED | STYLE_DEFAULT;
         line->text_color = colour;
     }
-#ifdef HAVE_LCD_COLOR
     else if (vp_op == 4) /*gradient*/
     {
         int num_lines;
@@ -603,7 +600,6 @@ static int parse_viewporttextstyle(struct skin_element *element,
         line->style = STYLE_GRADIENT;
         line->nlines = num_lines;
     }
-#endif
     else if (vp_op == 3) /*clear*/
     {
         line->style = STYLE_DEFAULT;
@@ -679,16 +675,8 @@ static int parse_viewportcolour(struct skin_element *element,
         switch (curr_screen)
         {
         default:
-#if defined(HAVE_LCD_COLOR)
             fg_color = global_settings.fg_color;
             bg_color = global_settings.bg_color;
-#elif LCD_DEPTH > 1
-            fg_color = LCD_DEFAULT_FG;
-            bg_color = LCD_DEFAULT_BG;
-#else
-            fg_color = 0;
-            bg_color = 0;
-#endif
             break;
         }
 
@@ -1742,14 +1730,12 @@ static int convert_viewport(struct wps_data *data, struct skin_element* element)
 #if (LCD_DEPTH > 1)
     skin_vp->output_to_backdrop_buffer = false;
 #endif
-#ifdef HAVE_LCD_COLOR
     skin_vp->start_gradient.start = global_settings.lss_color;
     skin_vp->start_gradient.end = global_settings.lse_color;
     skin_vp->start_gradient.text = global_settings.lst_color;
 #ifdef HAVE_ALBUMART
     skin_vp->dc_orig_fg = skin_vp->vp.fg_pattern;
     skin_vp->dc_orig_bg = skin_vp->vp.bg_pattern;
-#endif
 #endif
 
 
@@ -1956,11 +1942,9 @@ static int skin_element_callback(struct skin_element* element, void* data)
                     wps_data->use_extra_framebuffer = true;
                     break;
 #endif
-#ifdef HAVE_LCD_COLOR
                 case SKIN_TOKEN_VIEWPORT_GRADIENT_SETUP:
                     function = parse_viewport_gradient_setup;
                     break;
-#endif
                 case SKIN_TOKEN_TRANSLATEDSTRING:
                 case SKIN_TOKEN_SETTING:
                     function = parse_setting_and_lang;

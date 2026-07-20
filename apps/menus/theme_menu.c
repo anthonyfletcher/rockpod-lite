@@ -42,9 +42,7 @@
 #include "skin_engine/skin_engine.h"
 #include "splash.h"
 #include "icons.h"
-#ifdef HAVE_LCD_COLOR
 #include "filetypes.h"
-#endif
 
 #ifdef HAVE_BACKDROP_IMAGE
 /**
@@ -63,7 +61,6 @@ static int clear_main_backdrop(void)
 MENUITEM_FUNCTION(clear_main_bd, 0, ID2P(LANG_CLEAR_BACKDROP),
                   clear_main_backdrop, NULL, Icon_NOICON);
 #endif
-#ifdef HAVE_LCD_COLOR
 
 enum Colors {
     COLOR_FG = 0,
@@ -155,7 +152,6 @@ MAKE_MENU(colors_settings, ID2P(LANG_COLORS_MENU),
             &set_bg_col, &set_fg_col, &reset_colors
          );
 
-#endif /* HAVE_LCD_COLOR */
 /*    LCD MENU                    */
 /***********************************/
 
@@ -335,10 +331,8 @@ MAKE_MENU(theme_menu, ID2P(LANG_THEME_MENU),
 #if LCD_DEPTH > 1
             &sep_menu,
 #endif
-#ifdef HAVE_LCD_COLOR
             &colors_settings,
 #ifdef HAVE_ALBUMART
             &dynamic_colors,
-#endif
 #endif
 );

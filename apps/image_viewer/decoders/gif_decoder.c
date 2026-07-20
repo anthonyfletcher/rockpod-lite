@@ -28,22 +28,12 @@
 #include "gif_decoder.h"
 
 #ifndef resize_bitmap
-#if defined(HAVE_LCD_COLOR)
 #define resize_bitmap   smooth_resize_bitmap
-#else
-#define resize_bitmap   grey_resize_bitmap
-#endif
 #endif
 
-#if defined(HAVE_LCD_COLOR)
 typedef struct uint8_rgb pixel_t;
 #define NATIVE_SZ (GifFile->SWidth*GifFile->SHeight*FB_DATA_SZ)
 #define PIXEL_TRANSPARENT 0x00
-#else
-typedef unsigned char pixel_t;
-#define NATIVE_SZ (GifFile->SWidth*GifFile->SHeight)
-#define PIXEL_TRANSPARENT 0xff
-#endif
 
 #define PIXELS_SZ (GifFile->SWidth*GifFile->SHeight*sizeof(pixel_t))
 
@@ -53,9 +43,6 @@ static void gif2pixels(GifPixelType *Line, pixel_t *out,
                        int Row, int Col, int Width)
 {
     int x;
-#ifndef HAVE_LCD_COLOR
-    struct uint8_rgb rgb;
-#endif
 
     GifColorType *ColorMapEntry;
 
@@ -74,17 +61,9 @@ static void gif2pixels(GifPixelType *Line, pixel_t *out,
             GifFile->Image.GCB->TransparentColor == Line[x])
             continue;
 
-#ifdef HAVE_LCD_COLOR
         pixel->red = ColorMapEntry->Red;
         pixel->green = ColorMapEntry->Green;
         pixel->blue = ColorMapEntry->Blue;
-#else
-        rgb.red = ColorMapEntry->Red;
-        rgb.green = ColorMapEntry->Green;
-        rgb.blue = ColorMapEntry->Blue;
-
-        *pixel = brightness(rgb);
-#endif
     }
 }
 
@@ -92,11 +71,7 @@ static void pixels2native(struct scaler_context *ctx,
                           pixel_t *pixels_buffer,
                           int Row)
 {
-#ifdef HAVE_LCD_COLOR
     const struct custom_format *cformat = &format_native;
-#else
-    const struct custom_format *cformat = &format_grey;
-#endif
 
     void (*output_row_8)(uint32_t, void*, struct scaler_context*) =
         cformat->output_row_8;
@@ -440,11 +415,7 @@ void gif_decode(struct gif_decoder *d,
     if (!recalc_dimension(&dim_dst, &dim_src))
     {
         /* calculate 'corrected' image size */
-#ifdef HAVE_LCD_COLOR
         c_native_img_size = dim_dst.width * dim_dst.height * FB_DATA_SZ;
-#else
-        c_native_img_size = dim_dst.width * dim_dst.height;
-#endif
 
         /* check memory constraints
          * do the correction only if there is enough

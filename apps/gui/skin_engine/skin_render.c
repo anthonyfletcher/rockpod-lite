@@ -147,7 +147,6 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
         }
         break;
 #endif
-#ifdef HAVE_LCD_COLOR
         case SKIN_TOKEN_VIEWPORT_GRADIENT_SETUP:
         {
             struct gradient_config *cfg = SKINOFFSETTOPTR(skin_buffer, token->value.data);
@@ -158,7 +157,6 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
             linedes->line_end_color = dynamic_colors_resolve(cfg->end);
         }
         break;
-#endif
         case SKIN_TOKEN_VIEWPORT_ENABLE:
         {
             char *label = SKINOFFSETTOPTR(skin_buffer, token->value.data);
@@ -204,7 +202,6 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                 struct draw_rectangle *rect =
                         SKINOFFSETTOPTR(skin_buffer, token->value.data);
                 if (!rect) break;
-#ifdef HAVE_LCD_COLOR
                 unsigned dr_start = dynamic_colors_resolve(rect->start_colour);
                 unsigned dr_end = dynamic_colors_resolve(rect->end_colour);
                 if (dr_start != dr_end &&
@@ -214,15 +211,10 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                         rect->height, dr_start, dr_end);
                 }
                 else
-#endif
                 {
 #if LCD_DEPTH > 1
                     unsigned backup = skin_vp->vp.fg_pattern;
-#ifdef HAVE_LCD_COLOR
                     skin_vp->vp.fg_pattern = dr_start;
-#else
-                    skin_vp->vp.fg_pattern = rect->start_colour;
-#endif
 #endif
                     gwps->display->fillrect(rect->x, rect->y, rect->width,
                         rect->height);
@@ -848,13 +840,11 @@ void skin_render_viewport(struct skin_element* viewport, struct gui_wps *gwps,
         info.pending_aa = NULL;
 #if (LCD_DEPTH > 1)
         skin_viewport->fgbg_changed = false;
-#ifdef HAVE_LCD_COLOR
         if (info.line_desc.style&STYLE_GRADIENT)
         {
             if (++info.line_desc.line > info.line_desc.nlines)
                 info.line_desc.style = STYLE_DEFAULT;
         }
-#endif
 #endif
         info.cur_align_start = info.buf;
         align->left = info.buf;

@@ -350,9 +350,7 @@ static void tv_fullscreen_vp(struct viewport *vp)
      * as viewport_set_defaults() does. Skipping it dereferences stack garbage. */
     vp->buffer = NULL;
     viewport_set_fullscreen(vp, SCREEN_MAIN);
-#ifdef HAVE_LCD_COLOR
     vp->bg_pattern = tv.vp.bg_pattern;
-#endif
 }
 
 /* The page number, right-aligned on the reserved bottom line. Drawn with
@@ -754,7 +752,6 @@ static void tv_apply_settings(void)
 
     tv_apply_font();
 
-#ifdef HAVE_LCD_COLOR
     switch (global_settings.text_viewer_colour_mode)
     {
         case TV_COLOUR_INVERTED:
@@ -775,7 +772,6 @@ static void tv_apply_settings(void)
             tv.vp.bg_pattern = global_settings.bg_color;
             break;
     }
-#endif
 
     margin = global_settings.text_viewer_margin ? TV_MARGIN : 0;
     tv.vp.x = margin;

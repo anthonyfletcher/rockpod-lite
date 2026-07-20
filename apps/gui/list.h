@@ -123,7 +123,6 @@ typedef void list_draw_item(struct list_putlineinfo_t *list_info);
  * Returns an integer, 0 means success, ignored really...
  */
 typedef int list_speak_item(int selected_item, void * data);
-#ifdef HAVE_LCD_COLOR
 /*
  * Color callback
  *  - selected_item : an integer that tells the number of the item to display
@@ -153,7 +152,6 @@ struct list_selection_color
      * If using the default viewport you should call
      * gui_synclist_set_sel_color(gui_synclist*, NULL) when finished */
 };
-#endif
 
 struct gui_synclist
 {
@@ -198,11 +196,9 @@ struct gui_synclist
     /* Optional title icon */
     enum themable_icons title_icon;
 
-#ifdef HAVE_LCD_COLOR
     int title_color;
     list_get_color *callback_get_item_color;
     struct list_selection_color *selection_color;
-#endif
     struct viewport *parent[NB_SCREENS];
 
 };
@@ -229,10 +225,8 @@ int list_item_height(struct gui_synclist *list, enum screen_type screen);
 #endif
 extern void gui_synclist_set_voice_callback(struct gui_synclist * lists, list_speak_item voice_callback);
 extern void gui_synclist_set_viewport_defaults(struct viewport *vp, enum screen_type screen);
-#ifdef HAVE_LCD_COLOR
 extern void gui_synclist_set_color_callback(struct gui_synclist * lists, list_get_color color_callback);
 extern void gui_synclist_set_sel_color(struct gui_synclist * lists, struct list_selection_color *list_sel_color);
-#endif
 extern void gui_synclist_speak_item(struct gui_synclist * lists);
 extern int gui_synclist_get_nb_items(struct gui_synclist * lists);
 
@@ -323,10 +317,8 @@ struct simplelist_info {
     list_get_icon *get_icon; /* can be NULL */
     list_get_name *get_name; /* NULL if you're using simplelist_addline() */
     list_speak_item *get_talk; /* can be NULL to not speak */
-#ifdef HAVE_LCD_COLOR
     list_get_color *get_color;
     struct list_selection_color *selection_color;
-#endif
     void *callback_data; /* data for callbacks */
 };
 

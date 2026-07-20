@@ -794,10 +794,8 @@ struct plugin_api {
                        int32_t (*get_talk_id)(int, int));
     bool (*set_bool)(const char* string, const bool* variable );
 
-#ifdef HAVE_LCD_COLOR
     bool (*set_color)(struct screen *display, char *title,
                       unsigned *color, unsigned banned_color);
-#endif
 
     /* power */
     struct battery_tables_t *device_battery_tables;

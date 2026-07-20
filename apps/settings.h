@@ -506,7 +506,6 @@ struct user_settings
     unsigned char backdrop_file[MAX_PATHNAME+1];  /* backdrop bitmap file */
 #endif
 
-#ifdef HAVE_LCD_COLOR
     int bg_color; /* background color native format */
     int fg_color; /* foreground color native format */
     int lss_color; /* background color for the selector or start color for the gradient */
@@ -515,7 +514,6 @@ struct user_settings
     unsigned char colors_file[MAX_FILENAME+1];
 #ifdef HAVE_ALBUMART
     bool dynamic_colors; /* auto-color from album art */
-#endif
 #endif
 
     /* Modal dialog chrome (apps/gui/dialog.h). Applied in settings_apply() via
@@ -526,7 +524,6 @@ struct user_settings
     int dialog_box_margin;
     int dialog_btn_border_width;
     int dialog_btn_border_radius;
-#ifdef HAVE_LCD_COLOR
     bool dialog_colors;         /* off == inherit every colour from the theme */
     int dialog_box_fg;
     int dialog_box_bg;
@@ -537,7 +534,6 @@ struct user_settings
     int dialog_btn_fg_sel;      /* the selected button */
     int dialog_btn_bg_sel;
     int dialog_btn_border_sel;
-#endif
 
 #ifdef HAVE_TAGCACHE
     /* apps/gui/album_covers.c settings -- see enum show_album_name_values /

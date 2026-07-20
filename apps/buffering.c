@@ -963,11 +963,7 @@ int bufopen(const char *file, off_t offset, enum data_type type,
         size += JPEG_DECODE_OVERHEAD;
 #endif
        /* resize_on_load requires space for 1 line + 2 spare lines */
-#ifdef HAVE_LCD_COLOR
         size += sizeof(struct uint32_argb) * 3 * aa->dim->width;
-#else
-        size += sizeof(uint32_t) * 3 * aa->dim->width;
-#endif
     }
 #endif /* HAVE_ALBUMART */
 

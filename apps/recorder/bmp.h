@@ -148,15 +148,9 @@ extern const unsigned short vi_pattern[4];
 /* Size in bytes needed to load and scale a bitmap with target size up to
    width*height, including overhead to allow for buffer alignment.
 */
-#ifdef HAVE_LCD_COLOR
 #define BM_SCALED_SIZE(width,height,format,remote) \
     (BM_SIZE(width,height,format,remote) + \
     (remote ? 0 : BM_WIDTH(width,format,remote) * sizeof(uint32_t) * 9 + 3))
-#else
-#define BM_SCALED_SIZE(width,height,format,remote) \
-    (BM_SIZE(width,height,format,remote) + \
-    (width * sizeof(uint32_t) * 3 + 3))
-#endif
 
 /*********************************************************************
  * read_bmp_file()

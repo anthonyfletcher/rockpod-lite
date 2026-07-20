@@ -357,11 +357,7 @@ static struct img_part *store_part_bmp(void *args)
     struct bmp_args *ba = (struct bmp_args *)args;
 
     ba->part.len = read_part_line(ba);
-#ifdef HAVE_LCD_COLOR
     ba->part.buf = (struct uint8_rgb *)ba->buf;
-#else
-    ba->part.buf = (uint8_t *)ba->buf;
-#endif
     if (ba->part.len)
         return &(ba->part);
     else
@@ -384,11 +380,7 @@ void output_row_8_native(uint32_t row, void * row_in,
     int col;
     int fb_width = BM_WIDTH(ctx->bm->width,FORMAT_NATIVE,0);
     uint8_t dy = DITHERY(row);
-#ifdef HAVE_LCD_COLOR
     struct uint8_rgb *qp = (struct uint8_rgb*)row_in;
-#else
-    uint8_t *qp = (uint8_t*)row_in;
-#endif
     BDEBUGF("output_row: y: %lu in: %p\n",row, row_in);
 #if LCD_DEPTH == 2
 #if LCD_PIXELFORMAT == HORIZONTAL_PACKING
@@ -745,12 +737,10 @@ int read_bmp_fd(int fd,
 
     memset(bitmap, 0, totalsize);
 
-#ifdef HAVE_LCD_COLOR
     if (read_alpha && depth == 32)
         bm->alpha_offset = totalsize - alphasize;
     else
         bm->alpha_offset = 0;
-#endif
 
     struct bmp_args ba = {
         .fd = fd, .padded_width = padded_width, .read_width = read_width,
@@ -816,11 +806,7 @@ int read_bmp_fd(int fd,
     defined(HAVE_BMP_SCALING) || defined(PLUGIN)
         if (bm->width > BM_MAX_WIDTH)
         {
-#if defined(HAVE_LCD_COLOR)
             struct uint8_rgb *p = (struct uint8_rgb *)buf;
-#else
-            uint8_t* p = buf;
-#endif
             do {
                 int len = read_part_line(&ba);
                 if (!len)
@@ -879,7 +865,6 @@ int read_bmp_fd(int fd,
         }
 #endif
     }
-#ifdef HAVE_LCD_COLOR
     if (!ba.alpha_detected)
     {   /* if this has an alpha channel, totalsize accounts for it as well
          * subtract if no actual alpha information was found */
@@ -887,6 +872,5 @@ int read_bmp_fd(int fd,
             totalsize -= alphasize;
         bm->alpha_offset = 0;
     }
-#endif
     return totalsize; /* return the used buffer size. */
 }

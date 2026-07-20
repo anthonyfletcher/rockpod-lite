@@ -58,11 +58,7 @@
 #define MULUQ(a, b) ((a) * (b))
 #define MULQ(a, b) ((a) * (b))
 
-#ifdef HAVE_LCD_COLOR
 #define CHANNEL_BYTES (sizeof(struct uint32_argb)/sizeof(uint32_t))
-#else
-#define CHANNEL_BYTES (sizeof(uint32_t)/sizeof(uint32_t)) /* packed */
-#endif
 
 /* calculate the maximum dimensions which will preserve the aspect ration of
    src while fitting in the constraints passed in dst, and store result in dst,
@@ -104,11 +100,9 @@ int recalc_dimension(struct dim *dst, struct dim *src)
    "classic" version such that it is a useful input to the scaling calculation.
 */
 
-#ifdef HAVE_LCD_COLOR
 /* dither + pack on channel of RGB565, R an B share a packing macro */
 #define PACKRB(v, delta)  ((31 * v + (v >> 3) + delta) >> 8)
 #define PACKG(g, delta) ((63 * g + (g >> 2) + delta) >> 8)
-#endif
 
 /* read new img_part unconditionally, return false on failure */
 #define FILL_BUF_INIT(img_part, store_part, args) { \
@@ -147,13 +141,9 @@ static bool scale_h_area(void *out_line_ptr,
     unsigned int ix, ox, oxe, mul;
     const uint32_t h_i_val = ctx->h_i_val,
                    h_o_val = ctx->h_o_val;
-#ifdef HAVE_LCD_COLOR
     struct uint32_argb rgbvalacc = { 0, 0, 0, 0 },
                        rgbvaltmp = { 0, 0, 0, 0 },
                       *out_line = (struct uint32_argb *)out_line_ptr;
-#else
-    uint32_t acc = 0, tmp = 0, *out_line = (uint32_t*)out_line_ptr;
-#endif
     struct img_part *part;
     FILL_BUF_INIT(part,ctx->store_part,ctx->args);
     ox = 0;
@@ -167,7 +157,6 @@ static bool scale_h_area(void *out_line_ptr,
         /* end of current area has been reached */
         /* fill buffer if needed */
         FILL_BUF(part,ctx->store_part,ctx->args);
-#ifdef HAVE_LCD_COLOR
         if (oxe >= h_i_val)
         {
             /* "reset" error, which now represents partial coverage of next
@@ -250,50 +239,6 @@ static bool scale_h_area(void *out_line_ptr,
             rgbvalacc.b += part->buf->blue;
             rgbvalacc.a += part->buf->alpha;
         }
-#else
-        if (oxe >= h_i_val)
-        {
-            /* "reset" error, which now represents partial coverage of next
-               pixel by the next area
-            */
-            oxe -= h_i_val;
-#if defined(CPU_COLDFIRE)
-/* Coldfire EMAC math */
-            /* add saved partial pixel from start of area */
-            MAC(acc, h_o_val, 0);
-            MAC(tmp, mul, 0);
-            /* get new pixel , then add its partial coverage to this area */
-            tmp = *(part->buf);
-            mul = h_o_val - oxe;
-            MAC(tmp, mul, 0);
-            MAC_OUT(acc, 0);
-#else
-/* generic C math */
-            /* add saved partial pixel from start of area */
-            acc = (acc * h_o_val) + (tmp * mul);
-
-            /* get new pixel , then add its partial coverage to this area */
-            tmp = *(part->buf);
-            mul = h_o_val - oxe;
-            acc += tmp * mul;
-#endif /* CPU */
-            /* round, divide, and either store or accumulate to output row */
-            acc = (acc + (1 << 21)) >> 22;
-            if (accum)
-            {
-                acc += out_line[ox];
-            }
-            out_line[ox] = acc;
-            /* reset accumulator */
-            acc = 0;
-            mul = oxe;
-            ox += 1;
-        /* inside an area */
-        } else {
-            /* add pixel value to accumulator */
-            acc += *(part->buf);
-        }
-#endif
         part->buf++;
         part->len--;
     }
@@ -368,12 +313,8 @@ static bool scale_h_linear(void *out_line_ptr, struct scaler_context *ctx,
        values are conditionally initialized before use, but other values are
        set such that this will occur before these are used.
     */
-#ifdef HAVE_LCD_COLOR
     struct uint32_argb rgbval=rgbval, rgbinc=rgbinc,
                       *out_line = (struct uint32_argb*)out_line_ptr;
-#else
-    uint32_t val=val, inc=inc, *out_line = (uint32_t*)out_line_ptr;
-#endif
     struct img_part *part;
     SDEBUGF("scale_h_linear\n");
     FILL_BUF_INIT(part,ctx->store_part,ctx->args);
@@ -384,7 +325,6 @@ static bool scale_h_linear(void *out_line_ptr, struct scaler_context *ctx,
     yield();
     for (ox = 0; ox < (uint32_t)ctx->bm->width; ox++)
     {
-#ifdef HAVE_LCD_COLOR
         if (ixe >= h_o_val)
         {
             /* Store the new "current" pixel value in rgbval, and the color
@@ -467,58 +407,6 @@ static bool scale_h_linear(void *out_line_ptr, struct scaler_context *ctx,
             out_line[ox].b = (rgbval.b + (1 << 21)) >> 22;
             out_line[ox].a = (rgbval.a + (1 << 21)) >> 22;
         }
-#else
-        if (ixe >= h_o_val)
-        {
-            /* Store the new "current" pixel value in rgbval, and the color
-               step value in rgbinc.
-            */
-            ixe -= h_o_val;
-            val = *(part->buf);
-            inc = -val;
-#if defined(CPU_COLDFIRE)
-/* Coldfire EMAC math */
-            MAC(val, h_o_val, 0);
-#else
-/* generic C math */
-            val = val * h_o_val;
-#endif
-            ix += 1;
-            /* If this wasn't the last pixel, add the next one to rgbinc. */
-            if (LIKELY(ix < (uint32_t)ctx->src->width)) {
-                part->buf++;
-                part->len--;
-                /* Fetch new pixels if needed */
-                FILL_BUF(part,ctx->store_part,ctx->args);
-                inc += *(part->buf);
-                /* Add a partial step to rgbval, in this pixel isn't precisely
-                   aligned with the new source pixel
-                */
-#if defined(CPU_COLDFIRE)
-/* Coldfire EMAC math */
-                MAC(inc, ixe, 0);
-#else
-/* generic C math */
-                val += inc * ixe;
-#endif
-            }
-#if defined(CPU_COLDFIRE)
-/* get final EMAC result out of ACC register */
-            MAC_OUT(val, 0);
-#endif
-            /* Now multiply the color increment to its proper value */
-/* generic C math */
-            inc *= h_i_val;
-        } else
-            val += inc;
-        /* round and scale values, and accumulate or store to output */
-        if (accum)
-        {
-            out_line[ox] += (val + (1 << 21)) >> 22;
-        } else {
-            out_line[ox] = (val + (1 << 21)) >> 22;
-        }
-#endif
         ixe += h_i_val;
     }
     return true;
@@ -628,11 +516,7 @@ static void output_row_32_native(uint32_t row, void * row_in,
     int col;
     int fb_width = BM_WIDTH(ctx->bm->width,FORMAT_NATIVE,0);
     uint8_t dy = DITHERY(row);
-#ifdef HAVE_LCD_COLOR
     struct uint32_argb *qp = (struct uint32_argb*)row_in;
-#else
-    uint32_t *qp = (uint32_t*)row_in;
-#endif
     SDEBUGF("output_row: y: %lu in: %p\n",row, row_in);
 #if LCD_DEPTH == 2
 #if LCD_PIXELFORMAT == HORIZONTAL_PACKING
@@ -766,11 +650,7 @@ int resize_on_load(struct bitmap *bm, bool dither, struct dim *src,
     const int dh = bm->height;
     int ret;
     /* buffer for 1 line + 2 spare lines */
-#ifdef HAVE_LCD_COLOR
     unsigned int needed = sizeof(struct uint32_argb) * 3 * bm->width;
-#else
-    unsigned int needed = sizeof(uint32_t) * 3 * bm->width;
-#endif
 #if MAX_SC_STACK_ALLOC
     uint8_t sc_buf[(needed <= len  || needed > MAX_SC_STACK_ALLOC) ?
                    0 : needed];
@@ -824,11 +704,7 @@ int resize_on_load(struct bitmap *bm, bool dither, struct dim *src,
 #endif
     if (format)
 #endif
-#ifdef HAVE_LCD_COLOR
         ctx.output_row = format->output_row_32[format_index];
-#else
-        ctx.output_row = format->output_row_32;
-#endif
 #ifdef HAVE_UPSCALER
     if (sw > dw)
     {

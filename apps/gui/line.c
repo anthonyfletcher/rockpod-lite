@@ -32,9 +32,7 @@
 #include "settings.h"
 #include "debug.h"
 #include "viewport.h"
-#ifdef HAVE_LCD_COLOR
 #include "skin_engine/skin_albumart_color.h"
-#endif
 #include "debug.h"
 
 #define MAX_LINES  LCD_SCROLLABLE_LINES
@@ -301,16 +299,12 @@ static void style_line(struct screen *display,
     {
         int sep_height = MIN(line->separator_height, height);
         display->set_drawmode(DRMODE_FG);
-#ifdef HAVE_LCD_COLOR
         unsigned saved_sep_fg = display->get_foreground();
         display->set_foreground(dynamic_colors_resolve(
             global_settings.list_separator_color));
-#endif
         display->fillrect(x, y + height - sep_height, width, sep_height);
         bar_height -= sep_height;
-#ifdef HAVE_LCD_COLOR
         display->set_foreground(saved_sep_fg);
-#endif
     }
 
     /* mask out gradient and colorbar styles for non-color displays */
@@ -326,7 +320,6 @@ static void style_line(struct screen *display,
 
     switch (style & _STYLE_DECO_MASK)
     {
-#ifdef HAVE_LCD_COLOR
         case STYLE_GRADIENT:
             display->set_drawmode(DRMODE_FG);
             display->gradient_fillrect_part(x, y, width, bar_height,
@@ -340,7 +333,6 @@ static void style_line(struct screen *display,
             display->set_foreground(line->line_color);
             /*display->fillrect(x, y, width - x, bar_height);*/
             /* Fall through */
-#endif
         case STYLE_INVERT:
             display->set_drawmode(DRMODE_FG);
             display->fillrect(x, y, width - x, bar_height);

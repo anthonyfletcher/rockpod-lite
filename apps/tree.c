@@ -175,7 +175,6 @@ static const char* tree_get_filename(int selected_item, void *data,
     return(name);
 }
 
-#ifdef HAVE_LCD_COLOR
 static int tree_get_filecolor(int selected_item, void * data)
 {
     if (*tc.dirfilter == SHOW_ID3DB)
@@ -185,7 +184,6 @@ static int tree_get_filecolor(int selected_item, void * data)
 
     return filetype_get_color(entry->name, entry->attr);
 }
-#endif
 
 static enum themable_icons tree_get_fileicon(int selected_item, void * data)
 {
@@ -693,9 +691,7 @@ static int update_dir(void)
 #endif
     }
     gui_synclist_set_voice_callback(list, &tree_voice_cb);
-#ifdef HAVE_LCD_COLOR
     gui_synclist_set_color_callback(list, &tree_get_filecolor);
-#endif
     if( tc.selected_item >= tc.filesindir)
         tc.selected_item=tc.filesindir-1;
 

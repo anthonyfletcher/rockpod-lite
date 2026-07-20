@@ -221,11 +221,9 @@ void gui_synclist_init(struct gui_synclist * gui_list,
     gui_list->scheduled_talk_tick = gui_list->last_talked_tick = 0;
     gui_list->dirty_tick = current_tick;
 
-#ifdef HAVE_LCD_COLOR
     gui_list->title_color = -1;
     gui_list->callback_get_item_color = NULL;
     gui_list->selection_color = NULL;
-#endif
 }
 
 int gui_list_get_item_offset(struct gui_synclist * gui_list,
@@ -536,7 +534,6 @@ void gui_synclist_set_viewport_defaults(struct viewport *vp,
     viewport_set_defaults(vp, screen);
 }
 
-#ifdef HAVE_LCD_COLOR
 void gui_synclist_set_color_callback(struct gui_synclist * lists,
                                      list_get_color color_callback)
 {
@@ -558,7 +555,6 @@ void gui_synclist_set_sel_color(struct gui_synclist * lists,
     else
         list_init_viewports(lists);
 }
-#endif
 
 static void gui_synclist_select_next_page(struct gui_synclist * lists,
                                           enum screen_type screen,
@@ -991,11 +987,9 @@ bool simplelist_show_list(struct simplelist_info *info)
 
     gui_synclist_set_icon_callback(&lists, info->get_icon);
     gui_synclist_set_voice_callback(&lists, info->get_talk);
-#ifdef HAVE_LCD_COLOR
     gui_synclist_set_color_callback(&lists, info->get_color);
     if (info->selection_color)
         gui_synclist_set_sel_color(&lists, info->selection_color);
-#endif
 
     if (info->action_callback)
         info->action_callback(ACTION_REDRAW, &lists);
@@ -1064,10 +1058,8 @@ bool simplelist_show_list(struct simplelist_info *info)
 
     gui_synclist_scroll_stop(&lists);
 
-#ifdef HAVE_LCD_COLOR
     if (info->selection_color)
         gui_synclist_set_sel_color(&lists, NULL);
-#endif
 
     FOR_NB_SCREENS(i)
     {
@@ -1093,10 +1085,8 @@ void simplelist_info_init(struct simplelist_info *info, char* title,
     info->get_icon = NULL;
     info->get_name = NULL;
     info->get_talk = NULL;
-#ifdef HAVE_LCD_COLOR
     info->get_color = NULL;
     info->selection_color = NULL;
-#endif
     info->callback_data = data;
     simplelist_line_count = 0;
 }

@@ -1549,7 +1549,6 @@ int open_utf8(const char* pathname, int flags)
 }
 
 
-#ifdef HAVE_LCD_COLOR
 /*
  * Helper function to convert a string of 6 hex digits to a native colour
  */
@@ -1579,7 +1578,6 @@ int hex_to_rgb(const char* hex, int* color)
 
     return 0;
 }
-#endif /* HAVE_LCD_COLOR */
 
 /* '0'-'3' are ASCII 0x30 to 0x33 */
 #define is0123(x) (((x) & 0xfc) == 0x30)
@@ -1589,7 +1587,6 @@ bool parse_color(enum screen_type screen, char *text, int *value)
     (void)text; (void)value; /* silence warnings on mono bitmap */
     (void)screen;
 
-#ifdef HAVE_LCD_COLOR
     if (screens[screen].depth > 2)
     {
         if (hex_to_rgb(text, value) < 0)
@@ -1597,7 +1594,6 @@ bool parse_color(enum screen_type screen, char *text, int *value)
         else
             return true;
     }
-#endif
 
 #if LCD_DEPTH == 2
     if (screens[screen].depth == 2)

@@ -101,9 +101,7 @@ static const struct filetype_inbuilt inbuilt_filetypes[] = {
     { "jpe",  FILE_ATTR_IMG },
     { "jpeg", FILE_ATTR_IMG },
     { "png",  FILE_ATTR_IMG },
-#ifdef HAVE_LCD_COLOR
     { "ppm",  FILE_ATTR_IMG },
-#endif
     { "gif",  FILE_ATTR_IMG },
 };
 
@@ -183,7 +181,6 @@ static struct file_type filetypes[MAX_FILETYPES];
 static enum themable_icons custom_filetype_icons[MAX_FILETYPES];
 static bool custom_icons_loaded = false;
 
-#ifdef HAVE_LCD_COLOR
 static int custom_colors[MAX_FILETYPES];
 struct filetype_unknown {
     enum themable_icons icon;
@@ -193,10 +190,6 @@ static struct filetype_unknown unknown_file = {
     .icon = Icon_NOICON,
     .color = -1,
 };
-#else
-struct filetype_unknown { enum themable_icons icon; };
-static struct filetype_unknown unknown_file = { .icon = Icon_NOICON };
-#endif
 
 static int filetype_count = 0;
 
@@ -214,7 +207,6 @@ static int find_extension(const char* extension)
     return -1;
 }
 
-#ifdef HAVE_LCD_COLOR
 /* Colors file format is similar to icons:
  * ext:hex_color
  * load a colors file from a theme with:
@@ -255,7 +247,6 @@ void read_color_theme_file(void) {
     }
     close(fd);
 }
-#endif
 
 static int parse_icon(const char *line, enum themable_icons *icon)
 {
@@ -330,9 +321,7 @@ void filetype_init(void)
 
     read_builtin_types_init();
     read_viewer_theme_file();
-#ifdef HAVE_LCD_COLOR
     read_color_theme_file();
-#endif
 }
 
 static void fill_from_builtin(const char *ext, int tree_attr)
@@ -398,7 +387,6 @@ static int find_attr(int attr)
     return -1;
 }
 
-#ifdef HAVE_LCD_COLOR
 int filetype_get_color(const char * name, int attr)
 {
     if ((attr & ATTR_DIRECTORY)==ATTR_DIRECTORY)
@@ -408,7 +396,6 @@ int filetype_get_color(const char * name, int attr)
         return unknown_file.color;
     return custom_colors[i];
 }
-#endif
 
 int filetype_get_icon(int attr)
 {

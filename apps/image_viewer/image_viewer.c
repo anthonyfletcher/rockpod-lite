@@ -92,10 +92,8 @@ bool iv_running_slideshow = false;
  * stays up instead). */
 static bool iv_zooming = false;
 
-#ifdef HAVE_LCD_COLOR
 static fb_data rgb_linebuf[LCD_WIDTH];  /* Line buffer for scrolling when
                                            DITHER_DIFFUSION is set        */
-#endif
 
 /* the buffer for loaded+resized images and the file list */
 static int buf_handle = 0;
@@ -276,7 +274,6 @@ static void pan_view_up(struct image_info *info)
     {
         xlcd_scroll_down(move); /* scroll down */
         info->y -= move;
-#ifdef HAVE_LCD_COLOR
         if (image_type == IMAGE_JPEG
          && iv_settings.jpeg_dither_mode == DITHER_DIFFUSION)
         {
@@ -284,7 +281,6 @@ static void pan_view_up(struct image_info *info)
                caused by lack of error history on line zero. */
             move = MIN(move + 1, info->y + info->height);
         }
-#endif
         imgdec->draw_image_rect(info, 0, 0, info->width-info->x, move);
         lcd_update();
     }
@@ -302,7 +298,6 @@ static void pan_view_down(struct image_info *info)
     {
         xlcd_scroll_up(move); /* scroll up */
         info->y += move;
-#ifdef HAVE_LCD_COLOR
         if (image_type == IMAGE_JPEG
          && iv_settings.jpeg_dither_mode == DITHER_DIFFUSION)
         {
@@ -315,12 +310,10 @@ static void pan_view_down(struct image_info *info)
                     lcd_fb + (LCD_HEIGHT - move)*LCD_WIDTH,
                     LCD_WIDTH*sizeof (fb_data));
         }
-#endif
 
         imgdec->draw_image_rect(info, 0, LCD_HEIGHT - move,
                                 info->width-info->x, move);
 
-#ifdef HAVE_LCD_COLOR
         if (image_type == IMAGE_JPEG
          && iv_settings.jpeg_dither_mode == DITHER_DIFFUSION)
         {
@@ -329,7 +322,6 @@ static void pan_view_down(struct image_info *info)
                         rgb_linebuf, LCD_WIDTH*sizeof (fb_data));
             info->y++;
         }
-#endif
         lcd_update();
     }
 }

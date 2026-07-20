@@ -50,18 +50,10 @@
 
 /**************** begin JPEG code ********************/
 
-#ifdef HAVE_LCD_COLOR
 typedef struct uint8_rgb jpeg_pix_t;
-#else
-typedef uint8_t jpeg_pix_t;
-#endif
 #define JPEG_IDCT_TRANSPOSE
 #define JPEG_PIX_SZ (sizeof(jpeg_pix_t))
-#ifdef HAVE_LCD_COLOR
 #define COLOR_EXTRA_IDCT_WS 64
-#else
-#define COLOR_EXTRA_IDCT_WS 0
-#endif
 #ifdef JPEG_IDCT_TRANSPOSE
 #define V_OUT(n) ws2[8*n]
 #define V_IN_ST 1
@@ -107,19 +99,11 @@ struct jpeg
     int cur_row; /* current row relative to top of image */
     int set_rows;
     int store_pos[4]; /* for Y block ordering */
-#ifdef HAVE_LCD_COLOR
     int last_dc_val[3];
     int h_scale[2]; /* horizontal scalefactor = (2**N) / 8 */
     int v_scale[2]; /* same as above, for vertical direction */
     int k_need[2]; /* per component zig-zag index of last needed coefficient */
     int zero_need[2]; /* per compenent number of coefficients to zero */
-#else
-    int last_dc_val;
-    int h_scale[1]; /* horizontal scalefactor = (2**N) / 8 */
-    int v_scale[1]; /* same as above, for vertical direction */
-    int k_need[1]; /* per component zig-zag index of last needed coefficient */
-    int zero_need[1]; /* per compenent number of coefficients to zero */
-#endif
     jpeg_pix_t *img_buf;
 
     int16_t quanttable[4][QUANT_TABLE_LENGTH];/* raw quantization tables 0-3 */
@@ -610,7 +594,6 @@ extern void jpeg_idct8v(int16_t *ws, int16_t *end);
 extern void jpeg_idct8h(int16_t *ws, unsigned char *out, int16_t *end, int rowstep);
 #endif
 
-#ifdef HAVE_LCD_COLOR
 /* vertical-pass 16-point IDCT */
 static void jpeg_idct16v(int16_t *ws, int16_t *end)
 {
@@ -830,7 +813,6 @@ static void jpeg_idct16h(int16_t *ws, unsigned char *out, int16_t *end, int rows
         out[JPEG_PIX_SZ*8]  = scale_output(tmp27 - tmp13);
     }
 }
-#endif
 
 struct idct_entry {
     int scale;
@@ -843,9 +825,7 @@ static const struct idct_entry idct_tbl[] = {
     { PASS1_BITS, jpeg_idct2v, jpeg_idct2h },
     { 0, jpeg_idct4v, jpeg_idct4h },
     { 0, jpeg_idct8v, jpeg_idct8h },
-#ifdef HAVE_LCD_COLOR
     { 0, jpeg_idct16v, jpeg_idct16h },
-#endif
 };
 
 /* JPEG decoder implementation */
@@ -1578,11 +1558,7 @@ INLINE void fix_quant_tables(struct jpeg *p_jpeg)
 {
     int shift, i, j;
 
-#ifdef HAVE_LCD_COLOR
     const int k = 2;
-#else
-    const int k = 1;
-#endif
 
     for (i = 0; i < k; i++)
     {
@@ -1805,15 +1781,8 @@ static void search_restart(struct jpeg *p_jpeg)
 static struct img_part *store_row_jpeg(void *jpeg_args)
 {
     struct jpeg *p_jpeg = (struct jpeg*) jpeg_args;
-#ifdef HAVE_LCD_COLOR
     int mcu_hscale = p_jpeg->h_scale[1];
     int mcu_vscale = p_jpeg->v_scale[1];
-#else
-    int mcu_hscale = (p_jpeg->h_scale[0] +
-        p_jpeg->frameheader[0].horizontal_sampling - 1);
-    int mcu_vscale = (p_jpeg->v_scale[0] +
-        p_jpeg->frameheader[0].vertical_sampling - 1);
-#endif
     unsigned int width = p_jpeg->x_mbl << mcu_hscale;
     unsigned int b_width = width * JPEG_PIX_SZ;
     int height = BIT_N(mcu_vscale);
@@ -1822,9 +1791,7 @@ static struct img_part *store_row_jpeg(void *jpeg_args)
     {
         p_jpeg->out_ptr = (unsigned char *)p_jpeg->img_buf;
         int store_offs[4];
-#ifdef HAVE_LCD_COLOR
         unsigned mcu_width = BIT_N(mcu_hscale);
-#endif
         int mcu_offset = JPEG_PIX_SZ << mcu_hscale;
         unsigned char *out = p_jpeg->out_ptr;
         store_offs[p_jpeg->store_pos[0]] = 0;
@@ -1851,22 +1818,12 @@ static struct img_part *store_row_jpeg(void *jpeg_args)
                 /* Section F.2.2.1: decode the DC coefficient difference */
                 huff_decode_dc(p_jpeg, dctbl, s, r);
 
-#ifndef HAVE_LCD_COLOR
-                if (!ci)
-#endif
                 {
                     s = HUFF_EXTEND(r, s);
-#ifdef HAVE_LCD_COLOR
                     p_jpeg->last_dc_val[ci] += s;
                     /* output it (assumes zag[0] = 0) */
                     block[0] = MULTIPLY16(p_jpeg->last_dc_val[ci],
                         p_jpeg->quanttable[!!ci][0]);
-#else
-                    p_jpeg->last_dc_val += s;
-                    /* output it (assumes zag[0] = 0) */
-                    block[0] = MULTIPLY16(p_jpeg->last_dc_val,
-                        p_jpeg->quanttable[0][0]);
-#endif
                     /* coefficient buffer must be cleared */
                     MEMSET(block+1, 0, p_jpeg->zero_need[!!ci] * sizeof(int));
                     /* Section F.2.2.2: decode the AC coefficients */
@@ -1920,9 +1877,6 @@ skip_rest:
                     }
                 }  /* for k */
 block_end:
-#ifndef HAVE_LCD_COLOR
-                if (!ci)
-#endif
                 {
                     int idct_cols = BIT_N(MIN(p_jpeg->h_scale[!!ci], 3));
                     int idct_rows = BIT_N(p_jpeg->v_scale[!!ci]);
@@ -1945,7 +1899,6 @@ block_end:
             } /* for blkn */
             /* don't starve other threads while an MCU row decodes */
             yield();
-#ifdef HAVE_LCD_COLOR
             unsigned int xp;
             int yp;
             unsigned char *row = out;
@@ -1960,18 +1913,13 @@ block_end:
                     }
                 }
             }
-#endif
             out += mcu_offset;
             if (p_jpeg->restart_interval && --p_jpeg->restart == 0)
             {   /* if a restart marker is due: */
                 p_jpeg->restart = p_jpeg->restart_interval; /* count again */
                 search_restart(p_jpeg); /* align the bitstream */
-#ifdef HAVE_LCD_COLOR
                 p_jpeg->last_dc_val[0] = p_jpeg->last_dc_val[1] =
                                  p_jpeg->last_dc_val[2] = 0; /* reset decoder */
-#else
-                p_jpeg->last_dc_val = 0;
-#endif
             }
         }
     } /* if !p_jpeg->mcu_row */
@@ -2153,9 +2101,7 @@ int clip_jpeg_fd(int fd, int flags,
         resize = true;
     if (format & FORMAT_DITHER)
         dither = true;
-#ifdef HAVE_LCD_COLOR
     bm->alpha_offset = 0; /* no alpha channel */
-#endif
     if (resize) {
         struct dim resize_dim = {
             .width = bm->width,
@@ -2176,14 +2122,12 @@ int clip_jpeg_fd(int fd, int flags,
     if ((p_jpeg->x_size << p_jpeg->h_scale[0]) >> 3 == bm->width &&
         (p_jpeg->y_size << p_jpeg->v_scale[0]) >> 3 == bm->height)
         resize = false;
-#ifdef HAVE_LCD_COLOR
     p_jpeg->h_scale[1] = p_jpeg->h_scale[0] +
         p_jpeg->frameheader[0].horizontal_sampling - 1;
     p_jpeg->v_scale[1] = p_jpeg->v_scale[0] +
         p_jpeg->frameheader[0].vertical_sampling - 1;
     JDEBUGF("chroma IDCT size: %dx%d\n", BIT_N(p_jpeg->h_scale[1]),
         BIT_N(p_jpeg->v_scale[1]));
-#endif
     JDEBUGF("scaling from %dx%d -> %dx%d\n",
         (p_jpeg->x_size << p_jpeg->h_scale[0]) >> 3,
         (p_jpeg->y_size << p_jpeg->v_scale[0]) >> 3,
@@ -2201,7 +2145,6 @@ int clip_jpeg_fd(int fd, int flags,
         p_jpeg->zero_need[0] = (decode_h << 3) + decode_w;
     p_jpeg->k_need[0] = zig[(decode_h << 3) + decode_w];
     JDEBUGF("need luma components to %d\n", p_jpeg->k_need[0]);
-#ifdef HAVE_LCD_COLOR
     decode_w = BIT_N(MIN(p_jpeg->h_scale[1],3)) - 1;
     decode_h = BIT_N(MIN(p_jpeg->v_scale[1],3)) - 1;
     if (p_jpeg->v_scale[1] > 2)
@@ -2210,7 +2153,6 @@ int clip_jpeg_fd(int fd, int flags,
         p_jpeg->zero_need[1] = (decode_h << 3) + decode_w;
     p_jpeg->k_need[1] = zig[(decode_h << 3) + decode_w];
     JDEBUGF("need chroma components to %d\n", p_jpeg->k_need[1]);
-#endif
     if (cformat)
         bm_size = cformat->get_size(bm);
     else
@@ -2231,15 +2173,8 @@ int clip_jpeg_fd(int fd, int flags,
     buf_start += sizeof(struct jpeg);
 #endif
     maxsize = buf_end - buf_start;
-#ifdef HAVE_LCD_COLOR
     int decode_buf_size = (p_jpeg->x_mbl << p_jpeg->h_scale[1])
         << p_jpeg->v_scale[1];
-#else
-    int decode_buf_size = (p_jpeg->x_mbl << p_jpeg->h_scale[0])
-        << p_jpeg->v_scale[0];
-    decode_buf_size <<= p_jpeg->frameheader[0].horizontal_sampling +
-        p_jpeg->frameheader[0].vertical_sampling - 2;
-#endif
     decode_buf_size *= JPEG_PIX_SZ;
     JDEBUGF("decode buffer size: %d\n", decode_buf_size);
     if (return_size)
@@ -2248,11 +2183,7 @@ int clip_jpeg_fd(int fd, int flags,
                + (resize
                       ?
                       /* buffer for 1 line + 2 spare lines */
-#ifdef HAVE_LCD_COLOR
                       sizeof(struct uint32_argb)
-#else
-                      sizeof(uint32_t)
-#endif
                       * 3 * bm->width
                       : 0);
     }
@@ -2298,7 +2229,6 @@ int clip_jpeg_fd(int fd, int flags,
         for (row = 0; row < bm->height; row++)
         {
             part = store_row_jpeg(p_jpeg);
-#ifdef HAVE_LCD_COLOR
             if (p_jpeg->blocks > 1)
             {
                 struct uint8_rgb *qp = part->buf;
@@ -2316,7 +2246,6 @@ int clip_jpeg_fd(int fd, int flags,
                     qp->green = g;
                 }
             }
-#endif
             output_row_8(row, part->buf, &ctx);
         }
         return bm_size;

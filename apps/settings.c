@@ -288,14 +288,12 @@ bool string_to_cfg(const char *name, char* value, bool *theme_changed)
         break;
     case F_T_INT:
     case F_T_UINT:
-#ifdef HAVE_LCD_COLOR
         if (flags & F_RGB)
         {
             hex_to_rgb(value, (int*)setting->setting);
             logf("Val: %s\r\n", value);
         }
         else
-#endif
             if (setting_get_cfgvals(setting) == NULL)
             {
                 *(int*)setting->setting = atoi(value);
@@ -454,7 +452,6 @@ void cfg_to_string(const struct settings_list *setting, char* buf, int buf_len)
             break;
         case F_T_INT:
         case F_T_UINT:
-#ifdef HAVE_LCD_COLOR
             if (setting->flags & F_RGB)
             {
                 int colour = *(int*)setting->setting;
@@ -465,7 +462,6 @@ void cfg_to_string(const struct settings_list *setting, char* buf, int buf_len)
                 break; /* we got a value */
             }
             else
-#endif
             if (setting_get_cfgvals(setting) != NULL && cfg_int_to_string(
                 setting, *(int*)setting->setting, buf, buf_len))
             {
@@ -856,7 +852,6 @@ static void settings_apply_dialog_style(void)
     s.button_border_radius = clamp_int(global_settings.dialog_btn_border_radius,
                                        0, 64);
 
-#ifdef HAVE_LCD_COLOR
     if (global_settings.dialog_colors)
     {
         s.box_fg                       = global_settings.dialog_box_fg;
@@ -869,7 +864,6 @@ static void settings_apply_dialog_style(void)
         s.button_bg_selected           = global_settings.dialog_btn_bg_sel;
         s.button_border_color_selected = global_settings.dialog_btn_border_sel;
     }
-#endif
 
     dialog_set_default_style(&s);
 }
@@ -984,16 +978,12 @@ void settings_apply(bool read_disk)
         icons_init();
         CHART("<icons_init");
 
-#ifdef HAVE_LCD_COLOR
         CHART(">read_color_theme_file");
         read_color_theme_file();
         CHART("<read_color_theme_file");
-#endif
     }
-#ifdef HAVE_LCD_COLOR
     screens[SCREEN_MAIN].set_foreground(global_settings.fg_color);
     screens[SCREEN_MAIN].set_background(global_settings.bg_color);
-#endif
 
     lcd_scroll_step(global_settings.scroll_step);
     lcd_bidir_scroll(global_settings.bidir_limit);

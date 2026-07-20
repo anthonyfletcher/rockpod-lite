@@ -156,10 +156,8 @@ static bool draw_title(struct screen *display,
                                 + (lcd_get_dpi() > 200 ? 2 : 1);
 #endif
 
-#ifdef HAVE_LCD_COLOR
     if (list->title_color >= 0)
         linedes.style |= (STYLE_COLORED|list->title_color);
-#endif
     linedes.scroll = true;
 
     display->set_viewport(title_text_vp);
@@ -341,7 +339,6 @@ void list_draw(struct screen *display, struct gui_synclist *list)
                 i >= list->selected_item
                 && i <  list->selected_item + list->selected_size)
         {/* The selected item must be displayed scrolling */
-#ifdef HAVE_LCD_COLOR
             if (list->selection_color)
             {
                 /* Display gradient line selector */
@@ -354,14 +351,12 @@ void list_draw(struct screen *display, struct gui_synclist *list)
                     list->selection_color->line_end_color);
             }
             else
-#endif
             if (list->cursor_style == SYNCLIST_CURSOR_INVERT
             )
             {
                 /* Display inverted-line-style */
                 style = STYLE_INVERT;
             }
-#ifdef HAVE_LCD_COLOR
             else if (list->cursor_style == SYNCLIST_CURSOR_COLOR)
             {
                 /* Display colour line selector */
@@ -377,11 +372,9 @@ void list_draw(struct screen *display, struct gui_synclist *list)
                 linedes.line_color = dynamic_colors_resolve(global_settings.lss_color);
                 linedes.line_end_color = dynamic_colors_resolve(global_settings.lse_color);
             }
-#endif
             is_selected = true;
         }
         
-#ifdef HAVE_LCD_COLOR
         /* if the list has a color callback */
         if (list->callback_get_item_color)
         {
@@ -392,7 +385,6 @@ void list_draw(struct screen *display, struct gui_synclist *list)
                 style |= STYLE_COLORED;
             }
         }
-#endif
         linedes.style = style;
         linedes.scroll = is_selected ? true : list->scroll_all;
         linedes.line = i % list->selected_size;

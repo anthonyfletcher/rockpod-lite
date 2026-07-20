@@ -99,11 +99,7 @@ struct screen screens[NB_SCREENS] =
         .lcdheight=LCD_HEIGHT,
         .depth=LCD_DEPTH,
         .getnblines=&screen_helper_getnblines,
-#if defined(HAVE_LCD_COLOR)
         .is_color=true,
-#else
-        .is_color=false,
-#endif
         .pixel_format=LCD_PIXELFORMAT,
         .getcharwidth=screen_helper_getcharwidth,
         .getcharheight=screen_helper_getcharheight,
@@ -179,10 +175,8 @@ struct screen screens[NB_SCREENS] =
         .backdrop_load=&backdrop_load,
         .backdrop_show=&backdrop_show,
 #endif
-#if defined(HAVE_LCD_COLOR)
         .gradient_fillrect = lcd_gradient_fillrect,
         .gradient_fillrect_part = lcd_gradient_fillrect_part,
-#endif
         .put_line = screen_helper_put_line,
     },
 };

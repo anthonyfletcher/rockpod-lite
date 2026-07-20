@@ -358,8 +358,6 @@ static bool progress_cancel(int step, int count, char *msg)
 
 #define MULUQ(a, b) ((a) * (b))
 
-#ifdef HAVE_LCD_COLOR
-#endif
 
 /* Create the lookup table with the scaling values for the reflections */
 
