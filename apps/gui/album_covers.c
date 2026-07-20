@@ -64,15 +64,11 @@
 #include "menu.h"             /* do_menu */
 #include "menus/exported_menus.h" /* album_covers_menu (shared settings menu) */
 #include "bmp.h"              /* read_bmp_file */
-#ifdef HAVE_JPEG
 #include "jpeg_load.h"        /* read_jpeg_file */
-#endif
 #include "power.h"
 #include "powermgmt.h"        /* reset_poweroff_timer */
 #include "backlight.h"        /* backlight_set_timeout(_plugged) */
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
 #include "cpu.h"
-#endif
 #include "skin_engine/skin_engine.h"  /* skin_render_inhibit_flush */
 #include "skin_engine/skin_albumart_color.h" /* dynamic_colors_resolve */
 #include "statusbar-skinned.h" /* sb_set_persistent_title */

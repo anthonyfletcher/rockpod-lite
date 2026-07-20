@@ -27,8 +27,6 @@
 #include "settings.h"
 
 /* Some audio sources may require a boosted CPU */
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
-#endif
 
 #if (CONFIG_PLATFORM & PLATFORM_NATIVE)
 

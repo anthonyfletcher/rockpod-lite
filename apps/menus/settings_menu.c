@@ -45,68 +45,11 @@
 #endif
 #include "quickscreen.h"
 #include "dircache.h"
-#ifndef HAS_BUTTON_HOLD
-#include "mask_select.h"
-#endif
 #include "plugin.h"
 #include "folder_select.h"
 #include "onplay.h"
 #include "misc.h"
 
-#ifndef HAS_BUTTON_HOLD
-static int selectivesoftlock_callback(int action,
-                                      const struct menu_item_ex *this_item,
-                                      struct gui_synclist *this_list)
-{
-    (void)this_item;
-    (void)this_list;
-
-    switch (action)
-    {
-        case ACTION_STD_MENU:
-        case ACTION_STD_CANCEL:
-        case ACTION_EXIT_MENUITEM:
-            set_selective_softlock_actions(
-                            global_settings.bt_selective_softlock_actions,
-                            global_settings.bt_selective_softlock_actions_mask);
-            action_autosoftlock_init();
-            break;
-    }
-
-    return action;
-}
-
-static int selectivesoftlock_set_mask(void* param)
-{
-    (void)param;
-int mask = global_settings.bt_selective_softlock_actions_mask;
-            struct s_mask_items maskitems[]={
-                                       {ID2P(LANG_ACTION_VOLUME), SEL_ACTION_VOL},
-                                       {ID2P(LANG_ACTION_PLAY),   SEL_ACTION_PLAY},
-                                       {ID2P(LANG_ACTION_SEEK),   SEL_ACTION_SEEK},
-                                       {ID2P(LANG_ACTION_SKIP),   SEL_ACTION_SKIP},
- #ifdef HAVE_BACKLIGHT
-                                       {ID2P(LANG_ACTION_AUTOLOCK_ON),    SEL_ACTION_AUTOLOCK},
-                                       {ID2P(LANG_ACTION_ALWAYSAUTOLOCK), SEL_ACTION_ALWAYSAUTOLOCK},
- #endif
-                                       {ID2P(LANG_ACTION_DISABLE_NOTIFY), SEL_ACTION_NONOTIFY},
-                                       {ID2P(LANG_SOFTLOCK_DISABLE_ALL_NOTIFY), SEL_ACTION_ALLNONOTIFY}
-                                            };
-
-            mask = mask_select(mask, ID2P(LANG_SOFTLOCK_SELECTIVE)
-                               , maskitems,ARRAYLEN(maskitems));
-
-            if (mask == SEL_ACTION_NONE)
-                global_settings.bt_selective_softlock_actions = false;
-            else if (global_settings.bt_selective_softlock_actions_mask != mask)
-                global_settings.bt_selective_softlock_actions = true;
-
-            global_settings.bt_selective_softlock_actions_mask = mask;
-
-    return true;
-}
-
-#endif /* !HAS_BUTTON_HOLD */
 
 /***********************************/
 /*    TAGCACHE MENU                */
@@ -175,9 +118,7 @@ MENUITEM_SETTING(dirfilter, &global_settings.dirfilter, NULL);
 MENUITEM_SETTING(show_filename_ext, &global_settings.show_filename_ext, NULL);
 MENUITEM_SETTING(browse_current, &global_settings.browse_current, NULL);
 MENUITEM_SETTING(show_path_in_browser, &global_settings.show_path_in_browser, NULL);
-#ifdef HAVE_HOTKEY
 MENUITEM_SETTING(hotkey_tree_item, &global_settings.hotkey_tree, NULL);
-#endif
 static int clear_start_directory(void)
 {
     path_append(global_settings.start_directory, PATH_ROOTSTR,
@@ -197,9 +138,7 @@ MAKE_MENU(file_menu, ID2P(LANG_FILE), filemenu_callback, Icon_file_view_menu,
                 &dirfilter, &show_filename_ext, &browse_current,
                 &show_path_in_browser,
                 &clear_start_directory_item
-#ifdef HAVE_HOTKEY
                 ,&hotkey_tree_item
-#endif
                 );
 static int filemenu_callback(int action,
                              const struct menu_item_ex *this_item,
@@ -231,7 +170,6 @@ static int filemenu_callback(int action,
 MENUITEM_SETTING(battery_capacity, &global_settings.battery_capacity, NULL);
 #endif
 
-#ifdef HAVE_USB_CHARGING_ENABLE
 static int usbcharging_callback(int action,
                                 const struct menu_item_ex *this_item,
                                 struct gui_synclist *this_list)
@@ -247,23 +185,18 @@ static int usbcharging_callback(int action,
     return action;
 }
 MENUITEM_SETTING(usb_charging, &global_settings.usb_charging, usbcharging_callback);
-#endif /* HAVE_USB_CHARGING_ENABLE */
 MAKE_MENU(battery_menu, ID2P(LANG_BATTERY_MENU), 0, Icon_NOICON,
 #if BATTERY_CAPACITY_INC > 0
             &battery_capacity,
 #endif
-#ifdef HAVE_USB_CHARGING_ENABLE
             &usb_charging,
-#endif
          );
 #if (defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR))
 MENUITEM_SETTING(usb_mode, &global_settings.usb_mode, NULL);
 #endif
 /* Disk */
-#ifdef HAVE_DISK_STORAGE
 MENUITEM_SETTING(disk_spindown, &global_settings.disk_spindown, NULL);
 MENUITEM_SETTING(storage_mode, &global_settings.storage_mode, NULL);
-#endif
 static int dircache_callback(int action,
                              const struct menu_item_ex *this_item,
                              struct gui_synclist *this_list)
@@ -288,10 +221,8 @@ static int dircache_callback(int action,
 }
 MENUITEM_SETTING(dircache, &global_settings.dircache, dircache_callback);
 MAKE_MENU(disk_menu, ID2P(LANG_DISK_MENU), 0, Icon_NOICON,
-#ifdef HAVE_DISK_STORAGE
           &disk_spindown,
           &storage_mode,
-#endif
             &dircache,
          );
 
@@ -304,23 +235,16 @@ MAKE_MENU(limits_menu, ID2P(LANG_LIMITS_MENU), 0, Icon_NOICON,
            ,&default_glyphs
            );
 
-#ifdef HAVE_PERCEPTUAL_VOLUME
 /* Volume adjustment */
 MENUITEM_SETTING(volume_adjust_mode, &global_settings.volume_adjust_mode, NULL);
 MENUITEM_SETTING(volume_adjust_norm_steps, &global_settings.volume_adjust_norm_steps, NULL);
-#endif
 
 /* Keyclick menu */
 MENUITEM_SETTING(keyclick, &global_settings.keyclick, NULL);
 MENUITEM_SETTING(keyclick_repeats, &global_settings.keyclick_repeats, NULL);
-#ifdef HAVE_HARDWARE_CLICK
 MENUITEM_SETTING(keyclick_hardware, &global_settings.keyclick_hardware, NULL);
 MAKE_MENU(keyclick_menu, ID2P(LANG_KEYCLICK), 0, Icon_NOICON,
            &keyclick, &keyclick_hardware, &keyclick_repeats);
-#else
-MAKE_MENU(keyclick_menu, ID2P(LANG_KEYCLICK), 0, Icon_NOICON,
-           &keyclick, &keyclick_repeats);
-#endif
 
 #if CONFIG_CHARGING
 MENUITEM_SETTING(car_adapter_mode, &global_settings.car_adapter_mode, NULL);
@@ -328,87 +252,44 @@ MENUITEM_SETTING(car_adapter_mode_delay, &global_settings.car_adapter_mode_delay
 MAKE_MENU(car_adapter_mode_menu, ID2P(LANG_CAR_ADAPTER_MODE), 0, Icon_NOICON,
            &car_adapter_mode, &car_adapter_mode_delay);
 #endif
-#ifdef IPOD_ACCESSORY_PROTOCOL
 MENUITEM_SETTING(serial_bitrate, &global_settings.serial_bitrate, NULL);
-#endif
-#ifdef HAVE_ACCESSORY_SUPPLY
 MENUITEM_SETTING(accessory_supply, &global_settings.accessory_supply, NULL);
-#endif
-#ifdef HAVE_LINEOUT_POWEROFF
 MENUITEM_SETTING(lineout_onoff, &global_settings.lineout_active, NULL);
-#endif
-#ifdef USB_ENABLE_HID
 MENUITEM_SETTING(usb_hid, &global_settings.usb_hid, NULL);
 MENUITEM_SETTING(usb_keypad_mode, &global_settings.usb_keypad_mode, NULL);
-#endif
 #ifdef USB_ENABLE_AUDIO
 MENUITEM_SETTING(usb_audio, &global_settings.usb_audio, NULL);
 #endif
-#ifdef HAVE_MORSE_INPUT
 MENUITEM_SETTING(morse_input, &global_settings.morse_input, NULL);
-#endif
 
 
 
 
 
-#ifdef HAVE_QUICKSCREEN
 MENUITEM_SETTING(shortcuts_replaces_quickscreen, &global_settings.shortcuts_replaces_qs, NULL);
-#endif
 
-#ifndef HAS_BUTTON_HOLD
-
-MENUITEM_SETTING(bt_selective_actions,
-                 &global_settings.bt_selective_softlock_actions,
-                                                    selectivesoftlock_callback);
-MENUITEM_FUNCTION(sel_softlock_mask, 0, ID2P(LANG_SETTINGS),
-                  selectivesoftlock_set_mask, selectivesoftlock_callback,
-                  Icon_Menu_setting);
-
-MAKE_MENU(sel_softlock, ID2P(LANG_SOFTLOCK_SELECTIVE),
-          NULL, Icon_Menu_setting, &bt_selective_actions, &sel_softlock_mask);
-#endif /* !HAS_BUTTON_HOLD */
 
 MENUITEM_SETTING(wps_select_action, &global_settings.wps_select_action, NULL);
 
 
 MAKE_MENU(system_menu, ID2P(LANG_SYSTEM),
           0, Icon_System_menu,
-#if (BATTERY_CAPACITY_INC > 0) || defined(HAVE_USB_CHARGING_ENABLE)
             &battery_menu,
-#endif
             &disk_menu,
             &limits_menu,
-#ifdef HAVE_PERCEPTUAL_VOLUME
             &volume_adjust_mode,
             &volume_adjust_norm_steps,
-#endif
-#ifdef HAVE_QUICKSCREEN
             &shortcuts_replaces_quickscreen,
-#endif
-#ifdef HAVE_MORSE_INPUT
             &morse_input,
-#endif
 #if CONFIG_CHARGING
             &car_adapter_mode_menu,
 #endif
-#ifdef IPOD_ACCESSORY_PROTOCOL
             &serial_bitrate,
-#endif
-#ifdef HAVE_ACCESSORY_SUPPLY
             &accessory_supply,
-#endif
-#ifdef HAVE_LINEOUT_POWEROFF
             &lineout_onoff,
-#endif
             &keyclick_menu,
-#ifndef HAS_BUTTON_HOLD
-            &sel_softlock,
-#endif
-#ifdef USB_ENABLE_HID
             &usb_hid,
             &usb_keypad_mode,
-#endif
 #ifdef USB_ENABLE_AUDIO
             &usb_audio,
 #endif
@@ -618,9 +499,7 @@ static int talk_callback(int action,
             oldval = global_settings.talk_file_clip;
             break;
         case ACTION_EXIT_MENUITEM:
-#ifdef HAVE_CROSSFADE
             audio_set_crossfade(global_settings.crossfade);
-#endif
             if (this_item == &talk_dir_clip_item)
                 break;
             if (!oldval && global_settings.talk_file_clip)
@@ -650,15 +529,11 @@ MAKE_MENU(voice_settings_menu, ID2P(LANG_VOICE), 0, Icon_Voice,
 MENUITEM_SETTING(browser_default,
                  &global_settings.browser_default, NULL);
 
-#ifdef HAVE_HOTKEY
 MENUITEM_SETTING(hotkey_wps_item, &global_settings.hotkey_wps, NULL);
-#endif
 
 MAKE_MENU(wps_settings, ID2P(LANG_WPS), 0, Icon_Playback_menu
             ,&browser_default
-#ifdef HAVE_HOTKEY
             ,&hotkey_wps_item
-#endif
             );
 
 /*    WPS Settings MENU            */

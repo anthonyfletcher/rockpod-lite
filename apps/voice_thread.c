@@ -44,17 +44,9 @@
 /*#define LOGF_ENABLE*/
 #include "logf.h"
 
-#if VOICE_LOGQUEUES
-#define LOGFQUEUE logf
-#else
 #define LOGFQUEUE(...)
-#endif
 
-#if VOICE_LOGQUEUES_SYS_TIMEOUT
-#define LOGFQUEUE_SYS_TIMEOUT logf
-#else
 #define LOGFQUEUE_SYS_TIMEOUT(...)
-#endif
 
 #ifndef IBSS_ATTR_VOICE_STACK
 #define IBSS_ATTR_VOICE_STACK IBSS_ATTR
@@ -600,7 +592,6 @@ void voice_thread_init(void)
                             voice_thread_id);
 }
 
-#ifdef HAVE_PRIORITY_SCHEDULING
 /* Set the voice thread priority */
 void voice_thread_set_priority(int priority)
 {
@@ -612,4 +603,3 @@ void voice_thread_set_priority(int priority)
 
     thread_set_priority(voice_thread_id, priority);
 }
-#endif

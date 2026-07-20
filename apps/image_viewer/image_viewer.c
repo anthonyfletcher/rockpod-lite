@@ -62,10 +62,8 @@
 #include "image_viewer_button.h"
 
 /* Full-screen loading splash art, shipped for the 320x240 iPods only. */
-#if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
 #include "bitmaps/rockpodpicture.h"
 #define IV_HAVE_SPLASH_BMP
-#endif
 
 /* Headings */
 #define DIR_PREV  1
@@ -810,7 +808,6 @@ static int show_menu(void)
  * Mirrors the text viewer's rockpodtext splash. */
 static void iv_splash(void)
 {
-#ifdef IV_HAVE_SPLASH_BMP
     /* Branded splash, drawn exactly like the text viewer's tv_splash_loading():
      * the wait line in the bold UI font at y=180, the file name just beneath it
      * in the plain UI font, both in the light caption colour over the art. Held
@@ -845,9 +842,6 @@ static void iv_splash(void)
     d->set_viewport(last);
     lcd_update();               /* full flush: update_viewport() didn't show here */
     sleep(HZ);
-#else
-    splash(HZ, ID2P(LANG_WAIT));
-#endif
 }
 
 static void iv_setup_screen(void)

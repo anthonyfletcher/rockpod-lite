@@ -45,14 +45,10 @@
 #include "rbunicode.h"
 #include "peakmeter.h"
 #include "menus/eq_menu.h"
-#ifdef IPOD_ACCESSORY_PROTOCOL
 #include "iap.h"
-#endif
 #include "statusbar.h"
-#ifdef HAVE_HOTKEY
 #include "onplay.h"
 #include "misc.h" /* current activity */
-#endif
 #include "playlist.h"
 #include "tree.h"
 
@@ -236,22 +232,8 @@ static const char graphic_numeric[] = "graphic,numeric";
 #define DEFAULT_FONTNAME _EXPAND(DEFAULT_FONT_HEIGHT) "-Adobe-Helvetica"
 #endif
 
-  #if DEFAULT_FONT_HEIGHT >= 31
-    #define DEFAULT_ICONSET "tango_icons.32x32"
-    #define DEFAULT_VIEWERS_ICONSET "tango_icons_viewers.32x32"
-  #elif DEFAULT_FONT_HEIGHT >= 23
-    #define DEFAULT_ICONSET "tango_icons.24x24"
-    #define DEFAULT_VIEWERS_ICONSET "tango_icons_viewers.24x24"
-  #elif DEFAULT_FONT_HEIGHT >= 15
     #define DEFAULT_ICONSET "tango_icons.16x16"
     #define DEFAULT_VIEWERS_ICONSET "tango_icons_viewers.16x16"
-  #elif DEFAULT_FONT_HEIGHT >= 11
-    #define DEFAULT_ICONSET "tango_icons.12x12"
-    #define DEFAULT_VIEWERS_ICONSET "tango_icons_viewers.12x12"
-  #elif DEFAULT_FONT_HEIGHT >= 7
-    #define DEFAULT_ICONSET "tango_icons.8x8"
-    #define DEFAULT_VIEWERS_ICONSET "tango_icons_viewers.8x8"
-  #endif
 
 
 /* Themify_2 palette, so a colours reset falls back to the shipped theme. */
@@ -267,15 +249,11 @@ static const char graphic_numeric[] = "graphic,numeric";
 
 #define DEFAULT_TAGCACHE_SCAN_PATHS "/"
 
-#ifdef HAVE_BACKLIGHT
 #define DEFAULT_BACKLIGHT_TIMEOUT 15
-#endif /* HAVE_BACKLIGHT */
 
-#if defined(HAVE_USB_CHARGING_ENABLE)
 # if !defined(TARGET_USB_CHARGING_DEFAULT)
 #  define TARGET_USB_CHARGING_DEFAULT USB_CHARGING_ENABLE
 # endif
-#endif
 
 #ifdef AUDIOHW_HAVE_POWER_MODE
 # ifndef TARGET_DEFAULT_DAC_POWER_MODE
@@ -293,20 +271,9 @@ static const char graphic_numeric[] = "graphic,numeric";
  * also applies to the database browser so it makes sense to support
  * larger maximums.
  */
-#if MEMORYSIZE >= 16
 # define MAX_FILES_IN_DIR_DEFAULT   5000
 # define MAX_FILES_IN_DIR_MAX       100000
 # define MAX_FILES_IN_DIR_STEP      1000
-#elif MEMORYSIZE >= 8
-# define MAX_FILES_IN_DIR_DEFAULT   5000
-# define MAX_FILES_IN_DIR_MAX       40000
-# define MAX_FILES_IN_DIR_STEP      500
-#else
-/* historical defaults, only for 2 MiB targets these days */
-# define MAX_FILES_IN_DIR_DEFAULT   1000
-# define MAX_FILES_IN_DIR_MAX       10000
-# define MAX_FILES_IN_DIR_STEP      50
-#endif
 
 # define SCROLLBAR_DEFAULT SCROLLBAR_LEFT
 
@@ -352,7 +319,6 @@ static int32_t getlang_time_unit_0_is_off(int value, int unit)
         return talk_time_intervals(value, unit, false);
 }
 
-#if defined(HAVE_BACKLIGHT) || defined(HAVE_LCD_SLEEP_SETTING)
 static const char* formatter_time_unit_0_is_always(char *buffer, size_t buffer_size,
                                     int val, const char *unit)
 {
@@ -374,7 +340,6 @@ static int32_t getlang_time_unit_0_is_always(int value, int unit)
     else
         return talk_time_intervals(value, unit, false);
 }
-#endif /* HAVE_BACKLIGHT || HAVE_LCD_SLEEP_SETTING */
 
 static const char* formatter_time_unit_0_is_skip_track(char *buffer,
                                 size_t buffer_size, int val, const char *unit)
@@ -416,18 +381,6 @@ static int32_t getlang_time_unit_0_is_eternal(int value, int unit)
         return talk_time_intervals(value, unit, false);
 }
 
-#ifndef HAVE_WHEEL_ACCELERATION
-static const char* scanaccel_formatter(char *buffer, size_t buffer_size,
-        int val, const char *unit)
-{
-    (void)unit;
-    if (val == 0)
-        return str(LANG_OFF);
-    else
-        snprintf(buffer, buffer_size, "Speed up every %d s", val);
-    return buffer;
-}
-#endif
 
 static const char* formatter_unit_0_is_off(char *buffer, size_t buffer_size,
                                     int val, const char *unit)
@@ -547,7 +500,6 @@ static void eq_set_default(void* setting, void* defaultval)
     memcpy(setting, defaultval, sizeof(struct eq_band_setting));
 }
 
-#ifdef HAVE_PLAY_FREQ
 static const char* formatter_freq_unit_0_is_auto(char *buffer, size_t buffer_size,
                                     int value, const char *unit)
 {
@@ -571,7 +523,6 @@ static void playback_frequency_callback(int sample_rate_hz)
 {
     audio_set_playback_frequency(sample_rate_hz);
 }
-#endif /* HAVE_PLAY_FREQ */
 
 static void albumart_callback(int mode)
 {
@@ -614,7 +565,6 @@ static void treesort_callback(int value)
     reload_directory();
 }
 
-#ifdef HAVE_QUICKSCREEN
 static void qs_load_from_cfg(void *var, char *value)
 {
     const struct settings_list **item = var;
@@ -644,9 +594,7 @@ static void qs_set_default(void* var, void* defaultval)
 {
     *(const struct settings_list **)var = find_setting(defaultval);
 }
-#endif
 
-#ifdef HAVE_HOTKEY
 static void hotkey_callback(int var)
 {
     (void)var;
@@ -664,7 +612,6 @@ static int32_t hotkey_getlang(int value, int unit)
     (void)unit;
     return get_hotkey(value)->lang_id;
 }
-#endif /* HAVE_HOTKEY */
 
 /* volume limiter */
 static void volume_limit_load_from_cfg(void* var, char*value)
@@ -694,10 +641,8 @@ static void volume_limit_set_default(void* setting, void* defaultval)
 const struct settings_list settings[] = {
 /* system_status settings .resume.cfg */
     SYSTEM_STATUS_SOUND(F_NO_WRAP, volume, LANG_VOLUME, "volume", SOUND_VOLUME),
-#ifdef HAVE_PITCHCONTROL
     SYSTEM_STATUS(F_SOUNDSETTING, resume_pitch, PITCH_SPEED_100, "pitch"),
     SYSTEM_STATUS(F_SOUNDSETTING, resume_speed, PITCH_SPEED_100, "speed"),
-#endif
     SYSTEM_STATUS(0, resume_index,   -1,     "IDX"),
     SYSTEM_STATUS(0, resume_crc32,   -1,     "CRC"),
     SYSTEM_STATUS(0, resume_elapsed, -1,     "ELA"),
@@ -713,12 +658,8 @@ const struct settings_list settings[] = {
                   volume_limit_is_changed, volume_limit_set_default),
     SOUND_SETTING(0, balance, LANG_BALANCE, "balance", SOUND_BALANCE),
 /* Tone controls */
-#ifdef AUDIOHW_HAVE_BASS
     SOUND_SETTING(F_NO_WRAP,bass, LANG_BASS, "bass", SOUND_BASS),
-#endif
-#ifdef AUDIOHW_HAVE_TREBLE
     SOUND_SETTING(F_NO_WRAP,treble, LANG_TREBLE, "treble", SOUND_TREBLE),
-#endif
 /* Hardware EQ tone controls */
 #ifdef AUDIOHW_HAVE_EQ
 /* Band gain is generic */
@@ -790,37 +731,19 @@ const struct settings_list settings[] = {
 
     CHOICE_SETTING(F_CB_ON_SELECT_ONLY|F_CB_ONLY_IF_CHANGED, repeat_mode,
                    LANG_REPEAT, REPEAT_OFF, "repeat", "off,all,one,shuffle"
-#ifdef AB_REPEAT_ENABLE
                    ",ab"
-#endif
                    , repeat_mode_callback,
-#ifdef AB_REPEAT_ENABLE
                    5,
-#else
-                   4,
-#endif
                    ID2P(LANG_OFF), ID2P(LANG_ALL), ID2P(LANG_REPEAT_ONE),
                    ID2P(LANG_SHUFFLE)
-#ifdef AB_REPEAT_ENABLE
                    ,ID2P(LANG_REPEAT_AB)
-#endif
                   ), /* CHOICE_SETTING( repeat_mode ) */
-#ifdef HAVE_PLAY_FREQ
      TABLE_SETTING(F_SOUNDSETTING|F_CB_ON_SELECT_ONLY|F_CB_ONLY_IF_CHANGED,
                   play_frequency, LANG_FREQUENCY, 0, "playback frequency", "auto",
                   UNIT_KHZ, formatter_freq_unit_0_is_auto,
                   getlang_freq_unit_0_is_auto,
                   playback_frequency_callback,
-#if HAVE_PLAY_FREQ >= 192
-                  7,0,SAMPR_44,SAMPR_48,SAMPR_88,SAMPR_96,SAMPR_176,SAMPR_192),
-#elif HAVE_PLAY_FREQ >= 96
-                  5,0,SAMPR_44,SAMPR_48,SAMPR_88,SAMPR_96),
-#elif HAVE_PLAY_FREQ >= 48
                   3,0,SAMPR_44,SAMPR_48),
-#else
-      #error "HAVE_PLAY_FREQ < 48???"
-#endif
-#endif /* HAVE_PLAY_FREQ */
 
     CHOICE_SETTING(F_CB_ON_SELECT_ONLY|F_CB_ONLY_IF_CHANGED, album_art,
                    LANG_ALBUM_ART, AA_PREFER_EMBEDDED, "album art",
@@ -830,7 +753,6 @@ const struct settings_list settings[] = {
                    ID2P(LANG_PREFER_IMAGE_FILE)),
 
     /* LCD */
-#ifdef HAVE_BACKLIGHT
     TABLE_SETTING_LIST(F_TIME_SETTING | F_ALLOW_ARBITRARY_VALS,
                     backlight_timeout, LANG_BACKLIGHT,
                     DEFAULT_BACKLIGHT_TIMEOUT, "backlight timeout",
@@ -845,7 +767,6 @@ const struct settings_list settings[] = {
                     getlang_time_unit_0_is_always, backlight_set_timeout_plugged,
                     23, timeout_sec_common),
 #endif
-#endif /* HAVE_BACKLIGHT */
     /* display */
      CHOICE_SETTING(F_TEMPVAR|F_THEMESETTING, cursor_style, LANG_INVERT_CURSOR,
                     3, "selector type",
@@ -892,10 +813,8 @@ const struct settings_list settings[] = {
                   /** Slow CPU benefits greatly from building smaller playlists
                   On the iPod Mini 2nd gen, creating a playlist of 2000 entries takes around 10 seconds */
                   2000,
-#elif MEMORYSIZE > 1
-                  10000,
 #else
-                  400,
+                  10000,
 #endif
                   "max files in playlist", UNIT_INT, 1000, 32000, 1000,
                   NULL, NULL, NULL),
@@ -904,7 +823,6 @@ const struct settings_list settings[] = {
                 MAX_FILES_IN_DIR_STEP /* min */, MAX_FILES_IN_DIR_MAX,
                 MAX_FILES_IN_DIR_STEP,
                 NULL, NULL, NULL),
-#ifdef HAVE_PERCEPTUAL_VOLUME
     CHOICE_SETTING(0, volume_adjust_mode, LANG_VOLUME_ADJUST_MODE,
                    VOLUME_ADJUST_DIRECT, "volume adjustment mode",
                    "direct,perceptual", NULL, 2,
@@ -913,7 +831,6 @@ const struct settings_list settings[] = {
                        50, "perceptual volume step count", UNIT_INT,
                        MIN_NORM_VOLUME_STEPS, MAX_NORM_VOLUME_STEPS, 5,
                        NULL, NULL, NULL),
-#endif
 /* use this setting for user code even if there's no exchangable battery
  * support enabled */
 #if BATTERY_CAPACITY_INC > 0
@@ -941,41 +858,23 @@ const struct settings_list settings[] = {
                 5, "delay before resume", UNIT_SEC, 5, 30, 5,
                 NULL, NULL, NULL),
 #endif
-#ifdef IPOD_ACCESSORY_PROTOCOL
     CHOICE_SETTING(0, serial_bitrate, LANG_SERIAL_BITRATE, 0, "serial bitrate",
                    "auto,9600,19200,38400,57600", iap_bitrate_set, 5, ID2P(LANG_SERIAL_BITRATE_AUTO),
            ID2P(LANG_SERIAL_BITRATE_9600),ID2P(LANG_SERIAL_BITRATE_19200),
            ID2P(LANG_SERIAL_BITRATE_38400),ID2P(LANG_SERIAL_BITRATE_57600)),
-#endif
-#ifdef HAVE_ACCESSORY_SUPPLY
     OFFON_SETTING(0, accessory_supply, LANG_ACCESSORY_SUPPLY,
                   true, "accessory power supply", accessory_supply_set),
-#endif
-#ifdef HAVE_LINEOUT_POWEROFF
     OFFON_SETTING(0, lineout_active, LANG_LINEOUT,
                   true, "lineout", lineout_set),
-#endif
 
 
-#ifdef HAVE_BACKLIGHT
     OFFON_SETTING(0, bl_filter_first_keypress,
                   LANG_BACKLIGHT_FILTER_FIRST_KEYPRESS, true,
                   "backlight filters first keypress", NULL),
-#endif /* HAVE_BACKLIGHT */
 
 /** End of old RTC config block **/
 
-#ifndef HAS_BUTTON_HOLD
-    OFFON_SETTING(F_BANFROMQS, bt_selective_softlock_actions,
-                  LANG_ACTION_ENABLED, false,
-                  "No Screen Lock For Selected Actions", NULL),
-    INT_SETTING(F_BANFROMQS, bt_selective_softlock_actions_mask,
-                LANG_SOFTLOCK_SELECTIVE,
-                0, "Selective Screen Lock Actions", UNIT_INT,
-                0, 2048,2, NULL, NULL, NULL),
-#endif /* !HAS_BUTTON_HOLD */
 
-#ifdef HAVE_BACKLIGHT
     OFFON_SETTING(0, caption_backlight, LANG_CAPTION_BACKLIGHT,
                   false, "caption backlight", NULL),
 
@@ -987,12 +886,10 @@ const struct settings_list settings[] = {
                 LANG_BACKLIGHT_SELECTIVE,
                 0, "Selective Backlight Actions", UNIT_INT,
                 0, 2048,2, NULL, NULL, NULL),
-#ifdef HAVE_BACKLIGHT_BRIGHTNESS
     INT_SETTING(F_NO_WRAP, brightness, LANG_BRIGHTNESS,
                 DEFAULT_BRIGHTNESS_SETTING, "brightness",UNIT_INT,
                 MIN_BRIGHTNESS_SETTING, MAX_BRIGHTNESS_SETTING, 1,
                 NULL, NULL, backlight_set_brightness),
-#endif
     /* backlight fading */
 #if defined(HAVE_BACKLIGHT_FADING_INT_SETTING)
     TABLE_SETTING_LIST(F_TIME_SETTING | F_ALLOW_ARBITRARY_VALS, backlight_fade_in,
@@ -1005,7 +902,6 @@ const struct settings_list settings[] = {
                   getlang_time_unit_0_is_off,
                   backlight_set_fade_out, 10, backlight_fade),
 #endif
-#endif /* HAVE_BACKLIGHT */
     INT_SETTING(F_PADTITLE, scroll_speed, LANG_SCROLL_SPEED, 9,"scroll speed",
                 UNIT_INT, 0, 17, 1, NULL, NULL, lcd_scroll_speed),
     INT_SETTING(F_TIME_SETTING | F_PADTITLE, scroll_delay, LANG_SCROLL_DELAY,
@@ -1027,11 +923,7 @@ const struct settings_list settings[] = {
     OFFON_SETTING(0,list_wraparound,LANG_LIST_WRAPAROUND,
                   true,"list wraparound",NULL),
     CHOICE_SETTING(0, list_order, LANG_LIST_ORDER,
-#if defined(HAVE_SCROLLWHEEL)
                    1,
-#else
-                   0,
-#endif
                    /* values are defined by the enum in option_select.h */
                    "list order", "descending,ascending",
                    NULL, 2, ID2P(LANG_DESCENDING), ID2P(LANG_ASCENDING)),
@@ -1108,21 +1000,17 @@ const struct settings_list settings[] = {
                    "seek acceleration", "very fast,fast,normal,slow,very slow", NULL, 5,
                    ID2P(LANG_VERY_FAST), ID2P(LANG_FAST), ID2P(LANG_NORMAL),
                    ID2P(LANG_SLOW) , ID2P(LANG_VERY_SLOW)),
-#if defined(HAVE_DISK_STORAGE)
     TABLE_SETTING(F_TIME_SETTING | F_ALLOW_ARBITRARY_VALS, buffer_margin,
                   LANG_MP3BUFFER_MARGIN, 5, "antiskip", NULL, UNIT_SEC,
                   NULL, NULL,
                   NULL,8, 5,15,30,60,120,180,300,600),
-#endif
     /* disk */
-#ifdef HAVE_DISK_STORAGE
     INT_SETTING(F_TIME_SETTING, disk_spindown, LANG_SPINDOWN, 5, "disk spindown",
                     UNIT_SEC, 3, 254, 1, NULL, NULL, STORAGE_FUNCTION(spindown)),
     CHOICE_SETTING(0, storage_mode, LANG_STORAGE_MODE, 0,
                    "storage mode", "auto,hdd,ssd", NULL, 3,
                    ID2P(LANG_AUTO), ID2P(LANG_STORAGE_HDD),
                    ID2P(LANG_STORAGE_SSD)),
-#endif /* HAVE_DISK_STORAGE */
     /* browser */
     TEXT_SETTING(0, start_directory, "start directory", "/", NULL, NULL),
     CHOICE_SETTING(0, dirfilter, LANG_FILTER, SHOW_SUPPORTED, "show files",
@@ -1268,7 +1156,6 @@ const struct settings_list settings[] = {
                    NULL, 4, ID2P(LANG_OFF), ID2P(LANG_WEAK),
                    ID2P(LANG_MODERATE), ID2P(LANG_STRONG)),
 
-#ifdef HAVE_CROSSFADE
     /* crossfade */
     CHOICE_SETTING(F_SOUNDSETTING, crossfade, LANG_CROSSFADE_ENABLE, 0,
                    "crossfade",
@@ -1292,7 +1179,6 @@ const struct settings_list settings[] = {
                    LANG_CROSSFADE_FADE_OUT_MODE, 0,
                    "crossfade fade out mode", "crossfade,mix", NULL, 2,
                    ID2P(LANG_CROSSFADE), ID2P(LANG_MIX)),
-#endif
 
     /* crossfeed */
     CHOICE_SETTING(F_SOUNDSETTING, crossfeed, LANG_CROSSFEED, 0,"crossfeed",
@@ -1383,11 +1269,9 @@ const struct settings_list settings[] = {
                        LANG_EQUALIZER_PRECUT, -25,
                        "pbe precut", UNIT_DB, -45, 0,
                        1, db_format, NULL, dsp_pbe_precut),
-#ifdef HAVE_PITCHCONTROL
     /* timestretch */
     OFFON_SETTING(F_SOUNDSETTING, timestretch_enabled, LANG_TIMESTRETCH, false,
                   "timestretch enabled", dsp_timestretch_enable),
-#endif
 
     /* compressor */
     INT_SETTING_NOWRAP(F_SOUNDSETTING, compressor_settings.threshold,
@@ -1420,14 +1304,10 @@ const struct settings_list settings[] = {
                        "compressor release time", UNIT_MS, 100, 1000,
                        100, NULL, NULL, compressor_set),
 
-#ifdef AUDIOHW_HAVE_BASS_CUTOFF
     SOUND_SETTING(F_NO_WRAP, bass_cutoff, LANG_BASS_CUTOFF,
                   "bass cutoff", SOUND_BASS_CUTOFF),
-#endif
-#ifdef AUDIOHW_HAVE_TREBLE_CUTOFF
     SOUND_SETTING(F_NO_WRAP, treble_cutoff, LANG_TREBLE_CUTOFF,
                   "treble cutoff", SOUND_TREBLE_CUTOFF),
-#endif
     /*enable dircache for all targets > 2MB of RAM by default*/
     OFFON_SETTING(F_BANFROMQS,dircache,LANG_DIRCACHE_ENABLE,true,"dircache",NULL),
     SYSTEM_STATUS(0, dircache_size, 0, "DSZ"),
@@ -1479,27 +1359,19 @@ const struct settings_list settings[] = {
                       ID2P(LANG_MUSIC_BROWSER),
                       ID2P(LANG_PLAYLISTS)),
 
-#ifdef HAVE_BACKLIGHT
     CHOICE_SETTING(0, backlight_on_button_hold,
                    LANG_BACKLIGHT_ON_BUTTON_HOLD,
-#ifdef HAS_BUTTON_HOLD
                    1,
-#else
-                   0,
-#endif
                    "backlight on button hold", "normal,off,on",
                    backlight_set_on_button_hold, 3,
                    ID2P(LANG_NORMAL), ID2P(LANG_OFF), ID2P(LANG_ON)),
 
-#ifdef HAVE_LCD_SLEEP_SETTING
     TABLE_SETTING_LIST(F_TIME_SETTING | F_ALLOW_ARBITRARY_VALS,
                     lcd_sleep_after_backlight_off, LANG_LCD_SLEEP_AFTER_BACKLIGHT_OFF,
                     5, "lcd sleep after backlight off",
                     off_on, UNIT_SEC, formatter_time_unit_0_is_always,
                     getlang_time_unit_0_is_always, lcd_set_sleep_after_backlight_off,
                     23, timeout_sec_common),
-#endif /* HAVE_LCD_SLEEP_SETTING */
-#endif /* HAVE_BACKLIGHT */
 
     OFFON_SETTING(0, hold_lr_for_scroll_in_list, -1, true,
                   "hold_lr_for_scroll_in_list",NULL),
@@ -1509,7 +1381,6 @@ const struct settings_list settings[] = {
                    ID2P(LANG_DISPLAY_FULL_PATH)),
 
 
-#ifdef HAVE_HEADPHONE_DETECTION
     CHOICE_SETTING(0, unplug_mode, LANG_HEADPHONE_UNPLUG, 0,
                    "pause on headphone unplug", "off,pause,pause and resume",
                    NULL, 3, ID2P(LANG_OFF), ID2P(LANG_PAUSE),
@@ -1517,7 +1388,6 @@ const struct settings_list settings[] = {
     OFFON_SETTING(0, unplug_autoresume,
                   LANG_HEADPHONE_UNPLUG_DISABLE_AUTORESUME, false,
                   "disable autoresume if phones not present",NULL),
-#endif
     INT_SETTING(F_TIME_SETTING, pause_rewind, LANG_PAUSE_REWIND, 0,
                 "rewind duration on pause", UNIT_SEC, 0, 15, 1,
                 formatter_time_unit_0_is_off, getlang_time_unit_0_is_off, NULL),
@@ -1553,11 +1423,9 @@ const struct settings_list settings[] = {
     TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY,backdrop_file,"backdrop",
                      DEFAULT_BACKDROP, NULL, NULL),
     TEXT_SETTING(0,kbd_file,"kbd","-",ROCKBOX_DIR "/",".kbd"),
-#ifdef HAVE_USB_CHARGING_ENABLE
     CHOICE_SETTING(0, usb_charging, LANG_USB_CHARGING, TARGET_USB_CHARGING_DEFAULT, "usb charging",
                    "off,on,force", NULL, 3, ID2P(LANG_SET_BOOL_NO),
                    ID2P(LANG_SET_BOOL_YES), ID2P(LANG_FORCE)),
-#endif
     OFFON_SETTING(F_BANFROMQS,cuesheet,LANG_CUESHEET_ENABLE,false,"cuesheet support",
                   NULL),
     TABLE_SETTING_LIST(F_TIME_SETTING | F_ALLOW_ARBITRARY_VALS, skip_length,
@@ -1645,16 +1513,7 @@ const struct settings_list settings[] = {
                   NULL),
     {F_T_INT|F_THEMESETTING, &global_settings.db_art_row_height, -1,
         INT(52), "database art row height", UNUSED},
-#ifndef HAVE_WHEEL_ACCELERATION
-    INT_SETTING(F_TIME_SETTING, list_accel_start_delay, LANG_LISTACCEL_START_DELAY,
-                2, "list_accel_start_delay", UNIT_SEC, 0, 10, 1,
-                formatter_time_unit_0_is_off, getlang_time_unit_0_is_off, NULL),
-    INT_SETTING(0, list_accel_wait, LANG_LISTACCEL_ACCEL_SPEED,
-                3, "list_accel_wait", UNIT_SEC, 1, 10, 1,
-                scanaccel_formatter, NULL, NULL),
-#endif /* HAVE_WHEEL_ACCELERATION */
     /* keyclick */
-#ifdef HAVE_HARDWARE_CLICK
     CHOICE_SETTING(0, keyclick, LANG_KEYCLICK_SOFTWARE, 0,
                    "keyclick", "off,weak,moderate,strong", NULL, 4,
                    ID2P(LANG_OFF), ID2P(LANG_WEAK), ID2P(LANG_MODERATE),
@@ -1663,14 +1522,6 @@ const struct settings_list settings[] = {
                   "keyclick repeats", NULL),
     OFFON_SETTING(0, keyclick_hardware, LANG_KEYCLICK_HARDWARE, false,
         "hardware keyclick", NULL),
-#else
-    CHOICE_SETTING(0, keyclick, LANG_KEYCLICK, 0,
-                   "keyclick", "off,weak,moderate,strong", NULL, 4,
-                   ID2P(LANG_OFF), ID2P(LANG_WEAK), ID2P(LANG_MODERATE),
-                   ID2P(LANG_STRONG)),
-    OFFON_SETTING(0, keyclick_repeats, LANG_KEYCLICK_REPEATS, false,
-                  "keyclick repeats", NULL),
-#endif
     TEXT_SETTING(0, playlist_catalog_dir, "playlist catalog directory",
                      PLAYLIST_CATALOG_DEFAULT_DIR, NULL, NULL),
     INT_SETTING(F_TIME_SETTING, sleeptimer_duration, LANG_SLEEP_TIMER_DURATION,
@@ -1686,7 +1537,6 @@ const struct settings_list settings[] = {
 
 
 
-#ifdef HAVE_QUICKSCREEN
    CUSTOM_SETTING(0, qs_items[QUICKSCREEN_TOP], LANG_TOP_QS_ITEM,
                   NULL, "qs top",
                   qs_load_from_cfg, qs_write_to_cfg,
@@ -1705,36 +1555,23 @@ const struct settings_list settings[] = {
                   qs_is_changed, qs_set_default),
    OFFON_SETTING(0, shortcuts_replaces_qs, LANG_USE_SHORTCUTS_INSTEAD_OF_QS,
                   false, "shortcuts instead of quickscreen", NULL),
-#endif
     OFFON_SETTING(0, prevent_skip, LANG_PREVENT_SKIPPING, false, "prevent track skip", NULL),
     OFFON_SETTING(0, rewind_across_tracks, LANG_REWIND_ACROSS_TRACKS, false, "rewind across tracks", NULL),
-#ifdef HAVE_PITCHCONTROL
     OFFON_SETTING(0, pitch_mode_semitone, LANG_SEMITONE, false,
                   "Semitone pitch change", NULL),
     OFFON_SETTING(0, pitch_mode_timestretch, LANG_TIMESTRETCH, false,
                   "Timestretch mode", NULL),
-#endif
 
-#ifdef USB_ENABLE_HID
     OFFON_SETTING(0, usb_hid, LANG_USB_HID, true, "usb hid", usb_set_hid),
     CHOICE_SETTING(0, usb_keypad_mode, LANG_USB_KEYPAD_MODE, 0,
             "usb keypad mode", "multimedia,presentation,browser"
-#ifdef HAVE_USB_HID_MOUSE
             ",mouse"
-#endif
             , NULL,
-#ifdef HAVE_USB_HID_MOUSE
             4,
-#else
-            3,
-#endif
             ID2P(LANG_MULTIMEDIA_MODE), ID2P(LANG_PRESENTATION_MODE),
             ID2P(LANG_BROWSER_MODE)
-#ifdef HAVE_USB_HID_MOUSE
             , ID2P(LANG_MOUSE_MODE)
-#endif
     ), /* CHOICE_SETTING( usb_keypad_mode ) */
-#endif
 
 #ifdef USB_ENABLE_AUDIO
     CHOICE_SETTING(0, usb_audio, LANG_USB_DAC, 0, "usb-dac", "never,always,while_charge_only,while_mass_storage", usb_set_audio, 4,
@@ -1746,11 +1583,8 @@ const struct settings_list settings[] = {
     /* Customizable list */
     VIEWPORT_SETTING(ui_vp_config, "ui viewport"),
 
-#ifdef HAVE_MORSE_INPUT
     OFFON_SETTING(0, morse_input, LANG_MORSE_INPUT, false, "morse input", NULL),
-#endif
 
-#ifdef HAVE_HOTKEY
     TABLE_SETTING(F_CB_ON_SELECT_ONLY, hotkey_wps,
         LANG_HOTKEY_WPS, HOTKEY_VIEW_PLAYLIST, "hotkey wps",
         "off,view playlist,show track info,pitchscreen,open with,delete,bookmark,plugin,bookmark list"
@@ -1765,7 +1599,6 @@ const struct settings_list settings[] = {
         HOTKEY_OFF,HOTKEY_PROPERTIES,
         HOTKEY_PICTUREFLOW,
         HOTKEY_OPEN_WITH, HOTKEY_DELETE, HOTKEY_INSERT, HOTKEY_INSERT_SHUFFLED),
-#endif /* HAVE_HOTKEY */
 
     INT_SETTING(F_TIME_SETTING, resume_rewind, LANG_RESUME_REWIND, 0,
                 "resume rewind", UNIT_SEC, 0, 60, 5,

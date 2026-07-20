@@ -83,9 +83,7 @@ struct codec_api ci = {
     NULL, /* strip_filesize */
 
     /* kernel/ system */
-#if defined(ARM_NEED_DIV0)
     __div0,
-#endif
     sleep,
     yield,
 
@@ -197,7 +195,6 @@ static int codec_load_ram(struct codec_api *api)
     return c_hdr->entry_point(CODEC_LOAD);
 }
 
-#if defined(HAVE_CODEC_BUFFERING)
 int codec_load_buf(int hid, struct codec_api *api)
 {
     int rc = bufread(hid, CODEC_SIZE, codecbuf);
@@ -216,7 +213,6 @@ int codec_load_buf(int hid, struct codec_api *api)
 
     return codec_load_ram(api);
 }
-#endif /* HAVE_CODEC_BUFFERING */
 
 int codec_load_file(const char *plugin, struct codec_api *api)
 {

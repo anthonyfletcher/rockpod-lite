@@ -187,9 +187,7 @@ char *strip_extension(char* buffer, int buffer_size, const char *filename);
 bool parse_color(enum screen_type screen, char *text, int *value);
 
 /* only used in USB HID and set_time screen */
-#if defined(USB_ENABLE_HID) || (CONFIG_RTC != 0)
 int clamp_value_wrap(int value, int max, int min);
-#endif
 
 enum current_activity {
     ACTIVITY_UNKNOWN = 0,

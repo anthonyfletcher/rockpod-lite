@@ -54,7 +54,7 @@ static FORCE_INLINE int32_t FRACMUL_SHL(int32_t x, int32_t y, int z)
     return t;
 }
 
-#elif defined(CPU_ARM)
+#else
 
 /* Multiply two S.31 fractional integers and return the sign bit and the
  * 31 most significant bits of the result.
@@ -83,18 +83,6 @@ static FORCE_INLINE int32_t FRACMUL_SHL(int32_t x, int32_t y, int z)
          : [a] "r" (x), [b] "r" (y),
            [c] "Mr" ((z) + 1), [d] "Mr" (31 - (z)));
     return t;
-}
-
-#else
-
-static inline int32_t FRACMUL(int32_t x, int32_t y)
-{
-    return (int32_t) (((int64_t)x * y) >> 31);
-}
-
-static inline int32_t FRACMUL_SHL(int32_t x, int32_t y, int z)
-{
-    return (int32_t) (((int64_t)x * y) >> (31 - z));
 }
 
 #endif

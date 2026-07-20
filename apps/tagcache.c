@@ -390,7 +390,6 @@ const char* tagcache_tag_to_str(int tag)
     return tags_str[tag];
 }
 
-#ifdef TAGCACHE_SUPPORT_FOREIGN_ENDIAN
 static void swap_tagfile_entry(struct tagfile_entry *buf)
 {
     if (tc_stat.econ)
@@ -430,12 +429,6 @@ static void swap_master_header(struct master_header *buf)
         buf->dirty = swap32(buf->dirty);
     }
 }
-#else
-static void swap_tagfile_entry(struct tagfile_entry *buf) { (void)buf; }
-static void swap_index_entry(struct index_entry *buf) { (void)buf; }
-static void swap_tagcache_header(struct tagcache_header *buf) { (void)buf; }
-static void swap_master_header(struct master_header *buf) { (void)buf; }
-#endif
 
 static ssize_t read_tagfile_entry(int fd, struct tagfile_entry *buf)
 {
@@ -492,7 +485,6 @@ static ssize_t read_index_entries(int fd, struct index_entry *buf, size_t count)
 
 static ssize_t write_index_entries(int fd, struct index_entry *buf, size_t count)
 {
-#ifdef TAGCACHE_SUPPORT_FOREIGN_ENDIAN
     ssize_t ret = 0;
     for (; count > 0; count--)
     {
@@ -506,9 +498,6 @@ static ssize_t write_index_entries(int fd, struct index_entry *buf, size_t count
     }
 
     return ret;
-#else
-    return write(fd, buf, sizeof(*buf) * count);
-#endif
 }
 
 static ssize_t read_tagcache_header(int fd, struct tagcache_header *buf)
@@ -628,13 +617,11 @@ static int open_master_fd(struct master_header *hdr, bool write)
      * endian files for compatibility reasons. */
     if (hdr->tch.magic == TAGCACHE_MAGIC)
         tc_stat.econ = false;
-#ifdef TAGCACHE_SUPPORT_FOREIGN_ENDIAN
     else if (hdr->tch.magic == swap32(TAGCACHE_MAGIC))
     {
         tc_stat.econ = true;
         swap_master_header(hdr);
     }
-#endif
     else
     {
         logf("master file bad magic: %08lx\n", (unsigned long)hdr->tch.magic);

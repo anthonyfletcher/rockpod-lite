@@ -1787,53 +1787,6 @@ void LodePNG_decode(LodePNG_Decoder* decoder,
     LodePNG_convert(decoder);
 
     /* correct aspect ratio */
-#if (LCD_PIXEL_ASPECT_HEIGHT != 1 || LCD_PIXEL_ASPECT_WIDTH != 1)
-    struct bitmap img_src, img_dst;    /* scaler vars */
-    struct dim dim_src, dim_dst;       /* recalc_dimensions vars */
-    unsigned int c_native_img_size;    /* size of the image after correction */
-
-    dim_src.width = decoder->infoPng.width;
-    dim_src.height = decoder->infoPng.height;
-
-    dim_dst.width = decoder->infoPng.width;
-    dim_dst.height = decoder->infoPng.height;
-
-    /* defined in apps/recorder/resize.c */
-    if (!recalc_dimension(&dim_dst, &dim_src))
-    {
-        /* calculate 'corrected' image size */
-        c_native_img_size = dim_dst.width * dim_dst.height * FB_DATA_SZ;
-        /* check memory constraints
-         * do the correction only if there is enough
-         * free memory
-         */
-        if ( decoder->native_img_size + c_native_img_size <=
-             decoder->buf_size )
-        {
-            img_src.width = dim_src.width;
-            img_src.height = dim_src.height;
-            img_src.data = (unsigned char *)decoder->buf;
-
-            img_dst.width = dim_dst.width;
-            img_dst.height = dim_dst.height;
-            img_dst.data = (unsigned char *)decoder->buf +
-                           decoder->native_img_size;
-
-            /* scale the bitmap to correct physical
-             * pixel dimentions
-             */
-            resize_bitmap(&img_src, &img_dst);
-
-            /* update decoder struct */
-            decoder->infoPng.width = img_dst.width;
-            decoder->infoPng.height = img_dst.height;
-            decoder->native_img_size = c_native_img_size;
-
-            /* copy back corrected image to the begining of the buffer */
-            memcpy(img_src.data, img_dst.data, decoder->native_img_size);
-        }
-    }
-#endif /* (LCD_PIXEL_ASPECT_HEIGHT != 1 || LCD_PIXEL_ASPECT_WIDTH != 1) */
 
     if (pf_progress) pf_progress(100, 100);
 }

@@ -36,9 +36,7 @@
 #include "talk.h"
 #include "playlist.h"
 #include "abrepeat.h"
-#ifdef HAVE_PLAY_FREQ
 #include "pcm_mixer.h"
-#endif
 #include "pcmbuf.h"
 #include "audio_thread.h"
 #include "playback.h"
@@ -54,9 +52,7 @@
 
 #include "albumart.h"
 
-#ifdef HAVE_PLAY_FREQ
 #include "pcm_mixer.h"
-#endif
 
 #if defined(SIMULATOR) || defined(SDLAPP)
 #include <strings.h>  /* For strncasecmp() */
@@ -146,11 +142,9 @@ enum audio_id3_types
     /* These are allocated statically */
     PLAYING_ID3 = 0,
     NEXTTRACK_ID3,
-#ifdef AUDIO_FAST_SKIP_PREVIEW
     /* The real playing metadata must has to be protected since it contains
        critical info for other features */
     PLAYING_PEEK_ID3,
-#endif
     ID3_TYPE_NUM_STATIC,
     /* These go in the scratch memory */
     UNBUFFERED_ID3 = ID3_TYPE_NUM_STATIC,
@@ -217,11 +211,7 @@ static enum filling_state
 /* Track info - holds information about each track in the buffer */
 #define TRACK_INFO_AA       MAX_MULTIPLE_AA
 
-#ifdef HAVE_CODEC_BUFFERING
 #define TRACK_INFO_CODEC    1
-#else
-#define TRACK_INFO_CODEC    0
-#endif
 
 #define TRACK_INFO_HANDLES  (3 + TRACK_INFO_AA + TRACK_INFO_CODEC)
 
@@ -236,9 +226,7 @@ struct track_info
     int id3_hid;                    /* Metadata handle ID */
     int cuesheet_hid;               /* Parsed cuesheet handle ID */
     int aa_hid[MAX_MULTIPLE_AA];    /* Album art handle IDs */
-#ifdef HAVE_CODEC_BUFFERING
     int codec_hid;                  /* Buffered codec handle ID */
-#endif
     int audio_hid;                  /* Main audio data handle ID */
     }; };
 };
@@ -269,10 +257,8 @@ static struct
 /* Playlist steps from playlist position to next track to be buffered */
 static int playlist_peek_offset = 0;
 
-#ifdef HAVE_DISK_STORAGE
 /* Buffer margin A.K.A. anti-skip buffer (in seconds) */
 static size_t buffer_margin = 5;
-#endif
 
 /* Values returned for track loading */
 enum track_load_status
@@ -1079,9 +1065,7 @@ static int shrink_callback(int handle, unsigned hints, void* start, size_t old_s
     }
     else
         audio_queue_send(Q_AUDIO_STOP, 1);
-#ifdef PLAYBACK_VOICE
     voice_stop();
-#endif
 
     /* we should be free to change the buffer now */
     if (give_up)
@@ -1142,7 +1126,6 @@ static void audio_update_filebuf_watermark(int seconds)
 {
     size_t bytes = 0;
 
-#ifdef HAVE_DISK_STORAGE
     if (storage_get_ssd_mode())
     {
         /* SSD mode: no spinup delay, minimal watermark */
@@ -1180,10 +1163,6 @@ static void audio_update_filebuf_watermark(int seconds)
 
     seconds += buffer_margin;
     } /* !ssd_mode */
-#else
-    /* flash storage */
-    seconds = 1;
-#endif
 
     /* Watermark is a function of the bitrate of the last track in the buffer */
     struct track_info info;
@@ -1736,14 +1715,12 @@ static bool audio_init_codec(struct track_info *track_infop,
         {
             /* Codec is the same base type */
             logf("Reusing prev. codec: %d", track_id3->codectype);
-#ifdef HAVE_CODEC_BUFFERING
             /* Close any buffered codec (we could have skipped directly to a
                format transistion that is the same format as the current track
                and the buffered one is no longer needed) */
             bufclose(track_infop->codec_hid);
             track_infop->codec_hid = ERR_HANDLE_NOT_FOUND;
             track_info_sync(track_infop);
-#endif /* HAVE_CODEC_BUFFERING */
             return true;
         }
         else
@@ -1756,13 +1733,11 @@ static bool audio_init_codec(struct track_info *track_infop,
 
     logf("New codec: %d/%d", track_id3->codectype, codec_loaded());
 
-#ifdef HAVE_CODEC_BUFFERING
     /* Codec thread will close the handle even if it fails and will load from
        storage if hid is not valid or the buffer load fails */
     hid = track_infop->codec_hid;
     track_infop->codec_hid = ERR_HANDLE_NOT_FOUND;
     track_info_sync(track_infop);
-#endif
 
     return codec_load(hid, track_id3->codectype);
     (void)track_infop; /* When codec buffering isn't supported */
@@ -2120,7 +2095,6 @@ static int audio_load_albumart(struct track_info *infop,
     return true;
 }
 
-#ifdef HAVE_CODEC_BUFFERING
 /* Load a codec for the file onto the buffer - assumes we're working from the
    currently loading track - not called for the current track */
 static bool audio_buffer_codec(struct track_info *track_infop,
@@ -2168,7 +2142,6 @@ static bool audio_buffer_codec(struct track_info *track_infop,
 
     return false;
 }
-#endif /* HAVE_CODEC_BUFFERING */
 
 /* Load metadata for the next track (with bufopen). The rest of the track
    loading will be handled by audio_finish_load_track once the metadata has
@@ -2334,9 +2307,7 @@ static int audio_load_track(void)
     return LOAD_TRACK_OK;
 }
 
-#ifdef HAVE_PLAY_FREQ
 static bool audio_auto_change_frequency(struct mp3entry *id3, bool play);
-#endif
 
 /* Second part of the track loading: We now have the metadata available, so we
    can load the codec, the album art and finally the audio data.
@@ -2372,7 +2343,6 @@ static int audio_finish_load_track(struct track_info *infop)
 
     struct track_info user_cur;
 
-#ifdef HAVE_PLAY_FREQ
     track_list_user_current(0, &user_cur);
     bool is_current_user = infop->self_hid == user_cur.self_hid;
     if (audio_auto_change_frequency(track_id3, is_current_user))
@@ -2386,7 +2356,6 @@ static int audio_finish_load_track(struct track_info *infop)
 
         goto audio_finish_load_track_exit;
     }
-#endif
 
     /* Try to load a cuesheet for the track */
     if (!audio_load_cuesheet(infop, track_id3))
@@ -2422,7 +2391,6 @@ static int audio_finish_load_track(struct track_info *infop)
                          id3_get(PLAYING_ID3));
     }
 
-#ifdef HAVE_CODEC_BUFFERING
     /* Try to buffer a codec for the track */
     if (infop->self_hid != cur_info.self_hid
         && !audio_buffer_codec(infop, track_id3))
@@ -2444,7 +2412,6 @@ static int audio_finish_load_track(struct track_info *infop)
 
         goto audio_finish_load_track_exit;
     }
-#endif /* HAVE_CODEC_BUFFERING */
 
     /** Finally, load the audio **/
     off_t file_offset = 0;
@@ -2864,10 +2831,8 @@ static void audio_finalise_track_change(void)
 
     audio_playlist_track_change();
 
-#ifdef HAVE_PLAY_FREQ
     if (filling == STATE_STOPPED)
         audio_auto_change_frequency(track_id3, true);
-#endif
 }
 
 /* Actually begin a transition and take care of the codec change - may complete
@@ -3749,7 +3714,6 @@ void audio_playback_handler(struct queue_event *ev)
                 return; /* just need to change buffer state */
             break;
 
-#ifdef HAVE_DISK_STORAGE
         case Q_AUDIO_UPDATE_WATERMARK:
             /* buffering watermark needs updating */
             LOGFQUEUE("playback < Q_AUDIO_UPDATE_WATERMARK: %d",
@@ -3758,7 +3722,6 @@ void audio_playback_handler(struct queue_event *ev)
             if (play_status == PLAY_STOPPED)
                 return; /* just need to update setting */
             break;
-#endif /* HAVE_DISK_STORAGE */
 
         case SYS_TIMEOUT:
             LOGFQUEUE_SYS_TIMEOUT("playback < SYS_TIMEOUT");
@@ -3889,13 +3852,11 @@ void audio_codec_update_offset(size_t offset)
 /* Codec has finished running */
 void audio_codec_complete(int status)
 {
-#ifdef AB_REPEAT_ENABLE
     if (status >= CODEC_OK)
     {
         /* Normal automatic skip */
         ab_end_of_track_report();
     }
-#endif
 
     LOGFQUEUE("codec > audio Q_AUDIO_CODEC_COMPLETE: %d", status);
     audio_queue_post(Q_AUDIO_CODEC_COMPLETE, status);
@@ -3984,7 +3945,6 @@ struct mp3entry * audio_current_track(void)
 
     id3_mutex_lock();
 
-#ifdef AUDIO_FAST_SKIP_PREVIEW
     if (skip_offset != 0)
     {
         /* This is a peekahead */
@@ -3992,7 +3952,6 @@ struct mp3entry * audio_current_track(void)
         audio_peek_track(id3, 0);
     }
     else
-#endif
     {
         /* Normal case */
         id3 = id3_get(PLAYING_ID3);
@@ -4011,7 +3970,6 @@ struct mp3entry * audio_next_track(void)
 
     id3_mutex_lock();
 
-#ifdef AUDIO_FAST_SKIP_PREVIEW
     if (skip_offset != 0)
     {
         /* This is a peekahead */
@@ -4019,7 +3977,6 @@ struct mp3entry * audio_next_track(void)
             id3 = NULL;
     }
     else
-#endif
     {
         /* Normal case */
         if (!audio_get_track_metadata(1, id3))
@@ -4036,11 +3993,9 @@ void audio_play(unsigned long elapsed, unsigned long offset)
 {
     logf("audio_play");
 
-#ifdef PLAYBACK_VOICE
     /* Truncate any existing voice output so we don't have spelling
      * etc. over the first part of the played track */
     talk_force_shutup();
-#endif
 
     LOGFQUEUE("audio >| audio Q_AUDIO_PLAY: %lu %lX", elapsed, offset);
     audio_queue_send(Q_AUDIO_PLAY,
@@ -4068,9 +4023,7 @@ void audio_hard_stop(void)
     /* Stop playback */
     LOGFQUEUE("audio >| audio Q_AUDIO_STOP: 1");
     audio_queue_send(Q_AUDIO_STOP, 1);
-#ifdef PLAYBACK_VOICE
     voice_stop();
-#endif
     audiobuf_handle = core_free(audiobuf_handle);
 }
 
@@ -4112,13 +4065,11 @@ void audio_skip(int offset)
 
         LOGFQUEUE("audio > audio Q_AUDIO_SKIP %d", offset);
 
-#ifdef AUDIO_FAST_SKIP_PREVIEW
         /* Do this before posting so that the audio thread can correct us
            when things settle down - additionally, if audio gets a message
            and the delta is zero, the Q_AUDIO_SKIP handler (audio_on_skip)
            handler a skip event with the correct info but doesn't skip */
         send_event(PLAYBACK_EVENT_TRACK_SKIP, NULL);
-#endif /* AUDIO_FAST_SKIP_PREVIEW */
 
         /* Playback only needs the final state even if more than one is
            processed because it wasn't removed in time */
@@ -4321,7 +4272,6 @@ void audio_set_cuesheet(bool enable)
     }
 }
 
-#ifdef HAVE_DISK_STORAGE
 /* Set the audio antiskip buffer margin in SECONDS */
 void audio_set_buffer_margin(int seconds)
 {
@@ -4329,9 +4279,7 @@ void audio_set_buffer_margin(int seconds)
     LOGFQUEUE("audio > audio Q_AUDIO_UPDATE_WATERMARK: %u",(unsigned) seconds);
     audio_queue_post(Q_AUDIO_UPDATE_WATERMARK, (unsigned) seconds); /*SECONDS*/
 }
-#endif /* HAVE_DISK_STORAGE */
 
-#ifdef HAVE_CROSSFADE
 /* Take necessary steps to enable or disable the crossfade setting */
 void audio_set_crossfade(int enable)
 {
@@ -4347,31 +4295,15 @@ void audio_set_crossfade(int enable)
         audio_queue_send(Q_AUDIO_REMAKE_AUDIO_BUFFER, 0);
     }
 }
-#endif /* HAVE_CROSSFADE */
 
-#ifdef HAVE_PLAY_FREQ
 static unsigned long audio_guess_frequency(struct mp3entry *id3)
 {
     switch (id3->frequency)
     {
-#if HAVE_PLAY_FREQ >= 48
     case 44100:
         return SAMPR_44;
     case 48000:
         return SAMPR_48;
-#endif
-#if HAVE_PLAY_FREQ >= 96
-    case 88200:
-        return SAMPR_88;
-    case 96000:
-        return SAMPR_96;
-#endif
-#if HAVE_PLAY_FREQ >= 192
-    case 176400:
-        return SAMPR_176;
-    case 192000:
-        return SAMPR_192;
-#endif
     default:
         return (id3->frequency % 4000) ? SAMPR_44 : SAMPR_48;
     }
@@ -4387,9 +4319,7 @@ static bool audio_auto_change_frequency(struct mp3entry *id3, bool play)
         if (!play)
             return true;
 
-#ifdef PLAYBACK_VOICE
         voice_stop();
-#endif
         mixer_set_frequency(guessed_frequency);
         audio_queue_post(Q_AUDIO_REMAKE_AUDIO_BUFFER, 0);
         return true;
@@ -4400,15 +4330,7 @@ static bool audio_auto_change_frequency(struct mp3entry *id3, bool play)
 void audio_set_playback_frequency(unsigned int sample_rate_hz)
 {
     /* sample_rate_hz == 0 is "automatic", and also a sentinel */
-#if HAVE_PLAY_FREQ >= 192
-    static const unsigned int play_sampr[] = {SAMPR_44, SAMPR_48, SAMPR_88, SAMPR_96, SAMPR_176, SAMPR_192, 0 };
-#elif HAVE_PLAY_FREQ >= 96
-    static const unsigned int play_sampr[] = {SAMPR_44, SAMPR_48, SAMPR_88, SAMPR_96, 0 };
-#elif HAVE_PLAY_FREQ >= 48
     static const unsigned int play_sampr[] = {SAMPR_44, SAMPR_48, 0 };
-#else
-    #error "HAVE_PLAY_FREQ < 48 ??"
-#endif
     const unsigned int *p_sampr = play_sampr;
     unsigned int sampr = 0;
 
@@ -4442,7 +4364,6 @@ void audio_set_playback_frequency(unsigned int sample_rate_hz)
         audio_queue_send(Q_AUDIO_REMAKE_AUDIO_BUFFER, 0);
     }
 }
-#endif /* HAVE_PLAY_FREQ */
 
 unsigned int playback_status(void)
 {
@@ -4459,11 +4380,7 @@ void INIT_ATTR playback_init(void)
     track_list_init();
     buffering_init();
     pcmbuf_update_frequency();
-#ifdef HAVE_CROSSFADE
     /* Set crossfade setting for next buffer init which should be about... */
     pcmbuf_request_crossfade_enable(global_settings.crossfade);
-#endif
-#ifdef HAVE_DISK_STORAGE
     audio_set_buffer_margin(global_settings.buffer_margin);
-#endif
 }

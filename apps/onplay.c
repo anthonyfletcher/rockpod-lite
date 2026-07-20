@@ -65,9 +65,7 @@
 #include "pathfuncs.h"
 #include "shortcuts.h"
 #include "misc.h"
-#ifdef HAVE_DISK_STORAGE
 #include "storage.h"
-#endif
 
 static int onplay_result = ONPLAY_OK;
 static bool in_queue_submenu = false;
@@ -702,7 +700,6 @@ static int browse_id3_wrapper(void)
 MENUITEM_FUNCTION(browse_id3_item, MENU_FUNC_CHECK_RETVAL, ID2P(LANG_MENU_SHOW_ID3_INFO),
                   browse_id3_wrapper, NULL, Icon_NOICON);
 
-#ifdef HAVE_PITCHCONTROL
 MENUITEM_FUNCTION(pitch_screen_item, 0, ID2P(LANG_PITCH),
                   gui_syncpitchscreen_run, NULL, Icon_Audio);
 MENUITEM_FUNCTION(pitch_reset_item, 0, ID2P(LANG_RESET_SETTING),
@@ -749,7 +746,6 @@ static int pitch_callback(int action,
     (void)this_item;
     (void)this_list;
 }
-#endif /*def HAVE_PITCHCONTROL*/
 
 MENUITEM_FUNCTION(view_album_art_item, 0, ID2P(LANG_VIEW_ALBUMART),
                   view_album_art, NULL, Icon_NOICON);
@@ -832,14 +828,12 @@ static bool prepare_database_sel(void *param)
         {
             /* If database is not loaded into RAM, or tagcache_ram is
                set to "quick", filename needs to be retrieved from disk! */
-#ifdef HAVE_DISK_STORAGE
             if ((selected_file.attr & FILE_ATTR_MASK) == FILE_ATTR_AUDIO
                 && !storage_disk_is_active()
                 && (global_settings.tagcache_ram != TAGCACHE_RAM_ON
                     || !tagcache_is_in_ram())
             )
                 splash(0, ID2P(LANG_WAIT));
-#endif
              if (!tagtree_get_subentry_filename(selected_file.buf, MAX_PATH))
             {
                 onplay_result = ONPLAY_RELOAD_DIR;
@@ -995,14 +989,12 @@ static int clipboard_callback(int action,
     switch (action)
     {
         case ACTION_REQUEST_MENUITEM:
-#ifdef HAVE_MULTIVOLUME
             /* no rename+delete for volumes */
             if ((selected_file.attr & ATTR_VOLUME) &&
                 (this_item == &rename_file_item ||
                  this_item == &delete_dir_item ||
                  this_item == &clipboard_cut_item))
                 return ACTION_EXIT_MENUITEM;
-#endif
             if (selected_file.context == CONTEXT_ID3DB)
             {
                 if (this_item == &track_info_item ||
@@ -1082,9 +1074,7 @@ MAKE_ONPLAYMENU( wps_onplay_menu, ID2P(LANG_ONPLAY_MENU_TITLE),
            &bookmark_menu,
            &browse_id3_item,
            &delete_file_item, &view_cue_item,
-#ifdef HAVE_PITCHCONTROL
            &pitch_menu,
-#endif
            &view_album_art_item,
          );
 
@@ -1156,15 +1146,12 @@ static int onplaymenu_callback(int action,
     return action;
 }
 
-#ifdef HAVE_HOTKEY
 /* direct function calls, no need for menu callbacks */
 static bool hotkey_delete_item(void)
 {
-#ifdef HAVE_MULTIVOLUME
     /* no delete for volumes */
     if (selected_file.attr & ATTR_VOLUME)
         return false;
-#endif
 
     if (selected_file.context == CONTEXT_ID3DB &&
         (selected_file.attr & FILE_ATTR_MASK) != FILE_ATTR_AUDIO)
@@ -1237,13 +1224,11 @@ static const struct hotkey_assignment hotkey_items[] = {
       .func = HOTKEY_FUNC(browse_id3_wrapper, NULL),
       .return_code = ONPLAY_RELOAD_DIR,
       .flags = HOTKEY_FLAG_WPS },
-#ifdef HAVE_PITCHCONTROL
     { .action = HOTKEY_PITCHSCREEN,
       .lang_id = LANG_PITCH,
       .func = HOTKEY_FUNC(gui_syncpitchscreen_run, NULL),
       .return_code = ONPLAY_RELOAD_DIR,
       .flags = HOTKEY_FLAG_WPS | HOTKEY_FLAG_NOSBS },
-#endif
     { .action = HOTKEY_DELETE,
       .lang_id = LANG_DELETE,
       .func = HOTKEY_FUNC(hotkey_delete_item, NULL),
@@ -1317,7 +1302,6 @@ static int execute_hotkey(bool is_wps)
         return func_return;  /* Use value returned by function */
     return return_code;      /* or return the associated value */
 }
-#endif /* HOTKEY */
 
 int onplay(char* file, int attr, int from_context, bool hotkey, int customaction)
 {
@@ -1349,12 +1333,8 @@ int onplay(char* file, int attr, int from_context, bool hotkey, int customaction
     }
     int menu_selection;
 
-#ifdef HAVE_HOTKEY
     if (hotkey)
         return execute_hotkey(from_context == CONTEXT_WPS);
-#else
-    (void)hotkey;
-#endif
     if (customaction == ONPLAY_CUSTOMACTION_SHUFFLE_SONGS)
     {
         int returnCode = add_to_playlist(&addtopl_replace_shuffled);

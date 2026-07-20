@@ -301,10 +301,8 @@ struct wps_data
     OFFSETTYPE(struct skin_token_list *) images;
     OFFSETTYPE(int16_t *) font_ids;
     int16_t font_count;
-#ifdef HAVE_BACKDROP_IMAGE
     int16_t backdrop_id;
     bool use_extra_framebuffer;
-#endif
 
     OFFSETTYPE(struct skin_albumart *) albumart;
     int    playback_aa_slot;

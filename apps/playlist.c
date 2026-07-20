@@ -552,14 +552,10 @@ static ssize_t format_track_path(char *dest, char *src, int buf_length,
     if (path_strip_drive(src, (const char **)&src, true) >= 0 &&
         src[-1] == PATH_SEPCH)
     {
-    #ifdef HAVE_MULTIVOLUME
         const char *p;
         path_strip_last_volume(dir, &p, false);
         //dir = strmemdupa(dir, p - dir);
         dlen = (p-dir);  /* empty if no volspec on dir */
-    #else
-        dir = "";                       /* only volume is root */
-    #endif
     }
 
     if (*dir == '\0')
@@ -1684,9 +1680,7 @@ static int get_next_index(const struct playlist_info* playlist, int steps,
         }
 
         case REPEAT_ONE:
-#ifdef AB_REPEAT_ENABLE
         case REPEAT_AB:
-#endif
             next_index = current_index;
             break;
 
@@ -1762,11 +1756,9 @@ static void dc_thread_playlist(void)
                     /* Start the background scanning after either the disk
                      * spindown timeout or 5s, whichever is less */
                     sleep_time = 5 * HZ;
-#ifdef HAVE_DISK_STORAGE
                     if (global_settings.disk_spindown > 1 &&
                         global_settings.disk_spindown <= 5)
                         sleep_time = (global_settings.disk_spindown - 1) * HZ;
-#endif
                 }
                 break;
 
@@ -2276,11 +2268,9 @@ unsigned int playlist_get_filename_crc32(struct playlist_info *playlist,
     if (get_track_filename(playlist, index, filename, sizeof(filename)) != 0)
         return -1;
 
-#ifdef HAVE_MULTIVOLUME
     /* remove the volume identifier it might change just use the relative part*/
     path_strip_volume(filename, &basename, false);
     if (basename == NULL)
-#endif
         basename = filename;
     NOTEF("%s: %s", __func__, basename);
     return crc_32(basename, strlen(basename), -1);
@@ -2878,11 +2868,7 @@ int playlist_next(int steps)
     }
     if (steps > 0)
     {
-#ifdef AB_REPEAT_ENABLE
         if (repeat_mode != REPEAT_AB && repeat_mode != REPEAT_ONE)
-#else
-        if (repeat_mode != REPEAT_ONE)
-#endif
         {
             int i, j;
             /* We need to delete all the queued songs */

@@ -2857,11 +2857,7 @@ static bool tagtree_insert_selection(int position, bool queue,
     int ret;
 
     show_search_progress(
-#ifdef HAVE_DISK_STORAGE
         storage_disk_is_active()
-#else
-        true
-#endif
         , 0, 0, 0);
 
     newtable = tagtree_get_entry(tc, tc->selected_item)->newtable;

@@ -116,7 +116,6 @@ char* get_dir(char* buf, int buf_size, const char* path, int level)
     return buf;
 }
 
-#if defined (HAVE_PITCHCONTROL)
 /* A helper to determine the enum value for pitch/speed.
 
    When there are two choices (i.e. boolean), return 1 if the value is
@@ -152,7 +151,6 @@ static int pitch_speed_enum(int range, int32_t val, int32_t normval)
     n = (center * val) / normval + 1;
     return (range <= n) ? (range - 1) : n;
 }
-#endif
 
 const char *get_cuesheetid3_token(struct wps_token *token, struct mp3entry *id3,
                                   int offset_tracks, char *buf, int buf_size)
@@ -784,7 +782,6 @@ static const char* get_rtc_token_value(struct wps_token *token,
 #endif /* CONFIG_RTC */
 }
 
-#ifdef HAVE_QUICKSCREEN
 static const char* get_qs_token_value(struct wps_token *token, char *buf, int buf_size)
 {
     enum quickscreen_item item;
@@ -834,7 +831,6 @@ static const char* get_qs_token_value(struct wps_token *token, char *buf, int bu
 
     return P2STR(ID2P(qs_setting->lang_id));
 }
-#endif /*def HAVE_QUICKSCREEN */
 
 /* Return the tags value as text. buf should be used as temp storage if needed.
 
@@ -1242,16 +1238,11 @@ const char *get_token_value(struct gui_wps *gwps,
         }
 
         case SKIN_TOKEN_CROSSFADE:
-#ifdef HAVE_CROSSFADE
             itoa_buf(buf, buf_size, global_settings.crossfade);
             numeric_ret = global_settings.crossfade + 1;
-#else
-            itoa_buf(buf, buf_size, 0);
-#endif
             numeric_buf = buf;
             goto gtv_ret_numeric_tag_info;
 
-#if defined (HAVE_PITCHCONTROL)
         case SKIN_TOKEN_SOUND_PITCH:
         {
             int32_t pitch = sound_get_pitch();
@@ -1263,9 +1254,7 @@ const char *get_token_value(struct gui_wps *gwps,
             numeric_buf = buf;
             goto gtv_ret_numeric_tag_info;
         }
-#endif
 
-#if defined (HAVE_PITCHCONTROL)
     case SKIN_TOKEN_SOUND_SPEED:
     {
         int32_t pitch = sound_get_pitch();
@@ -1282,14 +1271,9 @@ const char *get_token_value(struct gui_wps *gwps,
         numeric_buf = buf;
         goto gtv_ret_numeric_tag_info;
     }
-#endif
 
         case SKIN_TOKEN_MAIN_HOLD:
-#ifdef HAS_BUTTON_HOLD
             if (button_hold())
-#else
-            if (is_keys_locked())
-#endif /*hold switch or softlock*/
                 return "h";
             else
                 return NULL;
@@ -1342,7 +1326,6 @@ const char *get_token_value(struct gui_wps *gwps,
         case SKIN_TOKEN_HAVE_TOUCH:
             return NULL;
 
-#ifdef HAVE_QUICKSCREEN
         case SKIN_TOKEN_TOP_QUICKSETTING_NAME:
         case SKIN_TOKEN_TOP_QUICKSETTING_VALUE:
         case SKIN_TOKEN_RIGHT_QUICKSETTING_NAME:
@@ -1352,7 +1335,6 @@ const char *get_token_value(struct gui_wps *gwps,
         case SKIN_TOKEN_LEFT_QUICKSETTING_NAME:
         case SKIN_TOKEN_LEFT_QUICKSETTING_VALUE:
             return get_qs_token_value(token, buf, buf_size);
-#endif
 
         case SKIN_TOKEN_SETTING:
         {

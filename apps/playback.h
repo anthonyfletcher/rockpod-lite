@@ -29,9 +29,7 @@
 /* Including the code for fast previews is entirely optional since it
    does add two more mp3entry's - for certain targets it may be less
    beneficial such as flash-only storage */
-#if MEMORYSIZE > 2
 #define AUDIO_FAST_SKIP_PREVIEW
-#endif
 
 
 #include "bmp.h"
@@ -77,12 +75,8 @@ void audio_pre_ff_rewind(void);
 void audio_skip(int direction);
 
 void audio_set_cuesheet(bool enable);
-#ifdef HAVE_CROSSFADE
 void audio_set_crossfade(int enable);
-#endif
-#ifdef HAVE_PLAY_FREQ
 void audio_set_playback_frequency(unsigned int sample_rate_hz);
-#endif
 void set_albumart_mode(int setting);
 
 size_t audio_get_filebuflen(void);

@@ -406,21 +406,17 @@ static bool generate_bookmark_file_name(char *filenamebuf,
 
         len = strlen(filenamebuf);
 
-#ifdef HAVE_MULTIVOLUME
         /* The "root" of an extra volume need special handling too. */
         const char *filename;
         path_strip_volume(filenamebuf, &filename, true);
         bool volume_root = *filename == '\0';
-#endif
         if(filenamebuf[len-1] == '/') {
             filenamebuf[len-1] = '\0';
         }
 
         const char *name = ".bmark";
-#ifdef HAVE_MULTIVOLUME
         if (volume_root)
             name = "/volume_dir.bmark";
-#endif
         len = strlcat(filenamebuf, name, filenamebufsz);
 
         if(len >= filenamebufsz)
@@ -459,17 +455,9 @@ static char* create_bookmark(char **name,
     size_t bmarksz= snprintf(buf, bufsz,
                              /* new optional bookmark token descriptors should
                                 be inserted just after ';"' in this line... */
-#if defined(HAVE_PITCHCONTROL)
                              ">%d;%d;%ld;%d;%ld;%d;%d;%ld;%ld;",
-#else
-                             ">%d;%d;%ld;%d;%ld;%d;%d;",
-#endif
                              /* ... their flags should go here ... */
-#if defined(HAVE_PITCHCONTROL)
                              BM_PITCH | BM_SPEED,
-#else
-                             0,
-#endif
                              resume_info->resume_index,
                              resume_info->id3->offset,
                              resume_info->resume_seed,
@@ -477,10 +465,8 @@ static char* create_bookmark(char **name,
                              resume_info->repeat_mode,
                              resume_info->shuffle,
                              /* ...and their values should go here */
-#if defined(HAVE_PITCHCONTROL)
                              (long)resume_info->pitch,
                              (long)resume_info->speed
-#endif
                     ); /*sprintf*/
 /* mandatory tokens */
     if (bmarksz >= bufsz) /* include NULL*/
@@ -541,10 +527,8 @@ static void get_track_resume_info(struct resume_info *resume_info)
     resume_info->id3 = audio_current_track();
     resume_info->repeat_mode = global_settings.repeat_mode;
     resume_info->shuffle = global_settings.playlist_shuffle;
-#if defined(HAVE_PITCHCONTROL)
     resume_info->pitch = sound_get_pitch();
     resume_info->speed = dsp_get_timestretch();
-#endif
 }
 
 /* ----------------------------------------------------------------------- */
@@ -1116,20 +1100,16 @@ static bool play_bookmark(const char* bookmark)
 {
     char fnamebuf[MAX_PATH];
     struct resume_info resume_info;
-#if defined(HAVE_PITCHCONTROL)
     /* preset pitch and speed to 100% in case bookmark doesn't have info */
     resume_info.pitch = sound_get_pitch();
     resume_info.speed = dsp_get_timestretch();
-#endif
 
     if (parse_bookmark(fnamebuf, sizeof(fnamebuf), bookmark, &resume_info, true))
     {
         global_settings.repeat_mode = resume_info.repeat_mode;
         global_settings.playlist_shuffle = resume_info.shuffle;
-#if defined(HAVE_PITCHCONTROL)
         sound_set_pitch(resume_info.pitch);
         dsp_set_timestretch(resume_info.speed);
-#endif
         if (!warn_on_pl_erase())
             return false;
         bool success = bookmark_play(global_temp_buffer, resume_info.resume_index,

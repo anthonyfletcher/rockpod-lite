@@ -65,10 +65,8 @@ enum
 
     /*- settings -*/
 
-#ifdef HAVE_DISK_STORAGE
     /* -> audio */
     Q_AUDIO_UPDATE_WATERMARK,   /* buffering watermark needs updating */
-#endif
     /* -> audio */
     Q_AUDIO_REMAKE_AUDIO_BUFFER, /* buffer needs to be reinitialized */
 };

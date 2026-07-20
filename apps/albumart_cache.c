@@ -43,16 +43,12 @@
 #include "bmp.h"
 #include "bitmaps/no_album_cover.h" /* compiled-in placeholder for aa_ensure_fallback */
 #include "bitmaps/rockpodnoartistcover.h" /* artist placeholder (silhouette) */
-#ifdef HAVE_JPEG
 #include "jpeg_load.h"
-#endif
 #include "usb.h"
 #include "events.h"
 #include "appevents.h"
 #include "audio.h"
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
 #include "cpu.h"
-#endif
 
 /* Define LOGF_ENABLE to enable logf output in this file */
 /*#define LOGF_ENABLE*/
@@ -364,7 +360,6 @@ static int aa_read_source(const struct aa_src *src, struct bitmap *bm, int fmt,
     {
         /* Embedded art -- always JPEG in Rockbox. lseek + clip_jpeg_fd is how
          * the WPS decodes it, and it handles the ID3-unsync flag in emb_flags. */
-#ifdef HAVE_JPEG
         int fd = open(src->path, O_RDONLY);
         int rc;
         if (fd < 0)
@@ -374,19 +369,12 @@ static int aa_read_source(const struct aa_src *src, struct bitmap *bm, int fmt,
                           (int)workbuf_sz, fmt, NULL);
         close(fd);
         return rc;
-#else
-        return -1;
-#endif
     }
 
     size_t namelen = strlen(src->path);
     if (namelen >= 4 && strcmp(src->path + namelen - 4, ".bmp") != 0)
     {
-#ifdef HAVE_JPEG
         return read_jpeg_file(src->path, bm, (int)workbuf_sz, fmt, NULL);
-#else
-        return -1;
-#endif
     }
     return read_bmp_file(src->path, bm, (int)workbuf_sz, fmt, NULL);
 }
@@ -688,9 +676,7 @@ static bool aa_run_pass(void)
     worksz = BM_SCALED_SIZE(ALBUMART_CACHE_MAX_DIM *
                                 ALBUMART_CACHE_COVER_MAX_ASPECT,
                             ALBUMART_CACHE_MAX_DIM, FORMAT_NATIVE, 0);
-#ifdef HAVE_JPEG
     worksz += JPEG_DECODE_OVERHEAD;
-#endif
 
     wh = core_alloc(worksz);
     if (wh <= 0)
@@ -719,12 +705,10 @@ static bool aa_run_pass(void)
 
     /* A pass is running -> lights the status-bar %lc ("Caching") token. */
     cache_busy = true;
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
     /* Speed up the (CPU-bound) image decoding, like Cover Flow's own
      * generator does. Passes are rare (only after the database settles or
      * changes), so the extra clock is a brief one-off. */
     cpu_boost(true);
-#endif
 
     while (tagcache_get_next(&tcs, aa_tcs_buf, sizeof(aa_tcs_buf)))
     {
@@ -773,9 +757,7 @@ static bool aa_run_pass(void)
         }
     }
     tagcache_search_finish(&tcs);
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
     cpu_boost(false); /* balances the boost above (skipped on the goto-out path) */
-#endif
 
 out:
     core_unpin(wh);
@@ -829,9 +811,7 @@ static void aa_handle_offer(void)
     worksz = BM_SCALED_SIZE(ALBUMART_CACHE_MAX_DIM *
                                 ALBUMART_CACHE_COVER_MAX_ASPECT,
                             ALBUMART_CACHE_MAX_DIM, FORMAT_NATIVE, 0);
-#ifdef HAVE_JPEG
     worksz += JPEG_DECODE_OVERHEAD;
-#endif
     wh = core_alloc(worksz);
     if (wh <= 0)
         return;

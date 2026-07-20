@@ -205,7 +205,6 @@ void list_draw(struct screen *display, struct gui_synclist *list)
         callback_draw_item = _default_listdraw_fn;
 
     struct viewport * last_vp = display->set_viewport(parent);
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
     /* Trigger extraction if pending — uses last known AA slot from SBS.
      * This ensures colors are ready before list draws, even on first frame
      * (list_draw runs before SBS skin_render in the rendering order). */
@@ -220,7 +219,6 @@ void list_draw(struct screen *display, struct gui_synclist *list)
         display->set_foreground(parent->fg_pattern);
         display->set_background(parent->bg_pattern);
     }
-#endif
     display->clear_viewport();
     if (!list->scroll_all)
         display->scroll_stop_viewport(list_text_vp);
@@ -399,10 +397,8 @@ void list_draw(struct screen *display, struct gui_synclist *list)
         callback_draw_item(&list_info);
         y += linedes.height;
     }
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
     parent->fg_pattern = dc_saved_list_fg;
     parent->bg_pattern = dc_saved_list_bg;
-#endif
     display->set_viewport(parent);
     if (!gui_synclist_flush_inhibited())
     {

@@ -168,9 +168,7 @@ static struct screen * sb_fill_bar_info(struct gui_statusbar * bar)
         return display;
 
     bar->info.battlevel = battery_level();
-#ifdef HAVE_USB_POWER
     bar->info.usb_inserted = usb_inserted();
-#endif
 #if CONFIG_CHARGING
     bar->info.inserted = (charger_input_state == CHARGER);
     if (bar->info.inserted)
@@ -220,11 +218,7 @@ static struct screen * sb_fill_bar_info(struct gui_statusbar * bar)
     }
     bar->info.volume = global_status.volume;
     bar->info.shuffle = global_settings.playlist_shuffle;
-#ifdef HAS_BUTTON_HOLD
     bar->info.keylock = button_hold();
-#else
-    bar->info.keylock = is_keys_locked();
-#endif /* HAS_BUTTON_HOLD */
     bar->info.repeat = global_settings.repeat_mode;
     bar->info.playmode = current_playmode();
 #if CONFIG_RTC
@@ -261,17 +255,13 @@ void gui_statusbar_draw(struct gui_statusbar * bar, bool force_redraw, struct vi
         if (bar->info.battery_state)
             gui_statusbar_icon_battery(display, bar->info.battlevel,
                                        bar->info.batt_charge_step);
-#ifdef HAVE_USB_POWER
         if (bar->info.usb_inserted)
             display->mono_bitmap(bitmap_icons_7x8[Icon_USBPlug],
                                  STATUSBAR_PLUG_X_POS,
                                  STATUSBAR_Y_POS, STATUSBAR_PLUG_WIDTH,
                                  SB_ICON_HEIGHT);
-#endif /* HAVE_USB_POWER */
 #if CONFIG_CHARGING
-#ifdef HAVE_USB_POWER
         else
-#endif
         /* draw power plug if charging */
         if (bar->info.inserted)
             display->mono_bitmap(bitmap_icons_7x8[Icon_Plug],
@@ -463,14 +453,12 @@ static void gui_statusbar_icon_play_state(struct screen * display, int state)
 static void gui_statusbar_icon_play_mode(struct screen * display, int mode)
 {
     switch (mode) {
-#ifdef AB_REPEAT_ENABLE
         case REPEAT_AB:
             display->mono_bitmap(bitmap_icons_7x8[Icon_RepeatAB],
                                  STATUSBAR_PLAY_MODE_X_POS,
                                  STATUSBAR_Y_POS, STATUSBAR_PLAY_MODE_WIDTH,
                                  SB_ICON_HEIGHT);
             break;
-#endif /* AB_REPEAT_ENABLE */
 
         case REPEAT_ONE:
             display->mono_bitmap(bitmap_icons_7x8[Icon_RepeatOne],

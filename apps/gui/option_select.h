@@ -34,10 +34,8 @@ bool option_screen(const struct settings_list *setting,
                    struct viewport parent[NB_SCREENS],
                    bool use_temp_var, const unsigned char* option_title);
 
-#if defined(HAVE_QUICKSCREEN)
 void option_select_next_val(const struct settings_list *setting,
                             bool previous, bool apply);
-#endif
 const char *option_get_valuestring(const struct settings_list *setting,
                              char *buffer, int buf_len,
                              intptr_t temp_var);

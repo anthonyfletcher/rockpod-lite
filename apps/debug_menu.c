@@ -83,12 +83,10 @@
 
 
 
-#ifdef HAVE_USBSTACK
 #include "usb_core.h"
 #include "usb_drv.h"
 #ifdef USB_ENABLE_AUDIO
 #include "../usbstack/usb_audio.h"
-#endif
 #endif
 
 #include "talk.h"
@@ -98,9 +96,7 @@
 #include "norboot-target.h"
 #endif
 
-#if defined(IPOD_ACCESSORY_PROTOCOL)
 #include "iap.h"
-#endif
 
 
 #define SCREEN_MAX_CHARS (LCD_WIDTH / SYSFONT_WIDTH)
@@ -539,7 +535,6 @@ static bool dbg_pcf(void)
 }
 #endif
 
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
 static bool dbg_cpufreq(void)
 {
     int line;
@@ -589,7 +584,6 @@ static bool dbg_cpufreq(void)
     lcd_setfont(FONT_UI);
     return false;
 }
-#endif /* HAVE_ADJUSTABLE_CPU_FREQ */
 
 #if (CONFIG_BATTERY_MEASURE != 0) && !defined(SIMULATOR)
 /*
@@ -740,10 +734,8 @@ static bool view_battery(void)
 #else
                 lcd_putsf(0, 3, "Charger: %s",
                          charger_inserted() ? "present" : "absent");
-#if defined(HAVE_USBSTACK) && defined(HAVE_USB_CHARGING_ENABLE)
                 lcd_putsf(0, 4, "USB current limit: %d mA",
                           usb_charging_maxcurrent());
-#endif /* HAVE_USB_CHARGING_ENABLE */
 #endif /* target type */
 #endif /* CONFIG_CHARGING */
                 break;
@@ -994,13 +986,11 @@ static int disk_callback(int btn, struct gui_synclist *lists)
              "Firmware: %s", buf);
 
     uint64_t total_sectors = (identify_info[61] << 16) | identify_info[60];
-#ifdef HAVE_LBA48
     if (identify_info[83] & 0x0400 && total_sectors == 0x0FFFFFFF)
         total_sectors = ((uint64_t)identify_info[103] << 48) |
                 ((uint64_t)identify_info[102] << 32) |
                 ((uint64_t)identify_info[101] << 16) |
                 identify_info[100];
-#endif
 
     uint32_t sector_size;
 
@@ -1024,13 +1014,6 @@ static int disk_callback(int btn, struct gui_synclist *lists)
     simplelist_addline(
             "Physical sector size: %lu B", sector_size);
 
-#ifndef HAVE_MULTIVOLUME
-    // XXX this needs to be fixed for multi-volume setups
-    sector_t free;
-    volume_size( IF_MV(0,) NULL, &free );
-    simplelist_addline(
-            "Free: %lu MB", (unsigned long)(free / 1024));
-#endif
 
     simplelist_addline("SSD detected: %s", ata_disk_isssd() ? "yes" : "no");
     simplelist_addline(
@@ -1074,7 +1057,6 @@ static int disk_callback(int btn, struct gui_synclist *lists)
                  "No timing info");
     }
 
-#ifdef HAVE_ATA_DMA
     if (identify_info[63] & (1<<0)) {
         simplelist_addline(
                  "MDMA modes:%.*s%.*s%.*s",
@@ -1104,7 +1086,6 @@ static int disk_callback(int btn, struct gui_synclist *lists)
     else {
         simplelist_setline("No UDMA mode info");
     }
-#endif /* HAVE_ATA_DMA */
     timing_info_present = identify_info[53] & (1<<1);
     if(timing_info_present) {
         i = identify_info[49] & (1<<11);
@@ -1118,7 +1099,6 @@ static int disk_callback(int btn, struct gui_synclist *lists)
     }
     simplelist_addline(
              "Cluster size: %d bytes", volume_get_cluster_size(IF_MV(0)));
-#ifdef HAVE_ATA_DMA
     i = ata_get_dma_mode();
     if (i == 0) {
         simplelist_setline("DMA not enabled");
@@ -1130,7 +1110,6 @@ static int disk_callback(int btn, struct gui_synclist *lists)
                 (i & 0x40) ? "UDMA" : "MDMA",
                 '0' + (i & 7));
     }
-#endif /* HAVE_ATA_DMA */
     i = identify_info[83] & (1 << 2);
     simplelist_addline(
             "CFA compatible: %s", i ? "yes" : "no");
@@ -1144,7 +1123,6 @@ static int disk_callback(int btn, struct gui_synclist *lists)
     return btn;
 }
 
-#ifdef HAVE_ATA_SMART
 static struct ata_smart_values smart_data STORAGE_ALIGN_ATTR;
 
 static const char * ata_smart_get_attr_name(unsigned char id)
@@ -1356,7 +1334,6 @@ static bool dbg_ata_smart(void)
     info.scroll_all = true;
     return simplelist_show_list(&info);
 }
-#endif /* HAVE_ATA_SMART */
 #else /* No SD, MMC or ATA */
 static int disk_callback(int btn, struct gui_synclist *lists)
 {
@@ -1385,16 +1362,12 @@ static bool dbg_identify_info(void)
     if(fd >= 0)
     {
         const unsigned short *identify_info = ata_get_identify();
-#ifdef ROCKBOX_LITTLE_ENDIAN
         /* this is a pointer to a driver buffer so we can't modify it */
         for (int i = 0; i < ATA_IDENTIFY_WORDS; ++i)
         {
             unsigned short word = swap16(identify_info[i]);
             write(fd, &word, 2);
         }
-#else
-        write(fd, identify_info, ATA_IDENTIFY_WORDS*2);
-#endif
         close(fd);
     }
     return false;
@@ -1760,7 +1733,6 @@ static bool dbg_talk(void)
     return simplelist_show_list(&list);
 }
 
-#ifdef HAVE_USBSTACK
 #if (defined(ROCKBOX_HAS_LOGF) && defined(USB_ENABLE_SERIAL))
 static bool toggle_usb_core_driver(int driver, char *msg)
 {
@@ -1825,7 +1797,6 @@ static bool dbg_usb_audio(void)
     return simplelist_show_list(&info);
 }
 #endif /* USB_ENABLE_AUDIO */
-#endif /* HAVE_USBSTACK */
 
 
 
@@ -1949,9 +1920,7 @@ static const struct {
 #if (CONFIG_RTC == RTC_PCF50605) && (CONFIG_PLATFORM & PLATFORM_NATIVE)
         { "View PCF registers", dbg_pcf },
 #endif
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
         { "CPU frequency", dbg_cpufreq },
-#endif
         { "View OS stacks", dbg_os },
 #ifdef __linux__
         { "View CPU stats", dbg_cpuinfo },
@@ -1968,9 +1937,7 @@ static const struct {
         { "View disk info", dbg_disk_info },
 #if (CONFIG_STORAGE & STORAGE_ATA)
         { "Dump ATA identify info", dbg_identify_info},
-#ifdef HAVE_ATA_SMART
         { "View/Dump S.M.A.R.T. data", dbg_ata_smart},
-#endif
 #endif
         { "Metadata log", dbg_metadatalog },
         { "View dircache info", dbg_dircache_info },
@@ -1986,14 +1953,12 @@ static const struct {
         {"Show Log File", logfdisplay },
         {"Dump Log File", logfdump },
 #endif
-#if defined(HAVE_USBSTACK)
 #if defined(ROCKBOX_HAS_LOGF) && defined(USB_ENABLE_SERIAL)
         {"USB Serial driver (logf)", toggle_usb_serial },
 #endif
 #if defined(USB_ENABLE_AUDIO)
         {"USB-DAC", dbg_usb_audio},
 #endif
-#endif /* HAVE_USBSTACK */
 #ifdef CPU_BOOST_LOGGING
         {"Show cpu_boost log",cpu_boost_log},
         {"Dump cpu_boost log",cpu_boost_log_dump},
@@ -2002,9 +1967,7 @@ static const struct {
      && !defined(IPOD_MINI) && !defined(SIMULATOR))
         {"Debug scrollwheel", dbg_scrollwheel },
 #endif
-#if defined(IPOD_ACCESSORY_PROTOCOL)
         {"Debug IAP", dbg_iap },
-#endif
         {"Talk engine stats", dbg_talk },
 
 #if defined(IPOD_6G) && !defined(SIMULATOR)

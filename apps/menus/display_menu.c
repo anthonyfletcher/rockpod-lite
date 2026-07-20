@@ -33,15 +33,12 @@
 #include "peakmeter.h"
 #include "talk.h"
 #include "lcd.h"
-#ifdef HAVE_BACKLIGHT
 #include "mask_select.h"
 #include "splash.h"
-#endif
 #include "viewport.h"
 #include "statusbar.h" /* statusbar_vals enum*/
 #include "rbunicode.h"
 
-#ifdef HAVE_BACKLIGHT
 static int selectivebacklight_callback(int action,
                                        const struct menu_item_ex *this_item,
                                        struct gui_synclist *this_list)
@@ -107,11 +104,9 @@ static int selectivebacklight_set_mask(void* param)
     return true;
 }
 
-#endif /* HAVE_BACKLIGHT */
 
 /***********************************/
 /*    LCD MENU                     */
-#ifdef HAVE_BACKLIGHT
 MENUITEM_SETTING(backlight_timeout, &global_settings.backlight_timeout, NULL);
 #if CONFIG_CHARGING
 MENUITEM_SETTING(backlight_timeout_plugged,
@@ -141,18 +136,12 @@ MENUITEM_FUNCTION(sel_backlight_mask, 0, ID2P(LANG_SETTINGS),
 MAKE_MENU(sel_backlight, ID2P(LANG_BACKLIGHT_SELECTIVE),
           NULL, Icon_Menu_setting, &bl_selective_actions, &sel_backlight_mask);
 
-#ifdef HAVE_LCD_SLEEP_SETTING
 MENUITEM_SETTING(lcd_sleep_after_backlight_off,
                 &global_settings.lcd_sleep_after_backlight_off, NULL);
-#endif
-#ifdef HAVE_BACKLIGHT_BRIGHTNESS
 MENUITEM_SETTING(brightness_item, &global_settings.brightness, NULL);
-#endif
-#endif /* HAVE_BACKLIGHT */
 /* now the actual menu */
 MAKE_MENU(lcd_settings,ID2P(LANG_LCD_MENU),
             NULL, Icon_Display_menu
-#ifdef HAVE_BACKLIGHT
             ,&backlight_timeout
 # if CONFIG_CHARGING
             ,&backlight_timeout_plugged
@@ -164,13 +153,8 @@ MAKE_MENU(lcd_settings,ID2P(LANG_LCD_MENU),
 #endif
             ,&bl_filter_first_keypress
             ,&sel_backlight
-# ifdef HAVE_LCD_SLEEP_SETTING
             ,&lcd_sleep_after_backlight_off
-# endif
-# ifdef HAVE_BACKLIGHT_BRIGHTNESS
             ,&brightness_item
-# endif
-#endif /* HAVE_BACKLIGHT */
          );
 /*    LCD MENU                    */
 /***********************************/
@@ -187,11 +171,6 @@ MENUITEM_SETTING_W_TEXT(scroll_step, &global_settings.scroll_step,
 MENUITEM_SETTING(bidir_limit, &global_settings.bidir_limit, NULL);
 
 /* list acceleration */
-#ifndef HAVE_WHEEL_ACCELERATION
-MENUITEM_SETTING(list_accel_start_delay,
-                 &global_settings.list_accel_start_delay, NULL);
-MENUITEM_SETTING(list_accel_wait, &global_settings.list_accel_wait, NULL);
-#endif /* HAVE_WHEEL_ACCELERATION */
 MENUITEM_SETTING(offset_out_of_view, &global_settings.offset_out_of_view, NULL);
 MENUITEM_SETTING(disable_mainmenu_scrolling, &global_settings.disable_mainmenu_scrolling, NULL);
 MENUITEM_SETTING(screen_scroll_step, &global_settings.screen_scroll_step, NULL);
@@ -209,9 +188,6 @@ MAKE_MENU(scroll_settings_menu, ID2P(LANG_SCROLL_MENU), 0, Icon_NOICON,
           &scroll_paginated,
           &list_wraparound,
           &list_order,
-#ifndef HAVE_WHEEL_ACCELERATION
-          &list_accel_start_delay, &list_accel_wait
-#endif
           );
 /*    SCROLL MENU                  */
 /***********************************/

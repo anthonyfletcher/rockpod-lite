@@ -60,9 +60,7 @@
 
 #include "debug.h"
 
-#ifdef IPOD_ACCESSORY_PROTOCOL
 #include "iap.h"
-#endif
 
 #if (CONFIG_STORAGE & STORAGE_MMC)
 #include "ata_mmc.h"
@@ -87,9 +85,7 @@
 #include "core_alloc.h" /*core_load_bmp()*/
 #endif
 
-#ifdef HAVE_HARDWARE_CLICK
 #include "piezo.h"
-#endif
 
 /* units used with output_dyn_value */
 const unsigned char * const byte_units[] =
@@ -387,9 +383,7 @@ static bool clean_shutdown(enum shutdown_type sd_type,
                                 str(LANG_SHUTTINGDOWN));
         }
 
-#ifdef HAVE_DISK_STORAGE
         if (batt_safe) /* do not save on critical battery */
-#endif
         {
             bookmark_autobookmark(false);
 
@@ -401,10 +395,8 @@ static bool clean_shutdown(enum shutdown_type sd_type,
 
             system_flush();
         }
-#if defined(HAVE_DIRCACHE) && defined(HAVE_DISK_STORAGE)
         else
             dircache_disable();
-#endif
 
         if(global_settings.talk_menu)
         {
@@ -521,7 +513,6 @@ void car_adapter_mode_init(void)
 }
 #endif
 
-#ifdef HAVE_HEADPHONE_DETECTION
 static void hp_unplug_change(bool inserted)
 {
     static bool headphone_caused_pause = true;
@@ -550,7 +541,6 @@ static void hp_unplug_change(bool inserted)
     }
 
 }
-#endif /*HAVE_HEADPHONE_DETECTION*/
 
 
 long default_event_handler_ex(long event, void (*callback)(void *), void *parameter)
@@ -616,7 +606,6 @@ long default_event_handler_ex(long event, void (*callback)(void *), void *parame
             unpause_action(true);
             return SYS_CAR_ADAPTER_RESUME;
 #endif
-#ifdef HAVE_HEADPHONE_DETECTION
         case SYS_PHONE_PLUGGED:
             hp_unplug_change(true);
             return SYS_PHONE_PLUGGED;
@@ -624,7 +613,6 @@ long default_event_handler_ex(long event, void (*callback)(void *), void *parame
         case SYS_PHONE_UNPLUGGED:
             hp_unplug_change(false);
             return SYS_PHONE_UNPLUGGED;
-#endif
 #if (CONFIG_PLATFORM & PLATFORM_HOSTED) && defined(PLATFORM_HAS_VOLUME_CHANGE)
         case SYS_VOLUME_CHANGED:
         {
@@ -719,7 +707,6 @@ void setvol(void)
     status_save(false);
 }
 
-#ifdef HAVE_PERCEPTUAL_VOLUME
 static short norm_tab[MAX_NORM_VOLUME_STEPS+2];
 static int norm_tab_num_steps;
 static int norm_tab_size;
@@ -787,25 +774,10 @@ int get_normalized_volume(void)
 
     return a;
 }
-#else
-void set_normalized_volume(int vol)
-{
-    global_status.volume = vol * sound_steps(SOUND_VOLUME);
-}
-
-int get_normalized_volume(void)
-{
-    return global_status.volume / sound_steps(SOUND_VOLUME);
-}
-#endif
 
 void adjust_volume(int steps)
 {
-#ifdef HAVE_PERCEPTUAL_VOLUME
     adjust_volume_ex(steps, global_settings.volume_adjust_mode);
-#else
-    adjust_volume_ex(steps, VOLUME_ADJUST_DIRECT);
-#endif
 }
 
 void adjust_volume_ex(int steps, enum volume_adjust_mode mode)
@@ -813,10 +785,8 @@ void adjust_volume_ex(int steps, enum volume_adjust_mode mode)
     switch (mode)
     {
     case VOLUME_ADJUST_PERCEPTUAL:
-#ifdef HAVE_PERCEPTUAL_VOLUME
         set_normalized_volume(get_normalized_volume() + steps);
         break;
-#endif
     case VOLUME_ADJUST_DIRECT:
     default:
         global_status.volume += steps * sound_steps(SOUND_VOLUME);
@@ -921,11 +891,7 @@ void keyclick_click(bool rawbutton, int action)
 
     /* Settings filters */
     if (
-#ifdef HAVE_HARDWARE_CLICK
         (global_settings.keyclick || global_settings.keyclick_hardware)
-#else
-        global_settings.keyclick
-#endif
         )
     {
         if (global_settings.keyclick_repeats || !(button & BUTTON_REPEAT))
@@ -941,12 +907,10 @@ void keyclick_click(bool rawbutton, int action)
         {
             do_beep = true;
         }
-#ifdef HAVE_SCROLLWHEEL
         else if (button & (BUTTON_SCROLL_BACK | BUTTON_SCROLL_FWD))
         {
             do_beep  = true;
         }
-#endif
     }
     if (button&BUTTON_REPEAT)
         last_button = button;
@@ -959,7 +923,6 @@ void keyclick_click(bool rawbutton, int action)
 
     if (do_beep)
     {
-#ifdef HAVE_HARDWARE_CLICK
         if (global_settings.keyclick)
         {
             system_sound_play(SOUND_KEYCLICK);
@@ -968,9 +931,6 @@ void keyclick_click(bool rawbutton, int action)
         {
             piezo_button_beep(false, false);
         }
-#else
-        system_sound_play(SOUND_KEYCLICK);
-#endif
     }
 }
 
@@ -1596,7 +1556,6 @@ bool parse_color(enum screen_type screen, char *text, int *value)
 #endif /* !defined(__PCTOOL__) || defined(CHECKWPS) */
 
 /* only used in USB HID and set_time screen */
-#if defined(USB_ENABLE_HID) || (CONFIG_RTC != 0)
 int clamp_value_wrap(int value, int max, int min)
 {
     if (value > max)
@@ -1605,7 +1564,6 @@ int clamp_value_wrap(int value, int max, int min)
         return max;
     return value;
 }
-#endif
 
 
 

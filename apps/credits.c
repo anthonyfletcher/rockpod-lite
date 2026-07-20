@@ -35,20 +35,13 @@
 /* The left-hand artwork panel, shipped for the 320x240 iPods only. It fills the
  * left CR_ART_W pixels; the rest of the screen is a solid fill the panel blends
  * into, and the names scroll over that fill. */
-#if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
 #include "bitmaps/rockpodcredits.h"
 #define CREDITS_HAVE_ART
-#endif
 
-#ifdef CREDITS_HAVE_ART
 #define CR_X   120                          /* names column: left edge       */
 #define CR_W   190                          /*              width            */
 #define CR_FG  LCD_RGBPACK(0x00, 0x0c, 0x21) /* dark navy, over the light fill */
 #define CR_BG  LCD_RGBPACK(0xe1, 0xe8, 0xea) /* fill blending into the panel  */
-#else
-#define CR_X   0                            /* no art: use the whole screen  */
-#define CR_W   LCD_WIDTH
-#endif
 
 static const char* const credits[] = {
 #include "credits.raw" /* generated list of names from docs/CREDITS */
@@ -70,23 +63,19 @@ static unsigned char cr_lines[sizeof(credits) / sizeof(credits[0])];
 
 static void cr_backlight_ignore_timeout(void)
 {
-#ifdef HAVE_BACKLIGHT
     if (global_settings.backlight_timeout > 0)
         backlight_set_timeout(0);
 #if CONFIG_CHARGING
     if (global_settings.backlight_timeout_plugged > 0)
         backlight_set_timeout_plugged(0);
 #endif
-#endif
 }
 
 static void cr_backlight_use_settings(void)
 {
-#ifdef HAVE_BACKLIGHT
     backlight_set_timeout(global_settings.backlight_timeout);
 #if CONFIG_CHARGING
     backlight_set_timeout_plugged(global_settings.backlight_timeout_plugged);
-#endif
 #endif
 }
 
@@ -172,14 +161,10 @@ static void cr_draw_backdrop(struct screen *d)
 
     vp.buffer = NULL;
     viewport_set_fullscreen(&vp, SCREEN_MAIN);
-#ifdef CREDITS_HAVE_ART
     vp.bg_pattern = CR_BG;
-#endif
     last = d->set_viewport(&vp);
     d->clear_viewport();
-#ifdef CREDITS_HAVE_ART
     d->bmp(&bm_rockpodcredits, 0, 0);
-#endif
     d->update_viewport();
     d->set_viewport(last);
 }
@@ -213,10 +198,8 @@ int credits_screen(void)
     region.height = LCD_HEIGHT;
     region.font = d->getuifont();
     region.drawmode = DRMODE_FG;
-#ifdef CREDITS_HAVE_ART
     region.fg_pattern = CR_FG;
     region.bg_pattern = CR_BG;
-#endif
     last = d->set_viewport(&region);
 
     d->getstringsize((const unsigned char *)"A", NULL, &line_h);

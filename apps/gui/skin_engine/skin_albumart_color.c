@@ -20,7 +20,6 @@
 
 #include "config.h"
 
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
 
 #include <string.h>
 #include "lcd.h"
@@ -576,4 +575,3 @@ bool dynamic_colors_pending(void)
     return needs_extraction && global_settings.dynamic_colors;
 }
 
-#endif /* HAVE_ALBUMART && HAVE_LCD_COLOR */

@@ -21,7 +21,6 @@
 #include "button.h"
 #include "config.h"
 
-#ifdef HAVE_QUICKSCREEN
 
 #ifndef _GUI_QUICKSCREEN_H_
 #define _GUI_QUICKSCREEN_H_
@@ -50,4 +49,3 @@ int quickscreen_set_option(void *data);
 bool is_setting_quickscreenable(const struct settings_list *setting);
 
 #endif /*_GUI_QUICK_SCREEN_H_*/
-#endif /* HAVE_QUICKSCREEN */

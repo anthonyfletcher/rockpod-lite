@@ -35,9 +35,7 @@
 /*#define LOGF_ENABLE*/
 #include "logf.h"
 
-#if defined(HAVE_JPEG) || defined(PLUGIN)
 #define USE_JPEG_COVER
-#endif
 
 #ifdef PLUGIN
     #define strmemccpy strlcpy
@@ -77,7 +75,6 @@ static char* strip_filename(char* buf, int buf_size, const char* fullpath)
     return (sep + 1);
 }
 
-#ifdef USE_JPEG_COVER
 static const char * const extensions[] = { "jpeg", "jpg", "bmp" };
 static const unsigned char extension_lens[] = { 4, 3, 3 };
 /* Try checking for several file extensions, return true if a file is found and
@@ -97,10 +94,6 @@ static bool try_exts(char *path, int len)
     return false;
 }
 #define EXT
-#else
-#define EXT "bmp"
-#define try_exts(path, len) file_exists(path)
-#endif
 
 /* Look for the first matching album art bitmap in the following list:
  *  ./<trackname><size>.{jpeg,jpg,bmp}
@@ -160,9 +153,7 @@ bool search_albumart_files(const struct mp3entry *id3, const char *size_string,
                             trackname);
             strcat(path, size_string);
             strcat(path, "." EXT);
-#ifdef USE_JPEG_COVER
             pathlen = strlen(path);
-#endif
             found = try_exts(path, pathlen);
         }
         if (pass)
@@ -185,13 +176,11 @@ bool search_albumart_files(const struct mp3entry *id3, const char *size_string,
             found = try_exts(path, pathlen);
         }
 
-#ifdef USE_JPEG_COVER
         if (!found && !*size_string)
         {
             snprintf (path, sizeof(path), "%sfolder.jpg", dir);
             found = file_exists(path);
         }
-#endif
 
         artist = id3->albumartist != NULL ? id3->albumartist : id3->artist;
 

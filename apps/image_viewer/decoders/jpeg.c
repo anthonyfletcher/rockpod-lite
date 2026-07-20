@@ -211,13 +211,9 @@ static int get_image(struct image_info *info, int frame, int ds)
     p_disp->stride = p_jpg->x_phys / ds; /* use physical size for stride */
 
     /* the actual decoding */
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
     cpu_boost(true);
     status = jpeg_decode(p_jpg, p_disp->bitmap, ds, cb_progress);
     cpu_boost(false);
-#else
-    status = jpeg_decode(p_jpg, p_disp->bitmap, ds, cb_progress);
-#endif
     if (status)
     {
         splashf(HZ, "decode error %d", status);

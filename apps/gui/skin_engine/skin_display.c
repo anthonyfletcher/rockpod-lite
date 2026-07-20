@@ -88,7 +88,6 @@ void skin_update(enum skinnable_screens skin, enum screen_type screen,
                         SKIN_REFRESH_ALL : update_type);
 }
 
-#ifdef AB_REPEAT_ENABLE
 
 #define DIRECTION_RIGHT 1
 #define DIRECTION_LEFT -1
@@ -152,7 +151,6 @@ void ab_draw_markers(struct screen * screen, int capacity,
         ab_draw_arrow_mark(screen, xb, y, h, DIRECTION_LEFT);
 }
 
-#endif
 
 void draw_progressbar(struct gui_wps *gwps, struct skin_viewport* skin_viewport,
                       int line, struct progressbar *pb)
@@ -181,13 +179,8 @@ void draw_progressbar(struct gui_wps *gwps, struct skin_viewport* skin_viewport,
     {
         int minvol = sound_min(SOUND_VOLUME);
         int maxvol = sound_max(SOUND_VOLUME);
-#if defined(HAVE_PERCEPTUAL_VOLUME)
         length = 1000;
         end = to_normalized_volume(global_status.volume, minvol, maxvol, length);
-#else
-        length = maxvol - minvol;
-        end = global_status.volume - minvol;
-#endif
     }
     else if (pb->type == SKIN_TOKEN_BATTERY_PERCENTBAR)
     {
@@ -332,10 +325,8 @@ void draw_progressbar(struct gui_wps *gwps, struct skin_viewport* skin_viewport,
     {
         if (id3 && id3->length)
         {
-#ifdef AB_REPEAT_ENABLE
             if (ab_repeat_mode_enabled())
                 ab_draw_markers(display, id3->length, x, y, width, height);
-#endif
 
             if (id3->cuesheet)
                 cue_draw_markers(display, id3->cuesheet, id3->length,

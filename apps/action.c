@@ -40,12 +40,10 @@
 #include "gui/skin_engine/skin_engine.h" /* skin_render_inhibit_flush */
 
 
-#ifdef HAVE_BACKLIGHT
 #include "backlight.h"
 #if CONFIG_CHARGING
 #include "power.h"
 #endif
-#endif /* HAVE_BACKLIGHT */
 
 /*#define LOGF_ENABLE*/
 #include "logf.h"
@@ -74,19 +72,9 @@ typedef struct
     int      context;
     intptr_t data;
 
-#if defined(HAVE_BACKLIGHT)
     unsigned int backlight_mask;
     long         bl_filter_tick;
-#endif
 
-#if !defined(HAS_BUTTON_HOLD)
-    long         sl_filter_tick;
-    unsigned int softlock_mask;
-    int          unlock_combo;
-    bool         keys_locked;
-    bool         screen_has_lock;
-
-#endif
 
     bool          repeated;
     bool          wait_for_release;
@@ -114,18 +102,9 @@ static action_last_t action_last =
 #endif
 
 
-#ifdef HAVE_BACKLIGHT
     .backlight_mask = SEL_ACTION_NONE,
     .bl_filter_tick = 0,
-#endif
 
-#ifndef HAS_BUTTON_HOLD
-    .keys_locked     = false,
-    .screen_has_lock = false,
-    .sl_filter_tick  = 0,
-    .softlock_mask   = SEL_ACTION_NONE,
-    .unlock_combo    = BUTTON_NONE,
-#endif
 }; /* action_last_t action_last */
 
 /******************************************************************************
@@ -142,7 +121,6 @@ static inline bool has_flag(unsigned int value, unsigned int flag)
     return ((value & flag) == flag);
 }
 
-#if defined(HAVE_BACKLIGHT) || !defined(HAS_BUTTON_HOLD)
 /* HELPER FUNCTIONS selective softlock and backlight */
 
 /****************************************************************
@@ -220,10 +198,8 @@ static bool is_action_discarded(action_cur_t *cur, bool filtered, long *tick)
     bool ret = true;
     bool completed = (cur->button & (BUTTON_REPEAT | BUTTON_REL)) != 0;
 
-#ifdef HAVE_SCROLLWHEEL
     /* Scrollwheel doesn't generate release events  */
     completed |= (cur->button & (BUTTON_SCROLL_BACK | BUTTON_SCROLL_FWD)) != 0;
-#endif
 
     /*directly after a match a key release event may trigger another*/
     if (filtered && cur->action != ACTION_UNKNOWN)
@@ -264,11 +240,6 @@ static bool is_action_discarded(action_cur_t *cur, bool filtered, long *tick)
 */
 static void action_handle_backlight(bool backlight, bool ignore_next)
 {
-#if !defined(HAVE_BACKLIGHT)
-    (void) backlight;
-    (void) ignore_next;
-    return;
-#else /* HAVE_BACKLIGHT */
     if (backlight)
     {
         backlight_on_ignore(false, 0);
@@ -278,10 +249,8 @@ static void action_handle_backlight(bool backlight, bool ignore_next)
     backlight_on_ignore(ignore_next, 5*HZ);/*must be set everytime we handle bl*/
 
 
-#endif/* HAVE_BACKLIGHT */
 }
 
-#endif /*defined(HAVE_BACKLIGHT) || !defined(HAS_BUTTON_HOLD) HELPER FUNCTIONS*/
 
 /******************************************************************
 * action_poll_button filters button presses for get_action_worker;
@@ -327,7 +296,6 @@ static inline bool action_poll_button(action_last_t *last, action_cur_t *cur)
 
         *button = ACTION_NONE;
     }
-#ifdef HAVE_SCROLLWHEEL
    /* *********************************************
     * Scrollwheel doesn't generate release events
     * further processing needed
@@ -336,7 +304,6 @@ static inline bool action_poll_button(action_last_t *last, action_cur_t *cur)
     {
         ret = false;
     }
-#endif
    /* *************************************************************
     * On Context Changed eat all buttons until the previous button
     * was |BUTTON_REL (also eat the |BUTTON_REL button)
@@ -349,14 +316,12 @@ static inline bool action_poll_button(action_last_t *last, action_cur_t *cur)
             last->action = ACTION_NONE;
             *button = ACTION_NONE;
         }
-#ifdef HAVE_SCROLLWHEEL
         else if ((*button & (BUTTON_SCROLL_BACK | BUTTON_SCROLL_FWD)) != 0)
         {
             /* Scrollwheel has no release events so it can never satisfy the
              * context-change gate.  Let it through and update the context. */
             ret = false;
         }
-#endif
         else
         {
             *button = ACTION_NONE;
@@ -388,14 +353,9 @@ static inline bool action_poll_button(action_last_t *last, action_cur_t *cur)
 */
 static inline void update_screen_has_lock(action_last_t *last, action_cur_t *cur)
 {
-#if defined(HAS_BUTTON_HOLD)
     (void) last;
     (void) cur;
     return;
-#else
-    last->screen_has_lock = has_flag(cur->context, ALLOW_SOFTLOCK);
-    cur->context &= ~ALLOW_SOFTLOCK;
-#endif
 }
 
 /***********************************************
@@ -443,7 +403,6 @@ static inline void button_flip_horizontally(int context, int *button)
 #warning "BUTTON_LEFT / BUTTON_RIGHT not defined!"
 #endif
 
-#ifdef HAVE_SCROLLWHEEL
     newbutton &= ~(BUTTON_SCROLL_BACK | BUTTON_SCROLL_FWD);
     if (has_flag(*button, BUTTON_SCROLL_BACK))
     {
@@ -454,7 +413,6 @@ static inline void button_flip_horizontally(int context, int *button)
     {
         newbutton |= BUTTON_SCROLL_BACK;
     }
-#endif
 
 #if defined(BUTTON_MINUS) && defined(BUTTON_PLUS)
     newbutton &= ~(BUTTON_MINUS | BUTTON_PLUS);
@@ -576,12 +534,6 @@ static inline void action_code_lookup(action_last_t *last, action_cur_t *cur)
     int  context = cur->context;
     cur->is_prebutton = false;
 
-#if !defined(HAS_BUTTON_HOLD) && !defined(BOOTLOADER)
-    /* This only applies to the first context, to allow locked contexts to
-     * specify a fall through to their non-locked version */
-    if (is_keys_locked())
-        context |= CONTEXT_LOCKED;
-#endif
 
 #ifndef DISABLE_ACTION_REMAP
         /* attempt to look up the button in user supplied remap */
@@ -655,85 +607,6 @@ static inline void action_code_lookup(action_last_t *last, action_cur_t *cur)
     cur->action = action;
 }
 
-#ifndef HAS_BUTTON_HOLD
-/*************************************
-* do_key_lock (dis)/enables softlock
-* based on lock flag, last button and
-* buttons still in queue are purged
-* if HAVE_TOUCHSCREEN then depending
-* on user selection it will be locked
-* or unlocked as well
-*/
-static inline void do_key_lock(bool lock)
-{
-    action_last.keys_locked = lock;
-    action_last.button = BUTTON_NONE;
-    button_clear_queue();
-}
-
-/**********************************************
-* do_auto_softlock when user selects autolock
-* unlock_combo stored for later unlock
-* activates autolock on backlight timeout
-* toggles autolock on / off by
-* ACTION_STD_KEYLOCK presses;
-*/
-static inline int do_auto_softlock(action_last_t *last, action_cur_t *cur)
-{
-
-#if !defined(HAVE_BACKLIGHT)
-    (void) last;
-    return cur->action;
-#else
-    int  action     = cur->action;
-    bool is_timeout = false;
-    int  timeout;
-    if (has_flag(last->softlock_mask, SEL_ACTION_ALOCK_OK))
-    {
-        timeout = backlight_get_current_timeout();
-        is_timeout = (timeout > 0 && (current_tick > action_last.tick + timeout));
-    }
-
-    if (is_timeout)
-    {
-        do_key_lock(true);
-
-    }
-    else if (action == ACTION_STD_KEYLOCK)
-    {
-        if (!has_flag(last->softlock_mask, SEL_ACTION_ALWAYSAUTOLOCK)) // normal operation, clear/arm autolock
-        {
-            last->unlock_combo = cur->button;/* set unlock combo to allow unlock */
-            last->softlock_mask ^= SEL_ACTION_ALOCK_OK;
-            action_handle_backlight(true, false);
-                /* If we don't wait for a moment for the backlight queue
-                 *  to process, the user will never see the message */
-            if (!is_backlight_on(false))
-            {
-                sleep(HZ/2);
-            }
-
-            if (has_flag(last->softlock_mask, SEL_ACTION_ALOCK_OK))
-            {
-                splash(HZ/2, ID2P(LANG_ACTION_AUTOLOCK_ON));
-                action = ACTION_REDRAW;
-            }
-            else
-            {
-                splash(HZ/2, ID2P(LANG_ACTION_AUTOLOCK_OFF));
-            }
-        } else if (!has_flag(last->softlock_mask, SEL_ACTION_ALOCK_OK)) // always autolock, but not currently armed
-        {
-            last->unlock_combo = cur->button;/* set unlock combo to allow unlock */
-            last->softlock_mask ^= SEL_ACTION_ALOCK_OK;
-        }
-    }
-
-    return action;
-#endif /* HAVE_BACKLIGHT */
-}
-
-#endif /* HAS_BUTTON_HOLD */
 
 /*****************************************************
 * do_softlock Handles softlock once action is known
@@ -743,115 +616,9 @@ static inline int do_auto_softlock(action_last_t *last, action_cur_t *cur)
 */
 static inline void do_softlock(action_last_t *last, action_cur_t *cur)
 {
-#if defined(HAS_BUTTON_HOLD)
     (void) last;
     (void) cur;
     return;
-#else
-    int  action = cur->action;
-
-    /* check to make sure we don't get stuck without a way to unlock - if locked,
-     * we can still use unlock_combo to unlock */
-    if (!last->screen_has_lock && !last->keys_locked)
-    {
-        /* no need to check softlock return immediately */
-        return;
-    }
-
-    bool filtered = true;
-    bool notify_user = false;
-    bool sl_activate = true; /* standard softlock behavior */
-
-    if ((!last->keys_locked) && has_flag(last->softlock_mask, SEL_ACTION_AUTOLOCK))
-    {
-        action = do_auto_softlock(last, cur);
-    }
-
-    /* Lock/Unlock toggled by ACTION_STD_KEYLOCK presses*/
-    if ((action == ACTION_STD_KEYLOCK)
-         || (last->keys_locked && last->unlock_combo == cur->button))
-    {
-#ifdef HAVE_BACKLIGHT
-	// if backlight is off and keys are unlocked, do nothing and exit.
-	// The backlight should come on without locking keypad.
-	if ((!last->keys_locked) && (!is_backlight_on(false)))
-	{
-	    return;
-	}
-#endif
-        last->unlock_combo = cur->button;
-        do_key_lock(!last->keys_locked);
-        notify_user = true;
-    }
-#if (BUTTON_REMOTE != 0)/* Allow remote actions through */
-    else if (has_flag(cur->button, BUTTON_REMOTE))
-    {
-        return;
-    }
-#endif
-
-    else if (last->keys_locked && action != ACTION_REDRAW)
-    {
-        if (has_flag(last->softlock_mask, SEL_ACTION_ENABLED))
-        {
-            filtered = is_action_filtered(action, last->softlock_mask, cur->context);
-
-            sl_activate = !is_action_discarded(cur, filtered, &last->sl_filter_tick);
-        }
-
-        if (sl_activate)
-        { /*All non-std softlock options are set to 0 if advanced sl is disabled*/
-            if (!has_flag(last->softlock_mask, SEL_ACTION_NONOTIFY))
-            {   /* always true on standard softlock behavior*/
-                notify_user = has_flag(cur->button, BUTTON_REL);
-                action = ACTION_REDRAW;
-            }
-            else
-                action = ACTION_NONE;
-        }
-        else if (!filtered)
-        { /* catch blocked actions on fast repeated presses */
-            action = ACTION_NONE;
-        }
-     }/* keys_locked */
-
-#ifdef BUTTON_POWER /*always notify if power button pressed while keys locked*/
-    notify_user |= (has_flag(cur->button, BUTTON_POWER|BUTTON_REL)
-                    && last->keys_locked);
-#endif
-
-    if (notify_user)
-    {
-        action_handle_backlight(true, false);
-
-#ifdef HAVE_BACKLIGHT
-       /* If we don't wait for a moment for the backlight queue to process,
-        * the user will never see the message
-        */
-        if (!is_backlight_on(false))
-        {
-            sleep(HZ/2);
-        }
-#endif
-        if (!has_flag(last->softlock_mask, SEL_ACTION_ALLNONOTIFY))
-        {
-            if (last->keys_locked)
-            {
-                splash(HZ/2, ID2P(LANG_KEYLOCK_ON));
-            }
-            else
-            {
-                splash(HZ/2, ID2P(LANG_KEYLOCK_OFF));
-            }
-        }
-
-        action       = ACTION_REDRAW;
-        last->button = BUTTON_NONE;
-        button_clear_queue();
-    }
-
-    cur->action = action;
-#endif/*!HAS_BUTTON_HOLD*/
 }
 
 /**********************************************************************
@@ -927,11 +694,6 @@ static void init_act_cur(action_cur_t *cur,
 static inline int do_backlight(action_last_t *last, action_cur_t *cur, int action)
 {
 
-#if !defined(HAVE_BACKLIGHT)
-    (void) last;
-    (void) cur;
-    return action;
-#else
     if (!has_flag(last->backlight_mask, SEL_ACTION_ENABLED)
         || (action & (SYS_EVENT|BUTTON_MULTIMEDIA)) != 0
         || action == ACTION_REDRAW)
@@ -975,7 +737,6 @@ static inline int do_backlight(action_last_t *last, action_cur_t *cur, int actio
     }
 
     return action;
-#endif /* !HAVE_BACKLIGHT */
 }
 
 /********************************************************************
@@ -1196,7 +957,6 @@ int get_action_statuscode(int *button)
     return ret;
 }
 
-#ifdef HAVE_BACKLIGHT
 /* Enable selected actions to leave the backlight off */
 void set_selective_backlight_actions(bool selective, unsigned int mask,
                                                               bool filter_fkp)
@@ -1217,80 +977,7 @@ void set_selective_backlight_actions(bool selective, unsigned int mask,
         action_last.backlight_mask = SEL_ACTION_NONE;
     }
 }
-#endif /* HAVE_BACKLIGHT */
 
-#ifndef HAS_BUTTON_HOLD
-bool is_keys_locked(void)
-{
-    return (action_last.keys_locked);
-}
-
-/* Enable selected actions to bypass a locked state */
-void set_selective_softlock_actions(bool selective, unsigned int mask)
-{
-    action_last.keys_locked = false;
-    if (selective)
-    {
-        action_last.softlock_mask = mask | SEL_ACTION_ENABLED;
-    }
-    else
-    {
-        action_last.softlock_mask = SEL_ACTION_NONE;
-    }
-}
-
-/* look for an action in the given context, return button which triggers it.
- * (note: pre_button isn't taken into account here) */
-static int find_button_for_action(int context, int action)
-{
-    const struct button_mapping *items;
-    int i;
-
-    do
-    {
-        items = get_context_mapping(context);
-        if (items == NULL)
-            break;
-
-        for (i = 0; items[i].button_code != BUTTON_NONE; ++i)
-        {
-            if (items[i].action_code == action)
-                return items[i].button_code;
-        }
-
-        /* get chained context, if none it will be CONTEXT_STOPSEARCHING */
-        context = items[i].action_code;
-    } while (context != (int)CONTEXT_STOPSEARCHING);
-
-    return BUTTON_NONE;
-}
-
-void action_autosoftlock_init(void)
-{
-    /* search in WPS and STD contexts for the keylock button combo */
-    static const int contexts[2] = { CONTEXT_WPS, CONTEXT_STD };
-
-    for (int i = 0; i < 2; ++i)
-    {
-        int button = find_button_for_action(contexts[i], ACTION_STD_KEYLOCK);
-        if (button != BUTTON_NONE)
-        {
-            action_last.unlock_combo = button;
-            break;
-        }
-    }
-
-    /* if we have autolock and alwaysautolock, go ahead and arm it */
-    if (has_flag(action_last.softlock_mask, SEL_ACTION_AUTOLOCK) &&
-        has_flag(action_last.softlock_mask, SEL_ACTION_ALWAYSAUTOLOCK) &&
-        (action_last.unlock_combo != BUTTON_NONE))
-    {
-        action_last.softlock_mask = action_last.softlock_mask | SEL_ACTION_ALOCK_OK;
-    }
-
-    return;
-}
-#endif /* !HAS_BUTTON_HOLD */
 
 /*
 *******************************************************************************

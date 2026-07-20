@@ -73,9 +73,7 @@ static void toggle_events(bool enable)
     evt_toggle(enable, GUI_EVENT_ACTIONUPDATE, viewportmanager_redraw);
     evt_toggle(enable, PLAYBACK_EVENT_TRACK_CHANGE, do_sbs_update_callback);
     evt_toggle(enable, PLAYBACK_EVENT_NEXTTRACKID3_AVAILABLE, do_sbs_update_callback);
-#if defined(HAVE_LCD_ENABLE) || defined(HAVE_LCD_SLEEP)
     evt_toggle(enable, LCD_EVENT_ACTIVATION, do_sbs_update_callback);
-#endif
 }
 
 static void set_clear_update_valid_vp(enum screen_type screen, struct viewport *vp)
@@ -108,9 +106,7 @@ static void toggle_theme(enum screen_type screen, bool force)
         bool first_boot = theme_stack_top[screen] == 0;
         /* remove the left overs from the previous screen.
          * could cause a tiny flicker. Redo your screen code if that happens */
-#ifdef HAVE_BACKDROP_IMAGE
         skin_backdrop_show(sb_get_backdrop(screen));
-#endif
         if (LIKELY(after_boot[screen]) && (!was_enabled[screen] || force))
         {
             struct viewport deadspace, user;

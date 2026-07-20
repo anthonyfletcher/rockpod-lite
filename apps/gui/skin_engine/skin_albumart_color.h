@@ -21,7 +21,6 @@
 #ifndef SKIN_ALBUMART_COLOR_H
 #define SKIN_ALBUMART_COLOR_H
 
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
 
 /* Initialize dynamic colors: save theme defaults, register playback events */
 void dynamic_colors_init(void);
@@ -49,17 +48,5 @@ bool dynamic_colors_screen_clear_needed(void);
 /* Returns true when color extraction is queued but not yet performed */
 bool dynamic_colors_pending(void);
 
-#else /* !HAVE_ALBUMART || !HAVE_LCD_COLOR */
-
-#define dynamic_colors_init()                do {} while(0)
-#define dynamic_colors_resolve(c)            (c)
-#define dynamic_colors_fading()              false
-#define dynamic_colors_check_extraction(s)   do {} while(0)
-#define dynamic_colors_save_theme()          do {} while(0)
-#define dynamic_colors_needs_full_update()   false
-#define dynamic_colors_screen_clear_needed() false
-#define dynamic_colors_pending()             false
-
-#endif /* HAVE_ALBUMART && HAVE_LCD_COLOR */
 
 #endif /* SKIN_ALBUMART_COLOR_H */

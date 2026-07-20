@@ -981,7 +981,6 @@ static int dirbrowse(void)
             case ACTION_TREE_WPS:
                 return exit_to_new_screen(GO_TO_PREVIOUS_MUSIC);
                 break;
-#ifdef HAVE_QUICKSCREEN
             case ACTION_STD_QUICKSCREEN:
             {
                 bool enter_shortcuts_menu = global_settings.shortcuts_replaces_qs;
@@ -1017,14 +1016,11 @@ static int dirbrowse(void)
                 restore = do_restore_display;
                 break;
             }
-#endif
 
-#ifdef HAVE_HOTKEY
             case ACTION_TREE_HOTKEY:
                 if (!global_settings.hotkey_tree)
                     break;
                 /* fall through */
-#endif
             case ACTION_STD_CONTEXT:
             {
                 bool hotkey = button == ACTION_TREE_HOTKEY;
@@ -1406,11 +1402,9 @@ static void say_filetype(int attr)
 
 static int ft_play_dirname(char* name)
 {
-#ifdef HAVE_MULTIVOLUME
     int vol = path_get_volume_id(name);
     if (talk_volume_id(vol))
         return 1;
-#endif
 
     return talk_file(tc.currdir, name, dir_thumbnail_name, NULL,
                      global_settings.talk_filetype ?

@@ -46,9 +46,7 @@
 #include "strnatcmp.h"
 #include "keyboard.h"
 
-#ifdef HAVE_MULTIVOLUME
 #include "mv.h"
-#endif
 
 #include "wps.h"
 
@@ -238,7 +236,6 @@ static int compare(const void* p1, const void* p2)
     {   /* two directories */
         criteria = cmp_data.sort_dir;
 
-#ifdef HAVE_MULTIVOLUME
         if (e1->attr & ATTR_VOLUME || e2->attr & ATTR_VOLUME)
         {   /* a volume identifier is involved */
             if (e1->attr & ATTR_VOLUME && e2->attr & ATTR_VOLUME)
@@ -246,7 +243,6 @@ static int compare(const void* p1, const void* p2)
             else /* only one is a volume: volume first */
                 return (e2->attr & ATTR_VOLUME) - (e1->attr & ATTR_VOLUME);
         }
-#endif
 
     }
     else if (!(e1->attr & ATTR_DIRECTORY) && !(e2->attr & ATTR_DIRECTORY))
@@ -480,7 +476,6 @@ int ft_assemble_path(char *buf, size_t bufsz, const char* currdir, const char* f
     filename = strip_slash(filename, "");
     /* remove slashes and NULL strings to make logic below simpler */
 
-#ifdef HAVE_MULTIVOLUME
     /* Multi-volume device drives might be enumerated in root so everything
        should be an absolute qualified path with <drive>/ prepended */
     if (*cd != '\0') /* Not in / */
@@ -508,19 +503,6 @@ int ft_assemble_path(char *buf, size_t bufsz, const char* currdir, const char* f
             len = path_append(buf, root_realpath(), filename, bufsz);
         } /* buf => /<drive>/filename */
     }
-#else
-    /* Other devices might need a specific drive/dir prepended but its usually '/' */
-    if (*cd != '\0') /* Not in / */
-    {
-        len = path_append(buf, root_realpath(), cd, bufsz);/* /currdir */
-        if(len < bufsz)
-            len += path_append(buf + len, PA_SEP_HARD, filename, bufsz - len);
-    } /* buf => /currdir/filename */
-    else /* In / */
-    {
-        len = path_append(buf, root_realpath(), filename, bufsz);
-    }  /* buf => /filename */
-#endif
 
     if (len > bufsz)
         splash(HZ, ID2P(LANG_PLAYLIST_DIRECTORY_ACCESS_ERROR));
@@ -650,14 +632,12 @@ int ft_enter(struct tree_context* c)
                 set_file(buf, (char *)global_settings.kbd_file);
                 break;
 
-#if defined(HAVE_ROLO)
                 /* firmware file */
             case FILE_ATTR_MOD:
                 splash(0, ID2P(LANG_WAIT));
                 audio_hard_stop();
                 rolo_load(buf);
                 break;
-#endif
             case FILE_ATTR_CUE:
                 display_cuesheet_content(buf);
                 break;
@@ -729,7 +709,6 @@ int ft_exit(struct tree_context* c)
         else
             c->currdir[i-1]='\0';
 
-#ifdef HAVE_MULTIVOLUME /* un-redirect the realpath */
         if ((unsigned)c->dirlevel<=2) /* only expect redirect two levels max */
         {
             char *currdir = c->currdir;
@@ -750,7 +729,6 @@ int ft_exit(struct tree_context* c)
                 c->dirlevel=1;
             }
         }
-#endif
 
         if (*c->dirfilter > NUM_FILTER_MODES && c->dirlevel < 1)
             exit_func = true;

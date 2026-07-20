@@ -81,9 +81,7 @@
 
 #include "shortcuts.h"
 
-#ifdef IPOD_ACCESSORY_PROTOCOL
 #include "iap.h"
-#endif
 
 #include "audio_thread.h"
 #include "playback.h"
@@ -97,9 +95,7 @@
 #include "ata_mmc.h"
 #endif
 
-#ifdef HAVE_HARDWARE_CLICK
 #include "piezo.h"
-#endif
 
 #define MAIN_NORETURN_ATTR NORETURN_ATTR
 
@@ -127,10 +123,8 @@ int main(void)
     tree_init();
     /* Keep the order of this 3
      * Must be done before any code uses the multi-screen API */
-#ifdef HAVE_USBSTACK
     /* All threads should be created and public queues registered by now */
     usb_start_monitoring();
-#endif
 
 #if !defined(DISABLE_ACTION_REMAP) && defined(CORE_KEYREMAP_FILE)
     if (file_exists(CORE_KEYREMAP_FILE))
@@ -279,19 +273,15 @@ static void init(void)
     /* early early early! */
     filesystem_init();
 
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
     set_cpu_frequency(CPUFREQ_NORMAL);
     cpu_boost(true);
-#endif
 
     i2c_init();
 
     power_init();
 
     enable_irq();
-#if defined(CPU_ARM_CLASSIC)
     enable_fiq();
-#endif
     /* current_tick should be ticking by now */
     CHART("ticking");
 
@@ -312,9 +302,7 @@ static void init(void)
 #ifdef DEBUG
     debug_init();
 #else
-#ifdef HAVE_SERIAL
     serial_setup();
-#endif
 #endif
 
 #if CONFIG_RTC
@@ -336,9 +324,7 @@ static void init(void)
     powermgmt_init();
 #endif
 
-#ifdef HAVE_HARDWARE_CLICK
     piezo_init();
-#endif
 
     /* Keep the order of this 3 (viewportmanager handles statusbars)
      * Must be done before any code uses the multi-screen API */
@@ -376,27 +362,6 @@ static void init(void)
     powermgmt_init();
 #endif
 
-#ifndef HAVE_USBSTACK
-    usb_start_monitoring();
-    while (usb_detect() == USB_INSERTED)
-    {
-        /* enter USB mode early, before trying to mount */
-        if (button_get_w_tmo(HZ/10) == SYS_USB_CONNECTED)
-#if (CONFIG_STORAGE & STORAGE_MMC)
-            if (!mmc_touched() ||
-                (mmc_remove_request() == SYS_HOTSWAP_EXTRACTED))
-#endif
-            {
-                gui_usb_screen_run(true, button_get_data());
-                mounted = true; /* mounting done @ end of USB mode */
-            }
-#ifdef HAVE_USB_POWER
-        /* if there is no host or user requested no USB, skip this */
-        if (usb_powered_only())
-            break;
-#endif
-    }
-#endif
 
     if (!mounted)
     {
@@ -416,14 +381,12 @@ static void init(void)
 #endif
             lcd_puts(0, line++, rbversion);
 
-#ifdef STORAGE_GET_INFO
             struct storage_info sinfo;
             storage_get_info(0, &sinfo);
 #ifdef MAX_PHYS_SECTOR_SIZE
             lcd_putsf(0, line++, "id: '%s' s:%u*%u", sinfo.product, sinfo.sector_size, sinfo.phys_sector_mult);
 #else
             lcd_putsf(0, line++, "id: '%s' s:%u", sinfo.product, sinfo.sector_size);
-#endif
 #endif
             struct partinfo pinfo;
             for (int i = 0 ; i < NUM_VOLUMES ; i++) {
@@ -519,15 +482,9 @@ static void init(void)
 #if CONFIG_CHARGING
     car_adapter_mode_init();
 #endif
-#ifdef IPOD_ACCESSORY_PROTOCOL
     iap_setup(global_settings.serial_bitrate);
-#endif
-#ifdef HAVE_ACCESSORY_SUPPLY
     accessory_supply_set(global_settings.accessory_supply);
-#endif
-#ifdef HAVE_LINEOUT_POWEROFF
     lineout_set(global_settings.lineout_active);
-#endif
     CHART("<settings_apply_skins");
     settings_apply_skins();
     CHART(">settings_apply_skins");

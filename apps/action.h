@@ -42,13 +42,8 @@
 #define LAST_ITEM_IN_LIST { CONTEXT_STOPSEARCHING, BUTTON_NONE, BUTTON_NONE }
 #define LAST_ITEM_IN_LIST__NEXTLIST(a) { a, BUTTON_NONE, BUTTON_NONE }
 
-#if !defined(HAS_BUTTON_HOLD)
-#define ALLOW_SOFTLOCK 0x08000000 /* will be stripped.. never needed except in calls to get_action() */
-#else
 #define ALLOW_SOFTLOCK 0
-#endif
 
-#if defined(HAVE_BACKLIGHT) || !defined(HAS_BUTTON_HOLD)
 /* Selective action selection flags */
 #define SEL_ACTION_NONE       0
 #define SEL_ACTION_VOL        0x001U
@@ -68,29 +63,12 @@
 #define SEL_ACTION_ENABLED    0x800U
 /* Selective Actions flags */
 
-#if !defined(HAS_BUTTON_HOLD)
-/* returns true if keys_locked and screen_has_lock */
-bool is_keys_locked(void);
 
-/* Enable selected actions to bypass a locked state
-* mask is combination of Selective action selection flags */
-void set_selective_softlock_actions(bool selective, unsigned int mask);
-
-/* search the standard and wps contexts for ACTION_STD_KEYLOCK,
- * load it into unlock_combo if we find it,
- * also arm autolock if enabled. */
-void action_autosoftlock_init(void);
-
-#endif /* !defined(HAS_BUTTON_HOLD) */
-
-#if defined(HAVE_BACKLIGHT)
 /* Enable selected actions to leave the backlight off
 * mask is combination of Selective action selection flags */
 void set_selective_backlight_actions(bool selective, unsigned int mask,
                                                              bool filter_fkp);
-#endif
 
-#endif /* defined(HAVE_BACKLIGHT) || !defined(HAS_BUTTON_HOLD) */
 
 enum {
     CONTEXT_STD = 0,

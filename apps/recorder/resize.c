@@ -78,15 +78,6 @@ int recalc_dimension(struct dim *dst, struct dim *src)
         dst->width = LCD_WIDTH;
     if (dst->height <= 0)
         dst->height = LCD_HEIGHT;
-#ifndef HAVE_UPSCALER
-    if (dst->width > sw || dst->height > sh)
-    {
-        dst->width = sw;
-        dst->height = sh;
-    }
-    if (sw == dst->width && sh == dst->height)
-        return 1;
-#endif
     tmp = (sw * dst->height + (sh >> 1)) / sh;
     if (tmp > dst->width)
         dst->height = (sh * dst->width + (sw >> 1)) / sw;
@@ -301,7 +292,6 @@ static inline bool scale_v_area(struct rowset *rset, struct scaler_context *ctx)
     return true;
 }
 
-#ifdef HAVE_UPSCALER
 /* horizontal linear scaler */
 static bool scale_h_linear(void *out_line_ptr, struct scaler_context *ctx,
                            bool accum)
@@ -467,9 +457,7 @@ static inline bool scale_v_linear(struct rowset *rset,
     }
     return true;
 }
-#endif /* HAVE_UPSCALER */
 
-#if defined(HAVE_LCD_COLOR) && (defined(HAVE_JPEG) || defined(PLUGIN))
 static void output_row_32_native_fromyuv(uint32_t row, void * row_in,
                                struct scaler_context *ctx)
 {
@@ -505,7 +493,6 @@ static void output_row_32_native_fromyuv(uint32_t row, void * row_in,
         dest += DEST_STEP;
     }
 }
-#endif
 
 static void output_row_32_native(uint32_t row, void * row_in,
                               struct scaler_context *ctx)
@@ -554,7 +541,6 @@ static void output_row_32_native(uint32_t row, void * row_in,
 }
 
 /* Also built for the core image viewer (colour targets), not just plugins. */
-#if (defined(PLUGIN) || defined(HAVE_LCD_COLOR)) && LCD_DEPTH > 1
 unsigned int get_size_native(struct bitmap *bm)
 {
     return BM_SIZE(bm->width,bm->height,FORMAT_NATIVE,0);
@@ -562,17 +548,12 @@ unsigned int get_size_native(struct bitmap *bm)
 
 const struct custom_format format_native = {
     .output_row_8 = output_row_8_native,
-#if defined(HAVE_LCD_COLOR) && (defined(HAVE_JPEG) || defined(PLUGIN))
     .output_row_32 = {
         output_row_32_native,
         output_row_32_native_fromyuv
     },
-#else
-    .output_row_32 = output_row_32_native,
-#endif
     .get_size = get_size_native
 };
-#endif
 
 int resize_on_load(struct bitmap *bm, bool dither, struct dim *src,
                    struct rowset *rset, unsigned char *buf, unsigned int len,
@@ -588,90 +569,52 @@ int resize_on_load(struct bitmap *bm, bool dither, struct dim *src,
     int ret;
     /* buffer for 1 line + 2 spare lines */
     unsigned int needed = sizeof(struct uint32_argb) * 3 * bm->width;
-#if MAX_SC_STACK_ALLOC
-    uint8_t sc_buf[(needed <= len  || needed > MAX_SC_STACK_ALLOC) ?
-                   0 : needed];
-#endif
     ALIGN_BUFFER(buf, len, sizeof(uint32_t));
     if (needed > len)
     {
-#if MAX_SC_STACK_ALLOC
-        if (needed > MAX_SC_STACK_ALLOC)
-        {
-            DEBUGF("unable to allocate required buffer: %d needed, "
-                   "%d available, %d permitted from stack\n",
-                   needed, len, MAX_SC_STACK_ALLOC);
-            return 0;
-        }
-        if (sizeof(sc_buf) < needed)
-        {
-            DEBUGF("failed to allocate large enough buffer on stack: "
-                   "%d needed, only got %d",
-                   needed, MAX_SC_STACK_ALLOC);
-            return 0;
-        }
-#else
         DEBUGF("unable to allocate required buffer: %d needed, "
                "%d available\n", needed, len);
         return 0;
-#endif
     }
 
     struct scaler_context ctx;
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
     cpu_boost(true);
-#endif
     ctx.store_part = store_part;
     ctx.args = args;
-#if MAX_SC_STACK_ALLOC
-    ctx.buf = needed > len ? sc_buf : buf;
-#else
     ctx.buf = buf;
-#endif
     ctx.len = len;
     ctx.bm = bm;
     ctx.src = src;
     ctx.dither = dither;
 #if !defined(PLUGIN)
-#if defined(HAVE_LCD_COLOR) && defined(HAVE_JPEG)
     ctx.output_row = format_index ? output_row_32_native_fromyuv
                                   : output_row_32_native;
-#else
-    ctx.output_row = output_row_32_native;
-#endif
     if (format)
 #endif
         ctx.output_row = format->output_row_32[format_index];
-#ifdef HAVE_UPSCALER
     if (sw > dw)
     {
-#endif
         ctx.h_scaler = scale_h_area;
         uint32_t h_div = (1U << 24) / sw;
         ctx.h_i_val = sw * h_div;
         ctx.h_o_val = dw * h_div;
-#ifdef HAVE_UPSCALER
     } else {
         ctx.h_scaler = scale_h_linear;
         uint32_t h_div = (1U << 24) / (dw - 1);
         ctx.h_i_val = (sw - 1) * h_div;
         ctx.h_o_val = (dw - 1) * h_div;
     }
-#endif
 #ifdef CPU_COLDFIRE
     unsigned old_macsr = coldfire_get_macsr();
     coldfire_set_macsr(EMAC_UNSIGNED);
 #endif
-#ifdef HAVE_UPSCALER
     if (sh > dh)
-#endif
     {
         uint32_t v_div = (1U << 22) / sh;
         ctx.v_i_val = sh * v_div;
         ctx.v_o_val = dh * v_div;
         ret = scale_v_area(rset, &ctx);
     }
-#ifdef HAVE_UPSCALER
     else
     {
         uint32_t v_div = (1U << 22) / dh;
@@ -679,15 +622,12 @@ int resize_on_load(struct bitmap *bm, bool dither, struct dim *src,
         ctx.v_o_val = (dh - 1) * v_div;
         ret = scale_v_linear(rset, &ctx);
     }
-#endif
 #ifdef CPU_COLDFIRE
     /* Restore emac status; other modules like tone control filter
      * calculation may rely on it. */
     coldfire_set_macsr(old_macsr);
 #endif
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
     cpu_boost(false);
-#endif
     if (!ret)
         return 0;
     return 1;

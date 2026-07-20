@@ -376,10 +376,8 @@ static int parse_image_load(struct skin_element *element,
     if (token->type == SKIN_TOKEN_IMAGE_DISPLAY)
     {
         token->value.data = PTRTOSKINOFFSET(skin_buffer, img);
-#ifdef HAVE_BACKDROP_IMAGE
         if (curr_vp)
             img->dither = curr_vp->output_to_backdrop_buffer;
-#endif
     }
 
     if (!strcmp(img->bm.data, "__list_icons__"))
@@ -694,16 +692,12 @@ static int parse_viewportcolour(struct skin_element *element,
         if (token->type == SKIN_TOKEN_VIEWPORT_FGCOLOUR)
         {
             curr_vp->vp.fg_pattern = colour->colour;
-#if defined(HAVE_LCD_COLOR) && defined(HAVE_ALBUMART)
             curr_vp->dc_orig_fg = colour->colour;
-#endif
         }
         else
         {
             curr_vp->vp.bg_pattern = colour->colour;
-#if defined(HAVE_LCD_COLOR) && defined(HAVE_ALBUMART)
             curr_vp->dc_orig_bg = colour->colour;
-#endif
         }
     }
     return 0;
@@ -1446,11 +1440,9 @@ static void skin_data_reset(struct wps_data *wps_data)
     skin_data_free_buflib_allocs(wps_data);
     wps_data->images = INVALID_OFFSET;
     wps_data->tree = INVALID_OFFSET;
-#ifdef HAVE_BACKDROP_IMAGE
     if (wps_data->backdrop_id >= 0)
         skin_backdrop_unload(wps_data->backdrop_id);
     backdrop_filename = NULL;
-#endif
     wps_data->albumart = INVALID_OFFSET;
     if (wps_data->playback_aa_slot >= 0)
     {
@@ -1592,9 +1584,7 @@ static bool load_skin_bitmaps(struct wps_data *wps_data, char *bmpdir)
         list = SKINOFFSETTOPTR(skin_buffer, list->next);
     }
 
-#ifdef HAVE_BACKDROP_IMAGE
     wps_data->backdrop_id = skin_backdrop_assign(backdrop_filename, bmpdir, curr_screen);
-#endif /* has backdrop support */
     return retval;
 }
 
@@ -1903,7 +1893,6 @@ static int skin_element_callback(struct skin_element* element, void* data)
                 case SKIN_TOKEN_FILE_TEXT:
                     function = parse_filetext;
                     break;
-#ifdef HAVE_BACKDROP_IMAGE
                 case SKIN_TOKEN_VIEWPORT_FGCOLOUR:
                 case SKIN_TOKEN_VIEWPORT_BGCOLOUR:
                     function = parse_viewportcolour;
@@ -1919,7 +1908,6 @@ static int skin_element_callback(struct skin_element* element, void* data)
                     backdrop_filename = BACKDROP_BUFFERNAME;
                     wps_data->use_extra_framebuffer = true;
                     break;
-#endif
                 case SKIN_TOKEN_VIEWPORT_GRADIENT_SETUP:
                     function = parse_viewport_gradient_setup;
                     break;
@@ -2079,10 +2067,8 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
 
     /* align to long */
     ALIGN_BUFFER(skin_buffer, buffersize, sizeof(long));
-#ifdef HAVE_BACKDROP_IMAGE
     backdrop_filename = "-";
     wps_data->backdrop_id = -1;
-#endif
     /* parse the skin source */
     skin_buffer_init(skin_buffer, buffersize);
     struct skin_element *tree = skin_parse(wps_buffer, skin_element_callback, wps_data);

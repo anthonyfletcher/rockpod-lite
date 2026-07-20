@@ -363,9 +363,6 @@ static inline int rgbcmp(const struct uint8_rgb *rgb1, const struct uint8_rgb *r
     return memcmp(rgb1, rgb2, sizeof(struct uint8_rgb));
 }
 
-#if !defined(PLUGIN) && !defined(HAVE_JPEG) && !defined(HAVE_BMP_SCALING)
-static inline
-#endif
 void output_row_8_native(uint32_t row, void * row_in,
                               struct scaler_context *ctx)
 {
@@ -688,24 +685,20 @@ int read_bmp_fd(int fd,
         .bm = bm,
         .dither = dither,
     };
-#if defined(PLUGIN) || defined(HAVE_JPEG) || defined(HAVE_BMP_SCALING)
     void (*output_row_8)(uint32_t, void*, struct scaler_context*) =
         output_row_8_native;
     if (cformat)
         output_row_8 = cformat->output_row_8;
-#endif
 
     unsigned char *buf = ba.buf;
 #if (LCD_DEPTH > 1) || \
     defined(PLUGIN)
     if (bm->width > BM_MAX_WIDTH)
     {
-#if defined(HAVE_BMP_SCALING) || defined(PLUGIN)
         unsigned int len = maxsize - totalsize;
         buf = bitmap + totalsize;
         ALIGN_BUFFER(buf, len, sizeof(uint32_t));
         if (bm->width*4 > (int)len)
-#endif
             return -6;
     }
 #endif
@@ -743,11 +736,7 @@ int read_bmp_fd(int fd,
         if (format == FORMAT_NATIVE) {
 #endif /* (LCD_DEPTH > 1) */
             {
-#if !defined(PLUGIN) && !defined(HAVE_JPEG) && !defined(HAVE_BMP_SCALING)
-                output_row_8_native(row, buf, &ctx);
-#else
                 output_row_8(row, buf, &ctx);
-#endif
             }
 #if ((LCD_DEPTH > 1)) && \
     !defined(PLUGIN)

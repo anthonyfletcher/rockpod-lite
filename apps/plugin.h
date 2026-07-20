@@ -134,9 +134,7 @@ int plugin_open(const char *plugin, const char *parameter);
 
 #include "filetypes.h"
 
-#ifdef USB_ENABLE_HID
 #include "usbstack/usb_hid_usage_tables.h"
-#endif
 
 
 #ifdef PLUGIN
@@ -251,15 +249,11 @@ struct plugin_api {
             int x, int y, int width, int height);
     void (*lcd_bitmap_transparent)(const fb_data *src, int x, int y,
             int width, int height);
-#if MEMORYSIZE > 2
     void (*lcd_blit_yuv)(unsigned char * const src[3],
                          int src_x, int src_y, int stride,
                          int x, int y, int width, int height);
-#endif /* MEMORYSIZE > 2 */
 
-#if defined(HAVE_LCD_ENABLE) || defined(HAVE_LCD_SLEEP)
     void (*button_queue_post)(long id, intptr_t data);
-#endif
     ucschar_t *(*bidi_l2v)(const unsigned char *str, int orientation);
     bool (*is_diacritic)(const ucschar_t char_code, bool *is_rtl);
     const unsigned char *(*font_get_bits)(struct font *pf, ucschar_t char_code);
@@ -289,7 +283,6 @@ struct plugin_api {
     void (*viewport_set_buffer)(struct viewport *vp, struct frame_buffer_t *buffer,
                                                      const enum screen_type screen);
 
-#ifdef HAVE_BACKLIGHT
     /* lcd backlight */
     /* For OLED targets like the Sansa Clip, the backlight_* functions control
      * the display enable, which has essentially the same effect. */
@@ -297,15 +290,12 @@ struct plugin_api {
     void (*backlight_on)(void);
     void (*backlight_off)(void);
     void (*backlight_set_timeout)(int index);
-#ifdef HAVE_BACKLIGHT_BRIGHTNESS
     void (*backlight_set_brightness)(int val);
-#endif /* HAVE_BACKLIGHT_BRIGHTNESS */
 
 #if CONFIG_CHARGING
     void (*backlight_set_timeout_plugged)(int index);
 #endif
 
-#endif /* HAVE_BACKLIGHT */
 
     /* list */
     void (*gui_synclist_init)(struct gui_synclist * lists,
@@ -355,13 +345,9 @@ struct plugin_api {
     int (*button_status)(void);
     void (*button_clear_queue)(void);
     int (*button_queue_count)(void);
-#ifdef HAS_BUTTON_HOLD
     bool (*button_hold)(void);
-#endif
-#ifdef HAVE_SW_POWEROFF
     void (*button_set_sw_poweroff_state)(bool enable);
     bool (*button_get_sw_poweroff_state)(void);
-#endif
 
     /* file */
     int (*open_utf8)(const char* pathname, int flags);
@@ -444,9 +430,7 @@ struct plugin_api {
     void (*talk_force_enqueue_next)(void);
 
     /* kernel/ system */
-#if defined(ARM_NEED_DIV0)
     void (*__div0)(void);
-#endif
     unsigned (*sleep)(unsigned ticks);
     void (*yield)(void);
     volatile long* current_tick;
@@ -462,9 +446,7 @@ struct plugin_api {
     void (*thread_exit)(void);
     void (*thread_wait)(unsigned int thread_id);
     void (*thread_thaw)(unsigned int thread_id);
-#ifdef HAVE_PRIORITY_SCHEDULING
     int (*thread_set_priority)(unsigned int thread_id, int priority);
-#endif
     void (*mutex_init)(struct mutex *m);
     void (*mutex_lock)(struct mutex *m);
     void (*mutex_unlock)(struct mutex *m);
@@ -478,13 +460,11 @@ struct plugin_api {
     int (*get_sleep_timer)(void);
     int (*system_memory_guard)(int newmode);
     long *cpu_frequency;
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
 #ifdef CPU_BOOST_LOGGING
     void (*cpu_boost_)(bool on_off,char*location,int line);
 #else
     void (*cpu_boost)(bool on_off);
 #endif
-#endif /* HAVE_ADJUSTABLE_CPU_FREQ */
 #ifdef HAVE_SCHEDULER_BOOSTCTRL
     void (*trigger_cpu_boost)(void);
     void (*cancel_cpu_boost)(void);
@@ -603,10 +583,8 @@ struct plugin_api {
     int (*sound_enum_hw_eq_band_setting)(unsigned int band,
                                          unsigned int band_setting);
 #endif /* AUDIOHW_HAVE_EQ */
-#if defined (HAVE_PITCHCONTROL)
     int32_t (*sound_get_pitch)(void);
     void (*sound_set_pitch)(int32_t pitch);
-#endif
     const unsigned long *audio_master_sampr_list;
     const unsigned long *hw_freq_sampr;
     void (*pcm_apply_settings)(void);
@@ -627,12 +605,10 @@ struct plugin_api {
     void (*dsp_set_crossfeed_type)(int type);
     void (*dsp_eq_enable)(bool enable);
     void (*dsp_dither_enable)(bool enable);
-#ifdef HAVE_PITCHCONTROL
     int32_t (*dsp_get_timestretch)(void);
     void    (*dsp_set_timestretch)(int32_t percent);
     void    (*dsp_timestretch_enable)(bool enabled);
     bool    (*dsp_timestretch_available)(void);
-#endif
     intptr_t (*dsp_configure)(struct dsp_config *dsp,
                               unsigned int setting, intptr_t value);
     struct dsp_config * (*dsp_get_config)(unsigned int dsp_id);
@@ -792,9 +768,7 @@ struct plugin_api {
     /* usb */
     bool (*usb_inserted)(void);
     void (*usb_acknowledge)(long id, intptr_t seqnum);
-#ifdef USB_ENABLE_HID
     void (*usb_hid_send)(usage_page_t usage_page, int id);
-#endif
 #ifdef USB_ENABLE_AUDIO
     bool (*usb_audio_get_playing)(void);
 #endif
@@ -837,12 +811,10 @@ struct plugin_api {
                          int format, const struct custom_format *cformat);
     int (*read_bmp_fd)(int fd, struct bitmap *bm, int maxsize,
                        int format, const struct custom_format *cformat);
-#ifdef HAVE_JPEG
     int (*read_jpeg_file)(const char* filename, struct bitmap *bm, int maxsize,
                           int format, const struct custom_format *cformat);
     int (*read_jpeg_fd)(int fd, struct bitmap *bm, int maxsize,
                         int format, const struct custom_format *cformat);
-#endif
     void (*screen_dump_set_hook)(void (*hook)(int fh));
 
 #ifdef HAVE_WHEEL_POSITION
@@ -863,15 +835,11 @@ struct plugin_api {
     void (*sys_reboot)(void);
     /* pathfuncs */
     void (*fix_path_part)(char* path, int offset, int count);
-#ifdef HAVE_MULTIVOLUME
     int (*path_strip_volume)(const char *name, const char **nameptr, bool greedy);
-#endif
 
     /* new stuff at the end, sort into place next time
        the API gets incompatible */
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
     unsigned int (*dynamic_colors_resolve)(unsigned int original);
-#endif
 };
 
 /* plugin header */

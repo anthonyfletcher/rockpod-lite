@@ -21,9 +21,7 @@
 #ifndef _ONPLAY_H_
 #define _ONPLAY_H_
 
-#ifdef HAVE_HOTKEY
 #include "menu.h"
-#endif
 
 enum {
     ONPLAY_NO_CUSTOMACTION,
@@ -41,12 +39,9 @@ enum {
     ONPLAY_START_PLAY,
     ONPLAY_PLAYLIST,
     ONPLAY_PLUGIN,
-#ifdef HAVE_HOTKEY
     ONPLAY_FUNC_RETURN, /* for use in hotkey_assignment only */
-#endif
 };
 
-#ifdef HAVE_HOTKEY
 
 enum hotkey_action {
     HOTKEY_OFF = 0,
@@ -79,7 +74,6 @@ struct hotkey_assignment {
 };                          /* (Pick ONPLAY_FUNC_RETURN to use function's return value) */
 
 const struct hotkey_assignment *get_hotkey(int action);
-#endif
 
 /* needed for the playlist viewer.. eventually clean this up */
 void onplay_show_playlist_cat_menu(const char* track_name, int attr,

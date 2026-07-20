@@ -762,24 +762,16 @@ void settings_apply_pm_range(void)
 
 void sound_settings_apply(void)
 {
-#ifdef AUDIOHW_HAVE_BASS
     sound_set(SOUND_BASS, global_settings.bass);
-#endif
-#ifdef AUDIOHW_HAVE_TREBLE
     sound_set(SOUND_TREBLE, global_settings.treble);
-#endif
     sound_set(SOUND_BALANCE, global_settings.balance);
 #ifndef PLATFORM_HAS_VOLUME_CHANGE
     sound_set(SOUND_VOLUME, global_status.volume);
 #endif
     sound_set(SOUND_CHANNELS, global_settings.channel_config);
     sound_set(SOUND_STEREO_WIDTH, global_settings.stereo_width);
-#ifdef AUDIOHW_HAVE_BASS_CUTOFF
     sound_set(SOUND_BASS_CUTOFF, global_settings.bass_cutoff);
-#endif
-#ifdef AUDIOHW_HAVE_TREBLE_CUTOFF
     sound_set(SOUND_TREBLE_CUTOFF, global_settings.treble_cutoff);
-#endif
 #ifdef AUDIOHW_HAVE_DEPTH_3D
     sound_set(SOUND_DEPTH_3D, global_settings.depth_3d);
 #endif
@@ -878,15 +870,10 @@ void settings_apply(bool read_disk)
 
     sound_settings_apply();
 
-#ifdef HAVE_DISK_STORAGE
     audio_set_buffer_margin(global_settings.buffer_margin);
-#endif
 
     lcd_scroll_speed(global_settings.scroll_speed);
-#ifdef HAVE_BACKLIGHT_BRIGHTNESS
     backlight_set_brightness(global_settings.brightness);
-#endif
-#ifdef HAVE_BACKLIGHT
     backlight_set_timeout(global_settings.backlight_timeout);
 #if CONFIG_CHARGING
     backlight_set_timeout_plugged(global_settings.backlight_timeout_plugged);
@@ -895,11 +882,8 @@ void settings_apply(bool read_disk)
     backlight_set_fade_in(global_settings.backlight_fade_in);
     backlight_set_fade_out(global_settings.backlight_fade_out);
 #endif
-#endif
-#ifdef HAVE_DISK_STORAGE
     storage_spindown(global_settings.disk_spindown);
     storage_set_storage_mode(global_settings.storage_mode);
-#endif
     set_poweroff_timeout(global_settings.poweroff);
     if (global_settings.sleeptimer_on_startup)
         set_sleeptimer_duration(global_settings.sleeptimer_duration);
@@ -991,13 +975,9 @@ void settings_apply(bool read_disk)
 
     set_albumart_mode(global_settings.album_art);
 
-#ifdef HAVE_PLAY_FREQ
     /* before crossfade */
     audio_set_playback_frequency(global_settings.play_frequency);
-#endif
-#ifdef HAVE_CROSSFADE
     audio_set_crossfade(global_settings.crossfade);
-#endif
     replaygain_update();
     dsp_set_crossfeed_type(global_settings.crossfeed);
     dsp_set_crossfeed_direct_gain(global_settings.crossfeed_direct_gain);
@@ -1020,36 +1000,22 @@ void settings_apply(bool read_disk)
     dsp_afr_enable(global_settings.afr_enabled);
     dsp_pbe_precut(global_settings.pbe_precut);
     dsp_pbe_enable(global_settings.pbe);
-#ifdef HAVE_PITCHCONTROL
     dsp_timestretch_enable(global_settings.timestretch_enabled);
-#endif
     dsp_set_compressor(&global_settings.compressor_settings);
 
 
-#ifdef HAVE_BACKLIGHT
     set_backlight_filter_keypress(global_settings.bl_filter_first_keypress);
     set_selective_backlight_actions(global_settings.bl_selective_actions,
                                     global_settings.bl_selective_actions_mask,
                                     global_settings.bl_filter_first_keypress);
     backlight_set_on_button_hold(global_settings.backlight_on_button_hold);
 
-#ifdef HAVE_LCD_SLEEP_SETTING
     lcd_set_sleep_after_backlight_off(global_settings.lcd_sleep_after_backlight_off);
-#endif
-#endif /* HAVE_BACKLIGHT */
-
-#ifndef HAS_BUTTON_HOLD
-    set_selective_softlock_actions(
-                            global_settings.bt_selective_softlock_actions,
-                            global_settings.bt_selective_softlock_actions_mask);
-    action_autosoftlock_init();
-#endif
 
 
 
-#ifdef HAVE_USB_CHARGING_ENABLE
+
     usb_charging_enable(global_settings.usb_charging);
-#endif
 
 
 #if defined(HAVE_USB_POWER) && !defined(USB_NONE) && !defined(SIMULATOR)

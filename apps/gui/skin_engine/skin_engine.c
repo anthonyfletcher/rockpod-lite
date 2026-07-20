@@ -112,9 +112,7 @@ static void gui_skin_reset(struct gui_skin *skin)
     skin->data.images = -1;
     skin->data.albumart = -1;
     skin->data.playback_aa_slot = -1;
-#ifdef HAVE_BACKDROP_IMAGE
     skin->gui_wps.data->backdrop_id = -1;
-#endif
 }
 
 void gui_sync_skin_init(void)
@@ -125,10 +123,8 @@ void gui_sync_skin_init(void)
         FOR_NB_SCREENS(i)
         {
             skin_data_free_buflib_allocs(&skins[j][i].data);
-#ifdef HAVE_BACKDROP_IMAGE
             if (skins[j][i].data.backdrop_id != -1)
                 skin_backdrop_unload(skins[j][i].data.backdrop_id);
-#endif
             gui_skin_reset(&skins[j][i]);
             skins[j][i].gui_wps.display = &screens[i];
         }
@@ -146,10 +142,8 @@ static void skin_reset_buffers(int item, int screen)
     skin_data_free_buflib_allocs(&skins[item][screen].data);
     if (skins[item][screen].data.playback_aa_slot >= 0)
         playback_release_aa_slot(skins[item][screen].data.playback_aa_slot);
-#ifdef HAVE_BACKDROP_IMAGE
     if (skins[item][screen].data.backdrop_id >= 0)
         skin_backdrop_unload(skins[item][screen].data.backdrop_id);
-#endif
 }
 
 void settings_apply_skins(void)
@@ -219,10 +213,8 @@ void skin_load(enum skinnable_screens skin, enum screen_type screen,
 
     skins[skin][screen].needs_full_update = true;
     skin_helpers[skin]->process(screen, &skins[skin][screen].data, false);
-#ifdef HAVE_BACKDROP_IMAGE
     if (loaded)
         skin_backdrops_preload();
-#endif
 }
 
 static char* get_skin_filename(char *buf, size_t buf_size,
@@ -298,12 +290,10 @@ bool dbg_skin_engine(void)
 {
     struct simplelist_info info;
     int i, total = 0;
-#if defined(HAVE_BACKDROP_IMAGE)
     int ref_count;
     char *path;
     size_t bytes;
     int path_prefix_len = strlen(ROCKBOX_DIR "/wps/");
-#endif
     simplelist_info_init(&info, "Skin engine usage", 0, NULL);
     simplelist_reset_lines();
     FOR_NB_SCREENS(j) {
@@ -324,7 +314,6 @@ bool dbg_skin_engine(void)
         }
     }
     simplelist_addline("%s usage: %d bytes", "Skin total", total);
-#if defined(HAVE_BACKDROP_IMAGE)
     simplelist_setline("Backdrop Images:");
     i = 0;
     while (skin_backdrop_get_debug(i++, &path, &ref_count, &bytes)) {
@@ -339,6 +328,5 @@ bool dbg_skin_engine(void)
         }
     }
     simplelist_addline("%s usage: %d bytes", "Total", total);
-#endif
     return simplelist_show_list(&info);
 }

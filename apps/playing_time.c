@@ -505,15 +505,11 @@ static bool playing_time(void)
     if (opt > -1)
         return opt;
 
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
     cpu_boost(true);
-#endif
     splash_progress_set_delay(HZ/2);
     pti.nb_tracks = playlist_amount();
     int success = (pti.remaining_only || pt_add_elapsed(&pti)) && pt_add_remaining(&pti);
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
     cpu_boost(false);
-#endif
     if (!success)
         return false;
     if (pti.error_count > 0)

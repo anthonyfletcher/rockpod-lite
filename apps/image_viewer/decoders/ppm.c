@@ -87,13 +87,9 @@ static int load_image(char *filename, struct image_info *info,
     ppm.buf_size = memory_size;
 
     /* the actual decoding */
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
     cpu_boost(true);
     rc = read_ppm(fd, &ppm);
     cpu_boost(false);
-#else
-    rc = read_ppm(fd, &ppm);
-#endif /*HAVE_ADJUSTABLE_CPU_FREQ*/
 
     close(fd);
 
@@ -155,13 +151,9 @@ static int get_image(struct image_info *info, int frame, int ds)
         bmp_dst.width = info->width;
         bmp_dst.height = info->height;
         bmp_dst.data = *p_disp;
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
         cpu_boost(true);
         smooth_resize_bitmap(&bmp_src, &bmp_dst);
         cpu_boost(false);
-#else
-        smooth_resize_bitmap(&bmp_src, &bmp_dst);
-#endif /*HAVE_ADJUSTABLE_CPU_FREQ*/
     }
     else
     {

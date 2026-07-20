@@ -52,7 +52,7 @@ INLINE unsigned range_limit(int value)
         [v]"+d"(value)
     );
     return value;
-#elif defined(CPU_ARM)
+#else
     asm (  /* Note: Uses knowledge that only the low byte of the result is used */
         "add     %[v], %[v], #128    \n"  /* value += 128 */
         "cmp     %[v], #255          \n"  /* out of range 0..255? */
@@ -60,11 +60,6 @@ INLINE unsigned range_limit(int value)
         : /* outputs */
         [v]"+r"(value)
     );
-    return value;
-#else
-    value += 128;
-    if(value < 0)   return 0;
-    if(value > 255) return 255;
     return value;
 #endif
 }

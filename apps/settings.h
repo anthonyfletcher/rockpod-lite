@@ -86,7 +86,6 @@ enum {
     PLAYLIST_VIEWER_ENTRY_SHOW_ID3_TITLE = 3
 };
 
-#ifdef HAVE_CROSSFADE
 enum {
     CROSSFADE_ENABLE_OFF = 0,
     CROSSFADE_ENABLE_AUTOSKIP,
@@ -95,7 +94,6 @@ enum {
     CROSSFADE_ENABLE_SHUFFLE_OR_MANSKIP,
     CROSSFADE_ENABLE_ALWAYS,
 };
-#endif
 
 enum {
     FOLDER_ADVANCE_OFF = 0,
@@ -110,9 +108,7 @@ enum
     REPEAT_ALL,
     REPEAT_ONE,
     REPEAT_SHUFFLE,
-#ifdef AB_REPEAT_ENABLE
     REPEAT_AB,
-#endif
     NUM_REPEAT_MODES
 };
 
@@ -324,10 +320,8 @@ struct system_status
     uint32_t resume_crc32; /* crc32 of the name of the file */
     uint32_t resume_elapsed; /* elapsed time in last file */
     uint32_t resume_offset; /* byte offset in mp3 file */
-#ifdef HAVE_PITCHCONTROL
     int32_t resume_pitch;
     int32_t resume_speed;
-#endif
     int runtime;       /* current runtime since last charge */
     int topruntime;    /* top known runtime */
     int dircache_size;      /* directory cache structure last size, 22 bits */
@@ -348,14 +342,9 @@ struct user_settings
     int channel_config; /* Stereo, Mono, Custom, Mono left, Mono right, Karaoke */
     int stereo_width; /* 0-255% */
 
-#ifdef AUDIOHW_HAVE_BASS_CUTOFF
     int bass_cutoff;
-#endif
-#ifdef AUDIOHW_HAVE_TREBLE_CUTOFF
     int treble_cutoff;
-#endif
 
-#ifdef HAVE_CROSSFADE
     /* Crossfade */
     int crossfade;     /* Enable crossfade (0=off, 1=shuffle, 2=trackskip,
                                             3=shuff&trackskip, 4=always) */
@@ -364,7 +353,6 @@ struct user_settings
     int crossfade_fade_in_duration;   /* Fade in duration (0-15s)          */
     int crossfade_fade_out_duration;  /* Fade out duration (0-15s)         */
     int crossfade_fade_out_mixmode;   /* Fade out mode (0=crossfade,1=mix) */
-#endif
 
     /* Replaygain */
     struct replaygain_settings replaygain_settings;
@@ -386,36 +374,24 @@ struct user_settings
     int  keyclick;          /* keyclick volume */
     int  keyclick_repeats;  /* keyclick on repeats */
     bool dithering_enabled;
-#ifdef HAVE_PITCHCONTROL
     bool timestretch_enabled;
-#endif
 
 
     /* misc options */
-#ifndef HAVE_WHEEL_ACCELERATION
-    int list_accel_start_delay; /* ms before we start increaseing step size */
-    int list_accel_wait; /* ms between increases */
-#endif
 
 
 
     int  pause_rewind; /* time in s to rewind when pausing */
-#if defined(HAVE_HEADPHONE_DETECTION)
     int  unplug_mode; /* pause on headphone unplug */
     bool unplug_autoresume; /* disable auto-resume if no phones */
-#endif
 
-#ifdef HAVE_QUICKSCREEN
     const struct settings_list *qs_items[QUICKSCREEN_ITEM_COUNT];
-#endif
 
     int timeformat;    /* time format: 0=24 hour clock, 1=12 hour clock */
 
-#ifdef HAVE_DISK_STORAGE
     int disk_spindown; /* time until disk spindown, in seconds (0=off) */
     int buffer_margin; /* audio buffer watermark margin, in seconds */
     int storage_mode;  /* 0=auto, 1=HDD, 2=SSD */
-#endif
 
     int dirfilter;     /* 0=display all, 1=only supported, 2=only music,
                           3=dirs+playlists, 4=ID3 database */
@@ -585,9 +561,7 @@ struct user_settings
 #if BATTERY_CAPACITY_INC > 0
     int battery_capacity; /* in mAh */
 #endif
-#ifdef HAVE_USB_CHARGING_ENABLE
     int usb_charging;
-#endif
     /* device settings */
 
     int  cursor_style; /* style of the selection cursor */
@@ -620,58 +594,38 @@ struct user_settings
 #if CONFIG_CHARGING
     int backlight_timeout_plugged;
 #endif
-#ifndef HAS_BUTTON_HOLD
-    bool bt_selective_softlock_actions;
-    int bt_selective_softlock_actions_mask;
-#endif
-#ifdef HAVE_BACKLIGHT
     bool bl_selective_actions; /* backlight disable on some actions */
     int  bl_selective_actions_mask;/* mask of actions that will not enable backlight */
     int backlight_on_button_hold; /* what to do with backlight when hold
                                      switch is on */
-#ifdef HAVE_LCD_SLEEP_SETTING
     int lcd_sleep_after_backlight_off; /* when to put lcd to sleep after backlight
                                           has turned off:  -1=never, 0=always,
                                           or time in seconds */
-#endif
-#endif /* HAVE_BACKLIGHT */
 
 #if defined(HAVE_BACKLIGHT_FADING_INT_SETTING)
     int backlight_fade_in;  /* backlight fade in timing: 0..3 */
     int backlight_fade_out; /* backlight fade in timing: 0..7 */
 #endif
-#ifdef HAVE_BACKLIGHT_BRIGHTNESS
     int brightness;
-#endif
 
 
 
-#ifdef IPOD_ACCESSORY_PROTOCOL
     int serial_bitrate; /* 0=auto 1=9600 2=19200 3=38400 4=57600 */
-#endif
-#ifdef HAVE_ACCESSORY_SUPPLY
     bool accessory_supply; /* 0=off 1=on, accessory power supply for iPod */
-#endif
-#ifdef HAVE_LINEOUT_POWEROFF
     bool lineout_active;
-#endif
 
     bool prevent_skip;
 
 
-#ifdef HAVE_PITCHCONTROL
     /* pitch screen settings */
     bool pitch_mode_semitone;
     bool pitch_mode_timestretch;
-#endif
     /* If values are just added to the end, no need to bump plugin API
        version. */
     /* new stuff to be added at the end */
 
-#ifdef USB_ENABLE_HID
     bool usb_hid;
     int usb_keypad_mode;
-#endif
 
 #ifdef USB_ENABLE_AUDIO
     int usb_audio;
@@ -688,16 +642,12 @@ struct user_settings
     bool show_shutdown_message; /* toggle whether display lights up and displays message
                                 when shutting down */
 
-#ifdef HAVE_MORSE_INPUT
     bool morse_input; /* text input method setting */
-#endif
 
-#ifdef HAVE_HOTKEY
     /* hotkey assignments - acceptable values are in
        hotkey_action enum in onplay.h */
     int hotkey_wps;
     int hotkey_tree;
-#endif
 
     /* When resuming playback (after a stop), rewind this number of seconds */
     int resume_rewind;
@@ -729,26 +679,18 @@ struct user_settings
     } hw_eq_bands[AUDIOHW_EQ_BAND_NUM];
 #endif /* AUDIOHW_HAVE_EQ */
 
-#ifdef HAVE_HARDWARE_CLICK
     bool keyclick_hardware; /* hardware piezo keyclick */
-#endif
 
     char start_directory[MAX_PATHNAME+1];
     /* Has the root been customized from the .cfg file? false = no, true = loaded from cfg */
     bool root_menu_customized;
-#ifdef HAVE_QUICKSCREEN
     bool shortcuts_replaces_qs;
-#endif
 
-#ifdef HAVE_PLAY_FREQ
     int play_frequency; /* core audio output frequency selection */
-#endif
     int volume_limit; /* maximum volume limit */
 
-#ifdef HAVE_PERCEPTUAL_VOLUME
     int volume_adjust_mode;
     int volume_adjust_norm_steps;
-#endif
 
     int surround_enabled;
     int surround_balance;

@@ -25,12 +25,8 @@
 #include "font.h"
 #include "lang.h"
 #include "usb.h"
-#if defined(HAVE_USBSTACK)
 #include "usb_core.h"
-#ifdef USB_ENABLE_HID
 #include "usb_keymaps.h"
-#endif
-#endif
 #include "settings.h"
 #include "led.h"
 #include "appevents.h"
@@ -41,23 +37,19 @@
 #include "icons.h"
 
 #include "bitmaps/usblogo.h"
-#if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
 /* This fork ships a full-screen custom USB (eject) screen for the 320x240
  * iPods, drawn as a plain bitmap + caption. It is NOT drawn via the skin
  * engine -- the skin engine must not run during the USB screen on PP502x, it
  * breaks enumeration (see the guard in usb_screen_fix_viewports()). */
 #define HAVE_ROCKPOD_USB_SCREEN
 #include "bitmaps/rockpodusb.h"
-#endif
 
 #if (CONFIG_STORAGE & STORAGE_MMC)
 #include "ata_mmc.h"
 #endif
 
-#ifdef USB_ENABLE_HID
 int usb_keypad_mode;
 static bool usb_hid;
-#endif
 
 
 static int handle_usb_events(void)
@@ -70,7 +62,6 @@ static int handle_usb_events(void)
     while(1)
     {
         int button;
-#ifdef USB_ENABLE_HID
         if (usb_hid)
         {
             button = get_hid_usb_action();
@@ -83,7 +74,6 @@ static int handle_usb_events(void)
             }
         }
         else
-#endif
         {
             button = button_get_w_tmo(HZ/2);
             /* hid emits the event in get_action */
@@ -121,9 +111,7 @@ struct usb_screen_vps_t
 {
     struct viewport parent;
     struct viewport logo;
-#ifdef USB_ENABLE_HID
     struct viewport title;
-#endif
 };
 
 static void usb_screen_fix_viewports(struct screen *screen,
@@ -163,7 +151,6 @@ static void usb_screen_fix_viewports(struct screen *screen,
     logo->width = logo_width;
     logo->height = logo_height;
 
-#ifdef USB_ENABLE_HID
     if (usb_hid)
     {
         struct viewport *title = &usb_screen_vps->title;
@@ -185,13 +172,11 @@ static void usb_screen_fix_viewports(struct screen *screen,
             langid = keypad_mode_name_get(i++);
         }
     }
-#endif
 }
 
 static void usb_screens_draw(struct usb_screen_vps_t *usb_screen_vps_ar)
 {
     struct viewport *last_vp;
-#ifdef HAVE_ROCKPOD_USB_SCREEN
     FOR_NB_SCREENS(i)
     {
         struct screen *screen = &screens[i];
@@ -224,46 +209,6 @@ static void usb_screens_draw(struct usb_screen_vps_t *usb_screen_vps_ar)
         screen->set_viewport(last_vp);
         screen->update_viewport();
     }
-#else
-    static const struct bitmap* logos[NB_SCREENS] = {
-        &bm_usblogo,
-    };
-
-    FOR_NB_SCREENS(i)
-    {
-        struct screen *screen = &screens[i];
-
-        struct usb_screen_vps_t *usb_screen_vps = &usb_screen_vps_ar[i];
-        struct viewport *parent = &usb_screen_vps->parent;
-        struct viewport *logo = &usb_screen_vps->logo;
-
-        last_vp = screen->set_viewport(parent);
-        screen->clear_viewport();
-        screen->backlight_on();
-
-        screen->set_viewport(logo);
-        screen->bmp(logos[i], 0, 0);
-        if (i == SCREEN_MAIN)
-        {
-#ifdef USB_ENABLE_HID
-            if (usb_hid)
-            {
-                char modestring[100];
-                screen->set_viewport(&usb_screen_vps->title);
-                usb_screen_vps->title.flags |= VP_FLAG_ALIGN_CENTER;
-                snprintf(modestring, sizeof(modestring), "%s: %s",
-                        str(LANG_USB_KEYPAD_MODE),
-                        str(keypad_mode_name_get(usb_keypad_mode)));
-                screen->puts_scroll(0, 0, modestring);
-            }
-#endif /* USB_ENABLE_HID */
-        }
-        screen->set_viewport(parent);
-
-        screen->set_viewport(last_vp);
-        screen->update_viewport();
-    }
-#endif /* HAVE_ROCKPOD_USB_SCREEN */
 }
 
 void gui_usb_screen_run(bool early_usb, intptr_t seqnum)
@@ -279,10 +224,8 @@ void gui_usb_screen_run(bool early_usb, intptr_t seqnum)
 
     push_current_activity(ACTIVITY_USBSCREEN);
 
-#ifdef USB_ENABLE_HID
     usb_hid = global_settings.usb_hid;
     usb_keypad_mode = global_settings.usb_keypad_mode;
-#endif
 
     FOR_NB_SCREENS(i)
     {
@@ -323,19 +266,15 @@ void gui_usb_screen_run(bool early_usb, intptr_t seqnum)
     {
         const struct viewport* vp = NULL;
 
-#if defined(USB_ENABLE_HID)
         vp = usb_hid ? &usb_screen_vps_ar[i].title : NULL;
-#endif
         if (vp)
             screens[i].scroll_stop_viewport(vp);
     }
-#ifdef USB_ENABLE_HID
     if (global_settings.usb_keypad_mode != usb_keypad_mode)
     {
         global_settings.usb_keypad_mode = usb_keypad_mode;
         settings_save();
     }
-#endif
 
 
     if(!early_usb)

@@ -184,7 +184,6 @@ static const struct button_mapping button_context_keyboard[]  = {
 
 
 
-#ifdef USB_ENABLE_HID
 static const struct button_mapping button_context_usb_hid[] = {
     { ACTION_USB_HID_MODE_SWITCH_NEXT, BUTTON_SELECT|BUTTON_RIGHT|BUTTON_REL,    BUTTON_SELECT|BUTTON_RIGHT },
     { ACTION_USB_HID_MODE_SWITCH_NEXT, BUTTON_SELECT|BUTTON_RIGHT|BUTTON_REPEAT, BUTTON_SELECT|BUTTON_RIGHT },
@@ -248,7 +247,6 @@ static const struct button_mapping button_context_usb_hid_mode_browser[] = {
     LAST_ITEM_IN_LIST__NEXTLIST(CONTEXT_USB_HID)
 }; /* button_context_usb_hid_mode_browser */
 
-#ifdef HAVE_USB_HID_MOUSE
 static const struct button_mapping button_context_usb_hid_mode_mouse[] = {
     { ACTION_USB_HID_MOUSE_UP,                BUTTON_MENU,                              BUTTON_NONE },
     { ACTION_USB_HID_MOUSE_UP_REP,            BUTTON_MENU|BUTTON_REPEAT,                BUTTON_NONE },
@@ -267,8 +265,6 @@ static const struct button_mapping button_context_usb_hid_mode_mouse[] = {
 
     LAST_ITEM_IN_LIST__NEXTLIST(CONTEXT_USB_HID)
 }; /* button_context_usb_hid_mode_mouse */
-#endif
-#endif
 
 #if BUTTON_REMOTE != 0
 /*****************************************************************************
@@ -416,7 +412,6 @@ const struct button_mapping* get_context_mapping(int context)
         case CONTEXT_KEYBOARD:
         case CONTEXT_MORSE_INPUT:
             return button_context_keyboard;
-#ifdef USB_ENABLE_HID
         case CONTEXT_USB_HID:
             return button_context_usb_hid;
         case CONTEXT_USB_HID_MODE_MULTIMEDIA:
@@ -425,11 +420,8 @@ const struct button_mapping* get_context_mapping(int context)
             return button_context_usb_hid_mode_presentation;
         case CONTEXT_USB_HID_MODE_BROWSER:
             return button_context_usb_hid_mode_browser;
-#ifdef HAVE_USB_HID_MOUSE
         case CONTEXT_USB_HID_MODE_MOUSE:
             return button_context_usb_hid_mode_mouse;
-#endif
-#endif
         default:
             return button_context_standard;
     }

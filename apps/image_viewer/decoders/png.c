@@ -113,13 +113,9 @@ static int load_image(char *filename, struct image_info *info,
 
         if (!p_decoder->error) {
             /* the actual decoding */
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
             cpu_boost(true);
             LodePNG_decode(p_decoder, image, file_size, cb_progress);
             cpu_boost(false);
-#else
-            LodePNG_decode(p_decoder, image, file_size, cb_progress);
-#endif /*HAVE_ADJUSTABLE_CPU_FREQ*/
         }
     }
 
@@ -198,13 +194,9 @@ static int get_image(struct image_info *info, int frame, int ds)
         bmp_dst.width = info->width;
         bmp_dst.height = info->height;
         bmp_dst.data = *p_disp;
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
         cpu_boost(true);
         smooth_resize_bitmap(&bmp_src, &bmp_dst);
         cpu_boost(false);
-#else
-        smooth_resize_bitmap(&bmp_src, &bmp_dst);
-#endif /*HAVE_ADJUSTABLE_CPU_FREQ*/
     } else {
         *p_disp = p_decoder->buf;
     }

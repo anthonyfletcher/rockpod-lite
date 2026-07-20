@@ -22,7 +22,6 @@
 #include "config.h"
 #include "abrepeat.h"
 
-#ifdef AB_REPEAT_ENABLE
 
 unsigned int ab_A_marker IDATA_ATTR = AB_MARKER_NONE;
 unsigned int ab_B_marker IDATA_ATTR = AB_MARKER_NONE;
@@ -127,4 +126,3 @@ bool ab_get_B_marker(unsigned *song_position)
     return ab_B_marker_set();
 }
 
-#endif /* AB_REPEAT_ENABLE */

@@ -1066,7 +1066,6 @@ enum playlist_viewer_result playlist_viewer_ex(const char* filename,
             case ACTION_STD_MENU:
                 ret = PLAYLIST_VIEWER_MAINMENU;
                 goto exit;
-#ifdef HAVE_QUICKSCREEN
             case ACTION_STD_QUICKSCREEN:
                     if (!global_settings.shortcuts_replaces_qs)
                     {
@@ -1082,8 +1081,6 @@ enum playlist_viewer_result playlist_viewer_ex(const char* filename,
                         update_gui(&playlist_lists, true);
                     }
                     break;
-#endif
-#ifdef HAVE_HOTKEY
             case ACTION_TREE_HOTKEY:
             {
                 struct playlist_entry *current_track = playlist_buffer_get_track(
@@ -1130,7 +1127,6 @@ enum playlist_viewer_result playlist_viewer_ex(const char* filename,
                     onplay(current_track->name, FILE_ATTR_AUDIO, CONTEXT_STD, true, ONPLAY_NO_CUSTOMACTION);
                 break;
             }
-#endif /* HAVE_HOTKEY */
             default:
                 if(default_event_handler(button) == SYS_USB_CONNECTED)
                 {

@@ -853,7 +853,6 @@ static int load_image(int fd, const char *path,
     bmp->maskdata = NULL;
     const int format = FORMAT_NATIVE | FORMAT_DITHER |
                        FORMAT_RESIZE | FORMAT_KEEP_ASPECT;
-#ifdef HAVE_JPEG
     if (aa != NULL) {
         lseek(fd, aa->pos, SEEK_SET);
         rc = clip_jpeg_fd(fd, aa->type, aa->size, bmp, (int)max_size, format, NULL);
@@ -861,7 +860,6 @@ static int load_image(int fd, const char *path,
     else if (strcmp(path + strlen(path) - 4, ".bmp"))
         rc = read_jpeg_fd(fd, bmp, (int)max_size, format, NULL);
     else
-#endif
         rc = read_bmp_fd(fd, bmp, (int)max_size, format, NULL);
 
     return rc + (rc > 0 ? sizeof(struct bitmap) : 0);
@@ -950,11 +948,9 @@ int bufopen(const char *file, off_t offset, enum data_type type,
         size = BM_SIZE(aa->dim->width, aa->dim->height, FORMAT_NATIVE, false);
         size += sizeof(struct bitmap);
 
-#ifdef HAVE_JPEG
         /* JPEG loading requires extra memory
          * TODO: don't add unncessary overhead for .bmp images! */
         size += JPEG_DECODE_OVERHEAD;
-#endif
        /* resize_on_load requires space for 1 line + 2 spare lines */
         size += sizeof(struct uint32_argb) * 3 * aa->dim->width;
     }
@@ -998,7 +994,6 @@ int bufopen(const char *file, off_t offset, enum data_type type,
     h->type = type;
     h->fd   = -1;
 
-#ifdef STORAGE_WANTS_ALIGN
     /* Don't bother to storage align bitmaps because they are not
      * loaded directly into the buffer.
      */
@@ -1008,7 +1003,6 @@ int bufopen(const char *file, off_t offset, enum data_type type,
                                                (uintptr_t)ringbuf_ptr(data));
         data = ringbuf_add(data, alignment_pad);
     }
-#endif /* STORAGE_WANTS_ALIGN */
 
     h->data  = data;
     h->ridx  = data;
@@ -1168,7 +1162,6 @@ static void rebuffer_handle(int handle_id, off_t newpos)
 
     size_t next = ringbuf_offset(HLIST_NEXT(h) ?: HLIST_FIRST);
 
-#ifdef STORAGE_WANTS_ALIGN
     /* Strip alignment padding then redo */
     size_t new_index = ringbuf_add(ringbuf_offset(h), h->size);
 
@@ -1182,10 +1175,6 @@ static void rebuffer_handle(int handle_id, off_t newpos)
         alignment_pad = 0; /* Forego storage alignment this time */
 
     new_index = ringbuf_add(new_index, alignment_pad);
-#else
-    /* Just clear the data buffer */
-    size_t new_index = h->data;
-#endif /* STORAGE_WANTS_ALIGN */
 
     /* Reset the handle to its new position */
     h->ridx = h->widx = h->data = new_index;

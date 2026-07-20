@@ -100,17 +100,6 @@ static int load_image(char *filename, struct image_info *info,
     int ds = 1;
     /* check size of image needed to load image. */
     size = read_bmp_fd(fd, &bmp, 0, format | FORMAT_RETURN_SIZE, cformat);
-#if (LCD_PIXEL_ASPECT_HEIGHT != 1 || LCD_PIXEL_ASPECT_WIDTH != 1)
-    if (size <= *buf_size)
-    {
-        /* correct aspect */
-        format |= FORMAT_RESIZE|FORMAT_KEEP_ASPECT;
-        bmp.width *= LCD_PIXEL_ASPECT_HEIGHT;
-        bmp.height *= LCD_PIXEL_ASPECT_WIDTH;
-        bmp.width /= MAX(LCD_PIXEL_ASPECT_HEIGHT, LCD_PIXEL_ASPECT_WIDTH);
-        bmp.height /= MAX(LCD_PIXEL_ASPECT_HEIGHT, LCD_PIXEL_ASPECT_WIDTH);
-    }
-#endif
     while (size > *buf_size && bmp.width >= 2 && bmp.height >= 2 && ds < 8)
     {
         /* too large for the buffer. resize on load. */
@@ -139,13 +128,9 @@ static int load_image(char *filename, struct image_info *info,
 
     /* actual loading */
     lseek(fd, 0, SEEK_SET);
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
     cpu_boost(true);
     size = read_bmp_fd(fd, &bmp, *buf_size, format, cformat);
     cpu_boost(false);
-#else
-    size = read_bmp_fd(fd, &bmp, *buf_size, format, cformat);
-#endif /*HAVE_ADJUSTABLE_CPU_FREQ*/
     close(fd);
 
     if (size <= 0)
@@ -203,13 +188,9 @@ static int get_image(struct image_info *info, int frame, int ds)
         bmp_dst.width = info->width;
         bmp_dst.height = info->height;
         bmp_dst.data = p_disp->bitmap;
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
         cpu_boost(true);
         smooth_resize_bitmap(&bmp, &bmp_dst);
         cpu_boost(false);
-#else
-        smooth_resize_bitmap(&bmp, &bmp_dst);
-#endif /*HAVE_ADJUSTABLE_CPU_FREQ*/
     }
     else
     {

@@ -179,7 +179,6 @@ void sb_skin_update(enum screen_type screen, bool force)
     int i = screen;
     if (!data->wps_loaded)
         return;
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
     {
         static bool sb_was_fading[NB_SCREENS] = {false};
         bool sb_fading = dynamic_colors_fading() || dynamic_colors_pending();
@@ -194,15 +193,12 @@ void sb_skin_update(enum screen_type screen, bool force)
             sb_was_fading[i] = false;
         }
     }
-#endif
     if (TIME_AFTER(current_tick, next_update[i]) || force || force_waiting)
     {
         force_waiting = false;
-#if defined(HAVE_LCD_ENABLE) || defined(HAVE_LCD_SLEEP)
         /* currently, all remotes are readable without backlight
          * so still update those */
         if (lcd_active() || (i != SCREEN_MAIN))
-#endif
         {
             if (force)
                 skin_request_full_update(CUSTOM_STATUSBAR);

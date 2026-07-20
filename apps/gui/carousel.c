@@ -63,15 +63,11 @@
 #include "icons.h"
 #include "menu.h"             /* MENUITEM_STRINGLIST, do_menu */
 #include "bmp.h"              /* read_bmp_file */
-#ifdef HAVE_JPEG
 #include "jpeg_load.h"        /* read_jpeg_file */
-#endif
 #include "power.h"
 #include "powermgmt.h"        /* reset_poweroff_timer */
 #include "backlight.h"        /* backlight_set_timeout(_plugged) */
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
 #include "cpu.h"
-#endif
 #include "skin_engine/skin_engine.h"  /* skin_render_inhibit_flush */
 #include "skin_engine/skin_albumart_color.h" /* dynamic_colors_resolve */
 #include "statusbar-skinned.h" /* sb_set_persistent_title */
@@ -978,12 +974,8 @@ static int create_empty_slide(bool force)
 static void thread(void)
 {
     /* SSD mode: poll more frequently since disk access is cheap */
-#ifdef HAVE_DISK_STORAGE
     long sleep_time = (global_settings.storage_mode == 2)
                       ? HZ : 5 * HZ;
-#else
-    long sleep_time = 5 * HZ;
-#endif
     struct queue_event ev;
     while (1) {
         queue_wait_w_tmo(&thread_q, &ev, sleep_time);
@@ -2252,9 +2244,7 @@ static void cleanup(void)
     if (buf_ctx_locked)
         buf_ctx_unlock();
 
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
     cpu_boost(false);
-#endif
     end_pf_thread();
 
     /* Turn on backlight timeout (revert to settings) -- inlined equivalent
@@ -2294,9 +2284,7 @@ static bool init(void)
     void *buf;
     size_t buf_size;
 
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
     cpu_boost(true); /* revert in cleanup */
-#endif
 
     wants_to_quit = false;
 

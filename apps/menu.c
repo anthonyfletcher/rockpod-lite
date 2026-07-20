@@ -479,7 +479,6 @@ int do_menu(const struct menu_item_ex *start_menu, int *start_selected,
 
         if (LIKELY(gui_synclist_do_button(&lists, &action)))
             continue;
-#ifdef HAVE_QUICKSCREEN
         else if (action == ACTION_STD_QUICKSCREEN)
         {
             if (global_settings.shortcuts_replaces_qs ||
@@ -501,7 +500,6 @@ int do_menu(const struct menu_item_ex *start_menu, int *start_selected,
                                 buf, sizeof buf);
             redraw_lists = true;
         }
-#endif
         else if (action == ACTION_TREE_WPS)
         {
             ret = GO_TO_PREVIOUS_MUSIC;
@@ -539,10 +537,6 @@ int do_menu(const struct menu_item_ex *start_menu, int *start_selected,
                     MENUITEM_STRINGLIST(settings_op_menu,
                                         ID2P(LANG_ONPLAY_MENU_TITLE), NULL,
                                         ID2P(LANG_RESET_SETTING),
-#ifndef HAVE_QUICKSCREEN
-                                       );
-                    context_menu = &settings_op_menu;
-#else
                                         ID2P(LANG_TOP_QS_ITEM),
                                         ID2P(LANG_LEFT_QS_ITEM),
                                         ID2P(LANG_BOTTOM_QS_ITEM),
@@ -562,7 +556,6 @@ int do_menu(const struct menu_item_ex *start_menu, int *start_selected,
                     {
                         context_menu = &non_quickscreen_op_menu;
                     }
-#endif
                     int msel = do_menu(context_menu, NULL, NULL, false);
 
                     switch (msel)
@@ -574,7 +567,6 @@ int do_menu(const struct menu_item_ex *start_menu, int *start_selected,
                             settings_save();
                             settings_apply(false);
                             break;
-#ifdef HAVE_QUICKSCREEN
                         case 1: /* set as top QS item */
                             global_settings.qs_items[QUICKSCREEN_TOP] = setting;
                             break;
@@ -596,7 +588,6 @@ int do_menu(const struct menu_item_ex *start_menu, int *start_selected,
                                   added to the shortcuts menu as the quickscreen */
                             shortcuts_add(SHORTCUT_SETTING, (void*)setting);
                             break;
-#endif
                     } /* switch(do_menu()) */
                     if (menu->flags & MENU_EXITAFTERTHISMENU)
                         done = true; /* in case onplay menu contains setting */

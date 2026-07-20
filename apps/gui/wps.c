@@ -131,9 +131,6 @@ void wps_do_action(enum wps_do_action_type action, bool updatewps)
         if (action == WPS_PLAYPAUSE)
         {
             settings_save();
-    #if !defined(HAVE_SW_POWEROFF)
-            call_storage_idle_notifys(true);   /* make sure resume info is saved */
-    #endif
         }
     }
 
@@ -283,10 +280,8 @@ static bool ffwd_rew(int button, bool seek_from_end)
 
 static void gwps_caption_backlight(struct wps_state *state)
 {
-#if defined(HAVE_BACKLIGHT)
     if (state->id3)
     {
-#ifdef HAVE_BACKLIGHT
         if (global_settings.caption_backlight)
         {
             /* turn on backlight n seconds before track ends, and turn it off n
@@ -301,11 +296,7 @@ static void gwps_caption_backlight(struct wps_state *state)
                 (state->paused == false))
                 backlight_on();
         }
-#endif
     }
-#else
-    (void) state;
-#endif /* def HAVE_BACKLIGHT */
 }
 
 static void change_dir(int direction)
@@ -433,7 +424,6 @@ static void play_hop(int direction)
     audio_ff_rewind(elapsed);
 }
 
-#if defined(HAVE_LCD_ENABLE) || defined(HAVE_LCD_SLEEP)
 /*
  * If the user is unable to see the wps, because the display is deactivated,
  * we suppress updates until the wps is activated again (the lcd driver will
@@ -447,7 +437,6 @@ static void wps_lcd_activation_hook(unsigned short id, void *param)
     /* force timeout in wps main loop, so that the update is instantly */
     button_queue_post(BUTTON_NONE, 0);
 }
-#endif
 
 static void gwps_leave_wps(bool theme_enabled)
 {
@@ -457,17 +446,13 @@ static void gwps_leave_wps(bool theme_enabled)
         gwps->display->scroll_stop();
         if (theme_enabled)
         {
-#ifdef HAVE_BACKDROP_IMAGE
             skin_backdrop_show(sb_get_backdrop(i));
-#endif
             viewportmanager_theme_undo(i, skin_has_sbs(gwps));
         }
     }
 
-#if defined(HAVE_LCD_ENABLE) || defined(HAVE_LCD_SLEEP)
     /* Play safe and unregister the hook */
     remove_event(LCD_EVENT_ACTIVATION, wps_lcd_activation_hook);
-#endif
     /* unhandle statusbar update delay */
     sb_skin_set_update_delay(DEFAULT_UPDATE_DELAY);
 }
@@ -511,9 +496,7 @@ static void gwps_enter_wps(bool theme_enabled)
             }
         }
         /* make the backdrop actually take effect */
-#ifdef HAVE_BACKDROP_IMAGE
         skin_backdrop_show(gwps->data->backdrop_id);
-#endif
         display->clear_display();
         skin_update(WPS, i, SKIN_REFRESH_ALL);
 
@@ -639,18 +622,13 @@ long gui_wps_show(void)
                about to shut down. lets save the settings. */
             if (state->paused) {
                 settings_save();
-#if !defined(HAVE_SW_POWEROFF)
-                call_storage_idle_notifys(true);
-#endif
             }
         }
 
         if (restore)
         {
             restore = false;
-#if defined(HAVE_LCD_ENABLE) || defined(HAVE_LCD_SLEEP)
             add_event(LCD_EVENT_ACTIVATION, wps_lcd_activation_hook);
-#endif
         /* we remove the update delay since it's not very usable in the wps,
          * e.g. during volume changing or ffwd/rewind */
             sb_skin_set_update_delay(0);
@@ -665,11 +643,9 @@ long gui_wps_show(void)
 
             FOR_NB_SCREENS(i)
             {
-#if defined(HAVE_LCD_ENABLE) || defined(HAVE_LCD_SLEEP)
                 /* currently, all remotes are readable without backlight
                  * so still update those */
                 if (lcd_active() || (i != SCREEN_MAIN))
-#endif
                 {
                     bool full_update = skin_do_full_update(WPS, i);
                     if (update || full_update)
@@ -702,7 +678,6 @@ long gui_wps_show(void)
 
         switch(button)
         {
-#ifdef HAVE_HOTKEY
             case ACTION_WPS_HOTKEY:
             {
                 hotkey = true;
@@ -726,7 +701,6 @@ long gui_wps_show(void)
                 }
             }
             /* fall through */
-#endif /* def HAVE_HOTKEY */
             case ACTION_WPS_CONTEXT:
             {
                 gwps_leave_wps(true);
@@ -909,7 +883,6 @@ long gui_wps_show(void)
                 break;
 
 
-#ifdef HAVE_QUICKSCREEN
             case ACTION_WPS_QUICKSCREEN:
             {
                 gwps_leave_wps(true);
@@ -933,12 +906,10 @@ long gui_wps_show(void)
                 }
             }
             break;
-#endif /* HAVE_QUICKSCREEN */
 
                 /* screen settings */
 
                 /* pitch screen */
-#ifdef HAVE_PITCHCONTROL
             case ACTION_WPS_PITCHSCREEN:
             {
                 gwps_leave_wps(true);
@@ -947,7 +918,6 @@ long gui_wps_show(void)
                 restore = true;
             }
             break;
-#endif /* HAVE_PITCHCONTROL */
 
             /* reset A&B markers */
             case ACTION_WPS_ABRESET:
@@ -1060,12 +1030,10 @@ static void track_info_callback(unsigned short id, void *param)
             cue_find_current_track(state->id3->cuesheet, state->id3->elapsed);
         }
     }
-#ifdef AUDIO_FAST_SKIP_PREVIEW
     else if (id == PLAYBACK_EVENT_TRACK_SKIP)
     {
         state->id3 = audio_current_track();
     }
-#endif
     if (id == PLAYBACK_EVENT_NEXTTRACKID3_AVAILABLE)
         state->nid3 = audio_next_track();
     skin_request_full_update(WPS);
@@ -1093,7 +1061,5 @@ static void wps_state_init(void)
     /* Use the same callback as ..._TRACK_CHANGE for when remaining handles have
        finished */
     add_event(PLAYBACK_EVENT_CUR_TRACK_READY, track_info_callback);
-#ifdef AUDIO_FAST_SKIP_PREVIEW
     add_event(PLAYBACK_EVENT_TRACK_SKIP, track_info_callback);
-#endif
 }

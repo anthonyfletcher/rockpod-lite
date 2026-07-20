@@ -89,26 +89,18 @@ static int volume_limit_callback(int action,
 /*    SOUND MENU                   */
 MENUITEM_SETTING(volume, &global_status.volume, NULL);
 MENUITEM_SETTING(volume_limit, &global_settings.volume_limit, volume_limit_callback);
-#ifdef AUDIOHW_HAVE_BASS
 MENUITEM_SETTING(bass, &global_settings.bass,
     NULL
 );
 
-#ifdef AUDIOHW_HAVE_BASS_CUTOFF
 MENUITEM_SETTING(bass_cutoff, &global_settings.bass_cutoff, NULL);
-#endif
-#endif /* AUDIOHW_HAVE_BASS */
 
 
-#ifdef AUDIOHW_HAVE_TREBLE
 MENUITEM_SETTING(treble, &global_settings.treble,
     NULL
 );
 
-#ifdef AUDIOHW_HAVE_TREBLE_CUTOFF
 MENUITEM_SETTING(treble_cutoff, &global_settings.treble_cutoff, NULL);
-#endif
-#endif /* AUDIOHW_HAVE_TREBLE */
 
 
 MENUITEM_SETTING(balance, &global_settings.balance, NULL);
@@ -146,7 +138,6 @@ MENUITEM_SETTING(power_mode, &global_settings.power_mode, NULL);
               &crossfeed, &crossfeed_direct_gain, &crossfeed_cross_gain,
               &crossfeed_hf_attenuation, &crossfeed_hf_cutoff);
 
-#ifdef HAVE_PITCHCONTROL
 static int timestretch_callback(int action,
                                 const struct menu_item_ex *this_item,
                                 struct gui_synclist *this_list)
@@ -164,7 +155,6 @@ static int timestretch_callback(int action,
 }
     MENUITEM_SETTING(timestretch_enabled,
                      &global_settings.timestretch_enabled, timestretch_callback);
-#endif
 
     MENUITEM_SETTING(dithering_enabled,
                      &global_settings.dithering_enabled, lowlatency_callback);
@@ -221,18 +211,10 @@ static int timestretch_callback(int action,
 MAKE_MENU(sound_settings, ID2P(LANG_SOUND_SETTINGS), NULL, Icon_Audio,
           &volume
           ,&volume_limit
-#ifdef AUDIOHW_HAVE_BASS
           ,&bass
-#endif
-#ifdef AUDIOHW_HAVE_BASS_CUTOFF
           ,&bass_cutoff
-#endif
-#ifdef AUDIOHW_HAVE_TREBLE
           ,&treble
-#endif
-#ifdef AUDIOHW_HAVE_TREBLE_CUTOFF
           ,&treble_cutoff
-#endif
 #ifdef AUDIOHW_HAVE_EQ
           ,&audiohw_eq_tone_controls
 #endif
@@ -248,8 +230,6 @@ MAKE_MENU(sound_settings, ID2P(LANG_SOUND_SETTINGS), NULL, Icon_Audio,
 #endif
           ,&crossfeed_menu, &equalizer_menu, &dithering_enabled
           ,&surround_menu, &pbe_menu, &afr_enabled
-#ifdef HAVE_PITCHCONTROL
           ,&timestretch_enabled
-#endif
           ,&compressor_menu
          );

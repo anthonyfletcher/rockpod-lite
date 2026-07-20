@@ -37,9 +37,7 @@ struct status_info {
 #if CONFIG_CHARGING
     bool inserted;
 #endif
-#ifdef HAVE_USB_POWER
     bool usb_inserted;
-#endif
     bool battery_state;
     bool shuffle;
     bool keylock;

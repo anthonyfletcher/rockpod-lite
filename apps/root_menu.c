@@ -376,13 +376,11 @@ static int wpsscrn(void* param)
     (void)param;
     push_current_activity(ACTIVITY_WPS);
 
-#ifdef HAVE_PITCHCONTROL
     if (!audstatus)
     {
         sound_set_pitch(global_status.resume_pitch);
         dsp_set_timestretch(global_status.resume_speed);
     }
-#endif
 
     if (audstatus)
     {
@@ -1161,16 +1159,12 @@ static int root_menu_setup_screens(void)
     }
 #endif /* HAVE_RTC_ALARM */
 
-#if defined(HAVE_HEADPHONE_DETECTION)
     if (new_screen == GO_TO_WPS && global_settings.unplug_autoresume)
     {
        new_screen = GO_TO_ROOT;
-#ifdef HAVE_HEADPHONE_DETECTION
         if (headphones_inserted())
             new_screen = GO_TO_WPS;
-#endif
     }
-#endif /* HAVE_HEADPHONE_DETECTION */
     return new_screen;
 }
 

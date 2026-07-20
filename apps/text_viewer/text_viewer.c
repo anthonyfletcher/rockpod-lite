@@ -54,10 +54,8 @@
 #include "text_viewer.h"
 
 /* Full-screen loading splash art, shipped for the 320x240 iPods only. */
-#if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
 #include "bitmaps/rockpodtext.h"
 #define TV_HAVE_SPLASH_BMP
-#endif
 
 /* Extracted text kept resident, and how much of it sits behind the current
  * page. The margin is the backward reach: at a typical few KiB per page it
@@ -409,7 +407,6 @@ static bool tv_heavy_format(const char *file)
  * Falls back to the plain text splash where the art is not built. */
 static void tv_splash_loading(void)
 {
-#ifdef TV_HAVE_SPLASH_BMP
     struct screen *d = &screens[SCREEN_MAIN];
     struct viewport vp, *last;
     const unsigned char *msg = str(LANG_WAIT);
@@ -443,9 +440,6 @@ static void tv_splash_loading(void)
 
     d->update_viewport();
     d->set_viewport(last);
-#else
-    splash(0, ID2P(LANG_WAIT));
-#endif
 }
 
 /* Clears the reading area before the slow open so nothing shows through, and

@@ -107,7 +107,6 @@ static const hid_key_mapping_t hid_key_mapping_browser = {
     }
 };
 
-#ifdef HAVE_USB_HID_MOUSE
 static const hid_key_mapping_t hid_key_mapping_mouse = {
     LANG_MOUSE_MODE,
     CONTEXT_USB_HID_MODE_MOUSE,
@@ -156,16 +155,13 @@ static const hid_key_mapping_t hid_key_mapping_mouse = {
 };
 
 #define USB_KEYPAD_MODE_MOUSE 3 /* Value of the mouse setting (hard-coded) */
-#endif /* HAVE_USB_HID_MOUSE */
 
 static const hid_key_mapping_t *hid_key_mappings[] =
 {
     &hid_key_mapping_multimedia,
     &hid_key_mapping_presentation,
     &hid_key_mapping_browser,
-#ifdef HAVE_USB_HID_MOUSE
     &hid_key_mapping_mouse,
-#endif
 };
 
 extern int usb_keypad_mode;

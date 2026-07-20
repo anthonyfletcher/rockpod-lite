@@ -214,7 +214,6 @@ static int option_talk(int selected_item, void * data)
     return 0;
 }
 
-#if defined(HAVE_QUICKSCREEN)
    /* only the quickscreen and recording trigger needs this */
 void option_select_next_val(const struct settings_list *setting,
                             bool previous, bool apply)
@@ -318,7 +317,6 @@ void option_select_next_val(const struct settings_list *setting,
             tbl_info->option_callback(val);
     }
 }
-#endif
 
 static int selection_to_val(const struct settings_list *setting, int selection)
 {

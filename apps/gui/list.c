@@ -656,40 +656,7 @@ bool gui_synclist_do_button(struct gui_synclist * lists, int *actionptr)
     int action = *actionptr;
     static bool pgleft_allow_cancel = false;
 
-#ifdef HAVE_WHEEL_ACCELERATION
     int next_item_modifier = button_apply_acceleration(get_action_data());
-#else
-    static int next_item_modifier = 1;
-    static int last_accel_tick = 0;
-
-    if (IS_SYSEVENT(action))
-        return false;
-
-    if (action != ACTION_TOUCHSCREEN)
-    {
-        if (global_settings.list_accel_start_delay)
-        {
-            int start_delay = global_settings.list_accel_start_delay * HZ;
-            int accel_wait = global_settings.list_accel_wait * HZ;
-
-            if (get_action_statuscode(NULL)&ACTION_REPEAT)
-            {
-                if (!last_accel_tick)
-                    last_accel_tick = current_tick + start_delay;
-                else if (TIME_AFTER(current_tick, last_accel_tick + accel_wait))
-                {
-                    last_accel_tick = current_tick;
-                    next_item_modifier++;
-                }
-            }
-            else if (last_accel_tick)
-            {
-                next_item_modifier = 1;
-                last_accel_tick = 0;
-            }
-        }
-    }
-#endif
 
     /* Disable the skin redraw callback */
     current_lists = NULL;
@@ -729,9 +696,6 @@ bool gui_synclist_do_button(struct gui_synclist * lists, int *actionptr)
         case ACTION_STD_PREV:
 
             gui_list_select_at_offset(lists, -next_item_modifier, allow_wrap);
-#ifndef HAVE_WHEEL_ACCELERATION
-            if (button_queue_count() < FRAMEDROP_TRIGGER)
-#endif
                 gui_synclist_draw(lists);
             yield();
             *actionptr = ACTION_STD_PREV;
@@ -742,9 +706,6 @@ bool gui_synclist_do_button(struct gui_synclist * lists, int *actionptr)
             /*Fallthrough*/
         case ACTION_STD_NEXT:
             gui_list_select_at_offset(lists, next_item_modifier, allow_wrap);
-#ifndef HAVE_WHEEL_ACCELERATION
-            if (button_queue_count() < FRAMEDROP_TRIGGER)
-#endif
                 gui_synclist_draw(lists);
             yield();
             *actionptr = ACTION_STD_NEXT;
@@ -810,7 +771,6 @@ bool gui_synclist_do_button(struct gui_synclist * lists, int *actionptr)
        && TIME_AFTER(current_tick, lists->scheduled_talk_tick))
         /* scheduled postponed item announcement is due */
         _gui_synclist_speak_item(lists);
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
     {
         static bool was_fading = false;
         bool dc_active = dynamic_colors_fading() || dynamic_colors_pending();
@@ -824,7 +784,6 @@ bool gui_synclist_do_button(struct gui_synclist * lists, int *actionptr)
             }
         }
     }
-#endif
     return false;
 }
 
@@ -832,14 +791,12 @@ int list_do_action_timeout(struct gui_synclist *lists, int timeout)
 /* Returns the lowest of timeout or the delay until a postponed
    scheduled announcement is due (if any). */
 {
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
     if (dynamic_colors_fading() || dynamic_colors_pending())
     {
         int fade_timeout = HZ / 20;
         if (timeout > fade_timeout)
             timeout = fade_timeout;
     }
-#endif
     /* While the themed status bar shows its animated "busy" spinner -- the
      * database/thumbnail "Building.." indicator (%lb) or the generic "Working.."
      * one (%lw) -- that animation only advances when the status bar is redrawn.

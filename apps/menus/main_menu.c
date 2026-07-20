@@ -164,26 +164,18 @@ enum infoscreenorder
 static int refresh_data(struct info_data *info)
 {
     int i = 0;
-#ifdef HAVE_MULTIVOLUME
     int drive = 0;
     for (i = 0 ; i < NUM_VOLUMES ; i++)
-#endif
     {
 	volume_size(IF_MV(i,) &info->size[i], &info->free[i]);
-#ifdef HAVE_MULTIVOLUME
 	if (drive > 0)
 	    info->name[i] = LANG_DISK_NAME_MMC;
 	else
-#endif
 	    info->name[i] = LANG_DISK_NAME_INTERNAL;
-#if defined(HAVE_MULTIVOLUME) && defined(HAVE_DIRCACHE) // Is this #ifdef necessary?
             if (volume_partition(i) == -1)
-#endif
 	    {
                     info->name[i] = 0;
-#ifdef HAVE_MULTIVOLUME
                 break; /* ie stop when we run out of valid partitions */
-#endif
             }
     }
 
@@ -281,10 +273,8 @@ static int info_speak_item(int selected_item, void * data)
                 output_dyn_value(NULL, 0, info->free[i], kibyte_units, 3, true);
                 talk_id(LANG_DISK_SIZE_INFO, true);
                 output_dyn_value(NULL, 0, info->size[i], kibyte_units, 3, true);
-#ifdef HAVE_MULTIVOLUME
             } else if (info->name[i]) {
                 talk_ids(true, info->name[i], LANG_NOT_PRESENT);
-#endif
             }
             break;
     }
@@ -395,11 +385,9 @@ static int info_action_callback(int action, struct gui_synclist *lists)
             output_dyn_value(s1, sizeof s1, info->free[i], kibyte_units, 3, true);
             output_dyn_value(s2, sizeof s2, info->size[i], kibyte_units, 3, true);
             simplelist_addline("%s %s/%s", str(info->name[i]), s1, s2);
-#ifdef HAVE_MULTIVOLUME
         } else if (info->name[i]) {
             simplelist_addline("%s %s", str(info->name[i]),
                 str(LANG_NOT_PRESENT));
-#endif
         }
     }
 

@@ -432,14 +432,12 @@ static void load_codec(const struct codec_load_info *ev_data)
         dsp_configure(ci.dsp, DSP_RESET, 0);
     }
 
-#if defined(HAVE_CODEC_BUFFERING)
     if (data.hid >= 0)
     {
         /* First try buffer load */
         status = codec_load_buf(data.hid, &ci);
         bufclose(data.hid);
     }
-#endif /* HAVE_CODEC_BUFFERING */
 
     if (status < 0)
     {
@@ -625,7 +623,6 @@ void INIT_ATTR codec_thread_init(void)
                             codec_thread_id);
 }
 
-#ifdef HAVE_PRIORITY_SCHEDULING
 /* Obtain codec thread's current priority */
 int codec_thread_get_priority(void)
 {
@@ -637,7 +634,6 @@ int codec_thread_set_priority(int priority)
 {
     return thread_set_priority(codec_thread_id, priority);
 }
-#endif /* HAVE_PRIORITY_SCHEDULING */
 
 
 /** --- Functions for audio thread use --- **/

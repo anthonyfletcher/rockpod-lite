@@ -469,10 +469,8 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                             }
 
                             gwps->display->set_viewport_ex(&skin_viewport->vp, VP_FLAG_VP_SET_CLEAN);
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
                             skin_viewport->vp.bg_pattern =
                                 dynamic_colors_resolve(skin_viewport->dc_orig_bg);
-#endif
                             gwps->display->clear_viewport();
                             gwps->display->set_viewport_ex(&info->skin_vp->vp, VP_FLAG_VP_SET_CLEAN);
 
@@ -913,7 +911,6 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
         {
             bool dirty = (first_vp->flags & VP_FLAG_VP_SET_CLEAN)
                           == VP_FLAG_VP_DIRTY;
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
             unsigned resolved_bg =
                 dynamic_colors_resolve(first_vp->bg_pattern);
             if (dirty || resolved_bg != first_vp->bg_pattern
@@ -924,10 +921,6 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
                 display->clear_viewport();
                 first_vp->bg_pattern = saved_bg;
             }
-#else
-            if (dirty)
-                display->clear_viewport();
-#endif
         }
     }
 
@@ -942,9 +935,7 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
         !strcmp(label,VP_DEFAULT_LABEL_STRING))
         refresh_mode = 0;
 
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
     bool dc_extraction_done = false;
-#endif
 
     for (viewport = SKINOFFSETTOPTR(skin_buffer, data->tree);
          viewport;
@@ -955,14 +946,12 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
         skin_viewport = SKINOFFSETTOPTR(skin_buffer, viewport->data);
         if (!skin_viewport) continue;
 
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
         /* Check for pending color extraction once per render pass */
         if (!dc_extraction_done)
         {
             dynamic_colors_check_extraction(data->playback_aa_slot);
             dc_extraction_done = true;
         }
-#endif
 
         unsigned vp_refresh_mode = refresh_mode;
         if (skin_viewport->output_to_backdrop_buffer)
@@ -994,7 +983,6 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
 
         display->set_viewport_ex(&skin_viewport->vp, VP_FLAG_VP_SET_CLEAN);
 
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
         /* Dynamic colors: resolve from stored originals (not current vp values).
          * Colors stay in the viewport permanently so the scroll engine
          * reads the correct resolved colors (no save/restore). */
@@ -1004,7 +992,6 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
             dynamic_colors_resolve(skin_viewport->dc_orig_bg);
         display->set_foreground(skin_viewport->vp.fg_pattern);
         display->set_background(skin_viewport->vp.bg_pattern);
-#endif
 
         if ((vp_refresh_mode&SKIN_REFRESH_ALL) == SKIN_REFRESH_ALL)
         {

@@ -269,12 +269,10 @@ static int move_by_rename(struct file_op_params *src,
         if ((flags & PASTE_OVERWRITE) || !file_exists(dst_path)) {
             /* Just try to move the directory / file */
             rc = rename(src->path, dst_path);
-#ifdef HAVE_MULTIVOLUME
             if (rc < FORC_SUCCESS && errno == EXDEV) {
                 /* Failed because cross volume rename doesn't work */
                 *pflags |= PASTE_EXDEV; /* force a move instead */
             }
-#endif /* HAVE_MULTIVOLUME */
              /* if (errno == ENOTEMPTY && (flags & PASTE_OVERWRITE)) {
               * Directory is not empty thus rename() will not do a quick overwrite */
         }

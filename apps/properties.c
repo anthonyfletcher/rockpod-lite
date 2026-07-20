@@ -101,13 +101,9 @@ static bool dir_properties(const char* selected_file, struct dir_stats *stats)
 {
     strlcpy(stats->dirname, selected_file, sizeof(stats->dirname));
 
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
         cpu_boost(true);
-#endif
     bool success = collect_dir_stats(stats, NULL);
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
         cpu_boost(false);
-#endif
     if (!success)
         return false;
 
@@ -332,15 +328,11 @@ static bool assemble_track_info(const char *filename, struct dir_stats *stats)
 {
     if (props_type == PROPS_DIR)
     {
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
         cpu_boost(true);
-#endif
         strlcpy(stats->dirname, filename, sizeof(stats->dirname));
         splash_progress_set_delay(HZ/2); /* hide progress bar for 0.5s */
         bool success = collect_dir_stats(stats, &mul_id3_add);
-#ifdef HAVE_ADJUSTABLE_CPU_FREQ
         cpu_boost(false);
-#endif
         if (!success)
             return false;
     }

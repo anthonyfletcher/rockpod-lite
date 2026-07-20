@@ -230,9 +230,7 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
         return false;
 
     current_list = list;
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
     dynamic_colors_check_extraction(-1);
-#endif
     wps.display = display;
     wps.data = listcfg[screen]->data;
     display_lines = skinlist_get_line_count(screen, list);
@@ -241,14 +239,12 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
         return false;
 
     display->set_viewport(parent);
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
     unsigned int dc_saved_fg = parent->fg_pattern;
     unsigned int dc_saved_bg = parent->bg_pattern;
     parent->fg_pattern = dynamic_colors_resolve(dc_saved_fg);
     parent->bg_pattern = dynamic_colors_resolve(dc_saved_bg);
     display->set_foreground(parent->fg_pattern);
     display->set_background(parent->bg_pattern);
-#endif
     display->clear_viewport();
     current_item = list->selected_item;
     current_nbitems = list->nb_items;
@@ -315,7 +311,6 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
                  * stretching to fill a taller row. */
             }
             display->set_viewport(&skin_viewport->vp);
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
             /* Dynamic colors: resolve from stored originals */
             skin_viewport->vp.fg_pattern =
                 dynamic_colors_resolve(skin_viewport->dc_orig_fg);
@@ -323,7 +318,6 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
                 dynamic_colors_resolve(skin_viewport->dc_orig_bg);
             display->set_foreground(skin_viewport->vp.fg_pattern);
             display->set_background(skin_viewport->vp.bg_pattern);
-#endif
             /* Set images to not to be displayed */
             struct skin_token_list *imglist = SKINOFFSETTOPTR(get_skin_buffer(wps.data), wps.data->images);
             while (imglist)
@@ -355,10 +349,8 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
     }
     current_column = -1;
     current_row = -1;
-#if defined(HAVE_ALBUMART) && defined(HAVE_LCD_COLOR)
     parent->fg_pattern = dc_saved_fg;
     parent->bg_pattern = dc_saved_bg;
-#endif
     display->set_viewport(parent);
     if (!gui_synclist_flush_inhibited())
     {

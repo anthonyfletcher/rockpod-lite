@@ -48,11 +48,7 @@
 
 /***************** Constants *****************/
 
-#if MEMORYSIZE <= 2
-#define QUEUE_SIZE 64
-#else
 #define QUEUE_SIZE 128 /* must be a power of two */
-#endif
 
 #define QUEUE_MASK (QUEUE_SIZE-1)
 const char* const dir_thumbnail_name = "_dirname.talk";
@@ -89,13 +85,6 @@ struct voicefile_header /* file format of our voice file */
 
 /***************** Globals *****************/
 
-#if MEMORYSIZE <= 8
-/* On low memory swcodec targets the entire voice file wouldn't fit in memory
- * together with codecs, so we load clips each time they are accessed. */
-#define TALK_PROGRESSIVE_LOAD
-/* 70+ clips should fit into 100k */
-#define MAX_CLIP_BUFFER_SIZE (100000)
-#endif
 
 #ifndef MAX_CLIP_BUFFER_SIZE
 /* 1GB should be enough for everybody; will be capped to voicefile size */
@@ -210,7 +199,6 @@ static int shrink_callback(int handle, unsigned hints, void *start, size_t old_s
 {
     (void)start;(void)old_size;
     int *h;
-#if (MAX_CLIP_BUFFER_SIZE < (MEMORYSIZE<<20) || (MEMORYSIZE > 2))
     /* on low-mem and when the voice buffer size is not limited (i.e.
      * on 2MB HWCODEC) we effectively own the entire buffer because
      * the voicefile takes up all RAM. This blocks other Rockbox parts
@@ -220,9 +208,6 @@ static int shrink_callback(int handle, unsigned hints, void *start, size_t old_s
      * not necessary. */
     if (give_buffer_away
             && (hints & BUFLIB_SHRINK_POS_MASK) == BUFLIB_SHRINK_POS_MASK)
-#else
-    (void)hints;
-#endif
     {
         if (handle == talk_handle)
             h = &talk_handle;
@@ -512,7 +497,6 @@ static bool load_index_table(int fd, const struct voicefile_header *hdr)
         return false;
     }
 
-#ifdef ROCKBOX_LITTLE_ENDIAN
     struct clip_entry *buf, *end;
     buf = core_get_data(index_handle);
     end = buf + hdr->id1_max + hdr->id2_max;
@@ -521,7 +505,6 @@ static bool load_index_table(int fd, const struct voicefile_header *hdr)
         buf->offset = swap32(buf->offset);
         buf->size = swap32(buf->size);
     }
-#endif
 
     return true;
 }
@@ -532,13 +515,11 @@ static bool load_header(int fd, struct voicefile_header *hdr)
     if (got_size != sizeof(*hdr))
         return false;
 
-#ifdef ROCKBOX_LITTLE_ENDIAN
     hdr->version = swap32(hdr->version);
     hdr->target_id = swap32(hdr->target_id);
     hdr->table = swap32(hdr->table);
     hdr->id1_max = swap32(hdr->id1_max);
     hdr->id2_max = swap32(hdr->id2_max);
-#endif
     return true;
 }
 
@@ -1188,7 +1169,6 @@ int talk_file_or_spell(const char *dirname, const char *filename,
     return 0;
 }
 
-#ifdef HAVE_MULTIVOLUME
 int talk_volume_id(int volume)
 {
     if (volume == -1)
@@ -1201,7 +1181,6 @@ int talk_volume_id(int volume)
     talk_value(volume, UNIT_INT, true);
     return 1;
 }
-#endif
 
 /* Play a directory's .talk thumbnail, fallback to spelling the filename, or
    go straight to spelling depending on settings. */
@@ -1238,13 +1217,11 @@ int talk_fullpath(const char* path, bool enqueue)
     while(ptr) { /* There are more slashes ahead */
         /* temporarily poke a NULL at end of component to truncate string */
         *ptr = '\0';
-#ifdef HAVE_MULTIVOLUME
         if (start == buf+1) {
             int vol = path_get_volume_id(buf+1);
             if (!talk_volume_id(vol))
                 talk_dir_or_spell(buf, NULL, true);
         } else
-#endif
             talk_dir_or_spell(buf, NULL, true);
         *ptr = PATH_SEPCH; /* restore string */
         talk_id(VOICE_CHAR_SLASH, true);

@@ -34,9 +34,7 @@
 #include "peakmeter.h"
 #include "audio.h"
 #include "screen_access.h"
-#ifdef HAVE_BACKLIGHT
 #include "backlight.h"
-#endif
 #include "action.h"
 
 #include "pcm.h"

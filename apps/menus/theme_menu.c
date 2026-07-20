@@ -44,7 +44,6 @@
 #include "icons.h"
 #include "filetypes.h"
 
-#ifdef HAVE_BACKDROP_IMAGE
 /**
 * Menu to clear the backdrop image
  */
@@ -60,7 +59,6 @@ static int clear_main_backdrop(void)
 }
 MENUITEM_FUNCTION(clear_main_bd, 0, ID2P(LANG_CLEAR_BACKDROP),
                   clear_main_backdrop, NULL, Icon_NOICON);
-#endif
 
 enum Colors {
     COLOR_FG = 0,
@@ -310,9 +308,7 @@ MENUITEM_FUNCTION_W_PARAM(browse_themes, 0, ID2P(LANG_CUSTOM_THEME),
                           browse_folder, (void*)&themes, NULL, Icon_Config);
 MENUITEM_SETTING(cursor_style, &global_settings.cursor_style, NULL);
 MENUITEM_SETTING(sep_menu, &global_settings.list_separator_height, NULL);
-#if defined(HAVE_LCD_COLOR) && defined(HAVE_ALBUMART)
 MENUITEM_SETTING(dynamic_colors, &global_settings.dynamic_colors, NULL);
-#endif
 
 MAKE_MENU(theme_menu, ID2P(LANG_THEME_MENU),
             NULL, Icon_Wps,
@@ -321,9 +317,7 @@ MAKE_MENU(theme_menu, ID2P(LANG_THEME_MENU),
             &browse_wps,
             &browse_sbs,
             &show_icons,
-#ifdef HAVE_BACKDROP_IMAGE
             &clear_main_bd,
-#endif
             &bars_menu,
             &cursor_style,
             &sep_menu,
