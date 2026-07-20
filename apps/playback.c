@@ -54,9 +54,6 @@
 
 #include "pcm_mixer.h"
 
-#if defined(SIMULATOR) || defined(SDLAPP)
-#include <strings.h>  /* For strncasecmp() */
-#endif
 
 #ifdef USB_ENABLE_AUDIO
 #include "usbstack/usb_audio.h"
@@ -345,13 +342,8 @@ static int playback_log_handle = 0; /* core_alloc handle for playback log buffer
 #define PLAYBACK_LOG_GENERIC 1 /* playback.log: timestamp:elapsed:length:path   */
 #define PLAYBACK_LOG_LASTFM  2 /* /.scrobbler.log in Audioscrobbler .log format */
 
-#if CONFIG_RTC
 #define SCROBBLER_LOG_PATH   "/.scrobbler.log"
 #define SCROBBLER_TIMELESS   ""
-#else
-#define SCROBBLER_LOG_PATH   "/.scrobbler-timeless.log"
-#define SCROBBLER_TIMELESS   " Timeless"
-#endif
 #define SCROBBLER_LISTENED_PCT 50   /* played >= this % of a track => rating 'L' */
 #define SCROBBLER_UNTAGGED     "<UNTAGGED>"
 
@@ -1334,12 +1326,8 @@ void allocate_playback_log(void)
             }
             else
             {
-#if CONFIG_RTC
                 create_datetime_filename(filename, "", " Time ", "", false);
                 fdprintf(fd, "# Started Ver. %s %s\n", rbversion, filename);
-#else
-                fdprintf(fd, "# Started Ver. %s\n", rbversion);
-#endif
             }
             close(fd);
         }
@@ -1371,11 +1359,7 @@ void add_playbacklog(struct mp3entry *id3)
     }
     if (id3 && id3->elapsed > PLAYBACK_LOG_MIN_ELAPSED_MS)
     {
-#if     CONFIG_RTC
         timestamp = mktime(get_time());
-#else
-        timestamp = current_tick * (1000 / HZ); /* milliseconds */
-#endif
         if (buf)  /* we have a buffer allocd from core */
         {
             ssize_t entrylen = format_playbacklog(buf, bufsz, id3, timestamp);

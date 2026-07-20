@@ -64,7 +64,6 @@ void charging_splash(void)
 }
 
 
-#if (CONFIG_RTC != 0)
 
 /* little helper function for voice output */
 static void say_time(int cursorpos, const struct tm *tm)
@@ -346,7 +345,6 @@ bool set_time_screen(const char* title, struct tm *tm, bool set_date)
         screens[s].scroll_stop_viewport(&viewports[s]);
     return usb;
 }
-#endif /* (CONFIG_RTC != 0) */
 
 static const int id3_headers[]=
 {

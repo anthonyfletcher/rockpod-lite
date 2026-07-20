@@ -1326,7 +1326,6 @@ void talk_sleeptimer(int custom_duration)
     talk_idarray(talk_ids, true);
 }
 
-#if CONFIG_RTC
 void talk_timedate(void)
 {
     struct tm *tm = get_time();
@@ -1343,7 +1342,6 @@ void talk_timedate(void)
         talk_id(LANG_UNKNOWN, true);
     }
 }
-#endif /* CONFIG_RTC */
 #endif /* !defined(CHECKWPS) && !defined(DBTOOL)*/
 
 /**
@@ -1500,7 +1498,6 @@ int hex_to_rgb(const char* hex, int* color)
 
 /* '0'-'3' are ASCII 0x30 to 0x33 */
 #define is0123(x) (((x) & 0xfc) == 0x30)
-#if !defined(__PCTOOL__) || defined(CHECKWPS)
 bool parse_color(enum screen_type screen, char *text, int *value)
 {
     (void)text; (void)value; /* silence warnings on mono bitmap */
@@ -1516,7 +1513,6 @@ bool parse_color(enum screen_type screen, char *text, int *value)
 
     return false;
 }
-#endif /* !defined(__PCTOOL__) || defined(CHECKWPS) */
 
 /* only used in USB HID and set_time screen */
 int clamp_value_wrap(int value, int max, int min)

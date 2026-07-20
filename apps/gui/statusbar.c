@@ -132,9 +132,7 @@ static void gui_statusbar_icon_play_mode(struct screen * display, int mode);
 static void gui_statusbar_icon_shuffle(struct screen * display);
 static void gui_statusbar_icon_lock(struct screen * display);
 static void gui_statusbar_led(struct screen * display);
-#if CONFIG_RTC
 static void gui_statusbar_time(struct screen * display, struct tm *time);
-#endif
 
 /* End prototypes */
 
@@ -149,9 +147,7 @@ static void gui_statusbar_init(struct screen * display, struct gui_statusbar * b
     bar->redraw_volume = true;
     bar->volume_icon_switch_tick = bar->battery_icon_switch_tick = current_tick;
     memset((void*)&(bar->lastinfo), 0, sizeof(struct status_info));
-#if CONFIG_RTC
     bar->last_tm_min = 0;
-#endif
 }
 
 static struct screen * sb_fill_bar_info(struct gui_statusbar * bar)
@@ -208,9 +204,7 @@ static struct screen * sb_fill_bar_info(struct gui_statusbar * bar)
     bar->info.keylock = button_hold();
     bar->info.repeat = global_settings.repeat_mode;
     bar->info.playmode = current_playmode();
-#if CONFIG_RTC
     bar->time = get_time();
-#endif /* CONFIG_RTC */
     if(!display->has_disk_led)
         bar->info.led = led_read(HZ/2); /* delay should match polling interval */
 
@@ -226,9 +220,7 @@ void gui_statusbar_draw(struct gui_statusbar * bar, bool force_redraw, struct vi
 
     /* only redraw if forced to, or info has changed */
     if (force_redraw || bar->redraw_volume ||
-#if CONFIG_RTC
         (bar->time->tm_min != bar->last_tm_min) ||
-#endif
         memcmp(&(bar->info), &(bar->lastinfo), sizeof(struct status_info)))
     {
         last_vp = display->set_viewport(vp);
@@ -263,10 +255,8 @@ void gui_statusbar_draw(struct gui_statusbar * bar, bool force_redraw, struct vi
         }
         if (bar->info.keylock)
             gui_statusbar_icon_lock(display);
-#if CONFIG_RTC
         gui_statusbar_time(display, bar->time);
         bar->last_tm_min = bar->time->tm_min;
-#endif /* CONFIG_RTC */
         if(!display->has_disk_led && bar->info.led)
         {
             gui_statusbar_led(display);
@@ -485,7 +475,6 @@ static void gui_statusbar_led(struct screen * display)
                          SB_ICON_HEIGHT);
 }
 
-#if CONFIG_RTC
 /*
  * Print time to status bar
  */
@@ -517,7 +506,6 @@ static void gui_statusbar_time(struct screen * display, struct tm *time)
     }
 
 }
-#endif
 
 
 void gui_syncstatusbar_init(struct gui_syncstatusbar * bars)

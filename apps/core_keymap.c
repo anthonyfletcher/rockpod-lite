@@ -26,7 +26,6 @@
 /*#define LOGF_ENABLE*/
 #include "logf.h"
 
-#if !defined(__PCTOOL__) || defined(CHECKWPS)
 int core_set_keyremap(struct button_mapping* core_keymap, int count)
 {
     return action_set_keymap(core_keymap, count);
@@ -92,4 +91,3 @@ int INIT_ATTR core_load_key_remap(const char *filename)
     return count;
 }
 
-#endif /* !defined(__PCTOOL__) */

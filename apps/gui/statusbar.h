@@ -57,10 +57,8 @@ struct gui_statusbar
 
     long battery_icon_switch_tick;
 
-#if CONFIG_RTC
     struct tm *time;
     int last_tm_min;
-#endif
     struct screen * display;
 };
 

@@ -361,9 +361,5 @@ enum skin_find_what {
 void *skin_find_item(const char *label, enum skin_find_what what,
                      struct wps_data *data);
 
-#if defined(SIMULATOR) || defined(CHECKWPS)
-#define DEBUG_SKIN_ENGINE
-extern bool debug_wps;
-#endif
 
 #endif

@@ -299,20 +299,6 @@ void skin_backdrop_load_setting(void)
         }
     }
 }
-#elif defined(__PCTOOL__)
-
-int skin_backdrop_assign(char* backdrop, char *bmpdir,
-                         enum screen_type screen)
-{
-    (void)backdrop;
-    (void)bmpdir;
-    (void)screen;
-    return 0;
-}
-void skin_backdrop_unload(int backdrop_id)
-{
-    (void)backdrop_id;
-}
 #else
 static bool first_go = true;
 bool skin_backdrop_init(void)

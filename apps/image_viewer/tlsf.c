@@ -64,9 +64,6 @@
 
 void abort(void);
 
-#if defined(ROCKBOX) && (CONFIG_PLATFORM & PLATFORM_HOSTED) && defined(DEBUG)
-#define USE_PRINTF 1
-#endif
 
 #if defined(ROCKBOX)
 #include "panic.h"

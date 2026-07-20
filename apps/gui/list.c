@@ -670,25 +670,6 @@ bool gui_synclist_do_button(struct gui_synclist * lists, int *actionptr)
             gui_synclist_draw(lists);
             return true;
 
-#ifdef SIMULATOR /* BUGFIX sim doesn't scroll lists from other threads */
-        case ACTION_NONE:
-        {
-            extern struct scroll_screen_info lcd_scroll_info;
-            struct scroll_screen_info *si = &lcd_scroll_info;
-
-            for (int index = 0; index < si->lines; index++)
-            {
-                struct scrollinfo *s = &si->scroll[index];
-                if (s->vp && (s->vp->flags & VP_FLAG_VP_DIRTY))
-                {
-                    s->vp->flags &= ~VP_FLAG_VP_SET_CLEAN;
-                    lcd_update_viewport_rect(s->x, s->y, s->width, s->height);
-                }
-            }
-
-            break;
-        }
-#endif
 
         case ACTION_STD_PREVREPEAT:
             allow_wrap = false; /* Prevent list wraparound on repeating actions */

@@ -299,9 +299,7 @@ static void init(void)
     serial_setup();
 #endif
 
-#if CONFIG_RTC
     rtc_init();
-#endif
 
     adc_init();
 

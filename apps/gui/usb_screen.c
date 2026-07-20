@@ -198,12 +198,6 @@ static void usb_screens_draw(struct usb_screen_vps_t *usb_screen_vps_ar)
 
 void gui_usb_screen_run(bool early_usb, intptr_t seqnum)
 {
-#ifdef SIMULATOR /* the sim allows toggling USB fast enough to overflow viewportmanagers stack */
-    static bool in_usb_screen = false;
-    if (in_usb_screen)
-        return;
-    in_usb_screen = true;
-#endif
 
     struct usb_screen_vps_t usb_screen_vps_ar[NB_SCREENS];
 

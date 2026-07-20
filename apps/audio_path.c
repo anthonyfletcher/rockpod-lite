@@ -28,7 +28,6 @@
 
 /* Some audio sources may require a boosted CPU */
 
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE)
 
 
 /**
@@ -48,22 +47,4 @@ void audio_set_input_source(int source, unsigned flags)
 } /* audio_set_source */
 
 
-#else /* PLATFORM_HOSTED */
-
-/** Sim stubs **/
-
-
-void audio_set_output_source(int source)
-{
-   (void)source;
-} /* audio_set_output_source */
-
-void audio_set_input_source(int source, unsigned flags)
-{
-    (void)source;
-    (void)flags;
-} /* audio_set_input_source */
-
-
-#endif /* PLATFORM_NATIVE */
 

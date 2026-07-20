@@ -624,7 +624,6 @@ static const char* get_rtc_token_value(struct wps_token *token,
                                                 char *buf, int buf_size,
                                                 int *intval)
 {
-#if CONFIG_RTC
     int numeric_ret = -1;
     const char *numeric_buf = buf;
     struct tm* tm = get_time();
@@ -746,40 +745,6 @@ static const char* get_rtc_token_value(struct wps_token *token,
             *intval = numeric_ret;
         }
         return numeric_buf;
-#else   /* !CONFIG_RTC */
-    (void)buf;
-    (void)buf_size;
-    (void)intval;
-
-    switch (token->type)
-    {
-        default:
-            return "?";
-
-        case SKIN_TOKEN_RTC_DAY_OF_MONTH:
-        case SKIN_TOKEN_RTC_DAY_OF_MONTH_BLANK_PADDED:
-        case SKIN_TOKEN_RTC_HOUR_24_ZERO_PADDED:
-        case SKIN_TOKEN_RTC_HOUR_24:
-        case SKIN_TOKEN_RTC_HOUR_12_ZERO_PADDED:
-        case SKIN_TOKEN_RTC_HOUR_12:
-        case SKIN_TOKEN_RTC_MONTH:
-        case SKIN_TOKEN_RTC_MINUTE:
-        case SKIN_TOKEN_RTC_SECOND:
-        case SKIN_TOKEN_RTC_AM_PM_UPPER:
-        case SKIN_TOKEN_RTC_AM_PM_LOWER:
-        case SKIN_TOKEN_RTC_YEAR_2_DIGITS:
-            return "--";
-        case SKIN_TOKEN_RTC_YEAR_4_DIGITS:
-            return "----";
-        case SKIN_TOKEN_RTC_WEEKDAY_NAME:
-        case SKIN_TOKEN_RTC_MONTH_NAME:
-            return "---";
-        case SKIN_TOKEN_RTC_DAY_OF_WEEK_START_MON:
-        case SKIN_TOKEN_RTC_DAY_OF_WEEK_START_SUN:
-            return "-";
-    }
-    return NULL;
-#endif /* CONFIG_RTC */
 }
 
 static const char* get_qs_token_value(struct wps_token *token, char *buf, int buf_size)
@@ -1212,11 +1177,7 @@ const char *get_token_value(struct gui_wps *gwps,
             goto gtv_ret_numeric_tag_info;
 
         case SKIN_TOKEN_RTC_PRESENT:
-#if CONFIG_RTC
             return "c";
-#else
-            return NULL;
-#endif
         /* peakmeter */
         case SKIN_TOKEN_PEAKMETER_LEFT:
         case SKIN_TOKEN_PEAKMETER_RIGHT:

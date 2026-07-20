@@ -103,9 +103,7 @@ char* string_sleeptimer(char *buffer, size_t buffer_len);
 int toggle_sleeptimer(void);
 void talk_sleeptimer(int custom_duration);
 
-#if CONFIG_RTC
 void talk_timedate(void);
-#endif
 
 /* Ask the user if they really want to erase the current dynamic playlist
  * returns true if the playlist should be replaced */

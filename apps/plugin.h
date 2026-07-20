@@ -748,9 +748,7 @@ struct plugin_api {
     int (*kbd_input)(char* buffer, int buflen, ucschar_t *kbd);
     struct tm* (*get_time)(void);
     struct tm * (*gmtime_r)(const time_t *timep, struct tm *tm);
-#if CONFIG_RTC
     time_t (*mktime)(struct tm *t);
-#endif
     const char* (*format_time_auto)(char *buffer, int buf_len, long value,
                                     int unit_idx, bool supress_unit);
 #if defined(DEBUG) || defined(SIMULATOR)

@@ -72,9 +72,7 @@ struct shortcut {
     union {
         char path[MAX_PATH];
         struct {
-#if CONFIG_RTC
             bool talktime;
-#endif
             int sleep_timeout;
         } timedata;
     } u;
@@ -253,11 +251,9 @@ static void shortcuts_ata_idle_callback(void)
 
         if (sc->type == SHORTCUT_TIME)
         {
-#if CONFIG_RTC
             if (sc->u.timedata.talktime)
                 write(fd, "talk", 4);
             else
-#endif
             {
                 write(fd, "sleep", 5);
                 if(sc->u.timedata.sleep_timeout >= 0)
@@ -393,12 +389,10 @@ static int readline_cb(int n, char *buf, void *parameters)
                     }
                     break;
                 case SHORTCUT_TIME:
-#if CONFIG_RTC
                     sc->u.timedata.talktime = false;
                     if (!strcasecmp(value, "talk"))
                         sc->u.timedata.talktime = true;
                     else
-#endif
                     if (!strncasecmp(value, "sleep", sizeof("sleep")-1))
                     {
                         /* 'sleep' may appear alone or followed by number after a space */
@@ -489,20 +483,16 @@ static const char * shortcut_menu_get_name(int selected_item, void * data,
     else if (sc->type == SHORTCUT_TIME)
     {
         if (sc->u.timedata.sleep_timeout < 0
-#if CONFIG_RTC
             && !sc->u.timedata.talktime
-#endif
         ) /* String representation for toggling sleep timer */
             return string_sleeptimer(buffer, buffer_len);
 
         if (sc->name[0])
             return sc->name;
 
-#if CONFIG_RTC
         if (sc->u.timedata.talktime)
             return P2STR(ID2P(LANG_CURRENT_TIME));
         else
-#endif
         {
             format_sleeptimer(sc->name, sizeof(sc->name),
                               sc->u.timedata.sleep_timeout, NULL);
@@ -598,11 +588,9 @@ static int shortcut_menu_speak_item(int selected_item, void * data)
                 break;
 
             case SHORTCUT_TIME:
-#if CONFIG_RTC
                 if (sc->u.timedata.talktime)
                     talk_timedate();
                 else
-#endif
                 if (sc->name[0] && sc->u.timedata.sleep_timeout >= 0)
                     talk_spell(sc->name, false);
                 else
@@ -831,9 +819,7 @@ int do_shortcut_menu(void *ignored)
                         sys_reboot();
                     break;
                 case SHORTCUT_TIME:
-#if CONFIG_RTC
                   if (!sc->u.timedata.talktime)
-#endif
                     {
                         char timer_buf[10];
                         if (sc->u.timedata.sleep_timeout >= 0)

@@ -40,9 +40,7 @@
 #include "talk.h"
 #include "powermgmt.h"
 #include "playback.h"
-#if CONFIG_RTC
 #include "screens.h"
-#endif
 #include "quickscreen.h"
 #include "dircache.h"
 #include "plugin.h"

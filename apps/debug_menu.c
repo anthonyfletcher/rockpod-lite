@@ -481,7 +481,7 @@ static bool dbg_partitions(void)
 }
 
 
-#if (CONFIG_RTC == RTC_PCF50605) && (CONFIG_PLATFORM & PLATFORM_NATIVE)
+#if CONFIG_RTC == RTC_PCF50605
 static bool dbg_pcf(void)
 {
     int line;
@@ -1396,16 +1396,12 @@ static bool cpu_boost_log_dump(void)
     if(count == 0)
         return false;
 
-#if CONFIG_RTC
     char fname[MAX_PATH];
     struct tm *nowtm = get_time();
     fd = open_pathfmt(fname, sizeof(fname), O_CREAT|O_WRONLY|O_TRUNC,
                       "%s/boostlog_%04d%02d%02d%02d%02d%02d.txt", ROCKBOX_DIR,
                       nowtm->tm_year + 1900, nowtm->tm_mon + 1, nowtm->tm_mday,
                       nowtm->tm_hour, nowtm->tm_min, nowtm->tm_sec);
-#else
-    fd = open(ROCKBOX_DIR "/boostlog.txt", O_CREAT|O_WRONLY|O_TRUNC, 0666);
-#endif
     if(-1 != fd) {
         for (int i = 0; i < count; i++)
         {
@@ -1677,7 +1673,7 @@ static const struct {
 #if defined(CPU_PP) || defined(CPU_S5L87XX)
         { "View I/O ports", dbg_ports },
 #endif
-#if (CONFIG_RTC == RTC_PCF50605) && (CONFIG_PLATFORM & PLATFORM_NATIVE)
+#if CONFIG_RTC == RTC_PCF50605
         { "View PCF registers", dbg_pcf },
 #endif
         { "CPU frequency", dbg_cpufreq },
@@ -1690,9 +1686,7 @@ static const struct {
 #endif
         { "Screendump", dbg_screendump },
         { "Skin Engine RAM usage", dbg_skin_engine },
-#if (CONFIG_PLATFORM & PLATFORM_NATIVE) && !defined(SIMULATOR)
         { "View HW info", dbg_hw_info },
-#endif
         { "View partitions", dbg_partitions },
         { "View disk info", dbg_disk_info },
         { "Dump ATA identify info", dbg_identify_info},

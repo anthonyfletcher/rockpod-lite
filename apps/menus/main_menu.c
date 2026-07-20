@@ -149,10 +149,8 @@ enum infoscreenorder
     INFO_ROOT_DIR,
     INFO_VERSION_TITLE,
     INFO_VERSION,
-#if CONFIG_RTC
     INFO_DATE,
     INFO_TIME,
-#endif
     INFO_DISK1, /* capacity/free on internal */
     INFO_COUNT
 };
@@ -187,9 +185,7 @@ static int info_speak_item(int selected_item, void * data)
 {
     struct info_data *info = (struct info_data*)data;
 
-#if CONFIG_RTC
     struct tm *tm;
-#endif
     int i;
 
     if (info->new_data)
@@ -203,7 +199,6 @@ static int info_speak_item(int selected_item, void * data)
         case INFO_VERSION_TITLE:  /*fallthrough*/
             break;
 
-#if CONFIG_RTC
         case INFO_TIME:
             talk_id(LANG_CURRENT_TIME, false);
             /* fallthrough */
@@ -221,7 +216,6 @@ static int info_speak_item(int selected_item, void * data)
                 talk_time(tm, true);
 
             break;
-#endif
 
         case INFO_ROOT_DIR:
             talk_id(LANG_DISPLAY_FULL_PATH, false);
@@ -278,9 +272,7 @@ static int info_action_callback(int action, struct gui_synclist *lists)
 
     char s1[32];
     char s2[32];
-#if CONFIG_RTC
     struct tm *tm;
-#endif
     if (action == ACTION_STD_CANCEL)
     {
         return action;
@@ -295,7 +287,6 @@ static int info_action_callback(int action, struct gui_synclist *lists)
             volume_recalc_free(IF_MV(i));
         gui_synclist_speak_item(lists);
     }
-#if CONFIG_RTC
     else if (action == ACTION_NONE)
     {
         static int last_redraw = 0;
@@ -306,7 +297,6 @@ static int info_action_callback(int action, struct gui_synclist *lists)
         else
             return action;
     }
-#endif
 /* Note: these need to be in the same order as enum infoscreenorder */
     simplelist_reset_lines();
 /* INFO_BATTERY */
@@ -334,7 +324,6 @@ static int info_action_callback(int action, struct gui_synclist *lists)
     simplelist_setline(str(LANG_VERSION));
 /* INFO_VERSION */
     simplelist_setline(rbversion);
-#if CONFIG_RTC
 
     tm = get_time();
     if (valid_time(tm))
@@ -360,7 +349,6 @@ static int info_action_callback(int action, struct gui_synclist *lists)
 /* INFO_TIME */
         simplelist_setline("--:--:--");
     }
-#endif
 /* INFO_DISK, capacity/free on internal */
     for (int i = 0; i < NUM_VOLUMES ; i++) {
         if (info->size[i]) {
@@ -393,11 +381,9 @@ static int show_info(void)
 MENUITEM_FUNCTION(show_info_item, 0, ID2P(LANG_ROCKBOX_INFO),
                   show_info, NULL, Icon_NOICON);
 
-#if CONFIG_RTC
 int time_screen(void* ignored);
 MENUITEM_FUNCTION(timedate_item, MENU_FUNC_CHECK_RETVAL, ID2P(LANG_TIME_MENU),
                   time_screen,  NULL, Icon_Menu_setting );
-#endif
 
 MENUITEM_FUNCTION(show_credits_item, 0, ID2P(LANG_CREDITS),
                   show_credits, NULL, Icon_NOICON);
@@ -441,9 +427,7 @@ MAKE_MENU(main_menu_, ID2P(LANG_SETTINGS), NULL,
         &settings_menu_item, &theme_menu,
         &album_covers_menu,
         &text_viewer_menu,
-#if CONFIG_RTC
         &timedate_item,
-#endif
         &main_menu_config_item,
         &manage_settings,
         );

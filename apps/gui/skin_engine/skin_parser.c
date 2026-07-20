@@ -1360,11 +1360,7 @@ static bool check_feature_tag(const int type)
     switch (type)
     {
         case SKIN_TOKEN_RTC_PRESENT:
-#if CONFIG_RTC
             return true;
-#else
-            return false;
-#endif
         case SKIN_TOKEN_HAVE_RECORDING:
             return false;
         case SKIN_TOKEN_HAVE_TUNER:
@@ -1484,16 +1480,6 @@ static int load_skin_bmp(struct wps_data *wps_data, struct gui_img *img, char* b
     get_image_filename(bitmap->data, bmpdir,
                        img_path, sizeof(img_path));
 
-#ifdef __PCTOOL__ /* just check if image exists */
-    int fd = open(img_path, O_RDONLY);
-    if (fd < 0)
-    {
-        DEBUGF("Couldn't open %s\n", img_path);
-        return fd;
-    }
-    close(fd);
-    return 1;
-#else /* load the image */
     static struct buflib_callbacks buflib_ops = {buflib_move_callback, NULL, NULL};
     int handle;
     int bmpformat;
@@ -1523,7 +1509,6 @@ static int load_skin_bmp(struct wps_data *wps_data, struct gui_img *img, char* b
     }
 
     return -1;
-#endif/* !__PCTOOL__ */
 }
 
 static bool load_skin_bitmaps(struct wps_data *wps_data, char *bmpdir)
@@ -1825,11 +1810,7 @@ static int skin_element_callback(struct skin_element* element, void* data)
 
             if (element->tag->flags&SKIN_RTC_REFRESH)
             {
-#if CONFIG_RTC
                 curr_line->update_mode |= SKIN_REFRESH_DYNAMIC;
-#else
-                curr_line->update_mode |= SKIN_REFRESH_STATIC;
-#endif
             }
             else
                 curr_line->update_mode |= element->tag->flags&SKIN_REFRESH_ALL;
