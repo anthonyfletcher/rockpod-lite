@@ -37,7 +37,6 @@
 #include "lang.h"
 #include "menu.h"
 #include "misc.h"
-#include "open_plugin.h"
 #include "tree.h"
 #include "splash.h"
 #include "pathfuncs.h"
@@ -786,11 +785,6 @@ int do_shortcut_menu(void *ignored)
                     /* else fall through */
                 case SHORTCUT_BROWSER:
                 {
-                    if(open_plugin_add_path(ID2P(LANG_SHORTCUTS), sc->u.path, NULL) != 0)
-                    {
-                        done = GO_TO_PLUGIN;
-                        break;
-                    }
                     struct browse_context browse = {
                         .dirfilter = global_settings.dirfilter,
                         .icon = Icon_NOICON,

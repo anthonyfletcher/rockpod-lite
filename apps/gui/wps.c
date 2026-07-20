@@ -66,7 +66,6 @@
 #include "wps.h"
 #include "statusbar-skinned.h"
 #include "skin_engine/wps_internals.h"
-#include "open_plugin.h"
 
 #ifdef USB_ENABLE_AUDIO
 #include "usbstack/usb_audio.h"
@@ -745,12 +744,6 @@ long gui_wps_show(void)
                     return GO_TO_ROOT;
                 else if (retval == ONPLAY_PLAYLIST)
                     return GO_TO_PLAYLIST_VIEWER;
-                else if (retval == ONPLAY_PLUGIN)
-                {
-                    restore_theme();
-                    theme_enabled = false;
-                    open_plugin_run(ID2P(LANG_OPEN_PLUGIN_SET_WPS_CONTEXT_PLUGIN));
-                }
 
                 restore = true;
             }

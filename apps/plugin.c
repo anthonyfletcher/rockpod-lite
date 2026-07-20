@@ -21,7 +21,6 @@
 #define DIRFUNCTIONS_DEFINED
 #define FILEFUNCTIONS_DEFINED
 #include "plugin.h"
-#include "open_plugin.h"
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
@@ -1020,7 +1019,7 @@ static void plugin_tsr(int (*exit_callback)(bool))
 
 int plugin_open(const char *plugin, const char *parameter)
 {
-    open_plugin_add_path(ID2P(LANG_OPEN_PLUGIN), plugin, parameter);
+    (void)plugin; (void)parameter;
     return PLUGIN_GOTO_PLUGIN;
 }
 

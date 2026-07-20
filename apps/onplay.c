@@ -46,7 +46,6 @@
 #include "properties.h"
 #include "playing_time.h"
 #include "fileop.h"
-#include "open_plugin.h"
 #include "plugin.h"
 #include "bookmark.h"
 #include "action.h"
@@ -668,9 +667,6 @@ MENUITEM_FUNCTION(rating_item, 0, ID2P(LANG_MENU_SET_RATING),
                   set_rating_inline,
                   ratingitem_callback, Icon_Questionmark);
 #endif
-MENUITEM_RETURNVALUE(plugin_item, ID2P(LANG_OPEN_PLUGIN),
-                  GO_TO_PLUGIN, NULL, Icon_Plugin);
-
 static bool view_cue(void)
 {
     struct mp3entry* id3 = audio_current_track();
@@ -1116,7 +1112,6 @@ MAKE_ONPLAYMENU( wps_onplay_menu, ID2P(LANG_ONPLAY_MENU_TITLE),
            &rating_item,
 #endif
            &bookmark_menu,
-           &plugin_item,
            &browse_id3_item,
            &delete_file_item, &view_cue_item,
 #ifdef HAVE_PITCHCONTROL
@@ -1265,11 +1260,6 @@ static int hotkey_album_covers(void *param)
 }
 #endif
 
-static int hotkey_wps_run_plugin(void)
-{
-    open_plugin_run(ID2P(LANG_HOTKEY_WPS));
-    return ONPLAY_OK;
-}
 #define HOTKEY_FUNC(func, param) {{(void *)func}, param}
 
 /* Any desired hotkey functions go here, in the enum in onplay.h,
@@ -1313,11 +1303,6 @@ static const struct hotkey_assignment hotkey_items[] = {
       .func = HOTKEY_FUNC(hotkey_tree_pl_insert_shuffled, NULL),
       .return_code = ONPLAY_FUNC_RETURN,
       .flags = HOTKEY_FLAG_TREE },
-    { .action = HOTKEY_PLUGIN,
-      .lang_id = LANG_OPEN_PLUGIN,
-      .func = HOTKEY_FUNC(hotkey_wps_run_plugin, NULL),
-      .return_code = ONPLAY_FUNC_RETURN,
-      .flags = HOTKEY_FLAG_WPS | HOTKEY_FLAG_NOSBS },
     { .action = HOTKEY_BOOKMARK,
       .lang_id = LANG_BOOKMARK_MENU_CREATE,
       .func = HOTKEY_FUNC(bookmark_create_menu, NULL),

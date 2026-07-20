@@ -29,7 +29,6 @@
 #include "settings.h"
 #include "rbpaths.h"
 #include "menu.h"
-#include "open_plugin.h"
 #include "keyboard.h"
 #include "sound_menu.h"
 #include "exported_menus.h"
