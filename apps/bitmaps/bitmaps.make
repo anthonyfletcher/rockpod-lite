@@ -30,7 +30,10 @@ BMPOBJ = $(call full_path_subst,$(ROOTDIR)/%.bmp,$(BUILDDIR)/%.o,$(BMP))
 BMPHFILES = $(BMPINCDIR)/usblogo.h $(BMPINCDIR)/remote_usblogo.h \
 	$(BMPINCDIR)/default_icons.h $(BMPINCDIR)/remote_default_icons.h \
 	$(BMPINCDIR)/rockboxicon.h $(BMPINCDIR)/toolsicon.h \
-	$(BMPINCDIR)/rockpodlogo.h
+	$(BMPINCDIR)/rockpodlogo.h $(BMPINCDIR)/rockpodcredits.h \
+	$(BMPINCDIR)/rockpodusb.h $(BMPINCDIR)/rockpodtext.h \
+	$(BMPINCDIR)/rockpodpicture.h $(BMPINCDIR)/no_album_cover.h \
+	$(BMPINCDIR)/rockpodnoartistcover.h
 
 $(BMPHFILES): $(BMPOBJ)
 
