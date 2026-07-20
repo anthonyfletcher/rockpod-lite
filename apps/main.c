@@ -156,19 +156,6 @@ int main(void)
         }
     }
 
-#ifdef AUTOROCK
-    {
-        char filename[MAX_PATH];
-        const char *file =
-                                PLUGIN_DIR
-                                    "/autostart.rock";
-        if(file_exists(file)) /* no complaint if it doesn't exist */
-        {
-            plugin_load(file, NULL); /* start if it does */
-        }
-    }
-#endif /* #ifdef AUTOROCK */
-
     global_status.last_volume_change = 0;
     /* no calls INIT_ATTR functions after this point anymore!
      * see definition of INIT_ATTR in config.h */
