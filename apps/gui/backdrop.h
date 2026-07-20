@@ -22,7 +22,6 @@
 #ifndef _BACKDROP_H
 #define _BACKDROP_H
 
-#if LCD_DEPTH > 1
 
 #include "lcd.h"
 #include "bmp.h"
@@ -31,9 +30,6 @@
 bool backdrop_load(const char *filename, char* backdrop_buffer);
 void backdrop_show(char* backdrop_buffer);
 
-#else
-#define LCD_BACKDROP_BYTES 0
-#endif
 
 
 #endif /* _BACKDROP_H */

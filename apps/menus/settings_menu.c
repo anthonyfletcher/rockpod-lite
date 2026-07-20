@@ -353,11 +353,9 @@ MENUITEM_SETTING(keypress_restarts_sleeptimer,
                  &global_settings.keypress_restarts_sleeptimer, NULL);
 MENUITEM_SETTING(show_shutdown_message, &global_settings.show_shutdown_message, NULL);
 
-#if (CONFIG_KEYPAD == IPOD_4G_PAD)
 #define SETTINGS_CLEAR_ON_HOLD
 MENUITEM_SETTING(clear_settings_on_hold,
                  &global_settings.clear_settings_on_hold, NULL);
-#endif
 
 MAKE_MENU(startup_shutdown_menu, ID2P(LANG_STARTUP_SHUTDOWN),
           0, Icon_System_menu,

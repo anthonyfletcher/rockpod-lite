@@ -1563,10 +1563,8 @@ const struct settings_list settings[] = {
                    ID2P(LANG_USB_MODE_CHARGE)
         ),
 #endif
-#if (CONFIG_KEYPAD == IPOD_4G_PAD)
     OFFON_SETTING(0, clear_settings_on_hold, LANG_CLEAR_SETTINGS_ON_HOLD,
                   false, "clear settings on hold", NULL),
-#endif
     CHOICE_SETTING(0, playback_log, LANG_LOGGING, 0, "play log",
                    "off,on,last.fm", NULL, 3,
                    ID2P(LANG_OFF), ID2P(LANG_ON), ID2P(LANG_AUDIOSCROBBLER)),

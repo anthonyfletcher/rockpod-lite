@@ -414,7 +414,6 @@ static void init(void)
     settings_load();
     CHART("<settings_load");
 
-#if (CONFIG_KEYPAD == IPOD_4G_PAD)
     if (global_settings.clear_settings_on_hold &&
 #ifdef SETTINGS_RESET
     /* Reset settings if holding the reset button. (Rec on Archos,
@@ -428,7 +427,6 @@ static void init(void)
         splash(HZ*2, str(LANG_RESET_DONE_CLEAR));
         settings_reset();
     }
-#endif
     CHART(">init_battery_tables");
     init_battery_tables();
     CHART("<init_battery_tables");
