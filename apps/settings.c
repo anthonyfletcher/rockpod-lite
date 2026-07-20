@@ -765,42 +765,11 @@ void sound_settings_apply(void)
     sound_set(SOUND_BASS, global_settings.bass);
     sound_set(SOUND_TREBLE, global_settings.treble);
     sound_set(SOUND_BALANCE, global_settings.balance);
-#ifndef PLATFORM_HAS_VOLUME_CHANGE
     sound_set(SOUND_VOLUME, global_status.volume);
-#endif
     sound_set(SOUND_CHANNELS, global_settings.channel_config);
     sound_set(SOUND_STEREO_WIDTH, global_settings.stereo_width);
     sound_set(SOUND_BASS_CUTOFF, global_settings.bass_cutoff);
     sound_set(SOUND_TREBLE_CUTOFF, global_settings.treble_cutoff);
-#ifdef AUDIOHW_HAVE_DEPTH_3D
-    sound_set(SOUND_DEPTH_3D, global_settings.depth_3d);
-#endif
-#ifdef AUDIOHW_HAVE_FILTER_ROLL_OFF
-    sound_set(SOUND_FILTER_ROLL_OFF, global_settings.roll_off);
-#endif
-#ifdef AUDIOHW_HAVE_POWER_MODE
-    sound_set(SOUND_POWER_MODE, global_settings.power_mode);
-#endif
-#ifdef AUDIOHW_HAVE_EQ
-    int b;
-
-    for (b = 0; b < AUDIOHW_EQ_BAND_NUM; b++)
-    {
-        int setting = sound_enum_hw_eq_band_setting(b, AUDIOHW_EQ_GAIN);
-        sound_set(setting, global_settings.hw_eq_bands[b].gain);
-
-#ifdef AUDIOHW_HAVE_EQ_FREQUENCY
-        setting = sound_enum_hw_eq_band_setting(b, AUDIOHW_EQ_FREQUENCY);
-        if (setting != -1)
-            sound_set(setting, global_settings.hw_eq_bands[b].frequency);
-#endif /* AUDIOHW_HAVE_EQ_FREQUENCY */
-#ifdef AUDIOHW_HAVE_EQ_WIDTH
-        setting = sound_enum_hw_eq_band_setting(b, AUDIOHW_EQ_WIDTH);
-        if (setting != -1)
-            sound_set(setting, global_settings.hw_eq_bands[b].width);
-#endif /* AUDIOHW_HAVE_EQ_WIDTH */
-    }
-#endif
 }
 
 /* Shared bold UI font id (see font_get_ui_bold()); -1 when none is loaded. */

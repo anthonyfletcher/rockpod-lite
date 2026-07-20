@@ -23,7 +23,6 @@
 #ifndef _SKIN_ENGINE_H
 #define _SKIN_ENGINE_H
 
-#ifndef PLUGIN
 
 #include "tag_table.h"
 #include "screen_access.h"
@@ -83,5 +82,4 @@ void skin_request_full_update(enum skinnable_screens skin);
 
 bool dbg_skin_engine(void);
 
-#endif /* !PLUGIN */
 #endif

@@ -85,14 +85,12 @@ enum {
      * from there returns here via the normal previous-screen tracking. */
     GO_TO_ARTIST_PORTRAITS,
 };
-#ifndef PLUGIN
 extern struct menu_item_ex root_menu_;
 
 void root_menu_load_from_cfg(void* setting, char *value);
 char* root_menu_write_to_cfg(void* setting, char*buf, int buf_len);
 void root_menu_set_default(void* setting, void* defaultval);
 bool root_menu_is_changed(void* setting, void* defaultval);
-#endif
 
 
 #endif /* __ROOT_MENU_H__ */

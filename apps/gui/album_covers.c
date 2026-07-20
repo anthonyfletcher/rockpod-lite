@@ -343,7 +343,6 @@ static bool progress_cancel(int step, int count, char *msg)
 #if (defined(CPU_ARM) && (ARM_ARCH > 4))
 
 /* Otherwise, use our clz, which can be inlined */
-#elif defined(CPU_COLDFIRE)
 #else
 #endif
 
@@ -1036,15 +1035,7 @@ static int jmp_idx_prev(void)
 {
     if (!carousel_cache_ready())
     {
-#ifdef USEGSLIB
-        grey_show(false);
-        lcd_clear_display();
-        lcd_update();
-#endif
         splash(HZ*2, str(LANG_WAIT_FOR_CACHE));
-#ifdef USEGSLIB
-        grey_show(true);
-#endif
         return center_index;
     }
 
@@ -1091,15 +1082,7 @@ static int jmp_idx_next(void)
 {
     if (!carousel_cache_ready())
     {
-#ifdef USEGSLIB
-        grey_show(false);
-        lcd_clear_display();
-        lcd_update();
-#endif
         splash(HZ*2, str(LANG_WAIT_FOR_CACHE));
-#ifdef USEGSLIB
-        grey_show(true);
-#endif
         return center_index;
     }
 
@@ -1342,15 +1325,7 @@ static bool sort_albums(int new_sorting, bool from_settings)
     /* Only change sorting once artwork has been inspected */
     if (!carousel_cache_ready())
     {
-#ifdef USEGSLIB
-        if (!from_settings)
-            grey_show(false);
-#endif
         splash(HZ*2, str(LANG_WAIT_FOR_CACHE));
-#ifdef USEGSLIB
-        if (!from_settings)
-            grey_show(true);
-#endif
         return false;
     }
 
@@ -1359,13 +1334,6 @@ static bool sort_albums(int new_sorting, bool from_settings)
     global_settings.album_covers_sort_albums_by = new_sorting;
     if (!from_settings)
     {
-#ifdef USEGSLIB
-        grey_show(false);
-        lcd_set_background(N_BRIGHT(0));
-        lcd_set_foreground(N_BRIGHT(255));
-        lcd_clear_display();
-        lcd_update();
-#endif
         splash(HZ, sort_options[global_settings.album_covers_sort_albums_by]);
     }
 
@@ -1376,10 +1344,6 @@ static bool sort_albums(int new_sorting, bool from_settings)
 
     reselect(hash_album, hash_artist); /* splash if not found */
 
-#ifdef USEGSLIB
-    if (!from_settings)
-        grey_show(true);
-#endif
     return true;
 }
 

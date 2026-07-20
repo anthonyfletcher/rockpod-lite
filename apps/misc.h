@@ -147,9 +147,7 @@ int open_utf8(const char* pathname, int flags);
 int string_option(const char *option, const char *const oplist[], bool ignore_case);
 
 #ifdef BOOTFILE
-#if !defined(USB_NONE) && !defined(USB_HANDLED_BY_OF)
 void check_bootfile(bool do_rolo);
-#endif
 #endif
 
 enum volume_adjust_mode
@@ -279,7 +277,6 @@ void format_sound_value(char *buf, size_t buf_sz, int snd, int val);
  */
 void format_sound_value_ex(char *buf, size_t buf_sz, int snd, int val, bool skin_token);
 
-#ifndef PLUGIN
 enum core_load_bmp_error
 {
     CLB_ALOC_ERR = 0,
@@ -288,7 +285,6 @@ enum core_load_bmp_error
 struct buflib_callbacks;
 int core_load_bmp(const char *filename, struct bitmap *bm, const int bmformat,
                   ssize_t *buf_reqd, struct buflib_callbacks *ops);
-#endif
 
 /* Convert a volume (in tenth dB) in the range [min_vol, max_vol]
  * to a normalized linear value in the range [0, max_norm]. */

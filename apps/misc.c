@@ -76,14 +76,10 @@
 #include "voice_thread.h"
 
 #ifdef BOOTFILE
-#if !defined(USB_NONE) && !defined(USB_HANDLED_BY_OF)
 #include "rolo.h"
 #endif
-#endif
 
-#ifndef PLUGIN
 #include "core_alloc.h" /*core_load_bmp()*/
-#endif
 
 #include "piezo.h"
 
@@ -565,15 +561,11 @@ long default_event_handler_ex(long event, void (*callback)(void *), void *parame
                 callback(parameter);
             system_flush();
 #ifdef BOOTFILE
-#if !defined(USB_NONE) && !defined(USB_HANDLED_BY_OF)
             check_bootfile(false); /* gets initial size */
-#endif
 #endif
             gui_usb_screen_run(false, seqnum);
 #ifdef BOOTFILE
-#if !defined(USB_NONE) && !defined(USB_HANDLED_BY_OF)
             check_bootfile(true);
-#endif
 #endif
             system_restore();
             return SYS_USB_CONNECTED;
@@ -613,24 +605,6 @@ long default_event_handler_ex(long event, void (*callback)(void *), void *parame
         case SYS_PHONE_UNPLUGGED:
             hp_unplug_change(false);
             return SYS_PHONE_UNPLUGGED;
-#if (CONFIG_PLATFORM & PLATFORM_HOSTED) && defined(PLATFORM_HAS_VOLUME_CHANGE)
-        case SYS_VOLUME_CHANGED:
-        {
-            static bool firstvolume = true;
-            /* kludge: since this events go to the button_queue,
-             * event data is available in the last button data */
-            int volume = button_get_data();
-            DEBUGF("SYS_VOLUME_CHANGED: %d\n", volume);
-            if (global_status.volume != volume) {
-                global_status.volume = volume;
-                if (firstvolume) {
-                    setvol();
-                    firstvolume = false;
-                }
-            }
-            return 0;
-        }
-#endif
     }
     return 0;
 }
@@ -641,7 +615,6 @@ long default_event_handler(long event)
 }
 
 #ifdef BOOTFILE
-#if !defined(USB_NONE) && !defined(USB_HANDLED_BY_OF)
 /*
     memorize/compare details about the BOOTFILE
     we don't use dircache because it may not be up to date after
@@ -686,7 +659,6 @@ void check_bootfile(bool do_rolo)
     }
     closedir(dir);
 }
-#endif
 #endif
 
 /* check range, set volume and save settings */

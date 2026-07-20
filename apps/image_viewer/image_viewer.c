@@ -434,10 +434,6 @@ static int scroll_bmp(struct image_info *info, bool initial_frame)
             break;
 
         case IMGVIEW_MENU:
-#ifdef IMGVIEW_MENU_PRE
-            if (lastbutton != IMGVIEW_MENU_PRE)
-                break;
-#endif
             if (show_menu() == 1)
                 return PLUGIN_OK;
 
@@ -450,10 +446,6 @@ static int scroll_bmp(struct image_info *info, bool initial_frame)
 
 #ifdef IMGVIEW_QUIT
         case IMGVIEW_QUIT:
-#ifdef IMGVIEW_QUIT_PRE
-            if (lastbutton != IMGVIEW_QUIT_PRE)
-                break;
-#endif
             return PLUGIN_OK;
             break;
 #endif

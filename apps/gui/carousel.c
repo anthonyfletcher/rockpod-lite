@@ -593,43 +593,6 @@ static inline int clz(uint32_t v)
 }
 
 /* Otherwise, use our clz, which can be inlined */
-#elif defined(CPU_COLDFIRE)
-/* This clz is based on the log2(n) implementation at
- * http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog
- * A clz benchmark plugin showed this to be about 14% faster on coldfire
- * than the LUT-based version.
- */
-static inline int clz(uint32_t v)
-{
-    int r = 32;
-    if (v >= 0x10000)
-    {
-        v >>= 16;
-        r -= 16;
-    }
-    if (v & 0xff00)
-    {
-        v >>= 8;
-        r -= 8;
-    }
-    if (v & 0xf0)
-    {
-        v >>= 4;
-        r -= 4;
-    }
-    if (v & 0xc)
-    {
-        v >>= 2;
-        r -= 2;
-    }
-    if (v & 2)
-    {
-        v >>= 1;
-        r -= 1;
-    }
-    r -= v;
-    return r;
-}
 #else
 static const char clz_lut[16] = { 4, 3, 2, 2, 1, 1, 1, 1,
                                   0, 0, 0, 0, 0, 0, 0, 0 };
@@ -722,11 +685,6 @@ static void output_row_8_transposed(uint32_t row, void * row_in,
 {
     pix_t *dest = (pix_t*)ctx->bm->data + row;
     pix_t *end = dest + ctx->bm->height * ctx->bm->width;
-#ifdef USEGSLIB
-    uint8_t *qp = (uint8_t*)row_in;
-    for (; dest < end; dest += ctx->bm->height)
-        *dest = *qp++;
-#else
     struct uint8_rgb *qp = (struct uint8_rgb*)row_in;
     unsigned r, g, b;
     int col = 0;
@@ -740,7 +698,6 @@ static void output_row_8_transposed(uint32_t row, void * row_in,
         qp++;
         *dest = FB_RGBPACK_LCD(r, g, b);
     }
-#endif
 }
 
 /* read_image_file() is called without FORMAT_TRANSPARENT so
@@ -750,11 +707,6 @@ static void output_row_32_transposed(uint32_t row, void * row_in,
 {
     pix_t *dest = (pix_t*)ctx->bm->data + row;
     pix_t *end = dest + ctx->bm->height * ctx->bm->width;
-#ifdef USEGSLIB
-    uint32_t *qp = (uint32_t*)row_in;
-    for (; dest < end; dest += ctx->bm->height)
-        *dest = SC_OUT(*qp++, ctx);
-#else
     struct uint32_argb *qp = (struct uint32_argb*)row_in;
     int r, g, b;
     int col = 0;
@@ -771,7 +723,6 @@ static void output_row_32_transposed(uint32_t row, void * row_in,
         b = (31 * b + (b >> 3) + delta) >> 8;
         *dest = FB_RGBPACK_LCD(r, g, b);
     }
-#endif
 }
 
 static void output_row_32_transposed_fromyuv(uint32_t row, void * row_in,

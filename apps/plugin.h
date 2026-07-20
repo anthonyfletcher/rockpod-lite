@@ -23,9 +23,6 @@
 
 /* instruct simulator code to not redefine any symbols when compiling plugins.
    (the PLUGIN macro is defined in apps/plugins/Makefile) */
-#ifdef PLUGIN
-#define NO_REDEFINES_PLEASE
-#endif
 
 #include <stdbool.h>
 #include <inttypes.h>
@@ -137,28 +134,6 @@ int plugin_open(const char *plugin, const char *parameter);
 #include "usbstack/usb_hid_usage_tables.h"
 
 
-#ifdef PLUGIN
-
-#if defined(DEBUG) || defined(SIMULATOR)
-#undef DEBUGF
-#define DEBUGF  rb->debugf
-#undef LDEBUGF
-#define LDEBUGF rb->debugf
-#else
-#undef DEBUGF
-#define DEBUGF(...) do { } while(0)
-#undef LDEBUGF
-#define LDEBUGF(...) do { } while(0)
-#endif
-
-#ifdef ROCKBOX_HAS_LOGF
-#undef LOGF
-#define LOGF rb->logf
-#else
-#define LOGF(...)
-#endif
-
-#endif
 
 #define PLUGIN_MAGIC 0x526F634B /* RocK */
 
@@ -579,10 +554,6 @@ struct plugin_api {
     int (*sound_max)(int setting);
     const char * (*sound_unit)(int setting);
     int (*sound_val2phys)(int setting, int value);
-#ifdef AUDIOHW_HAVE_EQ
-    int (*sound_enum_hw_eq_band_setting)(unsigned int band,
-                                         unsigned int band_setting);
-#endif /* AUDIOHW_HAVE_EQ */
     int32_t (*sound_get_pitch)(void);
     void (*sound_set_pitch)(int32_t pitch);
     const unsigned long *audio_master_sampr_list;
@@ -850,17 +821,6 @@ struct plugin_header {
     size_t api_size;
 };
 
-#ifdef PLUGIN
-extern unsigned char plugin_start_addr[];
-extern unsigned char plugin_end_addr[];
-#define PLUGIN_HEADER \
-        const struct plugin_api *rb DATA_ATTR; \
-        const struct plugin_header __header \
-        __attribute__ ((section (".header")))= { \
-        { PLUGIN_MAGIC, TARGET_ID, PLUGIN_API_VERSION, \
-          plugin_start_addr, plugin_end_addr, }, \
-        plugin__start, &rb, sizeof(struct plugin_api) };
-#endif /* PLUGIN */
 
 /*
  * The str() macro/functions is how to access strings that might be

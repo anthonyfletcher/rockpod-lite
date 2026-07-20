@@ -41,18 +41,6 @@
 
 INLINE unsigned range_limit(int value)
 {
-#if defined(CPU_COLDFIRE)
-    asm (  /* Note: Uses knowledge that only the low byte of the result is used */
-        "add.l   #128,%[v]   \n"  /* value += 128; */
-        "cmp.l   #255,%[v]   \n"  /* overflow? */
-        "bls.b   1f          \n"  /* no: return value */
-        "spl.b   %[v]        \n"  /* yes: set low byte to appropriate boundary */
-    "1:                      \n"
-        : /* outputs */
-        [v]"+d"(value)
-    );
-    return value;
-#else
     asm (  /* Note: Uses knowledge that only the low byte of the result is used */
         "add     %[v], %[v], #128    \n"  /* value += 128 */
         "cmp     %[v], #255          \n"  /* out of range 0..255? */
@@ -61,7 +49,6 @@ INLINE unsigned range_limit(int value)
         [v]"+r"(value)
     );
     return value;
-#endif
 }
 
 /* IDCT implementation */

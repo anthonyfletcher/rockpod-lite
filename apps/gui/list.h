@@ -246,7 +246,6 @@ extern bool gui_synclist_keyclick_callback(int action, void* data);
  * NOTE: *action may be changed regardless of return value
  */
 extern bool gui_synclist_do_button(struct gui_synclist * lists, int *action);
-#if !defined(PLUGIN)
 struct listitem_viewport_cfg;
 
 bool skinlist_get_item(struct screen *display, struct gui_synclist *list, int x, int y, int *item);
@@ -269,7 +268,6 @@ int skinlist_get_line_count(enum screen_type screen, struct gui_synclist *list);
 /* The skin's own row pitch (%Lb) when a non-tiled skinned list is drawing
  * `list`; -1 otherwise, so the caller falls back to the font height. */
 int skinlist_row_height(enum screen_type screen, struct gui_synclist *list);
-#endif /* !PLUGIN) */
 
 
 /* If the list has a pending postponed scheduled announcement, that

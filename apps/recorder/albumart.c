@@ -37,11 +37,6 @@
 
 #define USE_JPEG_COVER
 
-#ifdef PLUGIN
-    #define strmemccpy strlcpy
-    /* Note we don't use the return value so this works */
-    /* FIXME if strmemccpy gets added to the rb->plugin struct */
-#endif
 
 /* Strip filename from a full path
  *
@@ -240,7 +235,6 @@ bool search_albumart_files(const struct mp3entry *id3, const char *size_string,
     return true;
 }
 
-#ifndef PLUGIN
 /* Look for albumart bitmap in the same dir as the track and in its parent dir.
  * Stores the found filename in the buf parameter.
  * Returns true if a bitmap was found, false otherwise */
@@ -266,4 +260,3 @@ bool find_albumart(const struct mp3entry *id3, char *buf, int buflen,
     return search_albumart_files(id3, size_string, buf, buflen);
 }
 
-#endif /* PLUGIN */

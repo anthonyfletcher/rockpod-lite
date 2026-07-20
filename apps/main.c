@@ -87,9 +87,6 @@
 #include "playback.h"
 #include "tdspeed.h"
 
-#ifdef BUTTON_REC
-    #define SETTINGS_RESET BUTTON_REC
-#endif
 
 #if (CONFIG_STORAGE & STORAGE_MMC)
 #include "ata_mmc.h"
@@ -373,12 +370,8 @@ static void init(void)
             int line=0;
             lcd_clear_display();
             lcd_putsf(0, line++, "No partition found (%d).", rc);
-#ifndef USB_NONE
             lcd_puts(0, line++, "Insert USB cable");
             lcd_puts(0, line++, "and fix it.");
-#elif !defined(DEBUG) && !(CONFIG_STORAGE & STORAGE_RAMDISK)
-            lcd_puts(0, line++, "Rebooting in 5s");
-#endif
             lcd_puts(0, line++, rbversion);
 
             struct storage_info sinfo;
@@ -401,13 +394,9 @@ static void init(void)
                 disk_set_sector_multiplier(IF_MD(i,) DEFAULT_VIRT_SECTOR_SIZE/SECTOR_SIZE);
 #endif
 
-#ifndef USB_NONE
             usb_start_monitoring();
             while(button_get(true) != SYS_USB_CONNECTED) {};
             gui_usb_screen_run(true, button_get_data());
-#elif !defined(DEBUG) && !(CONFIG_STORAGE & STORAGE_RAMDISK)
-            sleep(HZ*5);
-#endif
 
 #if !defined(DEBUG) && !(CONFIG_STORAGE & STORAGE_RAMDISK)
             system_reboot();

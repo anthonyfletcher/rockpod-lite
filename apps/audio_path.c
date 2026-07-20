@@ -30,18 +30,6 @@
 
 #if (CONFIG_PLATFORM & PLATFORM_NATIVE)
 
-#ifdef AUDIO_CPU_BOOST
-static void audio_cpu_boost(bool state)
-{
-    static bool cpu_boosted = false;
-
-    if (state != cpu_boosted)
-    {
-        cpu_boost(state);
-        cpu_boosted = state;
-    }
-} /* audio_cpu_boost */
-#endif /* AUDIO_CPU_BOOST */
 
 /**
  * Selects an audio source for recording or playback
@@ -52,10 +40,6 @@ void audio_set_input_source(int source, unsigned flags)
     /** Do power up/down of associated device(s) **/
 
     /** SPDIF **/
-#ifdef AUDIO_CPU_BOOST
-    /* Always boost for SPDIF */
-    audio_cpu_boost(source == AUDIO_SRC_SPDIF);
-#endif /* AUDIO_CPU_BOOST */
 
     /* Set the appropriate feed for spdif output */
 
@@ -68,12 +52,6 @@ void audio_set_input_source(int source, unsigned flags)
 
 /** Sim stubs **/
 
-#ifdef AUDIO_CPU_BOOST
-static void audio_cpu_boost(bool state)
-{
-    (void)state;
-} /* audio_cpu_boost */
-#endif /* AUDIO_CPU_BOOST */
 
 void audio_set_output_source(int source)
 {

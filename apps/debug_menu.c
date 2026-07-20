@@ -281,17 +281,13 @@ static bool dbg_cpuinfo(void)
 #endif
 
 static unsigned int ticks, freq_sum;
-#ifndef CPU_MULTI_FREQUENCY
 static unsigned int boost_ticks;
-#endif
 
 static void dbg_audio_task(void)
 {
 #ifdef CPUFREQ_NORMAL
-#ifndef CPU_MULTI_FREQUENCY
     if(FREQ > CPUFREQ_NORMAL)
         boost_ticks++;
-#endif
     freq_sum += FREQ/1000000; /* in MHz */
 #endif
     ticks++;
@@ -311,9 +307,7 @@ static bool dbg_buffering_thread(void)
     #define STR_DATAREM "data_rem"
     const char * const fmt_used = "%s: %6ld/%ld";
 
-#ifndef CPU_MULTI_FREQUENCY
     boost_ticks = 0;
-#endif
     ticks = freq_sum = 0;
 
     tick_add_task(dbg_audio_task);
@@ -391,12 +385,7 @@ static bool dbg_buffering_thread(void)
             if (ticks > 0)
             {
                 int avgclock   = freq_sum * 10 / ticks;      /* in 100 kHz */
-#ifdef CPU_MULTI_FREQUENCY
-                int boostquota = (avgclock * 100 - CPUFREQ_NORMAL/1000) /
-                    ((CPUFREQ_MAX - CPUFREQ_NORMAL) / 1000000); /* in 0.1 % */
-#else
                 int boostquota = boost_ticks * 1000 / ticks; /* in 0.1 % */
-#endif
                 screens[i].putsf(0, line++, "boost:%3d.%d%% (%d.%dMHz)",
                                  boostquota/10, boostquota%10, avgclock/10, avgclock%10);
             }
@@ -701,10 +690,6 @@ static bool view_battery(void)
                     lcd_putsf(0, 1, "%s: %d.%03d V (%d %%)", "Battery", y / 1000, y % 1000, z);
                 else if (z > 0)
                     lcd_putsf(0, 1, "%s: %d %%", "Battery", z);
-#ifdef ADC_EXT_POWER
-                y = (adc_read(ADC_EXT_POWER) * EXT_SCALE_FACTOR) / 1000;
-                lcd_putsf(0, 2, "%s: %d.%03d V", "External", y / 1000, y % 1000);
-#endif
 #if CONFIG_CHARGING
 #if defined IPOD_VIDEO
                 int usb_pwr  = (GPIOL_INPUT_VAL & 0x10)?true:false;
@@ -1733,24 +1718,6 @@ static bool dbg_talk(void)
     return simplelist_show_list(&list);
 }
 
-#if (defined(ROCKBOX_HAS_LOGF) && defined(USB_ENABLE_SERIAL))
-static bool toggle_usb_core_driver(int driver, char *msg)
-{
-    bool enabled = !usb_core_driver_enabled(driver);
-
-    usb_core_enable_driver(driver,enabled);
-    splashf(HZ, "%s %s", msg, enabled ? "enabled" : "disabled");
-
-    return false;
-}
-
-#ifdef USB_ENABLE_SERIAL
-static bool toggle_usb_serial(void)
-{
-    return toggle_usb_core_driver(USB_DRIVER_SERIAL, "USB Serial");
-}
-#endif /* USB_ENABLE_SERIAL */
-#endif
 
 #ifdef USB_ENABLE_AUDIO
 static int dbg_usb_audio_cb(int action, struct gui_synclist *lists)
@@ -1952,9 +1919,6 @@ static const struct {
 #ifdef ROCKBOX_HAS_LOGF
         {"Show Log File", logfdisplay },
         {"Dump Log File", logfdump },
-#endif
-#if defined(ROCKBOX_HAS_LOGF) && defined(USB_ENABLE_SERIAL)
-        {"USB Serial driver (logf)", toggle_usb_serial },
 #endif
 #if defined(USB_ENABLE_AUDIO)
         {"USB-DAC", dbg_usb_audio},

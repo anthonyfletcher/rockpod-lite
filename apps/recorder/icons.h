@@ -82,7 +82,6 @@ enum icons_12x8 {
     Icon12x8Last
 };
 
-#ifndef PLUGIN
 
 extern const unsigned char bitmap_icons_5x8[Icon5x8Last][5];
 extern const unsigned char bitmap_icons_7x8[Icon7x8Last][7];
@@ -115,5 +114,4 @@ extern const unsigned char bitmap_icon_disk[];
 #error "Icons larger than statusbar!"
 #endif
 
-#endif /* PLUGIN */
 #endif /*  _ICONS_H_ */

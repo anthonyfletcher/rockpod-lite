@@ -43,9 +43,7 @@
 #include <string.h>
 #include "inttypes.h"
 #include "system.h"
-#ifndef PLUGIN
 #include "debug.h"
-#endif
 #include "lcd.h"
 #include "file.h"
 #include "bmp.h"
@@ -722,13 +720,11 @@ int read_bmp_fd(int fd,
 #endif
         if (!read_part_line(&ba))
             return -9;
-#ifndef PLUGIN
 #if !defined(HAVE_LCD_COLOR) && \
         (LCD_DEPTH > 1)
         uint8_t* qp = buf;
 #else
         struct uint8_rgb *qp = (struct uint8_rgb *)buf;
-#endif
 #endif
         /* Convert to destination format */
 #if ((LCD_DEPTH > 1)) && \
@@ -741,11 +737,8 @@ int read_bmp_fd(int fd,
 #if ((LCD_DEPTH > 1)) && \
     !defined(PLUGIN)
         }
-#ifndef PLUGIN
         else
 #endif
-#endif
-#ifndef PLUGIN
         {
             unsigned char *p = bitmap + bm->width * (row >> 3);
             unsigned char mask = BIT_N(row & 7);
@@ -760,7 +753,6 @@ int read_bmp_fd(int fd,
                     *p |= mask;
 #endif
         }
-#endif
     }
     if (!ba.alpha_detected)
     {   /* if this has an alpha channel, totalsize accounts for it as well

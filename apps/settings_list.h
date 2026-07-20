@@ -187,12 +187,10 @@ struct settings_list {
     };
 };
 const struct settings_list* get_settings_list(int*count);
-#ifndef PLUGIN
 /* not needed for plugins and just causes compile error,
    possibly fix proberly later */
 extern const struct settings_list  settings[];
 extern const int nb_settings;
 
-#endif
 
 #endif

@@ -33,12 +33,6 @@
 static unsigned short hw_eq_setting_lang_ids[AUDIOHW_EQ_SETTING_NUM] =
 {
     LANG_HW_EQ_GAIN,
-#ifdef AUDIOHW_HAVE_EQ_FREQUENCY
-    LANG_HW_EQ_FREQUENCY,
-#endif
-#ifdef AUDIOHW_HAVE_EQ_WIDTH
-    LANG_HW_EQ_WIDTH,
-#endif
 };
 
 static char * hw_eq_get_name(int selected_item, void * data,
@@ -94,94 +88,6 @@ MENUITEM_FUNCTION_DYNTEXT_W_PARAM(hw_eq_band1_frequency, 0,
                                   HW_EQ_IDX(AUDIOHW_EQ_BAND1, AUDIOHW_EQ_FREQUENCY),
                                   NULL, Icon_NOICON);
 #endif
-#ifdef AUDIOHW_HAVE_EQ_BAND2
-MENUITEM_FUNCTION_DYNTEXT_W_PARAM(hw_eq_band2_gain, 0,
-                                  hw_eq_do_band_setting,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND2, AUDIOHW_EQ_GAIN),
-                                  hw_eq_get_name, hw_eq_speak_item,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND2, AUDIOHW_EQ_GAIN),
-                                  NULL, Icon_Menu_setting);
-#ifdef AUDIOHW_HAVE_EQ_BAND2_FREQUENCY
-MENUITEM_FUNCTION_DYNTEXT_W_PARAM(hw_eq_band2_frequency, 0,
-                                  hw_eq_do_band_setting,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND2, AUDIOHW_EQ_FREQUENCY),
-                                  hw_eq_get_name, hw_eq_speak_item,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND2, AUDIOHW_EQ_FREQUENCY),
-                                  NULL, Icon_NOICON);
-#endif
-#ifdef AUDIOHW_HAVE_EQ_BAND2_WIDTH
-MENUITEM_FUNCTION_DYNTEXT_W_PARAM(hw_eq_band2_width, 0,
-                                  hw_eq_do_band_setting,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND2, AUDIOHW_EQ_WIDTH),
-                                  hw_eq_get_name, hw_eq_speak_item,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND2, AUDIOHW_EQ_WIDTH),
-                                  NULL, Icon_NOICON);
-#endif
-#endif /* AUDIOHW_HAVE_EQ_BAND2 */
-#ifdef AUDIOHW_HAVE_EQ_BAND3
-MENUITEM_FUNCTION_DYNTEXT_W_PARAM(hw_eq_band3_gain, 0,
-                                  hw_eq_do_band_setting,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND3, AUDIOHW_EQ_GAIN),
-                                  hw_eq_get_name, hw_eq_speak_item,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND3, AUDIOHW_EQ_GAIN),
-                                  NULL, Icon_Menu_setting);
-#ifdef AUDIOHW_HAVE_EQ_BAND3_FREQUENCY
-MENUITEM_FUNCTION_DYNTEXT_W_PARAM(hw_eq_band3_frequency, 0,
-                                  hw_eq_do_band_setting,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND3, AUDIOHW_EQ_FREQUENCY),
-                                  hw_eq_get_name, hw_eq_speak_item,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND3, AUDIOHW_EQ_FREQUENCY),
-                                  NULL, Icon_NOICON);
-#endif
-#ifdef AUDIOHW_HAVE_EQ_BAND3_WIDTH
-MENUITEM_FUNCTION_DYNTEXT_W_PARAM(hw_eq_band3_width, 0,
-                                  hw_eq_do_band_setting,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND3, AUDIOHW_EQ_WIDTH),
-                                  hw_eq_get_name, hw_eq_speak_item,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND3, AUDIOHW_EQ_WIDTH),
-                                  NULL, Icon_NOICON);
-#endif
-#endif /* AUDIOHW_HAVE_EQ_BAND3 */
-#ifdef AUDIOHW_HAVE_EQ_BAND4
-MENUITEM_FUNCTION_DYNTEXT_W_PARAM(hw_eq_band4_gain, 0,
-                                  hw_eq_do_band_setting,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND4, AUDIOHW_EQ_GAIN),
-                                  hw_eq_get_name, hw_eq_speak_item,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND4, AUDIOHW_EQ_GAIN),
-                                  NULL, Icon_Menu_setting);
-#ifdef AUDIOHW_HAVE_EQ_BAND4_FREQUENCY
-MENUITEM_FUNCTION_DYNTEXT_W_PARAM(hw_eq_band4_frequency, 0,
-                                  hw_eq_do_band_setting,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND4, AUDIOHW_EQ_FREQUENCY),
-                                  hw_eq_get_name, hw_eq_speak_item,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND4, AUDIOHW_EQ_FREQUENCY),
-                                  NULL, Icon_NOICON);
-#endif
-#ifdef AUDIOHW_HAVE_EQ_BAND4_WIDTH
-MENUITEM_FUNCTION_DYNTEXT_W_PARAM(hw_eq_band4_width, 0,
-                                  hw_eq_do_band_setting,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND4, AUDIOHW_EQ_WIDTH),
-                                  hw_eq_get_name, hw_eq_speak_item,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND4, AUDIOHW_EQ_WIDTH),
-                                  NULL, Icon_NOICON);
-#endif
-#endif /* AUDIOHW_HAVE_EQ_BAND4 */
-#ifdef AUDIOHW_HAVE_EQ_BAND5
-MENUITEM_FUNCTION_DYNTEXT_W_PARAM(hw_eq_band5_gain, 0,
-                                  hw_eq_do_band_setting,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND5, AUDIOHW_EQ_GAIN),
-                                  hw_eq_get_name, hw_eq_speak_item,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND5, AUDIOHW_EQ_GAIN),
-                                  NULL, Icon_Menu_setting);
-#ifdef AUDIOHW_HAVE_EQ_BAND5_FREQUENCY
-MENUITEM_FUNCTION_DYNTEXT_W_PARAM(hw_eq_band5_frequency, 0,
-                                  hw_eq_do_band_setting,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND5, AUDIOHW_EQ_FREQUENCY),
-                                  hw_eq_get_name, hw_eq_speak_item,
-                                  HW_EQ_IDX(AUDIOHW_EQ_BAND5, AUDIOHW_EQ_FREQUENCY),
-                                  NULL, Icon_NOICON);
-#endif
-#endif /* AUDIOHW_HAVE_EQ_BAND5 */
 
 /* Submenu for multiple "tone controls". Gain + all advanced settings. */
 MAKE_MENU(hardware_eq_tone_controls_advanced, ID2P(LANG_HW_EQ_TONE_CONTROLS_ADVANCED),
@@ -190,56 +96,11 @@ MAKE_MENU(hardware_eq_tone_controls_advanced, ID2P(LANG_HW_EQ_TONE_CONTROLS_ADVA
 #ifdef AUDIOHW_HAVE_EQ_BAND1_FREQUENCY
           ,&hw_eq_band1_frequency
 #endif
-#ifdef AUDIOHW_HAVE_EQ_BAND2
-          ,&hw_eq_band2_gain
-#ifdef AUDIOHW_HAVE_EQ_BAND2_FREQUENCY
-          ,&hw_eq_band2_frequency
-#endif
-#ifdef AUDIOHW_HAVE_EQ_BAND2_WIDTH
-          ,&hw_eq_band2_width
-#endif
-#endif /* AUDIOHW_HAVE_EQ_BAND2 */
-#ifdef AUDIOHW_HAVE_EQ_BAND3
-          ,&hw_eq_band3_gain
-#ifdef AUDIOHW_HAVE_EQ_BAND3_FREQUENCY
-          ,&hw_eq_band3_frequency
-#endif
-#ifdef AUDIOHW_HAVE_EQ_BAND3_WIDTH
-          ,&hw_eq_band3_width
-#endif
-#endif /* AUDIOHW_HAVE_EQ_BAND3 */
-#ifdef AUDIOHW_HAVE_EQ_BAND4
-          ,&hw_eq_band4_gain
-#ifdef AUDIOHW_HAVE_EQ_BAND4_FREQUENCY
-          ,&hw_eq_band4_frequency
-#endif
-#ifdef AUDIOHW_HAVE_EQ_BAND4_WIDTH
-          ,&hw_eq_band4_width
-#endif
-#endif /* AUDIOHW_HAVE_EQ_BAND4 */
-#ifdef AUDIOHW_HAVE_EQ_BAND5
-          ,&hw_eq_band5_gain
-#ifdef AUDIOHW_HAVE_EQ_BAND5_FREQUENCY
-          ,&hw_eq_band5_frequency
-#endif
-#endif /* AUDIOHW_HAVE_EQ_BAND5 */
     );
 /* Shows only the gains + advanced settings submenu */
 MAKE_MENU(audiohw_eq_tone_controls, ID2P(LANG_HW_EQ_TONE_CONTROLS),
           NULL, Icon_NOICON
           ,&hw_eq_band1_gain
-#ifdef AUDIOHW_HAVE_EQ_BAND2
-          ,&hw_eq_band2_gain
-#endif
-#ifdef AUDIOHW_HAVE_EQ_BAND3
-          ,&hw_eq_band3_gain
-#endif
-#ifdef AUDIOHW_HAVE_EQ_BAND4
-          ,&hw_eq_band4_gain
-#endif
-#ifdef AUDIOHW_HAVE_EQ_BAND5
-          ,&hw_eq_band5_gain
-#endif
           ,&hardware_eq_tone_controls_advanced
     );
 

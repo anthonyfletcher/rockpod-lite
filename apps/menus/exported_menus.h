@@ -23,7 +23,6 @@
 
 #include "menu.h"
 /* not needed for plugins */
-#ifndef PLUGIN 
 
 extern const struct menu_item_ex 
         display_menu,               /* display_menu.c   */
@@ -34,9 +33,6 @@ extern const struct menu_item_ex
         playlist_settings,          /* playlist_menu.c  */
         viewer_settings_menu,       /* playlist_menu.c  */
         equalizer_menu,             /* eq_menu.c        */
-#ifdef AUDIOHW_HAVE_EQ
-        audiohw_eq_tone_controls,   /* audiohw_eq_menu.c */
-#endif
         theme_menu                  /* theme_menu.c     */
         , album_covers_menu         /* album_covers_menu.c */
         , text_viewer_menu;         /* text_viewer_menu.c */
@@ -48,5 +44,4 @@ struct browse_folder_info {
 int browse_folder(void *param); /* in theme_menu.c as it is mostly used there */
 int main_menu_config(void); /* in main_menu_config.c */
 
-#endif /* ! PLUGIN */
 #endif /*_EXPORTED_MENUS_H */

@@ -55,7 +55,6 @@
  *
  */
 
-#if !defined(PLUGIN)
 
 /*#define LOGF_ENABLE*/
 /*#define LOGF_CLAUSES define to enable logf clause matching (LOGF_ENABLE req'd) */
@@ -87,9 +86,6 @@
 #include "lang.h"
 #include "eeprom_settings.h"
 #define USR_CANCEL false
-#else/*!defined(PLUGIN)*/
-#define USR_CANCEL (tc_stat.commit_delayed == true)
-#endif /*!defined(PLUGIN)*/
 /*
  * Define this to support non-native endian tagcache files.
  * Databases are always written in native endian so this is
@@ -235,13 +231,6 @@ static const char * const tag_type_str[] = {
 #define logf_clauses logf
 #endif /* !defined(LOGF_ENABLE) || !defined(LOGF_CLAUSES) */
 
-#if defined(PLUGIN)
-char *itoa_buf(char *buf, size_t bufsz, long int i)
-{
-    snprintf(buf, bufsz, "%ld", i);
-    return buf;
-}
-#endif
 
 /* Status information of the tagcache. */
 static struct tagcache_stat tc_stat;
@@ -710,7 +699,6 @@ static bool update_master_header(void)
     return true;
 }
 
-#if !defined(PLUGIN)
 static bool do_timed_yield(void)
 {
     /* Sorting can lock up for quite a while, so yield occasionally */
@@ -2319,7 +2307,6 @@ static void NO_INLINE add_tagcache(char *path, unsigned long mtime)
 
     #undef ADD_TAG
 }
-#endif /*!defined(PLUGIN)*/
 
 
 static bool tempbuf_insert(char *str, int id, int idx_id, bool unique)
@@ -3033,9 +3020,6 @@ static int build_index(int index_type, struct tagcache_header *h, int tmpfd)
             }
             str_setlen(build_idx_buf, entry.tag_length[index_type]);
 
-#if defined(PLUGIN)
-            if (user_check_tag(index_type, build_idx_buf))
-#endif /*defined(PLUGIN)*/
             {
                 if (TAGCACHE_IS_UNIQUE(index_type))
                     error = !tempbuf_insert(build_idx_buf, i, -1, true);
@@ -3268,7 +3252,6 @@ static bool commit(void)
     while (write_lock)
         sleep(1);
 
-#if !defined(PLUGIN)
     int fd = open_db_fd(TAGCACHE_FILE_NOCOMMIT, O_RDONLY);
     if (fd >= 0)
     {
@@ -3278,7 +3261,6 @@ static bool commit(void)
         tmpfd = -1;
     }
     else
-#endif /*!defined(PLUGIN)*/
     {
         tmpfd = open_db_fd(TAGCACHE_FILE_TEMP, O_RDONLY);
     }
@@ -3334,13 +3316,6 @@ static bool commit(void)
         ramcache_buffer_stolen = true;
     }
 
-#if defined(PLUGIN)
-    if (tempbuf_size == 0)
-    {
-        tempbuf = rb->plugin_get_audio_buffer(&tempbuf_size);
-        tempbuf_size &= ~0x03;
-    }
-#endif /*defined(PLUGIN)*/
 
     /* And finally fail if there are no buffers available. */
     if (tempbuf_size == 0)
@@ -3462,7 +3437,6 @@ void tagcache_commit_finalize(void)
     tc_stat.readyvalid = true;
 }
 
-#if !defined(PLUGIN)
 
 static bool modify_numeric_entry(int masterfd, int idx_id, int tag, long data)
 {
@@ -5153,4 +5127,3 @@ int tagcache_get_max_commit_step(void)
 {
     return (int)(SORTED_TAGS_COUNT)+1;
 }
-#endif /*!defined(PLUGIN)*/

@@ -399,7 +399,7 @@ static inline void button_flip_horizontally(int context, int *button)
     {
         newbutton |= BUTTON_LEFT;
     }
-#elif !defined(NO_BUTTON_LR)
+#else
 #warning "BUTTON_LEFT / BUTTON_RIGHT not defined!"
 #endif
 
@@ -414,18 +414,6 @@ static inline void button_flip_horizontally(int context, int *button)
         newbutton |= BUTTON_SCROLL_BACK;
     }
 
-#if defined(BUTTON_MINUS) && defined(BUTTON_PLUS)
-    newbutton &= ~(BUTTON_MINUS | BUTTON_PLUS);
-    if (has_flag(*button, BUTTON_MINUS))
-    {
-        newbutton |= BUTTON_PLUS;
-    }
-
-    if (has_flag(*button, BUTTON_PLUS))
-    {
-        newbutton |= BUTTON_MINUS;
-    }
-#endif
 
     *button = newbutton;
 } /* button_flip_horizontally */

@@ -31,12 +31,8 @@
 
 static uint32_t beep_phase;     /* Phase of square wave generator */
 static uint32_t beep_step;      /* Step of square wave generator on each sample */
-#ifdef BEEP_GENERIC
-static int16_t  beep_amplitude; /* Amplitude of square wave generator */
-#else
 /* Optimized routines do XOR with phase sign bit in both channels at once */
 static uint32_t beep_amplitude; /* Amplitude of square wave generator */
-#endif
 static int beep_count;          /* Number of samples remaining to generate */
 
 #define BEEP_COUNT(fs, duration) ((fs) / 1000 * (duration))
@@ -82,12 +78,8 @@ void beep_play(unsigned int frequency, unsigned int duration,
     beep_step = fp_div(frequency, fout, 32);
     beep_count = BEEP_COUNT(fout, duration);
 
-#ifdef BEEP_GENERIC
-    beep_amplitude = amplitude;
-#else
     /* Optimized routines do XOR with phase sign bit in both channels at once */
     beep_amplitude = amplitude | (amplitude << 16); /* Word:|AMP16|AMP16| */
-#endif
 
     /* If it fits - avoid cb overhead */
     const void *start;

@@ -39,9 +39,7 @@
 #include "general.h"
 #include "kernel.h"
 #include "system.h"
-#ifndef PLUGIN
 #include "debug.h"
-#endif
 #include "lcd.h"
 #include "file.h"
 #ifdef ROCKBOX_DEBUG_SCALERS
@@ -110,19 +108,6 @@ int recalc_dimension(struct dim *dst, struct dim *src)
         return false; \
 }
 
-#if defined(CPU_COLDFIRE)
-#define MAC(op1, op2, num) \
-    asm volatile( \
-        "mac.l %0, %1, %%acc" #num \
-        : \
-        : "%d" (op1), "d" (op2)\
-    )
-#define MAC_OUT(dest, num) \
-    asm volatile( \
-        "movclr.l %%acc" #num ", %0" \
-        : "=d" (dest) \
-    )
-#endif
 
 /* horizontal area average scaler */
 static bool scale_h_area(void *out_line_ptr,
@@ -155,32 +140,6 @@ static bool scale_h_area(void *out_line_ptr,
             */
             oxe -= h_i_val;
 
-#if defined(CPU_COLDFIRE)
-/* Coldfire EMAC math */
-            /* add saved partial pixel from start of area */
-            MAC(rgbvalacc.r, h_o_val, 0);
-            MAC(rgbvalacc.g, h_o_val, 1);
-            MAC(rgbvalacc.b, h_o_val, 2);
-            MAC(rgbvalacc.a, h_o_val, 3);
-            MAC(rgbvaltmp.r, mul, 0);
-            MAC(rgbvaltmp.g, mul, 1);
-            MAC(rgbvaltmp.b, mul, 2);
-            MAC(rgbvaltmp.a, mul, 3);
-            /* get new pixel , then add its partial coverage to this area */
-            mul = h_o_val - oxe;
-            rgbvaltmp.r = part->buf->red;
-            rgbvaltmp.g = part->buf->green;
-            rgbvaltmp.b = part->buf->blue;
-            rgbvaltmp.a = part->buf->alpha;
-            MAC(rgbvaltmp.r, mul, 0);
-            MAC(rgbvaltmp.g, mul, 1);
-            MAC(rgbvaltmp.b, mul, 2);
-            MAC(rgbvaltmp.a, mul, 3);
-            MAC_OUT(rgbvalacc.r, 0);
-            MAC_OUT(rgbvalacc.g, 1);
-            MAC_OUT(rgbvalacc.b, 2);
-            MAC_OUT(rgbvalacc.a, 3);
-#else
 /* generic C math */
             /* add saved partial pixel from start of area */
             rgbvalacc.r = rgbvalacc.r * h_o_val + rgbvaltmp.r * mul;
@@ -198,7 +157,6 @@ static bool scale_h_area(void *out_line_ptr,
             rgbvalacc.g += rgbvaltmp.g * mul;
             rgbvalacc.b += rgbvaltmp.b * mul;
             rgbvalacc.a += rgbvaltmp.a * mul;
-#endif /* CPU */
             rgbvalacc.r = (rgbvalacc.r + (1 << 21)) >> 22;
             rgbvalacc.g = (rgbvalacc.g + (1 << 21)) >> 22;
             rgbvalacc.b = (rgbvalacc.b + (1 << 21)) >> 22;
@@ -325,19 +283,11 @@ static bool scale_h_linear(void *out_line_ptr, struct scaler_context *ctx,
             rgbinc.g = -(part->buf->green);
             rgbinc.b = -(part->buf->blue);
             rgbinc.a = -(part->buf->alpha);
-#if defined(CPU_COLDFIRE)
-/* Coldfire EMAC math */
-            MAC(part->buf->red, h_o_val, 0);
-            MAC(part->buf->green, h_o_val, 1);
-            MAC(part->buf->blue, h_o_val, 2);
-            MAC(part->buf->alpha, h_o_val, 3);
-#else
 /* generic C math */
             rgbval.r = (part->buf->red) * h_o_val;
             rgbval.g = (part->buf->green) * h_o_val;
             rgbval.b = (part->buf->blue) * h_o_val;
             rgbval.a = (part->buf->alpha) * h_o_val;
-#endif /* CPU */
             ix += 1;
             /* If this wasn't the last pixel, add the next one to rgbinc. */
             if (LIKELY(ix < (uint32_t)ctx->src->width)) {
@@ -352,27 +302,12 @@ static bool scale_h_linear(void *out_line_ptr, struct scaler_context *ctx,
                 /* Add a partial step to rgbval, in this pixel isn't precisely
                    aligned with the new source pixel
                 */
-#if defined(CPU_COLDFIRE)
-/* Coldfire EMAC math */
-                MAC(rgbinc.r, ixe, 0);
-                MAC(rgbinc.g, ixe, 1);
-                MAC(rgbinc.b, ixe, 2);
-                MAC(rgbinc.a, ixe, 3);
-#else
 /* generic C math */
                 rgbval.r += rgbinc.r * ixe;
                 rgbval.g += rgbinc.g * ixe;
                 rgbval.b += rgbinc.b * ixe;
                 rgbval.a += rgbinc.a * ixe;
-#endif
             }
-#if defined(CPU_COLDFIRE)
-/* get final EMAC result out of ACC registers */
-            MAC_OUT(rgbval.r, 0);
-            MAC_OUT(rgbval.g, 1);
-            MAC_OUT(rgbval.b, 2);
-            MAC_OUT(rgbval.a, 3);
-#endif
             /* Now multiply the color increment to its proper value */
             rgbinc.r *= h_i_val;
             rgbinc.g *= h_i_val;
@@ -586,11 +521,9 @@ int resize_on_load(struct bitmap *bm, bool dither, struct dim *src,
     ctx.bm = bm;
     ctx.src = src;
     ctx.dither = dither;
-#if !defined(PLUGIN)
     ctx.output_row = format_index ? output_row_32_native_fromyuv
                                   : output_row_32_native;
     if (format)
-#endif
         ctx.output_row = format->output_row_32[format_index];
     if (sw > dw)
     {
@@ -604,10 +537,6 @@ int resize_on_load(struct bitmap *bm, bool dither, struct dim *src,
         ctx.h_i_val = (sw - 1) * h_div;
         ctx.h_o_val = (dw - 1) * h_div;
     }
-#ifdef CPU_COLDFIRE
-    unsigned old_macsr = coldfire_get_macsr();
-    coldfire_set_macsr(EMAC_UNSIGNED);
-#endif
     if (sh > dh)
     {
         uint32_t v_div = (1U << 22) / sh;
@@ -622,11 +551,6 @@ int resize_on_load(struct bitmap *bm, bool dither, struct dim *src,
         ctx.v_o_val = (dh - 1) * v_div;
         ret = scale_v_linear(rset, &ctx);
     }
-#ifdef CPU_COLDFIRE
-    /* Restore emac status; other modules like tone control filter
-     * calculation may rely on it. */
-    coldfire_set_macsr(old_macsr);
-#endif
     cpu_boost(false);
     if (!ret)
         return 0;

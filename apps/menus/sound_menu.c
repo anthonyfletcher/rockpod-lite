@@ -111,18 +111,9 @@ MENUITEM_SETTING(stereo_width, &global_settings.stereo_width,
     lowlatency_callback
 );
 
-#ifdef AUDIOHW_HAVE_DEPTH_3D
-MENUITEM_SETTING(depth_3d, &global_settings.depth_3d, NULL);
-#endif
-
-#ifdef AUDIOHW_HAVE_FILTER_ROLL_OFF
-MENUITEM_SETTING(roll_off, &global_settings.roll_off, NULL);
-#endif
 
 
-#ifdef AUDIOHW_HAVE_POWER_MODE
-MENUITEM_SETTING(power_mode, &global_settings.power_mode, NULL);
-#endif
+
 
     /* Crossfeed Submenu */
     MENUITEM_SETTING(crossfeed, &global_settings.crossfeed, lowlatency_callback);
@@ -205,8 +196,6 @@ static int timestretch_callback(int action,
               &compressor_knee, &compressor_attack, &compressor_release);
 
 
-#ifdef AUDIOHW_HAVE_EQ
-#endif /* AUDIOHW_HAVE_EQ */
 
 MAKE_MENU(sound_settings, ID2P(LANG_SOUND_SETTINGS), NULL, Icon_Audio,
           &volume
@@ -215,19 +204,7 @@ MAKE_MENU(sound_settings, ID2P(LANG_SOUND_SETTINGS), NULL, Icon_Audio,
           ,&bass_cutoff
           ,&treble
           ,&treble_cutoff
-#ifdef AUDIOHW_HAVE_EQ
-          ,&audiohw_eq_tone_controls
-#endif
           ,&balance,&channel_config,&stereo_width
-#ifdef AUDIOHW_HAVE_DEPTH_3D
-          ,&depth_3d
-#endif
-#ifdef AUDIOHW_HAVE_FILTER_ROLL_OFF
-          ,&roll_off
-#endif
-#ifdef AUDIOHW_HAVE_POWER_MODE
-          ,&power_mode
-#endif
           ,&crossfeed_menu, &equalizer_menu, &dithering_enabled
           ,&surround_menu, &pbe_menu, &afr_enabled
           ,&timestretch_enabled

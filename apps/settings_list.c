@@ -255,11 +255,6 @@ static const char graphic_numeric[] = "graphic,numeric";
 #  define TARGET_USB_CHARGING_DEFAULT USB_CHARGING_ENABLE
 # endif
 
-#ifdef AUDIOHW_HAVE_POWER_MODE
-# ifndef TARGET_DEFAULT_DAC_POWER_MODE
-#   define TARGET_DEFAULT_DAC_POWER_MODE SOUND_HIGH_POWER
-# endif
-#endif
 
 /*
  * Total buffer size due to this setting = max files in dir * 52 bytes
@@ -661,27 +656,6 @@ const struct settings_list settings[] = {
     SOUND_SETTING(F_NO_WRAP,bass, LANG_BASS, "bass", SOUND_BASS),
     SOUND_SETTING(F_NO_WRAP,treble, LANG_TREBLE, "treble", SOUND_TREBLE),
 /* Hardware EQ tone controls */
-#ifdef AUDIOHW_HAVE_EQ
-/* Band gain is generic */
-    SOUND_SETTING(F_NO_WRAP, hw_eq_bands[AUDIOHW_EQ_BAND1].gain,
-                  LANG_HW_EQ_GAIN, "tone band1 gain", SOUND_EQ_BAND1_GAIN),
-#ifdef AUDIOHW_HAVE_EQ_BAND2
-    SOUND_SETTING(F_NO_WRAP, hw_eq_bands[AUDIOHW_EQ_BAND2].gain,
-                  LANG_HW_EQ_GAIN, "tone band2 gain", SOUND_EQ_BAND2_GAIN),
-#endif /* AUDIOHW_HAVE_EQ_BAND2 */
-#ifdef AUDIOHW_HAVE_EQ_BAND3
-    SOUND_SETTING(F_NO_WRAP, hw_eq_bands[AUDIOHW_EQ_BAND3].gain,
-                  LANG_HW_EQ_GAIN, "tone band3 gain", SOUND_EQ_BAND3_GAIN),
-#endif /* AUDIOHW_HAVE_EQ_BAND3 */
-#ifdef AUDIOHW_HAVE_EQ_BAND4
-    SOUND_SETTING(F_NO_WRAP, hw_eq_bands[AUDIOHW_EQ_BAND4].gain,
-                  LANG_HW_EQ_GAIN, "tone band4 gain", SOUND_EQ_BAND4_GAIN),
-#endif /* AUDIOHW_HAVE_EQ_BAND4 */
-#ifdef AUDIOHW_HAVE_EQ_BAND5
-    SOUND_SETTING(F_NO_WRAP, hw_eq_bands[AUDIOHW_EQ_BAND5].gain,
-                  LANG_HW_EQ_GAIN, "tone band5 gain", SOUND_EQ_BAND5_GAIN),
-#endif /* AUDIOHW_HAVE_EQ_BAND5 */
-#endif /* AUDIOHW_HAVE_EQ */
 /* 3-d enhancement effect */
     CHOICE_SETTING(0, channel_config, LANG_CHANNEL_CONFIGURATION,
                    0,"channels",
@@ -692,38 +666,8 @@ const struct settings_list settings[] = {
                    ID2P(LANG_CHANNEL_RIGHT), ID2P(LANG_CHANNEL_KARAOKE)),
     SOUND_SETTING(0, stereo_width, LANG_STEREO_WIDTH,
                   "stereo_width", SOUND_STEREO_WIDTH),
-#ifdef AUDIOHW_HAVE_DEPTH_3D
-    SOUND_SETTING(0,depth_3d, LANG_DEPTH_3D, "3-d enhancement",
-                  SOUND_DEPTH_3D),
-#endif
 
-#ifdef AUDIOHW_HAVE_FILTER_ROLL_OFF
-    CHOICE_SETTING(F_SOUNDSETTING, roll_off, LANG_FILTER_ROLL_OFF, 0,
-#if defined(AUDIOHW_HAVE_ES9218_ROLL_OFF)
-                   "roll_off", "linear fast,linear slow,minimum fast,minimum slow,apodizing 1,apodizing 2,hybrid fast,brick wall", sound_set_filter_roll_off,
-                   8, ID2P(LANG_FILTER_LINEAR_FAST), ID2P(LANG_FILTER_LINEAR_SLOW), ID2P(LANG_FILTER_MINIMUM_FAST), ID2P(LANG_FILTER_MINIMUM_SLOW),
-                   ID2P(LANG_FILTER_APODIZING_1), ID2P(LANG_FILTER_APODIZING_2), ID2P(LANG_FILTER_HYBRID_FAST), ID2P(LANG_FILTER_BRICK_WALL)),
-#elif defined(AUDIOHW_HAVE_SHORT2_ROLL_OFF)
-                   "roll_off", "sharp,slow,short sharp,short slow", sound_set_filter_roll_off,
-                   4, ID2P(LANG_FILTER_SHARP), ID2P(LANG_FILTER_SLOW), ID2P(LANG_FILTER_SHORT_SHARP), ID2P(LANG_FILTER_SHORT_SLOW)),
-#elif defined(AUDIOHW_HAVE_SS_ROLL_OFF)
-                   "roll_off", "sharp,slow,short sharp,short slow,super slow", sound_set_filter_roll_off,
-                   5, ID2P(LANG_FILTER_SHARP), ID2P(LANG_FILTER_SLOW), ID2P(LANG_FILTER_SHORT_SHARP), ID2P(LANG_FILTER_SHORT_SLOW), ID2P(LANG_FILTER_SUPER_SLOW)),
-#elif defined(AUDIOHW_HAVE_SHORT_ROLL_OFF)
-                   "roll_off", "sharp,slow,short,bypass", sound_set_filter_roll_off,
-                   4, ID2P(LANG_FILTER_SHARP), ID2P(LANG_FILTER_SLOW), ID2P(LANG_FILTER_SHORT), ID2P(LANG_FILTER_BYPASS)),
-#else
-                   "roll_off", "sharp,slow", sound_set_filter_roll_off,
-                   2, ID2P(LANG_FILTER_SHARP), ID2P(LANG_FILTER_SLOW)),
-#endif
-#endif
 
-#ifdef AUDIOHW_HAVE_POWER_MODE
-    CHOICE_SETTING(F_SOUNDSETTING, power_mode, LANG_DAC_POWER_MODE,
-                   TARGET_DEFAULT_DAC_POWER_MODE,
-                   "dac_power_mode", "high,low", sound_set_power_mode,
-                   2, ID2P(LANG_DAC_POWER_HIGH), ID2P(LANG_DAC_POWER_LOW)),
-#endif
 
     /* playback */
     OFFON_SETTING(F_CB_ON_SELECT_ONLY|F_CB_ONLY_IF_CHANGED, playlist_shuffle,

@@ -47,9 +47,6 @@
 #include "screens.h"         /* browse_id3, view_text */
 #include "root_menu.h"       /* GO_TO_* */
 #include "gui/list.h"        /* gui_synclist */
-#ifdef HAVE_TOUCHSCREEN
-#include "touchscreen.h"
-#endif
 #include "mul_id3.h"
 #include "properties.h"
 
@@ -368,9 +365,6 @@ int properties(const char *file)
     skipped_count = 0;
     collect_dir_stats_reset();
 
-#ifdef HAVE_TOUCHSCREEN
-    touchscreen_set_mode(global_settings.touch_mode);
-#endif
     int ret = file && determine_props_type(file);
     if (!ret)
     {

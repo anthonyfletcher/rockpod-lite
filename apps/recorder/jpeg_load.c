@@ -64,9 +64,6 @@ typedef struct uint8_rgb jpeg_pix_t;
  */
 struct jpeg
 {
-#ifdef JPEG_FROM_MEM
-    unsigned char *data;
-#else
     int fd;
     int buf_left;
     int buf_index;
@@ -74,7 +71,6 @@ struct jpeg
     int (*read_buf)(struct jpeg* p_jpeg, size_t count);
     bool (*skip_bytes_seek)(struct jpeg* p_jpeg);
     void* custom_param;
-#endif
     unsigned long len;
     unsigned long int bitbuf;
     int bitbuf_bits;
@@ -118,25 +114,9 @@ struct jpeg
     struct img_part part;
 };
 
-#ifdef JPEG_FROM_MEM
-static struct jpeg jpeg;
-#endif
 
 INLINE unsigned range_limit(int value)
 {
-#if defined(CPU_COLDFIRE)
-    /* Note: Uses knowledge that only the low byte of the result is used */
-    asm (
-        "cmp.l   #255,%[v]   \n"  /* overflow? */
-        "bls.b   1f          \n"  /* no: return value */
-        /* yes: set low byte to appropriate boundary */
-        "spl.b   %[v]        \n"
-    "1:                      \n"
-        : /* outputs */
-        [v]"+d"(value)
-    );
-    return value;
-#else
     /* Note: Uses knowledge that only the low byte of the result is used */
     asm (
         "cmp     %[v], #255          \n"  /* out of range 0..255? */
@@ -145,7 +125,6 @@ INLINE unsigned range_limit(int value)
         [v]"+r"(value)
     );
     return value;
-#endif
 }
 
 INLINE unsigned scale_output(int value)
@@ -487,37 +466,6 @@ static const struct idct_entry idct_tbl[] = {
 
 /* JPEG decoder implementation */
 
-#ifdef JPEG_FROM_MEM
-INLINE unsigned char *jpeg_getc(struct jpeg* p_jpeg)
-{
-    if (LIKELY(p_jpeg->len))
-    {
-        p_jpeg->len--;
-        return p_jpeg->data++;
-    } else
-        return NULL;
-}
-
-INLINE bool skip_bytes(struct jpeg* p_jpeg, int count)
-{
-    if (p_jpeg->len >= (unsigned)count)
-    {
-        p_jpeg->len -= count;
-        p_jpeg->data += count;
-        return true;
-    } else {
-        p_jpeg->data += p_jpeg->len;
-        p_jpeg->len = 0;
-        return false;
-    }
-}
-
-INLINE void jpeg_putc(struct jpeg* p_jpeg)
-{
-    p_jpeg->len++;
-    p_jpeg->data--;
-}
-#else
 
 static int read_buf(struct jpeg* p_jpeg, size_t count)
 {
@@ -596,7 +544,6 @@ static void jpeg_putc(struct jpeg* p_jpeg)
     p_jpeg->buf_left++;
     p_jpeg->buf_index--;
 }
-#endif
 
 #define e_skip_bytes(jpeg, count) \
 do {\
@@ -1576,7 +1523,6 @@ block_end:
  * Reads a JPEG file and puts the data in rockbox format in *bitmap.
  *
  *****************************************************************************/
-#ifndef JPEG_FROM_MEM
 int clip_jpeg_file(const char* filename,
                    int offset,
                    unsigned long jpeg_size,
@@ -1608,7 +1554,6 @@ int read_jpeg_file(const char* filename,
 {
     return clip_jpeg_file(filename, 0, 0, bm, maxsize, format, cformat);
 }
-#endif
 
 static int calc_scale(int in_size, int out_size)
 {
@@ -1624,28 +1569,7 @@ static int calc_scale(int in_size, int out_size)
     return scale;
 }
 
-#ifdef JPEG_FROM_MEM
-int get_jpeg_dim_mem(unsigned char *data, unsigned long len,
-                     struct dim *size)
-{
-    struct jpeg *p_jpeg = &jpeg;
-    memset(p_jpeg, 0, sizeof(struct jpeg));
-    p_jpeg->data = data;
-    p_jpeg->len = len;
-    int status = process_markers(p_jpeg);
-    if (status < 0)
-        return status;
-    if ((status & (DQT | SOF0)) != (DQT | SOF0))
-        return -(status * 16);
-    size->width = p_jpeg->x_size;
-    size->height = p_jpeg->y_size;
-    return 0;
-}
-
-int decode_jpeg_mem(unsigned char *data,
-#else
 int clip_jpeg_fd(int fd, int flags,
-#endif
                  unsigned long len,
                  struct bitmap *bm,
                  int maxsize,
@@ -1657,21 +1581,14 @@ int clip_jpeg_fd(int fd, int flags,
     struct dim src_dim;
     int status;
     int bm_size;
-#ifdef JPEG_FROM_MEM
-    struct jpeg *p_jpeg = &jpeg;
-#else
     struct jpeg *p_jpeg = (struct jpeg*)bm->data;
     int tmp_size = maxsize;
     ALIGN_BUFFER(p_jpeg, tmp_size, sizeof(long));
     /* not enough memory for our struct jpeg */
     if ((size_t)tmp_size < sizeof(struct jpeg))
         return -1;
-#endif
     memset(p_jpeg, 0, sizeof(struct jpeg));
     p_jpeg->len = len;
-#ifdef JPEG_FROM_MEM
-    p_jpeg->data = data;
-#else
     p_jpeg->fd = fd;
     if (p_jpeg->len == 0)
         p_jpeg->len = filesize(p_jpeg->fd);
@@ -1709,12 +1626,9 @@ int clip_jpeg_fd(int fd, int flags,
         p_jpeg->custom_param = ogg;
     }
 
-#endif
     status = process_markers(p_jpeg);
-#ifndef JPEG_FROM_MEM
     JDEBUGF("position in file: %d buffer fill: %d\n",
         (int)lseek(p_jpeg->fd, 0, SEEK_CUR), p_jpeg->buf_left);
-#endif
     if (status < 0)
         return status;
     if ((status & (DQT | SOF0)) != (DQT | SOF0))
@@ -1795,7 +1709,6 @@ int clip_jpeg_fd(int fd, int flags,
     char *buf_start = (char *)bm->data + bm_size;
     char *buf_end = (char *)bm->data + maxsize;
     bool return_size = format & FORMAT_RETURN_SIZE;
-#ifndef JPEG_FROM_MEM
     ALIGN_BUFFER(buf_start, maxsize, sizeof(long));
     if (!return_size)
     {
@@ -1805,7 +1718,6 @@ int clip_jpeg_fd(int fd, int flags,
         p_jpeg = (struct jpeg *)buf_start;
     }
     buf_start += sizeof(struct jpeg);
-#endif
     maxsize = buf_end - buf_start;
     int decode_buf_size = (p_jpeg->x_mbl << p_jpeg->h_scale[1])
         << p_jpeg->v_scale[1];
@@ -1881,7 +1793,6 @@ int clip_jpeg_fd(int fd, int flags,
     return 0;
 }
 
-#ifndef JPEG_FROM_MEM
 int read_jpeg_fd(int fd,
                  struct bitmap *bm,
                  int maxsize,
@@ -1890,17 +1801,14 @@ int read_jpeg_fd(int fd,
 {
     return clip_jpeg_fd(fd, 0, 0, bm, maxsize, format, cformat);
 }
-#endif
 
 const size_t JPEG_DECODE_OVERHEAD =
     /* Reserve an arbitrary amount for the decode buffer
      * FIXME: Somebody who knows what they're doing should look at this */
     (38 * 1024)
-#ifndef JPEG_FROM_MEM
     /* Unless the struct jpeg is defined statically, we need to allocate
      * it in the bitmap buffer as well */
     + sizeof(struct jpeg)
-#endif
     ;
 
 /**************** end JPEG code ********************/
