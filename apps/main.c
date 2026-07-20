@@ -88,9 +88,6 @@
 #include "tdspeed.h"
 
 
-#if (CONFIG_STORAGE & STORAGE_MMC)
-#include "ata_mmc.h"
-#endif
 
 #include "piezo.h"
 
@@ -468,9 +465,7 @@ static void init(void)
     /* runtime database has to be initialized after audio_init() */
     cpu_boost(false);
 
-#if CONFIG_CHARGING
     car_adapter_mode_init();
-#endif
     iap_setup(global_settings.serial_bitrate);
     accessory_supply_set(global_settings.accessory_supply);
     lineout_set(global_settings.lineout_active);

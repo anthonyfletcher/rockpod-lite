@@ -246,12 +246,10 @@ MENUITEM_SETTING(keyclick_hardware, &global_settings.keyclick_hardware, NULL);
 MAKE_MENU(keyclick_menu, ID2P(LANG_KEYCLICK), 0, Icon_NOICON,
            &keyclick, &keyclick_hardware, &keyclick_repeats);
 
-#if CONFIG_CHARGING
 MENUITEM_SETTING(car_adapter_mode, &global_settings.car_adapter_mode, NULL);
 MENUITEM_SETTING(car_adapter_mode_delay, &global_settings.car_adapter_mode_delay, NULL);
 MAKE_MENU(car_adapter_mode_menu, ID2P(LANG_CAR_ADAPTER_MODE), 0, Icon_NOICON,
            &car_adapter_mode, &car_adapter_mode_delay);
-#endif
 MENUITEM_SETTING(serial_bitrate, &global_settings.serial_bitrate, NULL);
 MENUITEM_SETTING(accessory_supply, &global_settings.accessory_supply, NULL);
 MENUITEM_SETTING(lineout_onoff, &global_settings.lineout_active, NULL);
@@ -281,9 +279,7 @@ MAKE_MENU(system_menu, ID2P(LANG_SYSTEM),
             &volume_adjust_norm_steps,
             &shortcuts_replaces_quickscreen,
             &morse_input,
-#if CONFIG_CHARGING
             &car_adapter_mode_menu,
-#endif
             &serial_bitrate,
             &accessory_supply,
             &lineout_onoff,

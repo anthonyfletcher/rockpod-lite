@@ -44,9 +44,6 @@
 #define HAVE_ROCKPOD_USB_SCREEN
 #include "bitmaps/rockpodusb.h"
 
-#if (CONFIG_STORAGE & STORAGE_MMC)
-#include "ata_mmc.h"
-#endif
 
 int usb_keypad_mode;
 static bool usb_hid;
@@ -54,9 +51,6 @@ static bool usb_hid;
 
 static int handle_usb_events(void)
 {
-#if (CONFIG_STORAGE & STORAGE_MMC)
-    int next_update=0;
-#endif /* STORAGE_MMC */
 
     /* Don't return until we get SYS_USB_DISCONNECTED or SYS_TIMEOUT */
     while(1)
@@ -91,15 +85,6 @@ static int handle_usb_events(void)
                 break;
         }
 
-#if (CONFIG_STORAGE & STORAGE_MMC) /* USB-MMC bridge can report activity */
-        if(TIME_AFTER(current_tick,next_update))
-        {
-            if(usb_inserted()) {
-                led(mmc_usb_active(HZ));
-            }
-            next_update=current_tick+HZ/2;
-        }
-#endif /* STORAGE_MMC */
     }
 
     return 0;

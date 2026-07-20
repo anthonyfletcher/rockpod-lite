@@ -39,104 +39,6 @@ fb_data* get_framebuffer(struct viewport *vp, size_t *stride)
     return vp_main->buffer->fb_ptr;
 }
 
-#if LCD_STRIDEFORMAT == VERTICAL_STRIDE
-void xlcd_scroll_left(int count)
-{
-    fb_data *lcd_fb = get_framebuffer(NULL, NULL);
-    int length, oldmode;
-
-    if ((unsigned)count >= LCD_WIDTH)
-    {
-        lcd_clear_display();
-        return;
-    }
-
-    length = (LCD_WIDTH-count)*LCD_FBHEIGHT;
-
-    memmove(lcd_fb, lcd_fb + LCD_HEIGHT*count, length * sizeof(fb_data));
-
-    oldmode = lcd_get_drawmode();
-    lcd_set_drawmode(DRMODE_SOLID|DRMODE_INVERSEVID);
-    lcd_fillrect(LCD_WIDTH-count, 0, count, LCD_HEIGHT);
-    lcd_set_drawmode(oldmode);
-}
-
-void xlcd_scroll_right(int count)
-{
-    fb_data *lcd_fb = get_framebuffer(NULL, NULL);
-    int length, oldmode;
-
-    if ((unsigned)count >= LCD_WIDTH)
-    {
-        lcd_clear_display();
-        return;
-    }
-
-    length = (LCD_WIDTH-count)*LCD_FBHEIGHT;
-
-    memmove(lcd_fb + LCD_HEIGHT*count, lcd_fb, length * sizeof(fb_data));
-
-    oldmode = lcd_get_drawmode();
-    lcd_set_drawmode(DRMODE_SOLID|DRMODE_INVERSEVID);
-    lcd_fillrect(0, 0, count, LCD_HEIGHT);
-    lcd_set_drawmode(oldmode);
-}
-
-void xlcd_scroll_up(int count)
-{
-    fb_data *lcd_fb = get_framebuffer(NULL, NULL);
-    int width, length, oldmode;
-    fb_data *data;
-
-    if ((unsigned)count >= LCD_HEIGHT)
-    {
-        lcd_clear_display();
-        return;
-    }
-
-    length = LCD_HEIGHT - count;
-    width = LCD_WIDTH-1;
-    data = lcd_fb;
-
-    do {
-        memmove(data, data + count, length * sizeof(fb_data));
-        data += LCD_HEIGHT;
-    } while(width--);
-
-    oldmode = lcd_get_drawmode();
-    lcd_set_drawmode(DRMODE_SOLID|DRMODE_INVERSEVID);
-    lcd_fillrect(0, length, LCD_WIDTH, count);
-    lcd_set_drawmode(oldmode);
-}
-
-void xlcd_scroll_down(int count)
-{
-    fb_data *lcd_fb = get_framebuffer(NULL, NULL);
-    int width, length, oldmode;
-    fb_data *data;
-
-    if ((unsigned)count >= LCD_HEIGHT)
-    {
-        lcd_clear_display();
-        return;
-    }
-
-    length = LCD_HEIGHT - count;
-    width = LCD_WIDTH-1;
-    data = lcd_fb;
-
-    do {
-        memmove(data + count, data, length * sizeof(fb_data));
-        data += LCD_HEIGHT;
-    } while(width--);
-
-    oldmode = lcd_get_drawmode();
-    lcd_set_drawmode(DRMODE_SOLID|DRMODE_INVERSEVID);
-    lcd_fillrect(0, 0, LCD_WIDTH, count);
-    lcd_set_drawmode(oldmode);
-}
-
-#else /* horizontal stride, >= 8bpp */
 
 void xlcd_scroll_left(int count)
 {
@@ -242,4 +144,3 @@ void xlcd_scroll_down(int count)
     lcd_set_drawmode(oldmode);
 }
 
-#endif /* LCD_STRIDEFORMAT */

@@ -57,13 +57,11 @@
 #include "ctype.h"
 #include "plugin.h"
 
-#if CONFIG_CHARGING
 void charging_splash(void)
 {
     splash(2*HZ, str(LANG_BATTERY_CHARGE));
     button_clear_queue();
 }
-#endif
 
 
 #if (CONFIG_RTC != 0)

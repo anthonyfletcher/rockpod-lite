@@ -62,9 +62,6 @@
 
 #include "iap.h"
 
-#if (CONFIG_STORAGE & STORAGE_MMC)
-#include "ata_mmc.h"
-#endif
 #include "tree.h"
 #include "eeprom_settings.h"
 #include "bmp.h"
@@ -426,7 +423,6 @@ bool list_stop_handler(void)
             ret = true;  /* bookmarking can make a refresh necessary */
         }
     }
-#if CONFIG_CHARGING
 #ifndef HAVE_POWEROFF_WHILE_CHARGING
     {
         static long last_off = 0;
@@ -442,11 +438,9 @@ bool list_stop_handler(void)
         last_off = current_tick;
     }
 #endif
-#endif /* CONFIG_CHARGING */
     return ret;
 }
 
-#if CONFIG_CHARGING
 static bool waiting_to_resume_play = false;
 static bool paused_on_unplugged = false;
 static long play_resume_tick;
@@ -507,7 +501,6 @@ void car_adapter_mode_init(void)
 {
     tick_add_task(car_adapter_tick);
 }
-#endif
 
 static void hp_unplug_change(bool inserted)
 {
@@ -584,7 +577,6 @@ long default_event_handler_ex(long event, void (*callback)(void *), void *parame
                 return event;
         }
             break;
-#if CONFIG_CHARGING
         case SYS_CHARGER_CONNECTED:
             car_adapter_mode_processing(true);
             return SYS_CHARGER_CONNECTED;
@@ -597,7 +589,6 @@ long default_event_handler_ex(long event, void (*callback)(void *), void *parame
         case SYS_CAR_ADAPTER_RESUME:
             unpause_action(true);
             return SYS_CAR_ADAPTER_RESUME;
-#endif
         case SYS_PHONE_PLUGGED:
             hp_unplug_change(true);
             return SYS_PHONE_PLUGGED;

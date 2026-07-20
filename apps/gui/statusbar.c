@@ -116,13 +116,9 @@
                                                 7*ICONS_SPACING
 #define STATUSBAR_LOCKR_WIDTH                   5
 
-#if (CONFIG_LED == LED_VIRTUAL)
 #define STATUSBAR_DISK_WIDTH                    12
 #define STATUSBAR_DISK_X_POS(statusbar_width)   statusbar_width - \
                                                 STATUSBAR_DISK_WIDTH
-#else
-#define STATUSBAR_DISK_WIDTH                    0
-#endif
 #define STATUSBAR_TIME_X_END(statusbar_width)   statusbar_width - 1 - \
                                                 STATUSBAR_DISK_WIDTH
 struct gui_syncstatusbar statusbars;
@@ -135,9 +131,7 @@ static void gui_statusbar_icon_play_state(struct screen * display, int state);
 static void gui_statusbar_icon_play_mode(struct screen * display, int mode);
 static void gui_statusbar_icon_shuffle(struct screen * display);
 static void gui_statusbar_icon_lock(struct screen * display);
-#if (CONFIG_LED == LED_VIRTUAL)
 static void gui_statusbar_led(struct screen * display);
-#endif
 #if CONFIG_RTC
 static void gui_statusbar_time(struct screen * display, struct tm *time);
 #endif
@@ -169,13 +163,11 @@ static struct screen * sb_fill_bar_info(struct gui_statusbar * bar)
 
     bar->info.battlevel = battery_level();
     bar->info.usb_inserted = usb_inserted();
-#if CONFIG_CHARGING
     bar->info.inserted = (charger_input_state == CHARGER);
     if (bar->info.inserted)
     {
         bar->info.battery_state = true;
 
-#if CONFIG_CHARGING >= CHARGING_MONITOR
 
         /* zero battery run time if charging */
         if (charge_state > DISCHARGING)
@@ -188,10 +180,6 @@ static struct screen * sb_fill_bar_info(struct gui_statusbar * bar)
         }
         else
         {
-#else /* CONFIG_CHARGING < CHARGING_MONITOR */
-            zero_runtime();
-        {
-#endif /* CONFIG_CHARGING < CHARGING_MONITOR */
             /* animate in (max.) 4 steps, starting near the current charge level */
             if (TIME_AFTER(current_tick, bar->battery_icon_switch_tick))
             {
@@ -202,7 +190,6 @@ static struct screen * sb_fill_bar_info(struct gui_statusbar * bar)
         }
     }
     else
-#endif /* CONFIG_CHARGING */
     {
         bar->info.batt_charge_step = -1;
         if (battery_level_safe())
@@ -224,10 +211,8 @@ static struct screen * sb_fill_bar_info(struct gui_statusbar * bar)
 #if CONFIG_RTC
     bar->time = get_time();
 #endif /* CONFIG_RTC */
-#if (CONFIG_LED == LED_VIRTUAL)
     if(!display->has_disk_led)
         bar->info.led = led_read(HZ/2); /* delay should match polling interval */
-#endif
 
     return display;
 }
@@ -260,7 +245,6 @@ void gui_statusbar_draw(struct gui_statusbar * bar, bool force_redraw, struct vi
                                  STATUSBAR_PLUG_X_POS,
                                  STATUSBAR_Y_POS, STATUSBAR_PLUG_WIDTH,
                                  SB_ICON_HEIGHT);
-#if CONFIG_CHARGING
         else
         /* draw power plug if charging */
         if (bar->info.inserted)
@@ -268,7 +252,6 @@ void gui_statusbar_draw(struct gui_statusbar * bar, bool force_redraw, struct vi
                                     STATUSBAR_PLUG_X_POS,
                                     STATUSBAR_Y_POS, STATUSBAR_PLUG_WIDTH,
                                     SB_ICON_HEIGHT);
-#endif /* CONFIG_CHARGING */
         bar->redraw_volume = gui_statusbar_icon_volume(bar, bar->info.volume);
         gui_statusbar_icon_play_state(display, current_playmode() + Icon_Play);
 
@@ -284,12 +267,10 @@ void gui_statusbar_draw(struct gui_statusbar * bar, bool force_redraw, struct vi
         gui_statusbar_time(display, bar->time);
         bar->last_tm_min = bar->time->tm_min;
 #endif /* CONFIG_RTC */
-#if (CONFIG_LED == LED_VIRTUAL)
         if(!display->has_disk_led && bar->info.led)
         {
             gui_statusbar_led(display);
         }
-#endif
         display->setfont(FONT_UI);
         display->update_viewport();
         display->set_viewport(last_vp);
@@ -309,16 +290,12 @@ static void gui_statusbar_icon_battery(struct screen * display, int percent,
     unsigned int width, height;
     unsigned int prevfg = 0;
 
-#if CONFIG_CHARGING
     if (batt_charge_step >= 0)
     {
         fill = percent * (STATUSBAR_BATTERY_WIDTH-3) / 100;
         endfill = 34 * batt_charge_step * (STATUSBAR_BATTERY_WIDTH-3) / 100;
     }
     else
-#else
-    (void)batt_charge_step;
-#endif
     {
         fill = endfill = (percent * (STATUSBAR_BATTERY_WIDTH-3) + 50) / 100;
     }
@@ -497,7 +474,6 @@ static void gui_statusbar_icon_lock(struct screen * display)
 }
 
 
-#if (CONFIG_LED == LED_VIRTUAL)
 /*
  * no real LED: disk activity in status bar
  */
@@ -508,7 +484,6 @@ static void gui_statusbar_led(struct screen * display)
                          STATUSBAR_Y_POS, STATUSBAR_DISK_WIDTH,
                          SB_ICON_HEIGHT);
 }
-#endif
 
 #if CONFIG_RTC
 /*

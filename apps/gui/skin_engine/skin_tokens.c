@@ -1155,7 +1155,6 @@ const char *get_token_value(struct gui_wps *gwps,
             return buf;
         }
 
-#if CONFIG_CHARGING
         case SKIN_TOKEN_BATTERY_CHARGER_CONNECTED:
         {
             if(charger_input_state==CHARGER)
@@ -1163,8 +1162,6 @@ const char *get_token_value(struct gui_wps *gwps,
             else
                 return NULL;
         }
-#endif
-#if CONFIG_CHARGING >= CHARGING_MONITOR
         case SKIN_TOKEN_BATTERY_CHARGING:
         {
             if (charge_state == CHARGING || charge_state == TOPOFF) {
@@ -1173,7 +1170,6 @@ const char *get_token_value(struct gui_wps *gwps,
                 return NULL;
             }
         }
-#endif
         case SKIN_TOKEN_USB_INSERTED:
             if (usb_inserted())
                 return "u";
@@ -1279,13 +1275,11 @@ const char *get_token_value(struct gui_wps *gwps,
                 return NULL;
 
 
-#if (CONFIG_LED == LED_VIRTUAL)
         case SKIN_TOKEN_VLED_HDD:
             if(led_read(HZ/2))
                 return "h";
             else
                 return NULL;
-#endif
         case SKIN_TOKEN_VLED_BUILDING:
         {
             /* database and/or thumbnail-cache background work in progress */

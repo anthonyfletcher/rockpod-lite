@@ -703,14 +703,12 @@ const struct settings_list settings[] = {
                     off_on, UNIT_SEC, formatter_time_unit_0_is_always,
                     getlang_time_unit_0_is_always, backlight_set_timeout,
                     23, timeout_sec_common),
-#if CONFIG_CHARGING
     TABLE_SETTING_LIST(F_TIME_SETTING | F_ALLOW_ARBITRARY_VALS,
                     backlight_timeout_plugged, LANG_BACKLIGHT_ON_WHEN_CHARGING,
                     DEFAULT_BACKLIGHT_TIMEOUT, "backlight timeout plugged",
                     off_on, UNIT_SEC, formatter_time_unit_0_is_always,
                     getlang_time_unit_0_is_always, backlight_set_timeout_plugged,
                     23, timeout_sec_common),
-#endif
     /* display */
      CHOICE_SETTING(F_TEMPVAR|F_THEMESETTING, cursor_style, LANG_INVERT_CURSOR,
                     3, "selector type",
@@ -795,13 +793,11 @@ const struct settings_list settings[] = {
                 BATTERY_CAPACITY_INC, NULL, NULL, set_battery_capacity),
 #endif /* IPOD_VIDEO */
 #endif
-#if CONFIG_CHARGING
     OFFON_SETTING(0, car_adapter_mode,
                   LANG_CAR_ADAPTER_MODE, false, "car adapter mode", NULL),
     INT_SETTING_NOWRAP(0, car_adapter_mode_delay, LANG_CAR_ADAPTER_MODE_DELAY,
                 5, "delay before resume", UNIT_SEC, 5, 30, 5,
                 NULL, NULL, NULL),
-#endif
     CHOICE_SETTING(0, serial_bitrate, LANG_SERIAL_BITRATE, 0, "serial bitrate",
                    "auto,9600,19200,38400,57600", iap_bitrate_set, 5, ID2P(LANG_SERIAL_BITRATE_AUTO),
            ID2P(LANG_SERIAL_BITRATE_9600),ID2P(LANG_SERIAL_BITRATE_19200),

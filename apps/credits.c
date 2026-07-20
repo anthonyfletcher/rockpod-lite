@@ -65,18 +65,14 @@ static void cr_backlight_ignore_timeout(void)
 {
     if (global_settings.backlight_timeout > 0)
         backlight_set_timeout(0);
-#if CONFIG_CHARGING
     if (global_settings.backlight_timeout_plugged > 0)
         backlight_set_timeout_plugged(0);
-#endif
 }
 
 static void cr_backlight_use_settings(void)
 {
     backlight_set_timeout(global_settings.backlight_timeout);
-#if CONFIG_CHARGING
     backlight_set_timeout_plugged(global_settings.backlight_timeout_plugged);
-#endif
 }
 
 /* Greedily word-wraps one name to the column width, returning the number of

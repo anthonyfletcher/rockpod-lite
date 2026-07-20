@@ -1789,13 +1789,8 @@ static void render_slide(struct slide_data *slide, const int alpha)
 
         const pix_t *ptr = &src[column * sh];
 
-#if LCD_STRIDEFORMAT == VERTICAL_STRIDE
-#define PIXELSTEP_Y   1
-#define LCDADDR(x, y) (&buffer[BUFFER_HEIGHT*(x) + (y)])
-#else
 #define PIXELSTEP_Y   BUFFER_WIDTH
 #define LCDADDR(x, y) (&buffer[(y)*BUFFER_WIDTH + (x)])
-#endif
 
         int p = p_start_upper;
         int plim = MAX(0, p - (half_height-1) * dy);
@@ -2202,9 +2197,7 @@ static void cleanup(void)
      * of apps/plugins/lib/helper.c's backlight_use_settings(), which isn't
      * linkable from core code. */
     backlight_set_timeout(global_settings.backlight_timeout);
-#if CONFIG_CHARGING
     backlight_set_timeout_plugged(global_settings.backlight_timeout_plugged);
-#endif
 
     /* Nothing to free: pf_idx.buf points into plugin_get_buffer()'s static
      * pluginbuf[] (see init()), not a buflib handle. The bold album-name font

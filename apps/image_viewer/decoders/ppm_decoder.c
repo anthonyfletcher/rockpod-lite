@@ -175,13 +175,8 @@ static int read_ppm_row(int fd, struct ppm_info *ppm, int row)
 {
     int col;
     int r, g, b;
-#if LCD_STRIDEFORMAT == VERTICAL_STRIDE
-    fb_data *dst = (fb_data *) ppm->buf + row;
-    const int stride = ppm->x;
-#else
     fb_data *dst = (fb_data *) ppm->buf + ppm->x*row;
     const int stride = 1;
-#endif
     switch (ppm->format) {
         case PPM_FORMAT:
             for (col = 0; col < ppm->x; ++col) {

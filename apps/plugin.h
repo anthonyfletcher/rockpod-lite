@@ -267,9 +267,7 @@ struct plugin_api {
     void (*backlight_set_timeout)(int index);
     void (*backlight_set_brightness)(int val);
 
-#if CONFIG_CHARGING
     void (*backlight_set_timeout_plugged)(int index);
-#endif
 
 
     /* list */
@@ -729,12 +727,8 @@ struct plugin_api {
     int (*battery_time)(void);
     int (*battery_voltage)(void);
     int (*battery_current)(void);
-#if CONFIG_CHARGING
     bool (*charger_inserted)(void);
-# if CONFIG_CHARGING >= CHARGING_MONITOR
     bool (*charging_state)(void);
-# endif
-#endif
 
     /* usb */
     bool (*usb_inserted)(void);

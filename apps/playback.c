@@ -337,10 +337,8 @@ static unsigned int position_key = 0;
 #define PLAYBACK_LOG_PATH ROCKBOX_DIR "/playback.log"
 #define PLAYBACK_LOG_MAX_FILESZ_BYTES (511 << 10) /* 512k approx 1000-2500 tracks */
 #define PLAYBACK_LOG_MIN_ELAPSED_MS   (500) /* 500 milliseconds */
-#if (CONFIG_STORAGE & STORAGE_ATA)
 #define PLAYBACK_LOG_BUFSZ (MAX_PATH * 10)
 static int playback_log_handle = 0; /* core_alloc handle for playback log buffer */
-#endif
 
 /* global_settings.playback_log values */
 #define PLAYBACK_LOG_OFF     0
@@ -1288,7 +1286,6 @@ void allocate_playback_log(void)
     if (!global_settings.playback_log)
         return;
 
-#if (CONFIG_STORAGE & STORAGE_ATA)
     if (playback_log_handle == 0)
     {
         playback_log_handle = core_alloc(PLAYBACK_LOG_BUFSZ);
@@ -1299,7 +1296,6 @@ void allocate_playback_log(void)
             buf[0] = '\0';
         }
     }
-#endif
 
     if (global_settings.playback_log == PLAYBACK_LOG_LASTFM)
     {
@@ -1357,7 +1353,6 @@ void add_playbacklog(struct mp3entry *id3)
         return;
     unsigned long timestamp = 0;
     ssize_t used = 0;
-#if (CONFIG_STORAGE & STORAGE_ATA)
     ssize_t bufsz = 0;
     char *buf = NULL;
     /* if the user just enabled playback logging rather than stopping playback
@@ -1374,7 +1369,6 @@ void add_playbacklog(struct mp3entry *id3)
         }
         DEBUGF("%s Used %lu Remain: %lu\n", __func__, used, bufsz);
     }
-#endif
     if (id3 && id3->elapsed > PLAYBACK_LOG_MIN_ELAPSED_MS)
     {
 #if     CONFIG_RTC
@@ -1382,7 +1376,6 @@ void add_playbacklog(struct mp3entry *id3)
 #else
         timestamp = current_tick * (1000 / HZ); /* milliseconds */
 #endif
-#if (CONFIG_STORAGE & STORAGE_ATA)
         if (buf)  /* we have a buffer allocd from core */
         {
             ssize_t entrylen = format_playbacklog(buf, bufsz, id3, timestamp);
@@ -1396,7 +1389,6 @@ void add_playbacklog(struct mp3entry *id3)
             buf[0] = '\0';
         }
         /* that didn't fit, flush buffer & write this entry to disk */
-#endif
     }
     else
         id3 = NULL;
@@ -1410,7 +1402,6 @@ void add_playbacklog(struct mp3entry *id3)
         {
             return; /* failure */
         }
-#if (CONFIG_STORAGE & STORAGE_ATA)
         if (buf) /* we have a buffer allocd from core */
         {
             buf = core_get_data_pinned(playback_log_handle); /* we might yield - pin it*/
@@ -1419,7 +1410,6 @@ void add_playbacklog(struct mp3entry *id3)
             buf[0] = '\0';
             core_put_data_pinned(buf);
         }
-#endif
         if (id3)
         {
             /* we have the timestamp from when we tried to add to buffer */

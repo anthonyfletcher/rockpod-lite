@@ -56,12 +56,7 @@
 #include "storage.h"
 #include "fs_defines.h"
 #include "eeprom_24cxx.h"
-#if (CONFIG_STORAGE & STORAGE_MMC) || (CONFIG_STORAGE & STORAGE_SD)
-#include "sdmmc.h"
-#endif
-#if (CONFIG_STORAGE & STORAGE_ATA)
 #include "ata.h"
-#endif
 #include "power.h"
 
 
@@ -610,7 +605,6 @@ static bool view_battery(void)
                         minv = power_history[i];
                 }
                 /* print header */
-#if (CONFIG_BATTERY_MEASURE & VOLTAGE_MEASURE)
                 /* adjust grid scale */
                 if ((maxv - minv) > 50)
                     grid = 50;
@@ -622,15 +616,6 @@ static bool view_battery(void)
                 lcd_putsf(0, 1, "%d.%03d-%d.%03dV (%2dmV)",
                           minv / 1000, minv % 1000, maxv / 1000, maxv % 1000,
                           grid);
-#elif (CONFIG_BATTERY_MEASURE & PERCENTAGE_MEASURE)
-                /* adjust grid scale */
-                if ((maxv - minv) > 10)
-                    grid = 10;
-                else
-                    grid = 1;
-                lcd_putsf(0, 0, "%s %d%%", "Battery", power_history[0]);
-                lcd_putsf(0, 1, "%d%%-%d%% (%d %%)", minv, maxv, grid);
-#endif
 
                 i = 1;
                 while ((y = (minv - (minv % grid)+i*grid)) < maxv)
@@ -679,18 +664,13 @@ static bool view_battery(void)
                 break;
 
             case 1: /* status: */
-#if CONFIG_CHARGING >= CHARGING_MONITOR
                 lcd_putsf(0, 0, "Pwr status: %s",
                          charging_state() ? "charging" : "discharging");
-#else
-                lcd_putsf(0, 0, "Pwr status: %s", "unknown");
-#endif
                 battery_read_info(&y, &z);
                 if (y > 0)
                     lcd_putsf(0, 1, "%s: %d.%03d V (%d %%)", "Battery", y / 1000, y % 1000, z);
                 else if (z > 0)
                     lcd_putsf(0, 1, "%s: %d %%", "Battery", z);
-#if CONFIG_CHARGING
 #if defined IPOD_VIDEO
                 int usb_pwr  = (GPIOL_INPUT_VAL & 0x10)?true:false;
                 int ext_pwr  = (GPIOL_INPUT_VAL & 0x08)?false:true;
@@ -722,10 +702,8 @@ static bool view_battery(void)
                 lcd_putsf(0, 4, "USB current limit: %d mA",
                           usb_charging_maxcurrent());
 #endif /* target type */
-#endif /* CONFIG_CHARGING */
                 break;
             case 2: /* voltage deltas: */
-#if (CONFIG_BATTERY_MEASURE & VOLTAGE_MEASURE)
                 lcd_puts(0, 0, "Voltage deltas:");
                 for (i = 0; i < POWER_HISTORY_LEN-1; i++) {
                     y = power_history[i] - power_history[i+1];
@@ -733,23 +711,13 @@ static bool view_battery(void)
                              (y < 0) ? '-' : ' ', ((y < 0) ? y * -1 : y) / 1000,
                              ((y < 0) ? y * -1 : y ) % 1000);
                 }
-#elif (CONFIG_BATTERY_MEASURE & PERCENTAGE_MEASURE)
-                lcd_puts(0, 0, "Percentage deltas:");
-                for (i = 0; i < POWER_HISTORY_LEN-1; i++) {
-                    y = power_history[i] - power_history[i+1];
-                    lcd_putsf(0, i+1, "-%d min: %c%d%%", i,
-                             (y < 0) ? '-' : ' ', ((y < 0) ? y * -1 : y));
-                }
-#endif
                 break;
 
             case 3: /* remaining time estimation: */
 
-#if (CONFIG_BATTERY_MEASURE & VOLTAGE_MEASURE)
                 lcd_putsf(0, 5, "Last PwrHist: %d.%03dV",
                     power_history[0] / 1000,
                     power_history[0] % 1000);
-#endif
 
                 lcd_putsf(0, 6, "%s level: %d%%", "Battery", battery_level());
 
@@ -790,153 +758,6 @@ static bool view_battery(void)
 
 #endif /* (CONFIG_BATTERY_MEASURE != 0)  */
 
-#if (CONFIG_STORAGE & STORAGE_MMC) || (CONFIG_STORAGE & STORAGE_SD)
-
-#if (CONFIG_STORAGE & STORAGE_MMC)
-#define CARDTYPE "MMC"
-#elif (CONFIG_STORAGE & STORAGE_SD)
-#define CARDTYPE "microSD"
-#endif
-
-static int disk_callback(int btn, struct gui_synclist *lists)
-{
-    tCardInfo *card;
-    int *cardnum = (int*)lists->data;
-    unsigned char card_name[6];
-    unsigned char pbuf[32];
-    /* Casting away const is safe; the buffer is defined as non-const. */
-    char *title = (char *)lists->title;
-    static const unsigned char i_vmin[] = { 0, 1, 5, 10, 25, 35, 60, 100 };
-    static const unsigned char i_vmax[] = { 1, 5, 10, 25, 35, 45, 80, 200 };
-    static const unsigned char * const kbit_units[] = { "kBit/s", "MBit/s", "GBit/s" };
-    static const unsigned char * const nsec_units[] = { "ns", "µs", "ms" };
-#if (CONFIG_STORAGE & STORAGE_MMC)
-    static const char * const mmc_spec_vers[] = { "1.0-1.2", "1.4", "2.0-2.2",
-        "3.1-3.31", "4.0" };
-#endif
-
-    if ((btn == ACTION_STD_OK) || (btn == SYS_FS_CHANGED) || (btn == ACTION_REDRAW))
-    {
-
-        simplelist_reset_lines();
-
-        card = card_get_info(*cardnum);
-
-        if (card->initialized > 0)
-        {
-            unsigned i;
-            for (i=0; i<sizeof(card_name); i++)
-            {
-                card_name[i] = card_extract_bits(card->cid, (103-8*i), 8);
-            }
-            strmemccpy(card_name, card_name, sizeof(card_name));
-            simplelist_addline(
-                    "%s Rev %d.%d", card_name,
-                    (int) card_extract_bits(card->cid, 63, 4),
-                    (int) card_extract_bits(card->cid, 59, 4));
-            simplelist_addline(
-                    "Prod: %d/%d",
-#if (CONFIG_STORAGE & STORAGE_SD)
-                    (int) card_extract_bits(card->cid, 11, 4),
-                    (int) card_extract_bits(card->cid, 19, 8) + 2000
-#elif (CONFIG_STORAGE & STORAGE_MMC)
-                    (int) card_extract_bits(card->cid, 15, 4),
-                    (int) card_extract_bits(card->cid, 11, 4) + 1997
-#endif
-                    );
-            simplelist_addline(
-#if (CONFIG_STORAGE & STORAGE_SD)
-                    "Ser#: 0x%08lx",
-                    card_extract_bits(card->cid, 55, 32)
-#elif (CONFIG_STORAGE & STORAGE_MMC)
-                    "Ser#: 0x%04lx",
-                    card_extract_bits(card->cid, 47, 16)
-#endif
-                    );
-
-            simplelist_addline("M=%02x, "
-#if (CONFIG_STORAGE & STORAGE_SD)
-                    "O=%c%c",
-                    (int) card_extract_bits(card->cid, 127, 8),
-                    (int) card_extract_bits(card->cid, 119, 8),
-                    (int) card_extract_bits(card->cid, 111, 8)
-#elif (CONFIG_STORAGE & STORAGE_MMC)
-                    "O=%04x",
-                    (int) card_extract_bits(card->cid, 127, 8),
-                    (int) card_extract_bits(card->cid, 119, 16)
-#endif
-                    );
-
-#if (CONFIG_STORAGE & STORAGE_MMC)
-            int temp = card_extract_bits(card->csd, 125, 4);
-            simplelist_addline(
-                     "MMC v%s", temp < 5 ?
-                            mmc_spec_vers[temp] : "?.?");
-#endif
-            simplelist_addline(
-                    "Blocks: 0x%08lx", card->numblocks);
-            output_dyn_value(pbuf, sizeof pbuf, card->speed / 1000,
-                                            kbit_units, 3, false);
-            simplelist_addline(
-                    "Speed: %s", pbuf);
-            output_dyn_value(pbuf, sizeof pbuf, card->taac,
-                            nsec_units, 3, false);
-            simplelist_addline(
-                    "Taac: %s", pbuf);
-            simplelist_addline(
-                    "Nsac: %d clk", card->nsac);
-            simplelist_addline(
-                    "R2W: *%d", 1 << card->r2w_factor);
-#if (CONFIG_STORAGE & STORAGE_SD)
-            int csd_structure = card_extract_bits(card->csd, 127, 2);
-            const char *ver;
-            switch(csd_structure) {
-            case 0:
-                    ver = "1 (SD)";
-                    break;
-            case 1:
-                    ver = "2 (SDHC/SDXC)";
-                    break;
-            case 2:
-                    ver = "3 (SDUC)";
-                    break;
-            default:
-                    ver = "Unknown";
-                    break;
-            }
-            simplelist_addline("SDVer: %s", ver);
-            if (csd_structure == 0) /* CSD version 1.0 */
-#endif
-            {
-            simplelist_addline(
-                    "IRmax: %d..%d mA",
-                    i_vmin[card_extract_bits(card->csd, 61, 3)],
-                    i_vmax[card_extract_bits(card->csd, 58, 3)]);
-            simplelist_addline(
-                    "IWmax: %d..%d mA",
-                    i_vmin[card_extract_bits(card->csd, 55, 3)],
-                    i_vmax[card_extract_bits(card->csd, 52, 3)]);
-            }
-        }
-        else if (card->initialized == 0)
-        {
-            simplelist_setline("Not Found!");
-        }
-#if (CONFIG_STORAGE & STORAGE_SD)
-        else /* card->initialized < 0 */
-        {
-            simplelist_addline("Init Error! (%d)", card->initialized);
-        }
-#endif
-        snprintf(title, 16, "[" CARDTYPE " %d]", *cardnum);
-        gui_synclist_set_title(lists, title, Icon_NOICON);
-        gui_synclist_set_nb_items(lists, simplelist_get_line_count());
-        gui_synclist_select_item(lists, 0);
-        btn = ACTION_REDRAW;
-    }
-    return btn;
-}
-#elif  (CONFIG_STORAGE & STORAGE_ATA)
 static int disk_callback(int btn, struct gui_synclist *lists)
 {
     static const char atanums[] = { " 0 1 2 3 4 5 6" };
@@ -1319,28 +1140,7 @@ static bool dbg_ata_smart(void)
     info.scroll_all = true;
     return simplelist_show_list(&info);
 }
-#else /* No SD, MMC or ATA */
-static int disk_callback(int btn, struct gui_synclist *lists)
-{
-    (void)lists;
-    struct storage_info info;
-    storage_get_info(0,&info);
-    simplelist_addline("Vendor: %s", info.vendor);
-    simplelist_addline("Model: %s", info.product);
-    simplelist_addline("Firmware: %s", info.revision);
-    simplelist_addline(
-            "Size: %lu MB", (unsigned long)(info.num_sectors*(info.sector_size/512)/2048));
-    sector_t free;
-    volume_size( IF_MV(0,) NULL, &free );
-    simplelist_addline(
-             "Free: %ld MB", free / 1024);
-    simplelist_addline(
-             "Cluster size: %d bytes", volume_get_cluster_size(IF_MV(0)));
-    return btn;
-}
-#endif
 
-#if  (CONFIG_STORAGE & STORAGE_ATA)
 static bool dbg_identify_info(void)
 {
     int fd = creat("/identify_info.bin", 0666);
@@ -1357,18 +1157,11 @@ static bool dbg_identify_info(void)
     }
     return false;
 }
-#endif
 
 static bool dbg_disk_info(void)
 {
     struct simplelist_info info;
     simplelist_info_init(&info, "Disk Info", 1, NULL);
-#if (CONFIG_STORAGE & STORAGE_MMC) || (CONFIG_STORAGE & STORAGE_SD)
-    char title[16];
-    int card = 0;
-    info.callback_data = (void*)&card;
-    info.title = title;
-#endif
     info.action_callback = disk_callback;
     info.scroll_all = true;
     return simplelist_show_list(&info);
@@ -1902,10 +1695,8 @@ static const struct {
 #endif
         { "View partitions", dbg_partitions },
         { "View disk info", dbg_disk_info },
-#if (CONFIG_STORAGE & STORAGE_ATA)
         { "Dump ATA identify info", dbg_identify_info},
         { "View/Dump S.M.A.R.T. data", dbg_ata_smart},
-#endif
         { "Metadata log", dbg_metadatalog },
         { "View dircache info", dbg_dircache_info },
         { "View database info", dbg_tagcache_info },

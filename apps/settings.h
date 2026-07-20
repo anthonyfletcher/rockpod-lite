@@ -591,9 +591,7 @@ struct user_settings
                                 0=always, or time in seconds */
     bool caption_backlight; /* turn on backlight at end and start of track */
     bool bl_filter_first_keypress;   /* filter first keypress when dark? */
-#if CONFIG_CHARGING
     int backlight_timeout_plugged;
-#endif
     bool bl_selective_actions; /* backlight disable on some actions */
     int  bl_selective_actions_mask;/* mask of actions that will not enable backlight */
     int backlight_on_button_hold; /* what to do with backlight when hold

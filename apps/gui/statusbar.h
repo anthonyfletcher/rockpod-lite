@@ -34,16 +34,12 @@ struct status_info {
     int volume;
     int playmode;
     int repeat;
-#if CONFIG_CHARGING
     bool inserted;
-#endif
     bool usb_inserted;
     bool battery_state;
     bool shuffle;
     bool keylock;
-#if (CONFIG_LED == LED_VIRTUAL)
     bool led; /* disk LED simulation in the status bar */
-#endif
 
 };
 
