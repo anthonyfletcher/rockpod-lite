@@ -144,27 +144,8 @@ static const char* threads_getname(int selected_item, void *data,
              threadinfo.name);
 
     int start = 0;
-#if LCD_WIDTH <= 128
-    if (len >= SCREEN_MAX_CHARS)
-    {
-        int ch_offset = (*x_offset)%(len-1);
-        int rem = SCREEN_MAX_CHARS - (len - ch_offset);
-        if (rem > 0)
-            ch_offset -= rem;
-
-        if (ch_offset > 0)
-        {
-            /* don't scroll the # and status */
-            status_len++;
-            if ((unsigned int)ch_offset + status_len < buffer_len)
-                memmove(&buffer[ch_offset], &buffer[0], status_len);
-            start = ch_offset;
-        }
-    }
-#else
     (void) x_offset;
     (void) len;
-#endif
     return &buffer[start];
 }
 
@@ -175,24 +156,7 @@ static int dbg_threads_action_callback(int action, struct gui_synclist *lists)
     {
         return ACTION_REDRAW;
     }
-#if LCD_WIDTH <= 128
-    int *x_offset = ((int*) lists->data);
-    if (action == ACTION_STD_OK)
-    {
-        *x_offset += 1;
-        action = ACTION_REDRAW;
-    }
-    else if (IS_SYSEVENT(action))
-    {
-        return ACTION_REDRAW;
-    }
-    else if (action != ACTION_UNKNOWN)
-    {
-        *x_offset = 0;
-    }
-#else
     (void) lists;
-#endif
     return action;
 }
 /* Test code!!! */
@@ -350,13 +314,8 @@ static bool dbg_buffering_thread(void)
     struct buffering_debug d;
     size_t filebuflen = audio_get_filebuflen();
     /* This is a size_t, but call it a long so it puts a - when it's bad. */
-#if LCD_WIDTH > 96
     #define STR_DATAREM "data_rem"
     const char * const fmt_used = "%s: %6ld/%ld";
-#else /* clipzip, ?*/
-    #define STR_DATAREM "remain"
-    const char * const fmt_used = "%s:%ld/%ld";
-#endif
 
 #ifndef CPU_MULTI_FREQUENCY
     boost_ticks = 0;
@@ -402,7 +361,6 @@ static bool dbg_buffering_thread(void)
             screens[i].putsf(0, line++, fmt_used, "alloc", audio_filebufused(),
                             (long) filebuflen);
 
-#if LCD_HEIGHT > 80
             if (screens[i].lcdheight > 80)
             {
                 gui_scrollbar_draw(&screens[i],0, line*SYSFONT_HEIGHT, screens[i].lcdwidth, 6,
@@ -416,19 +374,16 @@ static bool dbg_buffering_thread(void)
                                    filebuflen, 0, (long)d.buffered_data, HORIZONTAL);
                 line++;
             }
-#endif
 
             screens[i].putsf(0, line++, fmt_used, "usefl", (long)(d.useful_data),
                                                        (long)filebuflen);
 
-#if LCD_HEIGHT > 80
             if (screens[i].lcdheight > 80)
             {
                 gui_scrollbar_draw(&screens[i],0, line*SYSFONT_HEIGHT, screens[i].lcdwidth, 6,
                                    filebuflen, 0, d.useful_data, HORIZONTAL);
                 line++;
             }
-#endif
 
             screens[i].putsf(0, line++, "%s: %ld", STR_DATAREM, (long)d.data_rem);
 

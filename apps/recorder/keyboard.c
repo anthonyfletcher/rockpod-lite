@@ -247,7 +247,6 @@ static void draw_char(struct screen *display, int x, int y, ucschar_t ch)
  * the theme backdrop and paints over the block we just filled. */
 static void draw_char_inverse(struct screen *display, int x, int y, ucschar_t ch)
 {
-#if LCD_DEPTH > 1
     if (display->depth > 1)
     {
         unsigned fg = display->get_foreground();
@@ -257,7 +256,6 @@ static void draw_char_inverse(struct screen *display, int x, int y, ucschar_t ch
         display->set_foreground(fg);
         return;
     }
-#endif
     display->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
     draw_char(display, x, y, ch);
 }

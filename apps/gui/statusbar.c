@@ -317,9 +317,7 @@ static void gui_statusbar_icon_battery(struct screen * display, int percent,
     int fill, endfill;
     char buffer[5];
     unsigned int width, height;
-#if LCD_DEPTH > 1
     unsigned int prevfg = 0;
-#endif
 
 #if CONFIG_CHARGING
     if (batt_charge_step >= 0)
@@ -364,19 +362,15 @@ static void gui_statusbar_icon_battery(struct screen * display, int percent,
 
         display->fillrect(STATUSBAR_BATTERY_X_POS + 1, STATUSBAR_Y_POS + 1,
                           fill, STATUSBAR_BATTERY_HEIGHT - 2);
-#if LCD_DEPTH > 1
         if (display->depth > 1)
         {
             prevfg = display->get_foreground();
             display->set_foreground(LCD_DARKGRAY);
         }
-#endif
         display->fillrect(STATUSBAR_BATTERY_X_POS + 1 + fill, STATUSBAR_Y_POS + 1,
                           endfill - fill, STATUSBAR_BATTERY_HEIGHT - 2);
-#if LCD_DEPTH > 1
         if (display->depth > 1)
             display->set_foreground(prevfg);
-#endif
     }
 
     if (percent == -1 || percent > 100) {

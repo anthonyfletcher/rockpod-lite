@@ -221,7 +221,6 @@ int get_icon_height(enum screen_type screen_type)
     return ICON_HEIGHT(screen_type);
 }
 
-#if (LCD_DEPTH > 1)
 int get_icon_format(enum screen_type screen)
 {
     const struct bitmap *iconset;
@@ -233,4 +232,3 @@ int get_icon_format(enum screen_type screen)
 
     return iconset->format;
 }
-#endif

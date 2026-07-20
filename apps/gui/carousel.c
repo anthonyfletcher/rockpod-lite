@@ -962,9 +962,7 @@ static int create_empty_slide(bool force)
 
         aa_cache.input_bmp.width = dst_w;
         aa_cache.input_bmp.height = dst_h;
-#if LCD_DEPTH > 1
         aa_cache.input_bmp.format = FORMAT_NATIVE;
-#endif
         aa_cache.input_bmp.data = (char*)aa_cache.buf;
 
         if (!save_pfraw(EMPTY_SLIDE, &aa_cache.input_bmp))
@@ -1731,17 +1729,6 @@ void carousel_refresh(void)
  */
 static inline pix_t fade_color(pix_t c, unsigned a)
 {
-#if (LCD_PIXELFORMAT == RGB565SWAPPED)
-    unsigned int result;
-    c = swap16(c);
-    a = (a + 2) & 0x1fc;
-    unsigned int inv_a = 0x100 - a;
-    result = (((c & 0xf81f) * a + pf_bg_rb * inv_a)) & 0xf81f00;
-    result |= (((c & 0x7e0) * a + pf_bg_g * inv_a)) & 0x7e000;
-    result >>= 8;
-    return swap16(result);
-
-#elif LCD_PIXELFORMAT == RGB565
     unsigned int result;
     a = (a + 2) & 0x1fc;
     unsigned int inv_a = 0x100 - a;
@@ -1750,21 +1737,6 @@ static inline pix_t fade_color(pix_t c, unsigned a)
     result >>= 8;
     return result;
 
-#elif (LCD_PIXELFORMAT == RGB888 || LCD_PIXELFORMAT == XRGB8888)
-    unsigned int pixel = FB_UNPACK_SCALAR_LCD(c);
-    unsigned int bg = FB_UNPACK_SCALAR_LCD(pf_bg_color);
-    unsigned int result;
-    a = (a + 2) & 0x1fc;
-    unsigned int inv_a = 0x100 - a;
-    result  = (((pixel & 0xff00ff) * a + (bg & 0xff00ff) * inv_a)) & 0xff00ff00;
-    result |= (((pixel & 0x00ff00) * a + (bg & 0x00ff00) * inv_a)) & 0x00ff0000;
-    result >>= 8;
-    return FB_SCALARPACK(result);
-
-#else
-    unsigned val = c;
-    return MULUQ(val, a) >> 8;
-#endif
 }
 
 /**

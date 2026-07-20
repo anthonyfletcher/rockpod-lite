@@ -122,24 +122,16 @@ struct screen screens[NB_SCREENS] =
         .mono_bitmap_part=&lcd_mono_bitmap_part,
         .bitmap=(screen_bitmap_func*)&lcd_bitmap,
         .bitmap_part=(screen_bitmap_part_func*)&lcd_bitmap_part,
-#if LCD_DEPTH <= 2
-        /* No transparency yet for grayscale and mono lcd */
-        .transparent_bitmap=(screen_bitmap_func*)&lcd_bitmap,
-        .transparent_bitmap_part=(screen_bitmap_part_func*)&lcd_bitmap_part,
-#else
         .transparent_bitmap=(screen_bitmap_func*)&lcd_bitmap_transparent,
         .transparent_bitmap_part=(screen_bitmap_part_func*)&lcd_bitmap_transparent_part,
-#endif
         .bmp = &lcd_bmp,
         .bmp_part = &lcd_bmp_part,
         .nine_segment_bmp = &lcd_nine_segment_bmp,
-#if LCD_DEPTH > 1
         .get_background=&lcd_get_background,
         .get_foreground=&lcd_get_foreground,
         .set_background=&lcd_set_background,
         .set_foreground=&lcd_set_foreground,
         .set_drawinfo = &lcd_set_drawinfo,
-#endif /* LCD_DEPTH > 1 */
         .update_rect=&lcd_update_rect,
         .update_viewport_rect=&lcd_update_viewport_rect,
         .fillrect=&lcd_fillrect,
@@ -171,10 +163,8 @@ struct screen screens[NB_SCREENS] =
         .backlight_off=&backlight_off,
         .is_backlight_on=&is_backlight_on,
         .backlight_set_timeout=&backlight_set_timeout,
-#if LCD_DEPTH > 1
         .backdrop_load=&backdrop_load,
         .backdrop_show=&backdrop_show,
-#endif
         .gradient_fillrect = lcd_gradient_fillrect,
         .gradient_fillrect_part = lcd_gradient_fillrect_part,
         .put_line = screen_helper_put_line,

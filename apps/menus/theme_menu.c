@@ -309,9 +309,7 @@ MENUITEM_SETTING(show_icons, &global_settings.show_icons, showicons_callback);
 MENUITEM_FUNCTION_W_PARAM(browse_themes, 0, ID2P(LANG_CUSTOM_THEME),
                           browse_folder, (void*)&themes, NULL, Icon_Config);
 MENUITEM_SETTING(cursor_style, &global_settings.cursor_style, NULL);
-#if LCD_DEPTH > 1
 MENUITEM_SETTING(sep_menu, &global_settings.list_separator_height, NULL);
-#endif
 #if defined(HAVE_LCD_COLOR) && defined(HAVE_ALBUMART)
 MENUITEM_SETTING(dynamic_colors, &global_settings.dynamic_colors, NULL);
 #endif
@@ -328,9 +326,7 @@ MAKE_MENU(theme_menu, ID2P(LANG_THEME_MENU),
 #endif
             &bars_menu,
             &cursor_style,
-#if LCD_DEPTH > 1
             &sep_menu,
-#endif
             &colors_settings,
 #ifdef HAVE_ALBUMART
             &dynamic_colors,

@@ -148,9 +148,7 @@ static void toggle_theme(enum screen_type screen, bool force)
     }
     else
     {
-#if LCD_DEPTH > 1
         screens[screen].backdrop_show(NULL);
-#endif
         screens[screen].scroll_stop();
         skinlist_set_cfg(screen, NULL);
     }
@@ -256,12 +254,10 @@ void viewport_set_fullscreen(struct viewport *vp,
     set_default_align_flags(vp);
     vp->font = screens[screen].getuifont();
     vp->drawmode = DRMODE_SOLID;
-#if LCD_DEPTH > 1
     {
         vp->fg_pattern = FG_FALLBACK;
         vp->bg_pattern = BG_FALLBACK;
     }
-#endif
 }
 
 void viewport_set_buffer(struct viewport *vp, struct frame_buffer_t *buffer,

@@ -498,18 +498,15 @@ static void output_row_32_native_fromyuv(uint32_t row, void * row_in,
         v = SC_OUT(qp->r, ctx);
         qp++;
         yuv_to_rgb(y, u, v, &r, &g, &b);
-#if LCD_DEPTH < 24
         r = (31 * r + (r >> 3) + delta) >> 8;
         g = (63 * g + (g >> 2) + delta) >> 8;
         b = (31 * b + (b >> 3) + delta) >> 8;
-#endif
         *dest = FB_RGBPACK_LCD(r, g, b);
         dest += DEST_STEP;
     }
 }
 #endif
 
-#if !defined(PLUGIN) || LCD_DEPTH > 1
 static void output_row_32_native(uint32_t row, void * row_in,
                               struct scaler_context *ctx)
 {
@@ -518,62 +515,6 @@ static void output_row_32_native(uint32_t row, void * row_in,
     uint8_t dy = DITHERY(row);
     struct uint32_argb *qp = (struct uint32_argb*)row_in;
     SDEBUGF("output_row: y: %lu in: %p\n",row, row_in);
-#if LCD_DEPTH == 2
-#if LCD_PIXELFORMAT == HORIZONTAL_PACKING
-                /* greyscale iPods */
-                fb_data *dest = (fb_data *)ctx->bm->data + fb_width * row;
-                int shift = 6;
-                int delta = 127;
-                unsigned bright;
-                unsigned data = 0;
-
-                for (col = 0; col < ctx->bm->width; col++) {
-                    if (ctx->dither)
-                        delta = DITHERXDY(col,dy);
-                    bright = SC_OUT(*qp++, ctx);
-                    bright = (3 * bright + (bright >> 6) + delta) >> 8;
-                    data |= (~bright & 3) << shift;
-                    shift -= 2;
-                    if (shift < 0) {
-                        *dest++ = data;
-                        data = 0;
-                        shift = 6;
-                    }
-                }
-                if (shift < 6)
-                    *dest++ = data;
-#elif LCD_PIXELFORMAT == VERTICAL_PACKING
-                /* iriver H1x0 */
-                fb_data *dest = (fb_data *)ctx->bm->data + fb_width *
-                                (row >> 2);
-                int shift = 2 * (row & 3);
-                int delta = 127;
-                unsigned bright;
-
-                for (col = 0; col < ctx->bm->width; col++) {
-                    if (ctx->dither)
-                        delta = DITHERXDY(col,dy);
-                    bright = SC_OUT(*qp++, ctx);
-                    bright = (3 * bright + (bright >> 6) + delta) >> 8;
-                    *dest++ |= (~bright & 3) << shift;
-                }
-#elif LCD_PIXELFORMAT == VERTICAL_INTERLEAVED
-                /* iAudio M3 */
-                fb_data *dest = (fb_data *)ctx->bm->data + fb_width *
-                                (row >> 3);
-                int shift = row & 7;
-                int delta = 127;
-                unsigned bright;
-
-                for (col = 0; col < ctx->bm->width; col++) {
-                    if (ctx->dither)
-                        delta = DITHERXDY(col,dy);
-                    bright = SC_OUT(*qp++, ctx);
-                    bright = (3 * bright + (bright >> 6) + delta) >> 8;
-                    *dest++ |= vi_pattern[bright] << shift;
-                }
-#endif /* LCD_PIXELFORMAT */
-#elif LCD_DEPTH >= 16
                 /* iriver h300, colour iPods, X5 */
                 (void)fb_width;
                 fb_data *dest = STRIDE_MAIN((fb_data *)ctx->bm->data + fb_width * row,
@@ -596,11 +537,9 @@ static void output_row_32_native(uint32_t row, void * row_in,
                     r = SC_OUT(q0.r, ctx);
                     g = SC_OUT(q0.g, ctx);
                     b = SC_OUT(q0.b, ctx);
-#if LCD_DEPTH < 24
                     r = (31 * r + (r >> 3) + delta) >> 8;
                     g = (63 * g + (g >> 2) + delta) >> 8;
                     b = (31 * b + (b >> 3) + delta) >> 8;
-#endif
                     *dest = FB_RGBPACK_LCD(r, g, b);
                     dest += STRIDE_MAIN(1, ctx->bm->height);
                     if (bm_alpha) {
@@ -612,9 +551,7 @@ static void output_row_32_native(uint32_t row, void * row_in,
                             *bm_alpha = alpha>>4;
                     }
                 }
-#endif /* LCD_DEPTH */
 }
-#endif
 
 /* Also built for the core image viewer (colour targets), not just plugins. */
 #if (defined(PLUGIN) || defined(HAVE_LCD_COLOR)) && LCD_DEPTH > 1

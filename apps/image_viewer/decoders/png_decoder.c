@@ -408,11 +408,7 @@ static void LodePNG_convert(LodePNG_Decoder *decoder)
         .dither = 0,
     };
 
-#if LCD_DEPTH < 8
-    const struct custom_format *cformat = &format_grey;
-#else
     const struct custom_format *cformat = &format_native;
-#endif
 
     void (*output_row_8)(uint32_t, void*, struct scaler_context*) = cformat->output_row_8;
 

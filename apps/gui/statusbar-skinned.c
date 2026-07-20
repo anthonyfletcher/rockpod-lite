@@ -163,7 +163,6 @@ struct viewport *sb_skin_get_info_vp(enum screen_type screen)
     return &vp->vp;
 }
 
-#if (LCD_DEPTH > 1)
 int sb_get_backdrop(enum screen_type screen)
 {
     struct wps_data *data = skin_get_gwps(CUSTOM_STATUSBAR, screen)->data;
@@ -172,13 +171,6 @@ int sb_get_backdrop(enum screen_type screen)
     else
         return -1;
 }
-#else
-int sb_get_backdrop(enum screen_type screen)
-{
-    (void) screen;
-    return -1;
-}
-#endif
 static bool force_waiting = false;
 void sb_skin_update(enum screen_type screen, bool force)
 {

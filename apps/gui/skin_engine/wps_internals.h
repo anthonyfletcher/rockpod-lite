@@ -187,7 +187,6 @@ struct skin_viewport {
     int16_t parsed_fontid;
     char hidden_flags;
     bool is_infovp;
-#if (LCD_DEPTH > 1)
     bool output_to_backdrop_buffer;
     bool fgbg_changed;
     struct gradient_config start_gradient;
@@ -195,13 +194,10 @@ struct skin_viewport {
     unsigned int dc_orig_fg; /* original parsed fg for dynamic colors */
     unsigned int dc_orig_bg; /* original parsed bg for dynamic colors */
 #endif
-#endif
 };
 struct viewport_colour {
     unsigned colour;
-#if (LCD_DEPTH > 1)
     bool is_default; /* true if parsed from `-` (theme default) */
-#endif
 };
 
 

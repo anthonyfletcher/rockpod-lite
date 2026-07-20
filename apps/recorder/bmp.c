@@ -116,18 +116,11 @@ static const struct uint8_rgb bitfields[][4] = {
     },
 };
 
-#if (LCD_DEPTH > 1)
 /* the full 16x16 Bayer dither matrix may be calculated quickly with this table
 */
 const unsigned char dither_table[16] =
     {   0,192, 48,240, 12,204, 60,252,  3,195, 51,243, 15,207, 63,255 };
-#endif
 
-#if ((LCD_DEPTH == 2) && (LCD_PIXELFORMAT == VERTICAL_INTERLEAVED))
-const unsigned short vi_pattern[4] = {
-    0x0101, 0x0100, 0x0001, 0x0000
-};
-#endif
 
 /******************************************************************************
  * read_bmp_file()
@@ -370,7 +363,6 @@ static inline int rgbcmp(const struct uint8_rgb *rgb1, const struct uint8_rgb *r
     return memcmp(rgb1, rgb2, sizeof(struct uint8_rgb));
 }
 
-#if LCD_DEPTH > 1
 #if !defined(PLUGIN) && !defined(HAVE_JPEG) && !defined(HAVE_BMP_SCALING)
 static inline
 #endif
@@ -382,62 +374,6 @@ void output_row_8_native(uint32_t row, void * row_in,
     uint8_t dy = DITHERY(row);
     struct uint8_rgb *qp = (struct uint8_rgb*)row_in;
     BDEBUGF("output_row: y: %lu in: %p\n",row, row_in);
-#if LCD_DEPTH == 2
-#if LCD_PIXELFORMAT == HORIZONTAL_PACKING
-                /* greyscale iPods */
-                fb_data *dest = (fb_data *)ctx->bm->data + fb_width * row;
-                int shift = 6;
-                int delta = 127;
-                unsigned bright;
-                unsigned data = 0;
-
-                for (col = 0; col < ctx->bm->width; col++) {
-                    if (ctx->dither)
-                        delta = DITHERXDY(col,dy);
-                    bright = *qp++;
-                    bright = (3 * bright + (bright >> 6) + delta) >> 8;
-                    data |= (~bright & 3) << shift;
-                    shift -= 2;
-                    if (shift < 0) {
-                        *dest++ = data;
-                        data = 0;
-                        shift = 6;
-                    }
-                }
-                if (shift < 6)
-                    *dest++ = data;
-#elif LCD_PIXELFORMAT == VERTICAL_PACKING
-                /* iriver H1x0 */
-                fb_data *dest = (fb_data *)ctx->bm->data + fb_width *
-                                (row >> 2);
-                int shift = 2 * (row & 3);
-                int delta = 127;
-                unsigned bright;
-
-                for (col = 0; col < ctx->bm->width; col++) {
-                    if (ctx->dither)
-                        delta = DITHERXDY(col,dy);
-                    bright = *qp++;
-                    bright = (3 * bright + (bright >> 6) + delta) >> 8;
-                    *dest++ |= (~bright & 3) << shift;
-                }
-#elif LCD_PIXELFORMAT == VERTICAL_INTERLEAVED
-                /* iAudio M3 */
-                fb_data *dest = (fb_data *)ctx->bm->data + fb_width *
-                                (row >> 3);
-                int shift = row & 7;
-                int delta = 127;
-                unsigned bright;
-
-                for (col = 0; col < ctx->bm->width; col++) {
-                    if (ctx->dither)
-                        delta = DITHERXDY(col,dy);
-                    bright = *qp++;
-                    bright = (3 * bright + (bright >> 6) + delta) >> 8;
-                    *dest++ |= vi_pattern[bright] << shift;
-                }
-#endif /* LCD_PIXELFORMAT */
-#elif LCD_DEPTH >= 16
                 /* iriver h300, colour iPods, X5 */
                 (void)fb_width;
                 fb_data *dest = STRIDE_MAIN((fb_data *)ctx->bm->data + fb_width * row,
@@ -458,11 +394,9 @@ void output_row_8_native(uint32_t row, void * row_in,
                     r = qp->red;
                     g = qp->green;
                     b = qp->blue;
-#if LCD_DEPTH < 24
                     r = (31 * r + (r >> 3) + delta) >> 8;
                     g = (63 * g + (g >> 2) + delta) >> 8;
                     b = (31 * b + (b >> 3) + delta) >> 8;
-#endif
                     *dest = FB_RGBPACK_LCD(r, g, b);
                     dest += STRIDE_MAIN(1, ctx->bm->height);
                     if (bm_alpha) {
@@ -476,9 +410,7 @@ void output_row_8_native(uint32_t row, void * row_in,
                     }
                     qp++;
                 }
-#endif /* LCD_DEPTH */
 }
-#endif
 
 /******************************************************************************
  * read_bmp_fd()
@@ -559,7 +491,6 @@ int read_bmp_fd(int fd,
     BDEBUGF("width: %d height: %d depth: %d padded_width: %d\n", src_dim.width,
             src_dim.height, depth, padded_width);
 
-#if (LCD_DEPTH > 1)
     if ((format & 3) == FORMAT_ANY) {
         if (depth == 1)
             format = (format & ~3);
@@ -576,10 +507,6 @@ int read_bmp_fd(int fd,
 #endif
         remote = false;
     }
-#elif !defined(PLUGIN)
-    if (src_dim.width > BM_MAX_WIDTH)
-            return -6;
-#endif /*(LCD_DEPTH > 1)*/
 
 #if (LCD_DEPTH > 1) && \
     defined(HAVE_BMP_SCALING) || defined(PLUGIN)
@@ -607,9 +534,7 @@ int read_bmp_fd(int fd,
     defined(HAVE_BMP_SCALING) || defined(PLUGIN)
     }
 #endif
-#if LCD_DEPTH > 1
     format &= 1;
-#endif
     if (rset.rowstep > 0) {     /* Top-down BMP file */
         rset.rowstart = 0;
         rset.rowstop = bm->height;
@@ -681,11 +606,9 @@ int read_bmp_fd(int fd,
 
     switch (depth) {
       case 16:
-#if LCD_DEPTH >= 16
         /* don't dither 16 bit BMP to LCD with same or larger depth */
         if (!remote)
             dither = false;
-#endif
         if (compression == 0) { /* BI_RGB, i.e. 15 bit */
             depth = 15;
             break;
@@ -726,11 +649,6 @@ int read_bmp_fd(int fd,
         break;
     }
 
-#if LCD_DEPTH >= 24
-    /* Never dither 24/32 bit BMP to 24 bit LCDs */
-    if (depth >= 24 && !remote)
-        dither = false;
-#endif
 
     /* Search to the beginning of the image data */
     lseek(fd, (off_t)letoh32(bmph.off_bits), SEEK_SET);
@@ -766,23 +684,15 @@ int read_bmp_fd(int fd,
     }
 #endif /* LCD_DEPTH */
 
-#if LCD_DEPTH > 1 || defined(PLUGIN)
     struct scaler_context ctx = {
         .bm = bm,
         .dither = dither,
     };
-#endif
 #if defined(PLUGIN) || defined(HAVE_JPEG) || defined(HAVE_BMP_SCALING)
-#if LCD_DEPTH > 1
     void (*output_row_8)(uint32_t, void*, struct scaler_context*) =
         output_row_8_native;
-#elif defined(PLUGIN)
-    void (*output_row_8)(uint32_t, void*, struct scaler_context*) = NULL;
-#endif
-#if LCD_DEPTH > 1 || defined(PLUGIN)
     if (cformat)
         output_row_8 = cformat->output_row_8;
-#endif
 #endif
 
     unsigned char *buf = ba.buf;
@@ -832,7 +742,6 @@ int read_bmp_fd(int fd,
     !defined(PLUGIN)
         if (format == FORMAT_NATIVE) {
 #endif /* (LCD_DEPTH > 1) */
-#if LCD_DEPTH > 1 || defined(PLUGIN)
             {
 #if !defined(PLUGIN) && !defined(HAVE_JPEG) && !defined(HAVE_BMP_SCALING)
                 output_row_8_native(row, buf, &ctx);
@@ -840,7 +749,6 @@ int read_bmp_fd(int fd,
                 output_row_8(row, buf, &ctx);
 #endif
             }
-#endif
 #if ((LCD_DEPTH > 1)) && \
     !defined(PLUGIN)
         }

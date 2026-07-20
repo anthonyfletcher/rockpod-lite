@@ -1595,15 +1595,6 @@ bool parse_color(enum screen_type screen, char *text, int *value)
             return true;
     }
 
-#if LCD_DEPTH == 2
-    if (screens[screen].depth == 2)
-    {
-        if (text[1] != '\0' || !is0123(*text))
-            return false;
-        *value = *text - '0';
-        return true;
-    }
-#endif
     return false;
 }
 #endif /* !defined(__PCTOOL__) || defined(CHECKWPS) */

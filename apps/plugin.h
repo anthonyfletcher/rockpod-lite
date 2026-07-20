@@ -238,7 +238,6 @@ struct plugin_api {
                                  int stride, int x, int y, int width, int height);
     void (*lcd_mono_bitmap)(const unsigned char *src, int x, int y,
                             int width, int height);
-#if LCD_DEPTH > 1
     void     (*lcd_set_foreground)(unsigned foreground);
     unsigned (*lcd_get_foreground)(void);
     void     (*lcd_set_background)(unsigned foreground);
@@ -249,8 +248,6 @@ struct plugin_api {
                        int height);
     fb_data* (*lcd_get_backdrop)(void);
     void (*lcd_set_backdrop)(fb_data* backdrop);
-#endif
-#if LCD_DEPTH >= 16
     void (*lcd_bitmap_transparent_part)(const fb_data *src,
             int src_x, int src_y, int stride,
             int x, int y, int width, int height);
@@ -261,13 +258,6 @@ struct plugin_api {
                          int src_x, int src_y, int stride,
                          int x, int y, int width, int height);
 #endif /* MEMORYSIZE > 2 */
-#elif (LCD_DEPTH < 4) && (CONFIG_PLATFORM & PLATFORM_NATIVE)
-    void (*lcd_blit_mono)(const unsigned char *data, int x, int by, int width,
-                          int bheight, int stride);
-    void (*lcd_blit_grey_phase)(unsigned char *values, unsigned char *phases,
-                                int bx, int by, int bwidth, int bheight,
-                                int stride);
-#endif /* LCD_DEPTH */
 
 #if defined(HAVE_LCD_ENABLE) || defined(HAVE_LCD_SLEEP)
     void (*button_queue_post)(long id, intptr_t data);

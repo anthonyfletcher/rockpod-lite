@@ -81,13 +81,11 @@ struct screen
     void (*bmp)(const struct bitmap *bm, int x, int y);
     void (*bmp_part)(const struct bitmap* bm, int src_x, int src_y,
                                 int x, int y, int width, int height);
-#if (LCD_DEPTH > 1)
     unsigned (*get_background)(void);
     unsigned (*get_foreground)(void);
     void (*set_background)(unsigned background);
     void (*set_foreground)(unsigned foreground);
     void (*set_drawinfo)(int mode, unsigned foreground, unsigned background);
-#endif /* (LCD_DEPTH > 1) || (LCD_REMOTE_DEPTH > 1) */
     void (*update_rect)(int x, int y, int width, int height);
     void (*update_viewport_rect)(int x, int y, int width, int height);
     void (*fillrect)(int x, int y, int width, int height);
@@ -120,10 +118,8 @@ struct screen
     void (*backlight_off)(void);
     bool (*is_backlight_on)(bool ignore_always_off);
     void (*backlight_set_timeout)(int index);
-#if LCD_DEPTH > 1
     bool (*backdrop_load)(const char *filename, char* backdrop_buffer);
     void (*backdrop_show)(char* backdrop_buffer);
-#endif
     void (*gradient_fillrect)(int x, int y, int width, int height,
             unsigned start, unsigned end);
     void (*gradient_fillrect_part)(int x, int y, int width, int height,

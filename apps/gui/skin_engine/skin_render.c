@@ -110,7 +110,6 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
 
     switch (token->type)
     {
-#if (LCD_DEPTH > 1)
         case SKIN_TOKEN_VIEWPORT_BGCOLOUR:
         case SKIN_TOKEN_VIEWPORT_FGCOLOUR:
         {
@@ -146,7 +145,6 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                 *linedes = *data;
         }
         break;
-#endif
         case SKIN_TOKEN_VIEWPORT_GRADIENT_SETUP:
         {
             struct gradient_config *cfg = SKINOFFSETTOPTR(skin_buffer, token->value.data);
@@ -212,15 +210,11 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                 }
                 else
                 {
-#if LCD_DEPTH > 1
                     unsigned backup = skin_vp->vp.fg_pattern;
                     skin_vp->vp.fg_pattern = dr_start;
-#endif
                     gwps->display->fillrect(rect->x, rect->y, rect->width,
                         rect->height);
-#if LCD_DEPTH > 1
                     skin_vp->vp.fg_pattern = backup;
-#endif
                 }
             }
             break;
@@ -472,7 +466,6 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                             skin_viewport->hidden_flags |= VP_DRAW_WASHIDDEN;
                         else
                         {
-#if (LCD_DEPTH > 1)
                             if (skin_viewport->output_to_backdrop_buffer)
                             {
                                 skin_backdrop_set_buffer(data->backdrop_id, skin_viewport);
@@ -492,11 +485,6 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                                 skin_backdrop_set_buffer(-1, skin_viewport);
                                 skin_backdrop_show(data->backdrop_id);
                             }
-#else
-                            gwps->display->set_viewport_ex(&skin_viewport->vp, VP_FLAG_VP_SET_CLEAN);
-                            gwps->display->clear_viewport();
-                            gwps->display->set_viewport_ex(&info->skin_vp->vp, VP_FLAG_VP_SET_CLEAN);
-#endif
                             skin_viewport->hidden_flags |= VP_DRAW_HIDDEN;
                         }
                     }
@@ -838,14 +826,12 @@ void skin_render_viewport(struct skin_element* viewport, struct gui_wps *gwps,
         info.line_scrolls = false;
         info.force_redraw = false;
         info.pending_aa = NULL;
-#if (LCD_DEPTH > 1)
         skin_viewport->fgbg_changed = false;
         if (info.line_desc.style&STYLE_GRADIENT)
         {
             if (++info.line_desc.line > info.line_desc.nlines)
                 info.line_desc.style = STYLE_DEFAULT;
         }
-#endif
         info.cur_align_start = info.buf;
         align->left = info.buf;
         align->center = NULL;
@@ -857,7 +843,6 @@ void skin_render_viewport(struct skin_element* viewport, struct gui_wps *gwps,
             func = skin_render_line;
 
         needs_update = func(line, &info);
-#if (LCD_DEPTH > 1)
         if (skin_viewport->fgbg_changed)
         {
             /* if fg/bg changed due to a conditional tag the colors
@@ -869,7 +854,6 @@ void skin_render_viewport(struct skin_element* viewport, struct gui_wps *gwps,
             if (needs_update)
                 update_all = true;
         }
-#endif
         /* only update if the line needs to be, and there is something to write */
         if (refresh_type && (needs_update || update_all))
         {
@@ -987,7 +971,6 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
 #endif
 
         unsigned vp_refresh_mode = refresh_mode;
-#if (LCD_DEPTH > 1)
         if (skin_viewport->output_to_backdrop_buffer)
         {
             skin_backdrop_set_buffer(data->backdrop_id, skin_viewport);
@@ -998,7 +981,6 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
             skin_backdrop_set_buffer(-1, skin_viewport);
             skin_backdrop_show(data->backdrop_id);
         }
-#endif
 
         /* dont redraw the viewport if its disabled */
         if (skin_viewport->hidden_flags&VP_NEVER_VISIBLE)
@@ -1041,10 +1023,8 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
 
         refresh_mode = old_refresh_mode;
     }
-#if (LCD_DEPTH > 1)
     skin_backdrop_set_buffer(-1, skin_viewport);
     skin_backdrop_show(data->backdrop_id);
-#endif
 
     if (inhibit_flush) /*ADDEDD*/
         pending_full_update = true; /*ADDEDD*/

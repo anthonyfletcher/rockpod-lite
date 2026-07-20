@@ -62,9 +62,7 @@
 #define WPS_ERROR_INVALID_PARAM         -1
 
 static char* skin_buffer = NULL;
-#if (LCD_DEPTH > 1)
 static char *backdrop_filename;
-#endif
 static struct skin_stats *_stats = NULL;
 
 static bool isdefault(struct skin_tag_parameter *param)
@@ -559,7 +557,6 @@ static int parse_listitemviewport(struct skin_element *element,
     return 0;
 }
 
-#if (LCD_DEPTH > 1)
 static int parse_viewporttextstyle(struct skin_element *element,
                                    struct wps_token *token,
                                    struct wps_data *wps_data)
@@ -684,18 +681,14 @@ static int parse_viewportcolour(struct skin_element *element,
             colour->colour = fg_color;
         else
             colour->colour = bg_color;
-#if (LCD_DEPTH > 1)
         colour->is_default = true;
-#endif
     }
     else
     {
         if (!parse_color(curr_screen, SKINOFFSETTOPTR(skin_buffer, param->data.text),
                     &colour->colour))
             return -1;
-#if (LCD_DEPTH > 1)
         colour->is_default = false;
-#endif
     }
     token->value.data = PTRTOSKINOFFSET(skin_buffer, colour);
     if (element->line == curr_viewport_element->line)
@@ -725,7 +718,6 @@ static int parse_image_special(struct skin_element *element,
     (void)wps_data; /* kill warning */
     (void)token;
 
-#if LCD_DEPTH > 1
     char *filename;
     if (token->type == SKIN_TOKEN_IMAGE_BACKDROP)
     {
@@ -742,11 +734,9 @@ static int parse_image_special(struct skin_element *element,
         }
         backdrop_filename = filename;
     }
-#endif
 
     return 0;
 }
-#endif
 
 static int parse_progressbar_tag(struct skin_element* element,
                                  struct wps_token *token,
@@ -1727,9 +1717,7 @@ static int convert_viewport(struct wps_data *data, struct skin_element* element)
 
     viewport_set_defaults(&skin_vp->vp, curr_screen);
 
-#if (LCD_DEPTH > 1)
     skin_vp->output_to_backdrop_buffer = false;
-#endif
     skin_vp->start_gradient.start = global_settings.lss_color;
     skin_vp->start_gradient.end = global_settings.lse_color;
     skin_vp->start_gradient.text = global_settings.lst_color;
@@ -1914,11 +1902,9 @@ static int skin_element_callback(struct skin_element* element, void* data)
                 case SKIN_TOKEN_LIST_TITLE_TEXT:
                     sb_skin_has_title(curr_screen);
                     break;
-#if (LCD_DEPTH > 1)
                 case SKIN_TOKEN_DRAWRECTANGLE:
                     function = parse_drawrectangle;
                     break;
-#endif
                 case SKIN_TOKEN_FILE_DIRECTORY:
                     token->value.i = get_param(element, 0)->data.number;
                     break;

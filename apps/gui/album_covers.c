@@ -1367,10 +1367,8 @@ static bool sort_albums(int new_sorting, bool from_settings)
     {
 #ifdef USEGSLIB
         grey_show(false);
-#if LCD_DEPTH > 1
         lcd_set_background(N_BRIGHT(0));
         lcd_set_foreground(N_BRIGHT(255));
-#endif
         lcd_clear_display();
         lcd_update();
 #endif

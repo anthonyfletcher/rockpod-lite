@@ -197,7 +197,6 @@ static void draw_round_rect(struct screen *s, int x, int y, int w, int h,
  * Frame primitive                                                        *
  * ---------------------------------------------------------------------- */
 
-#if LCD_DEPTH > 1
 static unsigned resolve_fg(struct screen *s, unsigned color)
 {
     return color == DIALOG_COLOR_INHERIT ? s->get_foreground() : color;
@@ -207,7 +206,6 @@ static unsigned resolve_bg(struct screen *s, unsigned color)
 {
     return color == DIALOG_COLOR_INHERIT ? s->get_background() : color;
 }
-#endif
 
 void dialog_frame_box(struct screen *screen, struct viewport *box,
                       const struct dialog_style *style,
@@ -225,7 +223,6 @@ void dialog_frame_box(struct screen *screen, struct viewport *box,
      * "background" and, when the theme has a backdrop active, copies the
      * backdrop image into the box (leaving it looking unfilled with unreadable
      * text over it). */
-#if LCD_DEPTH > 1
     if (screen->depth > 1)
     {
         unsigned fg = resolve_fg(screen, style->box_fg);
@@ -245,7 +242,6 @@ void dialog_frame_box(struct screen *screen, struct viewport *box,
         box->bg_pattern = bg;
     }
     else
-#endif
     {
         screen->set_drawmode(DRMODE_SOLID | DRMODE_INVERSEVID);
         fill_round_rect(screen, 0, 0, box->width, box->height, 0);
@@ -280,7 +276,6 @@ void dialog_draw_button(struct screen *screen,
     int tx = x + (w - lw) / 2;
     int ty = y + (h - lh) / 2;
 
-#if LCD_DEPTH > 1
     if (screen->depth > 1)
     {
         /* Inheriting reproduces the old inverse-video selector exactly: the
@@ -308,7 +303,6 @@ void dialog_draw_button(struct screen *screen,
         screen->set_drawmode(DRMODE_SOLID);
     }
     else
-#endif
     {
         if (selected)
         {

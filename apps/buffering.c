@@ -853,9 +853,7 @@ static int load_image(int fd, const char *path,
     /* FIXME: alignment may be needed for the data buffer. */
     bmp->data = ringbuf_ptr(bufidx + sizeof(struct bitmap));
 
-#if (LCD_DEPTH > 1)
     bmp->maskdata = NULL;
-#endif
     const int format = FORMAT_NATIVE | FORMAT_DITHER |
                        FORMAT_RESIZE | FORMAT_KEEP_ASPECT;
 #ifdef HAVE_JPEG

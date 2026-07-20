@@ -222,31 +222,9 @@ static const char graphic_numeric[] = "graphic,numeric";
 #define DEFAULT_SBSNAME  "Themify_2"
 #define DEFAULT_FMS_NAME "cabbiev2"
 
-#if LCD_HEIGHT <= 64
-  #define DEFAULT_FONT_HEIGHT 8
-  #define DEFAULT_FONTNAME "08-Rockfont"
-#elif LCD_HEIGHT <= 80
-  #define DEFAULT_FONT_HEIGHT 11
-  #define DEFAULT_FONTNAME "11-Sazanami-Mincho"
-/* sandisk sansa clip zip and samsung yh-820 */
-#elif (LCD_HEIGHT == 96) && ((LCD_WIDTH == 96) || (LCD_WIDTH == 128))
-  #define DEFAULT_FONT_HEIGHT 8
-  #define DEFAULT_FONTNAME "08-Rockfont"
-#elif LCD_HEIGHT <= 220
-  #define DEFAULT_FONT_HEIGHT 12
-#elif LCD_HEIGHT <= 240
   #define DEFAULT_FONT_HEIGHT 15
   /* Themify_2's UI font (bundled); overrides the Adobe-Helvetica fallback. */
   #define DEFAULT_FONTNAME "22-LeagueSpartan-Regular"
-#elif LCD_HEIGHT <= 320
-  #define DEFAULT_FONT_HEIGHT 18
-#elif LCD_HEIGHT <= 400
-  #define DEFAULT_FONT_HEIGHT 16
-#elif LCD_HEIGHT <= 480 && LCD_WIDTH < 800
-  #define DEFAULT_FONT_HEIGHT 27
-#else
-  #define DEFAULT_FONT_HEIGHT 35
-#endif
 #define DEFAULT_GLYPHS 250
 #define MIN_GLYPHS 50
 #define MAX_GLYPHS 65540
@@ -333,7 +311,6 @@ static const char graphic_numeric[] = "graphic,numeric";
 # define SCROLLBAR_DEFAULT SCROLLBAR_LEFT
 
 
-#if LCD_DEPTH > 1
 static const char* list_pad_formatter(char *buffer, size_t buffer_size,
                                     int val, const char *unit)
 {
@@ -356,7 +333,6 @@ static int32_t list_pad_getlang(int value, int unit)
         default: return TALK_ID(value, unit);
     }
 }
-#endif
 
 static const char* formatter_time_unit_0_is_off(char *buffer, size_t buffer_size,
                                     int val, const char *unit)
@@ -892,14 +868,12 @@ const struct settings_list settings[] = {
     INT_SETTING(F_THEMESETTING, scrollbar_width, LANG_SCROLLBAR_WIDTH, 6,
                 "scrollbar width",UNIT_INT, 3, MAX(LCD_WIDTH/10,25), 1,
                 NULL, NULL, NULL),
-#if LCD_DEPTH > 1
     TABLE_SETTING(F_ALLOW_ARBITRARY_VALS, list_separator_height, LANG_LIST_SEPARATOR,
                   0, "list separator height", "auto,off", UNIT_PIXEL,
                   list_pad_formatter, list_pad_getlang, NULL, 15,
                   -1,0,1,2,3,4,5,7,9,11,13,16,20,25,30),
     {F_T_INT|F_RGB|F_THEMESETTING ,&global_settings.list_separator_color,-1,
         INT(DEFAULT_THEME_SEPARATOR),"list separator color",UNUSED},
-#endif
     CHOICE_SETTING(F_THEMESETTING, volume_type, LANG_VOLUME_DISPLAY, 0,
                    "volume display", graphic_numeric, NULL, 2,
                    ID2P(LANG_DISPLAY_GRAPHIC),
@@ -1602,10 +1576,8 @@ const struct settings_list settings[] = {
     TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY,sbs_file, "sbs",
                      DEFAULT_SBSNAME, SBS_DIR "/", ".sbs"),
     TEXT_SETTING(0,lang_file,"lang","",LANG_DIR "/",".lng"),
-#if LCD_DEPTH > 1
     TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY,backdrop_file,"backdrop",
                      DEFAULT_BACKDROP, NULL, NULL),
-#endif
     TEXT_SETTING(0,kbd_file,"kbd","-",ROCKBOX_DIR "/",".kbd"),
 #ifdef HAVE_USB_CHARGING_ENABLE
     CHOICE_SETTING(0, usb_charging, LANG_USB_CHARGING, TARGET_USB_CHARGING_DEFAULT, "usb charging",

@@ -463,10 +463,8 @@ struct user_settings
     int scrollbar;    /* SCROLLBAR_* enum values */
     int scrollbar_width;
 
-#if LCD_DEPTH > 1
     int list_separator_height; /* -1=auto (== 1 currently), 0=disabled, X=height in pixels */
     int list_separator_color;
-#endif
     /* goto current song when exiting WPS */
     bool browse_current; /* 1=goto current song,
                             0=goto previous location */
@@ -502,9 +500,7 @@ struct user_settings
     unsigned char tagcache_db_path[MAX_PATHNAME+1];
 #endif /* HAVE_TAGCACHE */
 
-#if LCD_DEPTH > 1
     unsigned char backdrop_file[MAX_PATHNAME+1];  /* backdrop bitmap file */
-#endif
 
     int bg_color; /* background color native format */
     int fg_color; /* foreground color native format */

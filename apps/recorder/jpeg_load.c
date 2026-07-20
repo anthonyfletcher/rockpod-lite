@@ -2215,16 +2215,10 @@ int clip_jpeg_fd(int fd, int flags,
             .bm = bm,
             .dither = dither,
         };
-#if LCD_DEPTH > 1
         void (*output_row_8)(uint32_t, void*, struct scaler_context*) =
             output_row_8_native;
-#elif defined(PLUGIN)
-        void (*output_row_8)(uint32_t, void*, struct scaler_context*) = NULL;
-#endif
-#if LCD_DEPTH > 1 || defined(PLUGIN)
         if (cformat)
             output_row_8 = cformat->output_row_8;
-#endif
         struct img_part *part;
         for (row = 0; row < bm->height; row++)
         {

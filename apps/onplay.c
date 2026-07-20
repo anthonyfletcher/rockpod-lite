@@ -937,7 +937,6 @@ static void set_dir_helper(char* dirnamebuf, size_t bufsz)
     settings_save();
 }
 
-#if LCD_DEPTH > 1
 
 static void show_updated_backdrop(void)
 {
@@ -967,7 +966,6 @@ static bool set_backdrop(void)
 }
 MENUITEM_FUNCTION(set_backdrop_item, 0, ID2P(LANG_SET_AS_BACKDROP),
                   set_backdrop, clipboard_callback, Icon_NOICON);
-#endif
 static bool set_startdir(void)
 {
     set_dir_helper(global_settings.start_directory,
@@ -1079,7 +1077,6 @@ static int clipboard_callback(int action,
                 }
                 else if (this_item == &delete_file_item)
                     return action;
-#if LCD_DEPTH > 1
                 else if (this_item == &set_backdrop_item)
                 {
                     char *suffix = strrchr(selected_file.path, '.');
@@ -1091,7 +1088,6 @@ static int clipboard_callback(int action,
                         }
                     }
                 }
-#endif
             }
             return ACTION_EXIT_MENUITEM;
             break;
@@ -1153,9 +1149,7 @@ MAKE_ONPLAYMENU( tree_onplay_menu, ID2P(LANG_ONPLAY_MENU_TITLE),
 #ifdef HAVE_TAGCACHE
            &pictureflow_item,
 #endif
-#if LCD_DEPTH > 1
            &set_backdrop_item,
-#endif
            &add_to_faves_item, &set_as_dir_menu, &file_menu, &sort_playlists,
          );
 static int onplaymenu_callback(int action,

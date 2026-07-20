@@ -177,7 +177,6 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
     max_width[screen->screen_type] = width;
 
     vp->flags |=  VP_FLAG_ALIGN_CENTER;
-#if LCD_DEPTH > 1
     if (screen->depth > 1)
     {
         unsigned fg = screen->get_foreground();
@@ -194,7 +193,6 @@ static bool splash_internal(struct screen * screen, const char *fmt, va_list ap,
             screen->set_foreground(SCREEN_COLOR_TO_NATIVE(screen, LCD_BLACK));
         }
     }
-#endif
 
     /* opaque box + border via the shared dialog frame */
     struct viewport content;

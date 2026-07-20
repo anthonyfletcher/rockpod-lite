@@ -87,9 +87,7 @@ static void track_info_callback(unsigned short id, void *param);
 char* wps_default_skin(enum screen_type screen)
 {
     static char *skin_buf[NB_SCREENS] = {
-#if LCD_DEPTH > 1
             "%X(d)\n"
-#endif
             "%s%?it<%?in<%in. |>%it|%fn>\n"
             "%s%?ia<%ia|%?d(2)<%d(2)|%(root%)>>\n"
             "%s%?id<%id|%?d(1)<%d(1)|%(root%)>> %?iy<%(%iy%)|>\n\n"
@@ -503,7 +501,6 @@ static void gwps_enter_wps(bool theme_enabled)
         sb_set_title_text(NULL, Icon_NOICON, i);
         /* Update the values in the first (default) viewport - in case the user
            has modified the statusbar or colour settings */
-#if LCD_DEPTH > 1
         if (display->depth > 1)
         {
             struct skin_viewport *svp = skin_find_item(VP_DEFAULT_LABEL_STRING,
@@ -515,7 +512,6 @@ static void gwps_enter_wps(bool theme_enabled)
                 vp->bg_pattern = display->get_background();
             }
         }
-#endif
         /* make the backdrop actually take effect */
 #ifdef HAVE_BACKDROP_IMAGE
         skin_backdrop_show(gwps->data->backdrop_id);

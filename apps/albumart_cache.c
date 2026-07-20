@@ -359,9 +359,7 @@ static int aa_read_source(const struct aa_src *src, struct bitmap *bm, int fmt,
     bm->data = workbuf;
     bm->width = w;
     bm->height = h;
-#if LCD_DEPTH > 1
     bm->format = FORMAT_NATIVE;
-#endif
 
     if (src->emb_pos >= 0)
     {
@@ -523,7 +521,6 @@ static bool aa_generate_one(const struct aa_src *src, int size_index,
     return aa_write_aat(out_path, &bm);
 }
 
-#if LCD_DEPTH > 1
 /* Area-average downscale of a native (fb_data) image. Used only for the
  * compiled-in placeholder, so it needs no upscale or aspect handling: the source
  * is square and always larger than the thumbnail sizes. */
@@ -554,9 +551,7 @@ static void aa_scale_native(const fb_data *src, int sw, int sh,
         }
     }
 }
-#endif
 
-#if LCD_DEPTH > 1
 /* Downscale one compiled-in (square) placeholder bitmap into every size's
  * placeholder .aat, once. `pathfn` picks the per-size destination file. Cheap in
  * steady state (a file_exists per size); regenerated after a format bump because
@@ -585,7 +580,6 @@ static void aa_render_placeholder(const fb_data *src, int sw, int sh,
         yield();
     }
 }
-#endif
 
 /* Render the compiled-in placeholders (apps/bitmaps/native/) into each size's
  * placeholder .aat: the album "?" (no_album_cover) and the artist silhouette
@@ -593,7 +587,6 @@ static void aa_render_placeholder(const fb_data *src, int sw, int sh,
  * downscale. */
 static void aa_ensure_fallback(void *workbuf, size_t workbuf_sz)
 {
-#if LCD_DEPTH > 1
     (void)workbuf_sz;
     aa_render_placeholder((const fb_data *)no_album_cover,
                           BMPWIDTH_no_album_cover, BMPHEIGHT_no_album_cover,
@@ -602,9 +595,6 @@ static void aa_ensure_fallback(void *workbuf, size_t workbuf_sz)
                           BMPWIDTH_rockpodnoartistcover,
                           BMPHEIGHT_rockpodnoartistcover,
                           aa_artist_fallback_path, workbuf);
-#else
-    (void)workbuf; (void)workbuf_sz;
-#endif
 }
 
 /* True if the pass should stop right now: a USB connection or shutdown is
