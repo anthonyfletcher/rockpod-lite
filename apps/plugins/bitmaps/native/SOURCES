@@ -1,4 +1,0 @@
-/* Clock section removed: the clock plugin doesn't exist in this fork. */
-
-/* creditslogo removed: credits moved into the core (apps/credits.c), which
- * uses its own full-screen artwork (apps/bitmaps/native/rockpodcredits.bmp). */

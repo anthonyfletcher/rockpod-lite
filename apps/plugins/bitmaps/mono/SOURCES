@@ -1,4 +1,0 @@
-/* Intentionally empty: every entry previously here (Bubbles, Flip It,
- * Invadrox, MPEGplayer, Superdom) was bitmap data for a plugin that's been
- * removed from this fork. Must still exist and be openable, or
- * pluginbitmaps.make's preprocess() call dies. */

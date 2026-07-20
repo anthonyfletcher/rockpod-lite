@@ -1,4 +1,0 @@
-/* The plugin support library is empty: there are no plugins left to link it,
- * and everything the core still needed was ported into apps/ proper. This file
- * (and libplugin.a, now built empty) survives only because tools/ still drives
- * the plugin build; see apps/plugins/plugins.make. */
