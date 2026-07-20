@@ -39,7 +39,6 @@
 #include "power.h"
 #include "powermgmt.h"
 #include "kernel.h"
-#include "open_plugin.h"
 #include "misc.h"
 #include "playback.h"
 #include "list.h"
@@ -684,11 +683,7 @@ static void qs_set_default(void* var, void* defaultval)
 #ifdef HAVE_HOTKEY
 static void hotkey_callback(int var)
 {
-    if (get_current_activity() != ACTIVITY_QUICKSCREEN)
-    {
-        if (get_hotkey(var)->action == HOTKEY_PLUGIN)
-            open_plugin_browse(ID2P(LANG_HOTKEY_WPS));
-    }
+    (void)var;
 }
 static const char* hotkey_formatter(char* buffer, size_t buffer_size, int value,
                               const char* unit)
@@ -704,12 +699,6 @@ static int32_t hotkey_getlang(int value, int unit)
     return get_hotkey(value)->lang_id;
 }
 #endif /* HAVE_HOTKEY */
-
-static void start_in_callback(int var)
-{
-    if (var - 2 == GO_TO_PLUGIN)
-        open_plugin_browse(ID2P(LANG_START_SCREEN));
-}
 
 /* volume limiter */
 static void volume_limit_load_from_cfg(void* var, char*value)
@@ -1660,18 +1649,16 @@ const struct settings_list settings[] = {
 #define START_DB_COUNT 0
 #endif
                    "wps,menu,"
-                   "bookmarks,"
-                   "plugin"
-                   , start_in_callback,
-    (7 + START_DB_COUNT),
+                   "bookmarks"
+                   , NULL,
+    (6 + START_DB_COUNT),
                    ID2P(LANG_PREVIOUS_SCREEN), ID2P(LANG_MAIN_MENU),
                    ID2P(LANG_DIR_BROWSER),
 #ifdef HAVE_TAGCACHE
                    ID2P(LANG_TAGCACHE),
 #endif
                    ID2P(LANG_RESUME_PLAYBACK), ID2P(LANG_SETTINGS),
-                   ID2P(LANG_BOOKMARK_MENU_RECENT_BOOKMARKS),
-                   ID2P(LANG_OPEN_PLUGIN)
+                   ID2P(LANG_BOOKMARK_MENU_RECENT_BOOKMARKS)
                   ),
     CHOICE_SETTING(0, wps_select_action, LANG_WPS_SELECT_ACTION, 0,
                    "wps select action", "default,database,coverflow,files",

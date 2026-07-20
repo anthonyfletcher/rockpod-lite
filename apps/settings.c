@@ -74,7 +74,6 @@
 #include "scroll_engine.h"
 #include "dialog.h"
 
-#include "open_plugin.h"
 struct user_settings global_settings;
 struct system_status global_status;
 static uint32_t user_settings_crc;
@@ -392,14 +391,9 @@ bool settings_load_config(const char* file, bool apply)
         if (!settings_parseline(line, &name, &value))
             continue;
 
-        if (!string_to_cfg(name, value, &theme_changed))
-        {
-            /* if we are here then name was not a valid setting */
-            if (!strcmp(name, "openplugin"))
-            {
-                open_plugin_import(value);
-            }
-        }
+        /* name was not a valid setting; the old "openplugin" config line is
+         * ignored now that the plugin system is gone */
+        string_to_cfg(name, value, &theme_changed);
     } /* while(...) */
 
     close(fd);
@@ -611,11 +605,6 @@ static bool settings_write_config(const char* filename, int options)
 
         fdprintf(fd,"%s: %s\r\n",setting->cfg_name,value);
     } /* for(...) */
-    if (options == SETTINGS_SAVE_ALL)
-    {
-        /* add openplugin entries to the open settings file */
-        open_plugin_export(fd);
-    }
     close(fd);
     return true;
 }

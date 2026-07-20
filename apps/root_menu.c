@@ -32,7 +32,6 @@
 #include "kernel.h"
 #include "debug.h"
 #include "misc.h"
-#include "open_plugin.h"
 #include "rolo.h"
 #include "powermgmt.h"
 #include "power.h"
@@ -1150,74 +1149,6 @@ static int load_context_screen(int selection)
     return retval;
 }
 
-static int load_plugin_screen(char *key)
-{
-    int ret_val = PLUGIN_ERROR;
-    int loops = 100;
-    int old_previous = last_screen;
-    int old_global = global_status.last_screen;
-    last_screen = next_screen;
-    global_status.last_screen = (char)next_screen;
-
-    while(loops-- > 0) /* just to keep things from getting out of hand */
-    {
-        int opret = open_plugin_load_entry(key);
-        struct open_plugin_entry_t *op_entry = open_plugin_get_entry();
-        char *path = op_entry->path;
-        char *param = op_entry->param;
-        if (param[0] == '\0')
-            param = NULL;
-        if (path[0] == '\0' && key)
-            path = P2STR((unsigned char *)key);
-        int ret = plugin_load(path, param);
-
-        if (ret == PLUGIN_USB_CONNECTED || ret == PLUGIN_ERROR)
-            ret_val = GO_TO_ROOT;
-        else if (ret == PLUGIN_GOTO_WPS)
-            ret_val = GO_TO_WPS;
-        else if (ret == PLUGIN_GOTO_PLUGIN)
-        {
-            if(op_entry->lang_id == LANG_OPEN_PLUGIN)
-            {
-                if (key == (char*)ID2P(LANG_SHORTCUTS))
-                {
-                    op_entry->lang_id = LANG_SHORTCUTS;
-                }
-                else /* Bugfix ensure proper key */
-                {
-                    key = ID2P(LANG_OPEN_PLUGIN);
-                }
-            }
-            continue;
-        }
-        else
-        {
-            if (ret == PLUGIN_GOTO_ROOT)
-                ret_val = GO_TO_ROOT;
-            else
-                ret_val = GO_TO_PREVIOUS;
-            /* Prevents infinite loop with WPS, Plugins, Previous Screen*/
-            if (ret == PLUGIN_OK && old_global == GO_TO_WPS && !audio_status())
-                ret_val = GO_TO_ROOT;
-            last_screen = (old_previous == next_screen || old_global == GO_TO_ROOT)
-                ? GO_TO_ROOT : old_previous;
-            if (last_screen == GO_TO_ROOT)
-                global_status.last_screen = GO_TO_ROOT;
-        }
-        /* ret_val != GO_TO_PLUGIN */
-
-        if (opret != OPEN_PLUGIN_NEEDS_FLUSHED || last_screen != GO_TO_WPS)
-        {
-            /* Keep the entry in case of GO_TO_PREVIOUS */
-            op_entry->hash = 0; /*remove hash -- prevents flush to disk */
-            op_entry->lang_id = LANG_PREVIOUS_SCREEN;
-            /*open_plugin_add_path(NULL, NULL, NULL);// clear entry */
-        }
-        break;
-    } /*while */
-    return ret_val;
-}
-
 static void ignore_back_button_stub(bool ignore)
 {
     (void) ignore;
@@ -1301,7 +1232,6 @@ void root_menu(void)
 {
     int previous_browser = browser_default();
     int selected = 0;
-    int shortcut_origin = GO_TO_ROOT;
 
 #ifdef HAVE_TAGCACHE
     root_menu_fixup_tagnavi_slots();
@@ -1397,73 +1327,11 @@ void root_menu(void)
                 next_screen = load_context_screen(selected);
                 break;
             case GO_TO_PLUGIN:
-            {
-
-                char *key;
-                if (global_status.last_screen == GO_TO_SHORTCUTMENU)
-                {
-                    struct open_plugin_entry_t *op_entry = open_plugin_get_entry();
-                    if (op_entry->lang_id == LANG_OPEN_PLUGIN)
-                        op_entry->lang_id = LANG_SHORTCUTS;
-                    shortcut_origin = last_screen;
-                    key = ID2P(LANG_SHORTCUTS);
-                }
-                else
-                {
-                    switch (last_screen)
-                    {
-                        case GO_TO_ROOT:
-                            key = ID2P(LANG_START_SCREEN);
-                            break;
-                        case GO_TO_WPS:
-                            key = ID2P(LANG_OPEN_PLUGIN_SET_WPS_CONTEXT_PLUGIN);
-                            break;
-                        case GO_TO_SHORTCUTMENU:
-                            key = ID2P(LANG_SHORTCUTS);
-                            break;
-                        case GO_TO_PREVIOUS:
-                            key = ID2P(LANG_PREVIOUS_SCREEN);
-                            break;
-                        default:
-                            key = ID2P(LANG_OPEN_PLUGIN);
-                            break;
-                    }
-                }
-
-
-                push_activity_without_refresh(ACTIVITY_UNKNOWN); /* prevent plugin_load */
-                next_screen = load_plugin_screen(key);           /* from flashing root  */
-                pop_current_activity_without_refresh();          /* menu activity       */
-
-                if (next_screen == GO_TO_PREVIOUS)
-                {
-                    /* shortcuts may take several trips through the GO_TO_PLUGIN
-                       case make sure we preserve and restore the origin */
-                    if(tree_get_context()->out_of_tree > 0) /* a shortcut has been selected */
-                    {
-                        next_screen = GO_TO_FILEBROWSER;
-                        shortcut_origin = GO_TO_ROOT;
-                        /* note in some cases there is a screen to return to
-                        but the history is rewritten as if you browsed here
-                        from the root so return there when finished */
-                    }
-                    else if (shortcut_origin != GO_TO_ROOT)
-                    {
-                        if (shortcut_origin != GO_TO_WPS)
-                            next_screen = shortcut_origin;
-                        shortcut_origin = GO_TO_ROOT;
-                    }
-                    /* skip GO_TO_PREVIOUS */
-                    if (last_screen == GO_TO_BROWSEPLUGINS)
-                    {
-                        next_screen = last_screen;
-                        last_screen = GO_TO_PLUGIN;
-                    }
-                }
-                previous_browser = (next_screen != GO_TO_WPS) ? browser_default() :
-                                                                GO_TO_PLUGIN;
+                /* Plugins are gone; nothing produces this screen anymore. A
+                 * stale config (start screen / last screen set to a plugin)
+                 * can still land here -- fall back to the root menu. */
+                next_screen = GO_TO_ROOT;
                 break;
-            }
             default:
                 goto load_next_screen;
                 break;
