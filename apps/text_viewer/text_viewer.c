@@ -431,7 +431,7 @@ static void tv_splash_loading(void)
      * in the bold UI font at y=180, the file name just beneath it in the plain
      * UI font. */
     vp.drawmode = DRMODE_FG;
-    vp.fg_pattern = LCD_RGBPACK(0xe1, 0xf0, 0xee);
+    vp.fg_pattern = LCD_RGBPACK(0x00, 0x0c, 0x21);
 
     vp.font = font_get_ui_bold();
     d->set_viewport(&vp);
