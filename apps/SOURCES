@@ -43,7 +43,7 @@ onplay.c
 playlist.c
 playlist_catalog.c
 playlist_viewer.c
-plugin.c
+plugin_buffer.c
 root_menu.c
 screens.c
 view_text.c
