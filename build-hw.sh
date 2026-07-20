@@ -22,3 +22,4 @@ cd "$BUILDDIR"
 ../tools/configure --target="$TARGET" --type=n
 make -j$(sysctl -n hw.ncpu)
 make zip
+../bundle-theme.sh

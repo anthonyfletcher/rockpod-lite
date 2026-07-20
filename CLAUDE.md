@@ -91,8 +91,8 @@ Rockbox requires out-of-tree builds. Cross-compiler toolchains are built via `to
 ./build-hw.sh ipodvideo      # explicit target name
 
 # Incremental rebuild
-cd build-hw-ipod6g && make -j$(sysctl -n hw.ncpu) && make zip
-cd build-hw-ipodvideo && make -j$(sysctl -n hw.ncpu) && make zip
+cd build-hw-ipod6g && make -j$(sysctl -n hw.ncpu) && make zip && ../bundle-theme.sh
+cd build-hw-ipodvideo && make -j$(sysctl -n hw.ncpu) && make zip && ../bundle-theme.sh
 
 # Simulator build (6G)
 ./build-sim.sh               # configure if needed + make + make install
@@ -109,10 +109,17 @@ cd build-sim && ./rockboxui  # run simulator (uses simdisk/ as virtual FS)
 make rocks                  # plugins only
 make codecs                 # codecs only
 make bin                    # binary only
-make zip                    # create deployment zip
+make zip                    # create deployment zip (themeless -- see below)
 make reconf                 # reconfigure after tools/configure changes
 make clean / make veryclean
 ```
+
+**Theme bundling — `make zip` is not enough.** `tools/buildzip.pl` is kept
+byte-identical to upstream, so it knows nothing about this fork's theme. A zip
+straight from `make zip` has **no Themify_2 and no first-boot `config.cfg`**.
+Always follow it with `../bundle-theme.sh`, which injects the theme and prunes
+the empty `classic_statusbar` dir upstream still creates. `./build-hw.sh` does
+this for you; a bare `make zip` does not.
 
 **Configure build types:** (N)ormal, (S)imulator, (B)ootloader, (A)dvanced, (C)heckWPS, (D)atabase tool, (W)arble codec tool
 
