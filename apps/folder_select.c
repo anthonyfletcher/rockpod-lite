@@ -40,7 +40,6 @@
 #include "settings.h"
 #include "splash.h"
 #include "yesno.h"
-#include "icon.h"
 #include "gui/list.h"
 /*#define LOGF_ENABLE*/
 #include "logf.h"
@@ -371,21 +370,6 @@ static const char * folder_get_name(int selected_item, void * data,
     return buffer;
 }
 
-static enum themable_icons folder_get_icon(int selected_item, void * data)
-{
-    struct folder *root = (struct folder*)data;
-    struct folder *parent;
-    struct child *this = find_index(root, selected_item, &parent);
-
-    if (this == NULL)
-        return Icon_NOICON;
-    if (this->eaccess)
-        return Icon_Questionmark;
-    if (this->expanded)
-        return Icon_Submenu;
-    return Icon_Folder;
-}
-
 static int folder_action_callback(int action, struct gui_synclist *list)
 {
     struct folder *root = (struct folder*)list->data;
@@ -611,11 +595,7 @@ bool folder_select(char * header_text, char* setting, int setting_len)
     simplelist_info_init(&info, header_text, count_items(root), root);
     info.get_name = folder_get_name;
     info.action_callback = folder_action_callback;
-    info.get_icon = folder_get_icon;
-    bool show_icons = global_settings.show_icons;
-    global_settings.show_icons = true;
     simplelist_show_list(&info);
-    global_settings.show_icons = show_icons;
     logf("folder_select %d bytes free", (int)(buffer_end - buffer_front));
     /* done editing. check for changes */
     if (hash != save_folders(root, hashed.buf, setting_len))
