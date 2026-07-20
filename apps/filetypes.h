@@ -49,6 +49,8 @@
 #define FILE_ATTR_RFMS  0x1300 /* FM screen skin file */
 #define FILE_ATTR_OPX   0x1400 /* open plugins shortcut */
 #define FILE_ATTR_LOG   0x1500 /* log file */
+#define FILE_ATTR_TXT   0x1600 /* document handled by the core text viewer */
+#define FILE_ATTR_IMG   0x1700 /* image handled by the core image viewer */
 #define FILE_ATTR_MASK  0xFF00 /* which bits tree.c uses for file types */
 
 long tree_get_filetype_voiceclip(int attr);
@@ -72,8 +74,8 @@ int filetype_get_icon(int attr);
 /* returns true if the attr is supported */
 bool  filetype_supported(int attr);
 
-/* If the viewer viewers.config assigns to `attr` is core-linked (text/image),
- * runs it on `file`, stores its GO_TO_* code in *rc and returns true. Returns
+/* If `attr` is a type owned by a core-linked viewer (text/image), runs that
+ * viewer on `file`, stores its GO_TO_* code in *rc and returns true. Returns
  * false (leaving *rc alone) when there is no core viewer for the type. */
 bool  filetype_open_core_viewer(int attr, const char *file, int *rc);
 

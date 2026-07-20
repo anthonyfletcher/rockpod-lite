@@ -24,34 +24,27 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "string.h"
-#include <ctype.h>
 
 #include "settings.h"
 #include "debug.h"
 #include "lang.h"
 #include "kernel.h"
-#include "plugin.h"
+#include "misc.h"
 #include "filetypes.h"
 #include "text_viewer/text_viewer.h"
 #include "image_viewer/image_viewer_pub.h"
 #include "screens.h"
 #include "dir.h"
 #include "file.h"
-#include "splash.h"
-#include "core_alloc.h"
 #include "icons.h"
 /*#define LOGF_ENABLE*/
 #include "logf.h"
 
-/* max filetypes (plugins & icons stored here) */
+/* max filetypes (extensions & icons stored here) */
 #define MAX_FILETYPES 192
-/* max viewer plugins */
-#define MAX_VIEWERS 56
 
 static void fill_from_builtin(const char*,int) INIT_ATTR;
 static void read_builtin_types_init(void) INIT_ATTR;
-static void read_viewers_config_init(void) INIT_ATTR;
-static void read_config_init(int fd) INIT_ATTR;
 
 /* string array for known audio file types (tree_attr == FILE_ATTR_AUDIO) */
 static const char* inbuilt_audio_filetypes[] = {
@@ -91,12 +84,33 @@ static const struct filetype_inbuilt inbuilt_filetypes[] = {
 #ifdef BOOTFILE_EXT2
     { BOOTFILE_EXT2, FILE_ATTR_MOD },
 #endif
+    /* Types owned by the core-linked viewers. These used to be supplied by
+     * viewers.config, back when a viewer was a .rock named in that file. */
+    { "txt",  FILE_ATTR_TXT },
+    { "md",   FILE_ATTR_TXT },
+    { "nfo",  FILE_ATTR_TXT },
+    { "html", FILE_ATTR_TXT },
+    { "htm",  FILE_ATTR_TXT },
+    { "rtf",  FILE_ATTR_TXT },
+    { "fb2",  FILE_ATTR_TXT },
+    { "epub", FILE_ATTR_TXT },
+    { "docx", FILE_ATTR_TXT },
+    { "pdf",  FILE_ATTR_TXT },
+    { "bmp",  FILE_ATTR_IMG },
+    { "jpg",  FILE_ATTR_IMG },
+    { "jpe",  FILE_ATTR_IMG },
+    { "jpeg", FILE_ATTR_IMG },
+    { "png",  FILE_ATTR_IMG },
+#ifdef HAVE_LCD_COLOR
+    { "ppm",  FILE_ATTR_IMG },
+#endif
+    { "gif",  FILE_ATTR_IMG },
 };
 
 struct fileattr_icon_voice {
     int tree_attr;
     uint16_t icon;
-    uint16_t voiceclip;
+    int16_t voiceclip; /* -1 for types with no spoken name */
 };
 
 /* a table for the known file types icons & voice clips */
@@ -117,6 +131,11 @@ static const struct fileattr_icon_voice inbuilt_attr_icons_voices[] = {
 #if defined(BOOTFILE_EXT) || defined(BOOTFILE_EXT2)
     { FILE_ATTR_MOD,   Icon_Firmware,  VOICE_EXT_AJZ },
 #endif
+    /* Icon codes 1 and 2 of the theme's viewers iconset, which is where
+     * viewers.config used to point these. Themes shipping no viewers iconset
+     * fall back to Icon_Questionmark, as they always have. */
+    { FILE_ATTR_TXT,   Icon_Last_Themeable + 1, -1 },
+    { FILE_ATTR_IMG,   Icon_Last_Themeable + 2, -1 },
 };
 
 static int filetype_inbuilt_index(int tree_attr)
@@ -142,7 +161,7 @@ long tree_get_filetype_voiceclip(int attr)
     if (global_settings.talk_filetype)
     {
         int index = filetype_inbuilt_index(attr);
-        if (index >= 0)
+        if (index >= 0 && inbuilt_attr_icons_voices[index].voiceclip >= 0)
         {
             logf("%s found attr %d id %d", __func__, attr,
                  inbuilt_attr_icons_voices[index].voiceclip);
@@ -153,12 +172,9 @@ long tree_get_filetype_voiceclip(int attr)
     return -1;
 }
 
-#define ROCK_EXTENSION "rock"
-
 struct file_type {
     enum themable_icons icon; /* the icon which shall be used for it, NOICON if unknown */
     unsigned char  attr; /* FILE_ATTR_MASK >> 8 */
-    const char* plugin; /* Which plugin to use, NULL if unknown, or builtin */
     const char* extension; /* NULL for none */
 };
 
@@ -182,55 +198,7 @@ struct filetype_unknown { enum themable_icons icon; };
 static struct filetype_unknown unknown_file = { .icon = Icon_NOICON };
 #endif
 
-/* index array to filetypes used in open with list. */
-static int viewers[MAX_VIEWERS];
 static int filetype_count = 0;
-static unsigned char highest_attr = 0;
-static int viewer_count = 0;
-
-static int strdup_handle, strdup_cur_idx;
-static size_t strdup_bufsize;
-static int move_callback(int handle, void* current, void* new)
-{
-    /*could compare to strdup_handle, but ops is only used once */
-    (void)handle;
-    size_t diff = new - current;
-#define FIX_PTR(x) \
-    { if ((void*)x >= current && (void*)x < (current+strdup_bufsize)) x+= diff; }
-    for(int i = 0; i < filetype_count; i++)
-    {
-        FIX_PTR(filetypes[i].extension);
-        FIX_PTR(filetypes[i].plugin);
-    }
-    return BUFLIB_CB_OK;
-}
-
-static struct buflib_callbacks ops = {
-    .move_callback = move_callback,
-    .shrink_callback = NULL,
-};
-
-static const char *filetypes_strdup(const char* string)
-{
-    char *buffer = core_get_data(strdup_handle) + strdup_cur_idx;
-    strdup_cur_idx += strlcpy(buffer, string, strdup_bufsize-strdup_cur_idx)+1;
-    return buffer;
-}
-
-static const char *filetypes_store_plugin(const char *plugin, int n)
-{
-    int i;
-    /* if the plugin is in the list already, use it. */
-    for (i=0; i<viewer_count; i++)
-    {
-        if (!strcmp(filetypes[viewers[i]].plugin, plugin))
-            return filetypes[viewers[i]].plugin;
-    }
-    /* otherwise, allocate buffer */
-    if (viewer_count < MAX_VIEWERS)
-        viewers[viewer_count++] = n;
-    return filetypes_strdup(plugin);
-}
 
 static int find_extension(const char* extension)
 {
@@ -351,62 +319,20 @@ void read_viewer_theme_file(void)
     custom_icons_loaded = true;
 }
 
-static void read_viewers_config_init(void)
-{
-    int fd = open(VIEWERS_CONFIG, O_RDONLY);
-    if(fd < 0)
-        return;
-
-    off_t filesz = filesize(fd);
-    if(filesz <= 0)
-        goto out;
-
-    /* estimate bufsize with the filesize, will not be larger */
-    strdup_bufsize = (size_t)filesz;
-    strdup_handle = core_alloc_ex(strdup_bufsize, &ops);
-    if(strdup_handle <= 0)
-        goto out;
-
-    read_config_init(fd);
-    core_shrink(strdup_handle, NULL, strdup_cur_idx);
-
-  out:
-    close(fd);
-}
-
 void filetype_init(void)
 {
     /* set the directory item first */
     filetypes[0].extension = NULL;
-    filetypes[0].plugin = NULL;
     filetypes[0].attr   = 0;
     filetypes[0].icon   = Icon_Folder;
 
-    viewer_count = 0;
     filetype_count = 1;
 
     read_builtin_types_init();
-    read_viewers_config_init();
     read_viewer_theme_file();
 #ifdef HAVE_LCD_COLOR
     read_color_theme_file();
 #endif
-}
-
-/* remove all white spaces from string */
-static void rm_whitespaces(char* str)
-{
-    char *s = str;
-    while (*str)
-    {
-        if (!isspace(*str))
-        {
-            *s = *str;
-            s++;
-        }
-        str++;
-    }
-    *s = '\0';
 }
 
 static void fill_from_builtin(const char *ext, int tree_attr)
@@ -417,11 +343,7 @@ static void fill_from_builtin(const char *ext, int tree_attr)
     struct file_type *filetype = &filetypes[filetype_count];
     filetype->icon = unknown_file.icon;
     filetype->attr   = tree_attr>>8;
-    filetype->plugin = NULL;
     filetype->extension = ext;
-
-    if (filetype->attr > highest_attr)
-        highest_attr = filetype->attr;
 
     int index = filetype_inbuilt_index(tree_attr);
     if (index >= 0)
@@ -443,59 +365,6 @@ static void read_builtin_types_init(void)
     {
         fill_from_builtin(inbuilt_filetypes[i].extension,
                           inbuilt_filetypes[i].tree_attr);
-    }
-}
-
-static void read_config_init(int fd)
-{
-    char line[64], *s, *e;
-    const char *extension, *plugin;
-    /* config file is in the format
-       <extension>,<plugin>,<icon code>
-       ignore line if either of the first two are missing */
-    while (read_line(fd, line, sizeof line) > 0)
-    {
-        if (filetype_count >= MAX_FILETYPES)
-        {
-            splash(HZ, ID2P(LANG_FILETYPES_FULL));
-            break;
-        }
-        rm_whitespaces(line);
-        /* get the extension */
-        s = line;
-        e = strchr(s, ',');
-        if (!e)
-            continue;
-        *e = '\0';
-        extension = s;
-
-        /* get the plugin */
-        s = e+1;
-        e = strchr(s, ',');
-        if (!e)
-            continue;
-        *e = '\0';
-        plugin = s;
-
-        if (!strcmp("???", extension))
-        {
-            /* get the icon */
-            s = e+1;
-            parse_icon(s, &unknown_file.icon);
-            continue;
-        }
-
-        /* ok, store this plugin/extension, check icon after */
-        struct file_type *file_type = &filetypes[filetype_count];
-        file_type->extension = filetypes_strdup(extension);
-        file_type->plugin = filetypes_store_plugin(plugin, filetype_count);
-        file_type->attr = highest_attr +1;
-        file_type->icon = Icon_Questionmark;
-        highest_attr++;
-        /* get the icon */
-        s = e+1;
-        parse_icon(s, &file_type->icon);
-        filetype_count++;
     }
 }
 
@@ -551,74 +420,23 @@ int filetype_get_icon(int attr)
     return filetypes[index].icon;
 }
 
-static int filetype_get_plugin_index(int attr)
-{
-    int index = find_attr(attr);
-    if (index < 0)
-        return -1;
-    struct file_type *ft_indexed = &filetypes[index];
-
-    /* attempt to find a suitable viewer by file extension */
-    if(ft_indexed->plugin == NULL && ft_indexed->extension != NULL)
-    {
-        struct file_type *ft;
-        int i = filetype_count;
-        while (--i > index)
-        {
-            ft = &filetypes[i];
-            if (ft->plugin == NULL || ft->extension == NULL)
-                continue;
-            else if (ft->plugin != NULL &&
-                     strcmp(ft->extension, ft_indexed->extension) == 0)
-            {
-                /*splashf(HZ*3, "Found %d %s %s", i, ft->extension, ft->plugin);*/
-                return i;
-            }
-        }
-    }
-    if (ft_indexed->plugin == NULL)
-        index = -1;
-    return index; /* Not Found */
-}
-
 bool filetype_supported(int attr)
 {
     return find_attr(attr) >= 0;
 }
 
-/* Viewers that are linked into the core instead of loaded as a .rock.
- * viewers.config names them exactly as it names plugins -- resolution happens
- * here rather than in the config syntax, so that retiring a plugin in favour
- * of a core screen never touches the user's config file. */
-struct core_viewer {
-    const char *name;
-    int (*run)(const char *file);   /* returns a GO_TO_* code */
-};
-
-static const struct core_viewer core_viewers[] = {
-    { "textviewer", text_viewer },
-    { "imageviewer", image_viewer },
-};
-
+/* Viewers linked into the core rather than loaded as a .rock. The extension
+ * that reaches each one is fixed by inbuilt_filetypes above. */
 bool filetype_open_core_viewer(int attr, const char *file, int *rc)
 {
-    int index = filetype_get_plugin_index(attr);
-    const char *name;
-
-    if (index < 0)
-        return false;
-
-    name = filetypes[index].plugin;
-    if (!name)
-        return false;
-
-    for (size_t i = 0; i < ARRAY_SIZE(core_viewers); i++)
+    switch (attr & FILE_ATTR_MASK)
     {
-        if (!strcmp(name, core_viewers[i].name))
-        {
-            *rc = core_viewers[i].run(file);
+        case FILE_ATTR_TXT:
+            *rc = text_viewer(file);
             return true;
-        }
+        case FILE_ATTR_IMG:
+            *rc = image_viewer(file);
+            return true;
     }
     return false;
 }
