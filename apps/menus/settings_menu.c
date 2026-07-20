@@ -189,9 +189,7 @@ MAKE_MENU(battery_menu, ID2P(LANG_BATTERY_MENU), 0, Icon_NOICON,
 #endif
             &usb_charging,
          );
-#if (defined(HAVE_USB_POWER))
 MENUITEM_SETTING(usb_mode, &global_settings.usb_mode, NULL);
-#endif
 /* Disk */
 MENUITEM_SETTING(disk_spindown, &global_settings.disk_spindown, NULL);
 MENUITEM_SETTING(storage_mode, &global_settings.storage_mode, NULL);
@@ -288,9 +286,7 @@ MAKE_MENU(system_menu, ID2P(LANG_SYSTEM),
             &usb_audio,
 #endif
 
-#if (defined(HAVE_USB_POWER))
             &usb_mode,
-#endif
             &wps_select_action,
          );
 

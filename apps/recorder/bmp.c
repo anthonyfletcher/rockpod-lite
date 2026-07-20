@@ -166,12 +166,9 @@ struct bmp_args {
     short depth;
     enum color_order order;
     struct uint8_rgb *palette;
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
     int cur_row;
     int cur_col;
     struct img_part part;
-#endif
     /* as read_part_line() goes through the rows it'll set this to true
      * if it finds transparency. Initialize to 0 before calling */
     int alpha_detected;
@@ -186,11 +183,8 @@ static unsigned int read_part_line(struct bmp_args *ba)
     const int read_width = ba->read_width;
     const int width = ba->width;
     int depth = ba->depth;
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
     int cur_row = ba->cur_row;
     int cur_col = ba->cur_col;
-#endif
     const int fd = ba->fd;
     uint8_t *ibuf;
     struct uint8_rgb *buf = (struct uint8_rgb *)(ba->buf);
@@ -199,15 +193,9 @@ static unsigned int read_part_line(struct bmp_args *ba)
     int ret;
     int i, cols, len;
 
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
     cols = MIN(width - cur_col,(int)BM_MAX_WIDTH);
     BDEBUGF("reading %d cols (width: %d, max: %d)\n",cols,width,BM_MAX_WIDTH);
     len = (cols * (depth == 15 ? 16 : depth) + 7) >> 3;
-#else
-    cols = width;
-    len = read_width;
-#endif
     ibuf = ((unsigned char *)buf) + (BM_MAX_WIDTH << 2) - len;
     BDEBUGF("read_part_line: cols=%d len=%d\n",cols,len);
     ret = read(fd, ibuf, len);
@@ -215,11 +203,8 @@ static unsigned int read_part_line(struct bmp_args *ba)
     {
         DEBUGF("read_part_line: error reading image, read returned %d "
                "expected %d\n", ret, len);
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
         BDEBUGF("cur_row: %d cur_col: %d cols: %d len: %d\n", cur_row, cur_col,
                 cols, len);
-#endif
         return 0;
     }
 
@@ -307,29 +292,16 @@ static unsigned int read_part_line(struct bmp_args *ba)
             break;
         }
     }
-#if !defined(HAVE_LCD_COLOR) && \
-    ((LCD_DEPTH > 1) || \
-    defined(PLUGIN))
-    ibuf = ba->buf;
-    buf = (struct uint8_rgb*)ba->buf;
-    while (ibuf < ba->buf + cols)
-        *ibuf++ = brightness(*buf++);
-#endif
 
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
     cur_col += cols;
     if (cur_col == width)
     {
-#endif
         int pad = padded_width - read_width;
         if (pad > 0)
         {
             BDEBUGF("seeking %d bytes to next line\n",pad);
             lseek(fd, pad, SEEK_CUR);
         }
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
         cur_col = 0;
         BDEBUGF("read_part_line: completed row %d\n", cur_row);
         cur_row += 1;
@@ -337,12 +309,9 @@ static unsigned int read_part_line(struct bmp_args *ba)
 
     ba->cur_row = cur_row;
     ba->cur_col = cur_col;
-#endif
     return cols;
 }
 
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
 static struct img_part *store_part_bmp(void *args)
 {
     struct bmp_args *ba = (struct bmp_args *)args;
@@ -354,7 +323,6 @@ static struct img_part *store_part_bmp(void *args)
     else
         return NULL;
 }
-#endif
 
 static inline int rgbcmp(const struct uint8_rgb *rgb1, const struct uint8_rgb *rgb2)
 {
@@ -433,31 +401,19 @@ int read_bmp_fd(int fd,
     struct uint8_rgb palette[256];
     struct rowset rset;
     struct dim src_dim;
-#if (LCD_DEPTH > 1) || \
-    defined(PLUGIN)
     bool dither = false;
-#endif
 
     bool remote = false;
 
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
     unsigned int resize = IMG_NORESIZE;
 
     if (format & FORMAT_RESIZE) {
         resize = IMG_RESIZE;
     }
 
-#else
-
-    (void)format;
-#endif /*(LCD_DEPTH > 1)*/
-#if (LCD_DEPTH > 1) || \
-    defined(PLUGIN)
     if (format & FORMAT_DITHER) {
         dither = true;
     }
-#endif
     /* read fileheader */
     ret = read(fd, &bmph, sizeof(struct bmp_header));
     if (ret < 0) {
@@ -495,16 +451,11 @@ int read_bmp_fd(int fd,
     bm->format = format & 1;
     if ((format & 1) == FORMAT_MONO)
     {
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
         resize &= ~IMG_RESIZE;
         resize |= IMG_NORESIZE;
-#endif
         remote = false;
     }
 
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
     if (resize & IMG_RESIZE) {
         if(format & FORMAT_KEEP_ASPECT) {
             /* keep aspect ratio.. */
@@ -520,15 +471,11 @@ int read_bmp_fd(int fd,
     }
 
     if (!(resize & IMG_RESIZE)) {
-#endif
         /* returning image size */
         bm->width = src_dim.width;
         bm->height = src_dim.height;
 
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
     }
-#endif
     format &= 1;
     if (rset.rowstep > 0) {     /* Top-down BMP file */
         rset.rowstart = 0;
@@ -551,13 +498,10 @@ int read_bmp_fd(int fd,
 
     if(return_size)
     {
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
         if(resize)
             totalsize += BM_SCALED_SIZE(bm->width, 0, 0, 0);
         else if (bm->width > BM_MAX_WIDTH)
             totalsize += bm->width*4;
-#endif
         return totalsize;
     }
 
@@ -658,16 +602,11 @@ int read_bmp_fd(int fd,
     struct bmp_args ba = {
         .fd = fd, .padded_width = padded_width, .read_width = read_width,
         .width = src_dim.width, .depth = depth, .palette = palette,
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
         .cur_row = 0, .cur_col = 0, .part = {0,0},
-#endif
         .alpha_detected = false, .first_alpha_byte = 0x80,
         .order = order,
     };
 
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
     if (resize)
     {
         if (resize_on_load(bm, dither, &src_dim, &rset,
@@ -677,7 +616,6 @@ int read_bmp_fd(int fd,
         else
             return 0;
     }
-#endif /* LCD_DEPTH */
 
     struct scaler_context ctx = {
         .bm = bm,
@@ -689,8 +627,6 @@ int read_bmp_fd(int fd,
         output_row_8 = cformat->output_row_8;
 
     unsigned char *buf = ba.buf;
-#if (LCD_DEPTH > 1) || \
-    defined(PLUGIN)
     if (bm->width > BM_MAX_WIDTH)
     {
         unsigned int len = maxsize - totalsize;
@@ -699,12 +635,9 @@ int read_bmp_fd(int fd,
         if (bm->width*4 > (int)len)
             return -6;
     }
-#endif
     int row;
     /* loop to read rows and put them to buffer */
     for (row = rset.rowstart; row != rset.rowstop; row += rset.rowstep) {
-#if (LCD_DEPTH > 1) && \
-    defined(HAVE_BMP_SCALING) || defined(PLUGIN)
         if (bm->width > BM_MAX_WIDTH)
         {
             struct uint8_rgb *p = (struct uint8_rgb *)buf;
@@ -717,41 +650,23 @@ int read_bmp_fd(int fd,
             } while (ba.cur_col);
         }
         else
-#endif
         if (!read_part_line(&ba))
             return -9;
-#if !defined(HAVE_LCD_COLOR) && \
-        (LCD_DEPTH > 1)
-        uint8_t* qp = buf;
-#else
         struct uint8_rgb *qp = (struct uint8_rgb *)buf;
-#endif
         /* Convert to destination format */
-#if ((LCD_DEPTH > 1)) && \
-    !defined(PLUGIN)
         if (format == FORMAT_NATIVE) {
-#endif /* (LCD_DEPTH > 1) */
             {
                 output_row_8(row, buf, &ctx);
             }
-#if ((LCD_DEPTH > 1)) && \
-    !defined(PLUGIN)
         }
         else
-#endif
         {
             unsigned char *p = bitmap + bm->width * (row >> 3);
             unsigned char mask = BIT_N(row & 7);
             int col;
             for (col = 0; col < bm->width; col++, p++)
-#if !defined(HAVE_LCD_COLOR) && \
-        (LCD_DEPTH > 1)
-                if (*qp++ < 128)
-                    *p |= mask;
-#else
                 if (brightness(*qp++) < 128)
                     *p |= mask;
-#endif
         }
     }
     if (!ba.alpha_detected)

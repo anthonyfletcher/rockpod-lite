@@ -73,12 +73,7 @@ static inline unsigned brightness(struct uint8_rgb color)
 #define MONO_BM_HEIGHT(height) (((height) + 7) >> 3)
 
 /* Number of rows of datain a LCD native bitmap height pixels tall */
-#if LCD_DEPTH == 1 || \
-    (LCD_DEPTH == 2 && LCD_PIXELFORMAT == VERTICAL_INTERLEAVED)
-#define LCD_BM_HEIGHT(height) (((height) + 7) >> 3)
-#else
 #define LCD_BM_HEIGHT(height) (height)
-#endif
 
 #define NATIVE_BM_HEIGHT(height,remote) LCD_BM_HEIGHT(height)
 

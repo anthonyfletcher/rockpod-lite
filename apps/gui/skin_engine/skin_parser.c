@@ -2081,7 +2081,6 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
         skin_data_reset(wps_data);
         return false;
     }
-#if defined(HAVE_ALBUMART)
     /* last_albumart_{width,height} is either both 0 or valid AA dimensions */
     struct skin_albumart *aa = SKINOFFSETTOPTR(skin_buffer, wps_data->albumart);
     if (aa && (aa->state != WPS_ALBUMART_NONE ||
@@ -2090,7 +2089,6 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
     {
         playback_update_aa_dims();
     }
-#endif
     wps_data->buflib_handle = core_alloc(skin_buffer_usage());
     if (wps_data->buflib_handle > 0)
     {

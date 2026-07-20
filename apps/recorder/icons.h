@@ -21,12 +21,10 @@
 #ifndef _ICONS_H_
 #define _ICONS_H_
 
-#if !defined(PLUGIN)
 
 #include <lcd.h>
 #include "metadata.h"
 
-#endif /* !(PLUGIN || __PCTOOL__) */
 
 struct cbmp_bitmap_info_entry /* */
 {

@@ -679,9 +679,7 @@ struct user_settings
 
     int afr_enabled;
 
-#if (defined(HAVE_USB_POWER))
     int usb_mode;
-#endif
     bool clear_settings_on_hold;
     int playback_log; /* 0=off, 1=generic (ROCKBOX_DIR/playback.log),
                          2=Audioscrobbler (/.scrobbler.log) */

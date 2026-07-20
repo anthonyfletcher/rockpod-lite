@@ -176,8 +176,7 @@ INLINE unsigned scale_output(int value)
 */
 #define MULTIPLY(var1, var2) ((var1) * (var2))
 
-#if defined(CPU_COLDFIRE) || \
-    (defined(CPU_ARM) && ARM_ARCH > 4)
+#if defined(CPU_COLDFIRE) || (defined(CPU_ARM) && ARM_ARCH > 4)
 #define MULTIPLY16(var,const)  (((short) (var)) * ((short) (const)))
 #else
 #define MULTIPLY16 MULTIPLY

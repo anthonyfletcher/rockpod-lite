@@ -28,7 +28,6 @@
 #include "wps_internals.h"
 #include "skin_engine.h"
 
-#if defined(HAVE_BACKDROP_IMAGE)
 
 #define NB_BDROPS SKINNABLE_SCREENS_COUNT*NB_SCREENS
 static struct skin_backdrop {
@@ -299,21 +298,3 @@ void skin_backdrop_load_setting(void)
         }
     }
 }
-#else
-static bool first_go = true;
-bool skin_backdrop_init(void)
-{
-    bool go_status = first_go;
-    first_go = false;
-    return go_status;
-}
-
-void skin_backdrop_load_setting(void)
-{
-}
-
-void skin_backdrop_show(int backdrop_id)
-{
-    (void) backdrop_id;
-}
-#endif

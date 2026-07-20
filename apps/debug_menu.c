@@ -1422,8 +1422,6 @@ static bool cpu_boost_log_dump(void)
 }
 #endif
 
-#if (defined(HAVE_WHEEL_ACCELERATION) && (CONFIG_KEYPAD==IPOD_4G_PAD) \
-     && !defined(IPOD_MINI) && !defined(SIMULATOR))
 extern bool wheel_is_touched;
 extern int old_wheel_value;
 extern int new_wheel_value;
@@ -1459,7 +1457,6 @@ static bool dbg_scrollwheel(void)
     lcd_setfont(FONT_UI);
     return false;
 }
-#endif
 
 static bool dbg_talk(void)
 {
@@ -1712,10 +1709,7 @@ static const struct {
         {"Show cpu_boost log",cpu_boost_log},
         {"Dump cpu_boost log",cpu_boost_log_dump},
 #endif
-#if (defined(HAVE_WHEEL_ACCELERATION) && (CONFIG_KEYPAD==IPOD_4G_PAD) \
-     && !defined(IPOD_MINI) && !defined(SIMULATOR))
         {"Debug scrollwheel", dbg_scrollwheel },
-#endif
         {"Debug IAP", dbg_iap },
         {"Talk engine stats", dbg_talk },
 

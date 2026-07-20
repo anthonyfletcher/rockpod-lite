@@ -1549,7 +1549,6 @@ const struct settings_list settings[] = {
                   root_menu_load_from_cfg, root_menu_write_to_cfg,
                   root_menu_is_changed, root_menu_set_default),
 
-#if (defined(HAVE_USB_POWER))
     CHOICE_SETTING(0,
                    usb_mode,
                    LANG_USB_MODE,
@@ -1562,7 +1561,6 @@ const struct settings_list settings[] = {
                    ID2P(LANG_USB_MODE_MASS_STORAGE),
                    ID2P(LANG_USB_MODE_CHARGE)
         ),
-#endif
     OFFON_SETTING(0, clear_settings_on_hold, LANG_CLEAR_SETTINGS_ON_HOLD,
                   false, "clear settings on hold", NULL),
     CHOICE_SETTING(0, playback_log, LANG_LOGGING, 0, "play log",

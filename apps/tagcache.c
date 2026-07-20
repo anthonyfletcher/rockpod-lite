@@ -4698,7 +4698,6 @@ void do_tagcache_build(const char *path[])
     roots_ll[0].path = path[0];
     roots_ll[0].next = NULL;
 
-#if defined(HAVE_MULTIVOLUME)
     extern bool ns_volume_is_visible(int volume); /*rb_namespace.c*/
     /* i is for the path vector, j for the roots_ll array */
     int i = 1, j = 1;
@@ -4741,12 +4740,6 @@ void do_tagcache_build(const char *path[])
             added = true;
             continue;
         }
-#else
-    /* i is for the path vector, j for the roots_ll array
-     * path can be skipped , but root_ll entries can't */
-    for(int i = 1, j = 1; path[i] && j < MAX_STATIC_ROOTS; i++)
-    {
-#endif /*def HAVE_MULTIVOLUME*/
         if (search_root_exists(path[i])) /* skip this path */
             continue;
 
