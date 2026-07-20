@@ -48,9 +48,7 @@
 #include "bookmark.h"
 #include "onplay.h"
 #include "core_alloc.h"
-#ifdef HAVE_ALBUMART
 #include "albumart_cache.h"
-#endif
 #include "power.h"
 #include "action.h"
 #include "talk.h"
@@ -61,9 +59,7 @@
 #include "tagtree.h"
 #include "rtc.h"
 #include "dircache.h"
-#ifdef HAVE_TAGCACHE
 #include "tagcache.h"
-#endif
 #include "yesno.h"
 #include "eeprom_settings.h"
 #include "playlist_catalog.h"
@@ -85,9 +81,7 @@ static struct tree_context tc;
 
 char lastfile[MAX_PATH];
 static char lastdir[MAX_PATH];
-#ifdef HAVE_TAGCACHE
 static int lasttable, lastextra;
-#endif
 
 static bool reload_dir = false;
 
@@ -153,7 +147,6 @@ static const char* tree_get_filename(int selected_item, void *data,
     struct tree_context * local_tc=(struct tree_context *)data;
     char *name;
     int attr=0;
-#ifdef HAVE_TAGCACHE
     bool id3db = *(local_tc->dirfilter) == SHOW_ID3DB;
 
     if (id3db)
@@ -161,7 +154,6 @@ static const char* tree_get_filename(int selected_item, void *data,
         return tagtree_get_entry_name(&tc, selected_item, buffer, buffer_len);
     }
     else
-#endif
     {
         struct entry *entry = get_valid_entry(__func__, local_tc, selected_item);
         name = entry->name;
@@ -188,13 +180,11 @@ static int tree_get_filecolor(int selected_item, void * data)
 static enum themable_icons tree_get_fileicon(int selected_item, void * data)
 {
     struct tree_context * local_tc=(struct tree_context *)data;
-#ifdef HAVE_TAGCACHE
     bool id3db = *(local_tc->dirfilter) == SHOW_ID3DB;
     if (id3db) {
         return tagtree_get_icon(&tc);
     }
     else
-#endif
     {
         struct entry *entry = get_valid_entry(__func__, local_tc, selected_item);
 
@@ -202,7 +192,6 @@ static enum themable_icons tree_get_fileicon(int selected_item, void * data)
     }
 }
 
-#ifdef HAVE_ALBUMART
 /* Album art for database album rows, drawn by the skin's %La tag.
  *
  * Resolving one row costs a tagcache search (tagtree_get_album_dir) plus a file
@@ -340,7 +329,6 @@ hit:
                         (size_t)slot * tree_aa_slot_bytes();
     return &tree_aa_bm;
 }
-#endif /* HAVE_ALBUMART */
 
 
 static int tree_voice_cb(int selected_item, void * data)
@@ -349,7 +337,6 @@ static int tree_voice_cb(int selected_item, void * data)
     unsigned char *name;
     int attr=0;
     int customaction = ONPLAY_NO_CUSTOMACTION;
-#ifdef HAVE_TAGCACHE
     bool id3db = *(local_tc->dirfilter) == SHOW_ID3DB;
     char buf[AVERAGE_FILENAME_LENGTH*2];
 
@@ -387,7 +374,6 @@ static int tree_voice_cb(int selected_item, void * data)
 #endif
     }
     else
-#endif
     {
         struct entry *entry = get_valid_entry(__func__, local_tc, selected_item);
         name = entry->name;
@@ -546,13 +532,8 @@ static int update_dir(void)
     const char* title = NULL;/* Must clear the title as the list is reused */
     int icon = NOICON;
 
-#ifdef HAVE_TAGCACHE
     bool id3db = *tc.dirfilter == SHOW_ID3DB;
-#else
-    const bool id3db = false;
-#endif
 
-#ifdef HAVE_TAGCACHE
     /* Checks for changes */
     if (id3db) {
         if (tc.currtable != lasttable ||
@@ -568,7 +549,6 @@ static int update_dir(void)
         }
     }
     else
-#endif
     {
         tc.sort_dir = global_settings.sort_dir;
         /* if the tc.currdir has been changed, reload it ...*/
@@ -580,12 +560,10 @@ static int update_dir(void)
             changed = true;
         }
     }
-#ifdef HAVE_ALBUMART
     /* the list's contents moved under us, so cached thumbnails (keyed by item
      * index) no longer describe the rows they sit in */
     if (changed)
         tree_aa_reset();
-#endif
     /* if selected item is undefined */
     if (tc.selected_item == -1)
     {
@@ -608,7 +586,6 @@ static int update_dir(void)
 
     gui_synclist_init(list, &tree_get_filename, &tc, false, 1, NULL);
 
-#ifdef HAVE_TAGCACHE
     if (id3db)
     {
         if (show_path_in_browser == SHOW_PATH_FULL
@@ -619,7 +596,6 @@ static int update_dir(void)
         }
     }
     else
-#endif
     {
         if (tc.browse && tc.browse->title)
         {
@@ -672,7 +648,6 @@ static int update_dir(void)
      * and the whole off path never touch the art-resolution code. */
     {
         bool tall_rows = false;
-#if defined(HAVE_TAGCACHE) && defined(HAVE_ALBUMART)
         if (*tc.dirfilter == SHOW_ID3DB)
         {
             if (global_settings.db_albumart && tagtree_is_album_list(&tc))
@@ -680,15 +655,12 @@ static int update_dir(void)
             else if (global_settings.db_artistart && tagtree_is_artist_list(&tc))
                 tall_rows = true;
         }
-#endif
-#ifdef HAVE_ALBUMART
         gui_synclist_set_albumart_callback(list,
                                     tall_rows ? tree_get_albumart : NULL);
         /* Uniform tall rows so a cover fits (special rows included); 0 = the
          * skin's default height. */
         gui_synclist_set_row_height(list,
                                     tall_rows ? global_settings.db_art_row_height : 0);
-#endif
     }
     gui_synclist_set_voice_callback(list, &tree_voice_cb);
     gui_synclist_set_color_callback(list, &tree_get_filecolor);
@@ -715,11 +687,7 @@ void resume_directory(const char *dir)
 {
     int dirfilter = *tc.dirfilter;
     int ret;
-#ifdef HAVE_TAGCACHE
     bool id3db = *tc.dirfilter == SHOW_ID3DB;
-#else
-    const bool id3db = false;
-#endif
     /* make sure the dirfilter is sane. The only time it should be possible
      * thats its not is when resume playlist is called from a plugin
      */
@@ -733,10 +701,8 @@ void resume_directory(const char *dir)
 
     ft_build_playlist(&tc, 0);
 
-#ifdef HAVE_TAGCACHE
     if (id3db)
         tagtree_load(&tc);
-#endif
 }
 
 /* Returns the current working directory and also writes cwd to buf if
@@ -766,12 +732,10 @@ void reload_directory(void)
 
 char* get_current_file(char* buffer, size_t buffer_len)
 {
-#ifdef HAVE_TAGCACHE
     /* in ID3DB mode it is a bad idea to call this function */
     /* (only happens with `follow playlist') */
     if( *tc.dirfilter == SHOW_ID3DB )
         return NULL;
-#endif
 
     struct entry *entry = tree_get_entry_at(&tc, tc.selected_item);
     if (entry && getcwd(buffer, buffer_len))
@@ -809,12 +773,10 @@ static void set_current_file_ex(const char *path, const char *filename)
 {
     int i;
 
-#ifdef HAVE_TAGCACHE
     /* in ID3DB mode it is a bad idea to call this function */
     /* (only happens with `follow playlist') */
     if( *tc.dirfilter == SHOW_ID3DB )
         return;
-#endif
 
     if (!filename) /* path and filename supplied combined */
     {
@@ -904,20 +866,16 @@ static int dirbrowse(void)
     bool exit_func = false;
 
     char* currdir = tc.currdir; /* just a shortcut */
-#ifdef HAVE_TAGCACHE
     bool id3db = *tc.dirfilter == SHOW_ID3DB;
 
     if (id3db)
         curr_context=CONTEXT_ID3DB;
     else
-#endif
         curr_context=CONTEXT_TREE;
     if (tc.selected_item < 0)
         tc.selected_item = 0;
-#ifdef HAVE_TAGCACHE
     lasttable = -1;
     lastextra = -1;
-#endif
 
     start_wps = false;
     numentries = update_dir();
@@ -945,7 +903,6 @@ static int dirbrowse(void)
         tc.selected_item = gui_synclist_get_sel_pos(&tree_lists);
         int customaction = ONPLAY_NO_CUSTOMACTION;
         bool do_restore_display = true;
-        #ifdef HAVE_TAGCACHE
             if (id3db && (button == ACTION_STD_OK || button == ACTION_STD_CONTEXT))
             {
                 customaction = tagtree_get_custom_action(&tc);
@@ -956,7 +913,6 @@ static int dirbrowse(void)
                     do_restore_display = false;
                 }
             }
-        #endif
         switch ( button ) {
             case ACTION_STD_OK:
                 /* nothing to do if no files to display */
@@ -974,11 +930,7 @@ static int dirbrowse(void)
                         return exit_to_new_screen(GO_TO_PREVIOUS);
                     }
                 }
-#ifdef HAVE_TAGCACHE
                 switch (id3db ? tagtree_enter(&tc, true) : ft_enter(&tc))
-#else
-                switch (ft_enter(&tc))
-#endif
                 {
                     case GO_TO_FILEBROWSER: reload_dir = true; break;
                     case GO_TO_PLUGIN:
@@ -1007,11 +959,9 @@ static int dirbrowse(void)
                         return exit_to_new_screen(GO_TO_ROOT);
                 }
 
-#ifdef HAVE_TAGCACHE
                 if (id3db)
                     tagtree_exit(&tc, true);
                 else
-#endif
                     if (ft_exit(&tc) == 3)
                         exit_func = true;
 
@@ -1087,7 +1037,6 @@ static int dirbrowse(void)
                 if(!numentries)
                     onplay_result = onplay(NULL, 0, curr_context, hotkey, customaction);
                 else {
-#ifdef HAVE_TAGCACHE
                     if (id3db)
                     {
                         if (tagtree_get_attr(&tc) == FILE_ATTR_AUDIO)
@@ -1125,7 +1074,6 @@ static int dirbrowse(void)
                         }
                     }
                     else
-#endif
                     {
                         struct entry *entry =
                                get_valid_entry(__func__, &tc, tc.selected_item);
@@ -1192,12 +1140,10 @@ static int dirbrowse(void)
             if (reload_root) {
                 strcpy(currdir, "/");
                 tc.dirlevel = 0;
-#ifdef HAVE_TAGCACHE
                 tc.currtable = 0;
                 tc.currextra = 0;
                 lasttable = -1;
                 lastextra = -1;
-#endif
                 reload_root = false;
             }
 
@@ -1490,15 +1436,10 @@ static int ft_play_filename(char *dir, char *file, int attr)
 void tree_flush(void)
 {
      tc.is_browsing = false;/* clear browse to prevent reentry to a possibly missing file */
-#ifdef HAVE_TAGCACHE
     tagcache_shutdown();
-#endif
 
-#ifdef HAVE_TC_RAMCACHE
     tagcache_unload_ramcache();
-#endif
 
-#ifdef HAVE_DIRCACHE
     int old_val = global_status.dircache_size;
 
     if (global_settings.dircache)
@@ -1518,26 +1459,19 @@ void tree_flush(void)
     if (old_val != global_status.dircache_size)
         status_save(true);
 
-#endif /* HAVE_DIRCACHE */
 }
 
 void tree_restore(void)
 {
 
-#ifdef HAVE_TC_RAMCACHE
     tagcache_remove_statefile();
-#endif
 
-#ifdef HAVE_DIRCACHE
     if (global_settings.dircache && dircache_resume() > 0)
     {
         /* Print "Scanning disk..." to the display. */
         splash(0, str(LANG_SCANNING_DISK));
         dircache_wait();
     }
-#endif
 
-#ifdef HAVE_TAGCACHE
     tagcache_start_scan();
-#endif
 }

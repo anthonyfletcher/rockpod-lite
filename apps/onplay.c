@@ -56,10 +56,8 @@
 #include "sound_menu.h"
 #include "playlist_menu.h"
 #include "playlist_catalog.h"
-#ifdef HAVE_TAGCACHE
 #include "tagtree.h"
 #include "gui/album_covers.h"
-#endif
 #include "cuesheet.h"
 #include "statusbar-skinned.h"
 #include "pitchscreen.h"
@@ -217,12 +215,10 @@ static void playing_time(void)
     playing_time_screen();
 }
 
-#ifdef HAVE_ALBUMART
 static void view_album_art(void)
 {
     image_viewer(NULL);
 }
-#endif
 
 MENUITEM_FUNCTION(wps_view_cur_playlist_item, 0, ID2P(LANG_VIEW_DYNAMIC_PLAYLIST),
                   wps_view_cur_playlist, NULL, Icon_NOICON);
@@ -267,7 +263,6 @@ static struct add_to_pl_param addtopl_replace_shuffled = {PLAYLIST_INSERT_LAST_S
 
 static void op_playlist_insert_selected(int position, bool queue)
 {
-#ifdef HAVE_TAGCACHE
     if (selected_file.context == CONTEXT_STD && ctx_current_playlist_insert != NULL)
     {
         ctx_current_playlist_insert(position, queue, false);
@@ -278,7 +273,6 @@ static void op_playlist_insert_selected(int position, bool queue)
         tagtree_current_playlist_insert(position, queue);
         return;
     }
-#endif
     if ((selected_file.attr & FILE_ATTR_MASK) == FILE_ATTR_AUDIO)
         playlist_insert_track(NULL, selected_file.path, position, queue, true);
     else if ((selected_file.attr & FILE_ATTR_MASK) == FILE_ATTR_M3U)
@@ -636,7 +630,6 @@ static int clipboard_paste(void)
     return 1;
 }
 
-#ifdef HAVE_TAGCACHE
 static int set_rating_inline(void)
 {
     struct mp3entry* id3 = audio_current_track();
@@ -666,7 +659,6 @@ static int ratingitem_callback(int action,
 MENUITEM_FUNCTION(rating_item, 0, ID2P(LANG_MENU_SET_RATING),
                   set_rating_inline,
                   ratingitem_callback, Icon_Questionmark);
-#endif
 static bool view_cue(void)
 {
     struct mp3entry* id3 = audio_current_track();
@@ -759,10 +751,8 @@ static int pitch_callback(int action,
 }
 #endif /*def HAVE_PITCHCONTROL*/
 
-#ifdef HAVE_ALBUMART
 MENUITEM_FUNCTION(view_album_art_item, 0, ID2P(LANG_VIEW_ALBUMART),
                   view_album_art, NULL, Icon_NOICON);
-#endif
 
 static int clipboard_delete_selected_fileobject(void)
 {
@@ -828,7 +818,6 @@ MENUITEM_FUNCTION(delete_dir_item, 0, ID2P(LANG_DELETE_DIR),
 MENUITEM_FUNCTION(create_dir_item, 0, ID2P(LANG_CREATE_DIR),
                   clipboard_create_dir, clipboard_callback, Icon_NOICON);
 
-#ifdef HAVE_TAGCACHE
 static bool prepare_database_sel(void *param)
 {
     if (selected_file.context == CONTEXT_ID3DB)
@@ -846,10 +835,8 @@ static bool prepare_database_sel(void *param)
 #ifdef HAVE_DISK_STORAGE
             if ((selected_file.attr & FILE_ATTR_MASK) == FILE_ATTR_AUDIO
                 && !storage_disk_is_active()
-#ifdef HAVE_TC_RAMCACHE
                 && (global_settings.tagcache_ram != TAGCACHE_RAM_ON
                     || !tagcache_is_in_ram())
-#endif
             )
                 splash(0, ID2P(LANG_WAIT));
 #endif
@@ -864,7 +851,6 @@ static bool prepare_database_sel(void *param)
     }
     return true;
 }
-#endif
 
 /* Properties is core-linked, not a loadable plugin, so it can't go through
  * filetype_load_plugin() -- mirror onplay_album_covers()'s structure
@@ -874,10 +860,8 @@ static bool prepare_database_sel(void *param)
 static bool onplay_properties(void *param)
 {
     (void)param;
-#ifdef HAVE_TAGCACHE
     if (!prepare_database_sel((void *)"properties"))
         return false;
-#endif
 
     if (get_current_activity() == ACTIVITY_CONTEXTMENU)  /* get rid of parent activity */
         pop_current_activity_without_refresh();          /* when called from ctxt menu */
@@ -894,7 +878,6 @@ MENUITEM_FUNCTION_W_PARAM(properties_item, 0, ID2P(LANG_PROPERTIES),
 MENUITEM_FUNCTION_W_PARAM(track_info_item, 0, ID2P(LANG_MENU_SHOW_ID3_INFO),
                   onplay_properties, NULL,
                   clipboard_callback, Icon_NOICON);
-#ifdef HAVE_TAGCACHE
 /* Album covers is core-linked, not a loadable plugin, so this can't go
  * through filetype_load_plugin() like its siblings --
  * mirrors onplay_properties()'s structure (prepare_database_sel() to resolve
@@ -921,7 +904,6 @@ static bool onplay_album_covers(void *param)
 MENUITEM_FUNCTION_W_PARAM(pictureflow_item, 0, ID2P(LANG_ONPLAY_PICTUREFLOW),
                   onplay_album_covers, NULL,
                   clipboard_callback, Icon_NOICON);
-#endif
 static bool onplay_add_to_shortcuts(void)
 {
     shortcuts_add(SHORTCUT_BROWSER, selected_file.path);
@@ -984,7 +966,6 @@ static bool set_catalogdir(void)
 MENUITEM_FUNCTION(set_catalogdir_item, 0, ID2P(LANG_PLAYLIST_DIR),
                   set_catalogdir, clipboard_callback, Icon_Playlist);
 
-#ifdef HAVE_TAGCACHE
 static bool set_databasedir(void)
 {
     struct tagcache_stat *tc_stat = tagcache_get_stat();
@@ -999,14 +980,11 @@ static bool set_databasedir(void)
 }
 MENUITEM_FUNCTION(set_databasedir_item, 0, ID2P(LANG_DATABASE_DIR),
                   set_databasedir, clipboard_callback, Icon_Audio);
-#endif
 
 MAKE_ONPLAYMENU(set_as_dir_menu, ID2P(LANG_SET_AS),
                 clipboard_callback, Icon_NOICON,
                 &set_catalogdir_item,
-#ifdef HAVE_TAGCACHE
                 &set_databasedir_item,
-#endif
                 &set_startdir_item);
 
 static int clipboard_callback(int action,
@@ -1025,7 +1003,6 @@ static int clipboard_callback(int action,
                  this_item == &clipboard_cut_item))
                 return ACTION_EXIT_MENUITEM;
 #endif
-#ifdef HAVE_TAGCACHE
             if (selected_file.context == CONTEXT_ID3DB)
             {
                 if (this_item == &track_info_item ||
@@ -1033,7 +1010,6 @@ static int clipboard_callback(int action,
                     return action;
                 return ACTION_EXIT_MENUITEM;
             }
-#endif
             if (this_item == &clipboard_paste_item)
             {  /* visible if there is something to paste */
                 return (clipboard.path[0] != 0) ?
@@ -1068,9 +1044,7 @@ static int clipboard_callback(int action,
                     if (this_item == &delete_dir_item ||
                         this_item == &set_startdir_item ||
                         this_item == &set_catalogdir_item ||
-#ifdef HAVE_TAGCACHE
                         this_item == &set_databasedir_item ||
-#endif
                         this_item == &set_as_dir_menu
                         )
                         return action;
@@ -1104,18 +1078,14 @@ MAKE_ONPLAYMENU( wps_onplay_menu, ID2P(LANG_ONPLAY_MENU_TITLE),
            onplaymenu_callback, Icon_Audio,
            &wps_playlist_menu, &cat_playlist_menu,
            &sound_settings, &playback_settings,
-#ifdef HAVE_TAGCACHE
            &rating_item,
-#endif
            &bookmark_menu,
            &browse_id3_item,
            &delete_file_item, &view_cue_item,
 #ifdef HAVE_PITCHCONTROL
            &pitch_menu,
 #endif
-#ifdef HAVE_ALBUMART
            &view_album_art_item,
-#endif
          );
 
 int sort_playlists_callback(int action,
@@ -1146,9 +1116,7 @@ MAKE_ONPLAYMENU( tree_onplay_menu, ID2P(LANG_ONPLAY_MENU_TITLE),
            &rename_file_item, &clipboard_cut_item, &clipboard_copy_item,
            &clipboard_paste_item, &delete_file_item, &delete_dir_item,
            &create_dir_item, &properties_item, &track_info_item,
-#ifdef HAVE_TAGCACHE
            &pictureflow_item,
-#endif
            &set_backdrop_item,
            &add_to_faves_item, &set_as_dir_menu, &file_menu, &sort_playlists,
          );
@@ -1198,14 +1166,12 @@ static bool hotkey_delete_item(void)
         return false;
 #endif
 
-#ifdef HAVE_TAGCACHE
     if (selected_file.context == CONTEXT_ID3DB &&
         (selected_file.attr & FILE_ATTR_MASK) != FILE_ATTR_AUDIO)
         return false;
 
      if (!prepare_database_sel(NULL))
         return false;
-#endif
 
     return clipboard_delete_selected_fileobject();
 }
@@ -1228,17 +1194,14 @@ static int hotkey_tree_pl_insert_shuffled(void)
 static int hotkey_properties(void *param)
 {
     (void)param;
-#ifdef HAVE_TAGCACHE
     if (!prepare_database_sel((void *)"properties"))
         return ONPLAY_RELOAD_DIR;
-#endif
     if (properties(selected_file.path) == GO_TO_ROOT)
         return ONPLAY_MAINMENU;
 
     return ONPLAY_RELOAD_DIR;
 }
 
-#ifdef HAVE_TAGCACHE
 /* Album covers equivalent of hotkey_properties() above -- see
  * onplay_album_covers()'s comment for why this can't share a generic
  * plugin-loading helper. */
@@ -1252,7 +1215,6 @@ static int hotkey_album_covers(void *param)
 
     return ONPLAY_RELOAD_DIR;
 }
-#endif
 
 #define HOTKEY_FUNC(func, param) {{(void *)func}, param}
 
@@ -1312,13 +1274,11 @@ static const struct hotkey_assignment hotkey_items[] = {
       .func = HOTKEY_FUNC(hotkey_properties, NULL),
       .return_code = ONPLAY_FUNC_RETURN,
       .flags = HOTKEY_FLAG_TREE },
-#ifdef HAVE_TAGCACHE
     { .action = HOTKEY_PICTUREFLOW,
       .lang_id = LANG_ONPLAY_PICTUREFLOW,
       .func = HOTKEY_FUNC(hotkey_album_covers, NULL),
       .return_code = ONPLAY_FUNC_RETURN,
       .flags = HOTKEY_FLAG_TREE },
-#endif
 };
 
 const struct hotkey_assignment *get_hotkey(int action)
@@ -1366,7 +1326,6 @@ int onplay(char* file, int attr, int from_context, bool hotkey, int customaction
     ctx_current_playlist_insert = NULL;
     selected_file_set(from_context, NULL, attr);
 
-#ifdef HAVE_TAGCACHE
     if (from_context == CONTEXT_ID3DB)
     {
         ctx_add_to_playlist = tagtree_add_to_playlist;
@@ -1379,7 +1338,6 @@ int onplay(char* file, int attr, int from_context, bool hotkey, int customaction
         }
     }
    else
-#endif
     {
         ctx_add_to_playlist = NULL;
         if (file != NULL)

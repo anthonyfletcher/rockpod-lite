@@ -127,9 +127,7 @@ int plugin_open(const char *plugin, const char *parameter);
 #include "screens.h"
 #include "vuprintf.h"
 
-#ifdef HAVE_ALBUMART
 #include "albumart.h"
-#endif
 
 
 #include "yesno.h"
@@ -397,9 +395,7 @@ struct plugin_api {
     uint32_t (*crc_32r)(const void *src, uint32_t len, uint32_t crc32);
 
     int (*filetype_get_attr)(const char* file);
-#ifdef HAVE_DIRCACHE
     void (*dircache_wait)(void);
-#endif
 
     /* dir */
     DIR * (*opendir)(const char *dirname);
@@ -676,7 +672,6 @@ struct plugin_api {
             unsigned long rec_time, unsigned long header_template,
             void (*progressfunc)(int), bool generate_toc,
             unsigned char* tempbuf, size_t tempbuf_len);
-#ifdef HAVE_TAGCACHE
     bool (*tagcache_search)(struct tagcache_search *tcs, int tag);
     void (*tagcache_search_set_uniqbuf)(struct tagcache_search *tcs,
            void *buffer, long length);
@@ -689,19 +684,12 @@ struct plugin_api {
     long (*tagcache_get_numeric)(const struct tagcache_search *tcs, int tag);
     struct tagcache_stat* (*tagcache_get_stat)(void);
     void (*tagcache_commit_finalize)(void);
-#if defined(HAVE_TC_RAMCACHE)
     bool (*tagcache_is_in_ram)(void);
-#if defined(HAVE_DIRCACHE)
     bool (*tagcache_fill_tags)(struct mp3entry *id3, const char *filename);
-#endif
-#endif
     bool (*tagtree_subentries_do_action)(bool (*action_cb)(const char *file_name));
-#endif /* HAVE_TAGCACHE */
 
-#ifdef HAVE_ALBUMART
     bool (*search_albumart_files)(const struct mp3entry *id3, const char *size_string,
                                   char *buf, int buflen);
-#endif
 
     /* playback control */
     struct playlist_info* (*playlist_get_current)(void);

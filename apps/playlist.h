@@ -87,9 +87,7 @@ struct playlist_info
                                     shuffled command start */
     int  seed;           /* shuffle seed                            */
     struct mutex mutex; /* mutex for control file access    */
-#ifdef HAVE_DIRCACHE
     int dcfrefs_handle;
-#endif
     int  dirlen;         /* Length of the path to the playlist file */
     char filename[MAX_PATH];  /* path name of m3u playlist on disk  */
     /* full path of control file (with extra room for extensions) */

@@ -875,7 +875,6 @@ INLINE void fill_buf(struct jpeg* p_jpeg)
         p_jpeg->len -= p_jpeg->buf_left;
 }
 
-#ifdef HAVE_ALBUMART
 static int read_buf_id3_unsync(struct jpeg* p_jpeg, size_t count)
 {
     count = read(p_jpeg->fd, p_jpeg->buf, count);
@@ -909,7 +908,6 @@ static bool skip_bytes_read_buf(struct jpeg* p_jpeg)
     return true;
 }
 
-#endif /* HAVE_ALBUMART */
 
 static unsigned char *jpeg_getc(struct jpeg* p_jpeg)
 {
@@ -2039,7 +2037,6 @@ int clip_jpeg_fd(int fd, int flags,
     p_jpeg->read_buf = read_buf;
     p_jpeg->skip_bytes_seek = skip_bytes_seek;
 
-#ifdef HAVE_ALBUMART
     if (flags & AA_FLAG_ID3_UNSYNC)
     {
         p_jpeg->read_buf = read_buf_id3_unsync;
@@ -2069,9 +2066,6 @@ int clip_jpeg_fd(int fd, int flags,
         p_jpeg->skip_bytes_seek = skip_bytes_read_buf;
         p_jpeg->custom_param = ogg;
     }
-#else
-    (void)flags;
-#endif /* HAVE_ALBUMART */
 
 #endif
     status = process_markers(p_jpeg);

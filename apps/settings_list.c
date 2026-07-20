@@ -573,12 +573,10 @@ static void playback_frequency_callback(int sample_rate_hz)
 }
 #endif /* HAVE_PLAY_FREQ */
 
-#ifdef HAVE_ALBUMART
 static void albumart_callback(int mode)
 {
     set_albumart_mode(mode);
 }
-#endif
 
 /* perform shuffle/unshuffle of the current playlist based on the boolean provided */
 static void shuffle_playlist_callback(bool shuffle)
@@ -824,14 +822,12 @@ const struct settings_list settings[] = {
 #endif
 #endif /* HAVE_PLAY_FREQ */
 
-#ifdef HAVE_ALBUMART
     CHOICE_SETTING(F_CB_ON_SELECT_ONLY|F_CB_ONLY_IF_CHANGED, album_art,
                    LANG_ALBUM_ART, AA_PREFER_EMBEDDED, "album art",
                    "off,prefer embedded,prefer image file",
                    albumart_callback, 3,
                    ID2P(LANG_OFF), ID2P(LANG_PREFER_EMBEDDED),
                    ID2P(LANG_PREFER_IMAGE_FILE)),
-#endif
 
     /* LCD */
 #ifdef HAVE_BACKLIGHT
@@ -1237,7 +1233,6 @@ const struct settings_list settings[] = {
                  "constrain next folder", off_on,
                  LANG_SET_BOOL_YES, LANG_SET_BOOL_NO, NULL),
 
-#ifdef HAVE_TAGCACHE
     BOOL_SETTING(0, autoresume_enable, LANG_AUTORESUME, false,
                  "autoresume enable", off_on,
                  LANG_SET_BOOL_YES, LANG_SET_BOOL_NO, NULL),
@@ -1257,7 +1252,6 @@ const struct settings_list settings[] = {
                  DEFAULT_TAGCACHE_SCAN_PATHS, NULL, NULL),
     TEXT_SETTING(0, tagcache_db_path, "database path",
                  ROCKBOX_DIR, NULL, NULL),
-#endif
 
     /* replay gain */
     CHOICE_SETTING(F_SOUNDSETTING, replaygain_settings.type,
@@ -1434,22 +1428,16 @@ const struct settings_list settings[] = {
     SOUND_SETTING(F_NO_WRAP, treble_cutoff, LANG_TREBLE_CUTOFF,
                   "treble cutoff", SOUND_TREBLE_CUTOFF),
 #endif
-#ifdef HAVE_DIRCACHE
     /*enable dircache for all targets > 2MB of RAM by default*/
     OFFON_SETTING(F_BANFROMQS,dircache,LANG_DIRCACHE_ENABLE,true,"dircache",NULL),
     SYSTEM_STATUS(0, dircache_size, 0, "DSZ"),
-#endif
 
-#ifdef HAVE_TAGCACHE
-#ifdef HAVE_TC_RAMCACHE
     CHOICE_SETTING(F_BANFROMQS, tagcache_ram, LANG_TAGCACHE_RAM,
                    0, "tagcache_ram", "off,on,quick",
                    NULL, 3,
                    ID2P(LANG_OFF), ID2P(LANG_ON), ID2P(LANG_QUICK_IGNORE_DIRACHE)),
-#endif
     OFFON_SETTING(F_BANFROMQS, tagcache_autoupdate, LANG_TAGCACHE_AUTOUPDATE, true,
                   "tagcache_autoupdate", NULL),
-#endif
     CHOICE_SETTING(F_TEMPVAR, default_codepage, LANG_DEFAULT_CODEPAGE, 14,
                    "default codepage",
                    /* The order must match with that in unicode.c */
@@ -1482,27 +1470,13 @@ const struct settings_list settings[] = {
                       ID2P(LANG_IN_SUBMENU)),
 
     CHOICE_SETTING(0, browser_default, LANG_DEFAULT_BROWSER,
-#ifdef HAVE_TAGCACHE
                       1,
-#else
-                      0,
-#endif
                       "default browser",
-#ifdef HAVE_TAGCACHE
                       "files,database,playlists",
-#else
-                      "files,playlists",
-#endif
                       NULL,
-#ifdef HAVE_TAGCACHE
                       3
-#else
-                      2
-#endif
                       ,ID2P(LANG_DIR_BROWSER),
-#ifdef HAVE_TAGCACHE
                       ID2P(LANG_MUSIC_BROWSER),
-#endif
                       ID2P(LANG_PLAYLISTS)),
 
 #ifdef HAVE_BACKLIGHT
@@ -1594,21 +1568,15 @@ const struct settings_list settings[] = {
                   25, timeout_sec_common),
     CHOICE_SETTING(F_CB_ON_SELECT_ONLY, start_in_screen, LANG_START_SCREEN, 1,
                    "start in screen", "previous,root,files,"
-#ifdef HAVE_TAGCACHE
 #define START_DB_COUNT 1
                    "db,"
-#else
-#define START_DB_COUNT 0
-#endif
                    "wps,menu,"
                    "bookmarks"
                    , NULL,
     (6 + START_DB_COUNT),
                    ID2P(LANG_PREVIOUS_SCREEN), ID2P(LANG_MAIN_MENU),
                    ID2P(LANG_DIR_BROWSER),
-#ifdef HAVE_TAGCACHE
                    ID2P(LANG_TAGCACHE),
-#endif
                    ID2P(LANG_RESUME_PLAYBACK), ID2P(LANG_SETTINGS),
                    ID2P(LANG_BOOKMARK_MENU_RECENT_BOOKMARKS)
                   ),
@@ -1628,11 +1596,8 @@ const struct settings_list settings[] = {
                      ICON_DIR "/", ".bmp"),
     TEXT_SETTING(F_THEMESETTING|F_NEEDAPPLY, colors_file, "filetype colours", "-",
                      THEME_DIR "/", ".colours"),
-#ifdef HAVE_ALBUMART
     OFFON_SETTING(0, dynamic_colors, LANG_DYNAMIC_COLORS, true,
                   "dynamic colors", NULL),
-#endif
-#ifdef HAVE_TAGCACHE
     INT_SETTING(0, album_covers_center_margin, LANG_CENTRE_MARGIN, 0,
                 "album covers center margin", UNIT_INT, 0, 80, 1,
                 NULL, NULL, NULL),
@@ -1670,7 +1635,6 @@ const struct settings_list settings[] = {
                   NULL, 2, ID2P(LANG_ASCENDING), ID2P(LANG_DESCENDING)),
     OFFON_SETTING(0, album_covers_show_year, LANG_SHOW_YEAR_IN_ALBUM_TITLE,
                   false, "album covers show year", NULL),
-#ifdef HAVE_ALBUMART
     /* Config-file only (lang_id -1, no menu entry): a theme sets these. Defaults
      * on. A theme whose list config doesn't draw the %La cover should set it off
      * in its .cfg, otherwise its album rows still grow to the tall height (just
@@ -1681,8 +1645,6 @@ const struct settings_list settings[] = {
                   NULL),
     {F_T_INT|F_THEMESETTING, &global_settings.db_art_row_height, -1,
         INT(52), "database art row height", UNUSED},
-#endif
-#endif /* HAVE_TAGCACHE */
 #ifndef HAVE_WHEEL_ACCELERATION
     INT_SETTING(F_TIME_SETTING, list_accel_start_delay, LANG_LISTACCEL_START_DELAY,
                 2, "list_accel_start_delay", UNIT_SEC, 0, 10, 1,
@@ -1797,21 +1759,11 @@ const struct settings_list settings[] = {
         HOTKEY_OPEN_WITH, HOTKEY_DELETE, HOTKEY_BOOKMARK, HOTKEY_PLUGIN, HOTKEY_BOOKMARK_LIST),
     TABLE_SETTING(0, hotkey_tree,
         LANG_HOTKEY_FILE_BROWSER, HOTKEY_OFF, "hotkey tree",
-#ifdef HAVE_TAGCACHE
         "off,properties,pictureflow,open with,delete,insert,insert shuffled",
-#else
-        "off,properties,open with,delete,insert,insert shuffled",
-#endif
         UNIT_INT, hotkey_formatter, hotkey_getlang, NULL,
-#ifdef HAVE_TAGCACHE
         7,
-#else
-        6,
-#endif
         HOTKEY_OFF,HOTKEY_PROPERTIES,
-#ifdef HAVE_TAGCACHE
         HOTKEY_PICTUREFLOW,
-#endif
         HOTKEY_OPEN_WITH, HOTKEY_DELETE, HOTKEY_INSERT, HOTKEY_INSERT_SHUFFLED),
 #endif /* HAVE_HOTKEY */
 

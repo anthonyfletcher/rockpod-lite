@@ -51,13 +51,9 @@
 #include "menus/exported_menus.h"
 #include "yesno.h"
 #include "playback.h"
-#ifdef HAVE_TAGCACHE
 #include "tagcache.h"
 #include "root_menu.h"
-#ifdef HAVE_TAGCACHE
 #include "gui/album_covers.h"
-#endif
-#endif
 
 /* Maximum number of tracks we can have loaded at one time                   */
 #define MAX_PLAYLIST_ENTRIES 200
@@ -280,11 +276,9 @@ static bool retrieve_id3_tags(const int index, const char* name, struct mp3entry
     }
     else
     {
-#if defined(HAVE_TC_RAMCACHE) && defined(HAVE_DIRCACHE)
         /* Try tagcache first (in-RAM, no disk spinup) */
         id3_retrieval_successful = tagcache_fill_tags(id3, name);
         if (!id3_retrieval_successful)
-#endif
         {
             /* Read from disk */
             id3_retrieval_successful = get_metadata_ex(id3, -1, name, flags);
@@ -599,7 +593,6 @@ static void close_playlist_viewer(void)
     }
 }
 
-#if defined(HAVE_HOTKEY) || defined(HAVE_TAGCACHE)
 static enum pv_context_result
     open_with_plugin(const struct playlist_entry *current_track,
                      const char* plugin_name,
@@ -624,7 +617,6 @@ static enum pv_context_result
     }
 }
 
-#ifdef HAVE_TAGCACHE
 /* Album covers is core-linked, not a loadable plugin, so it doesn't match
  * open_with_plugin()'s loadplugin(plugin_name, file) callback shape or its
  * PLUGIN_*-return-code switch -- this adapts both, translating
@@ -645,8 +637,6 @@ static enum pv_context_result open_pictureflow(const struct playlist_entry *curr
 {
     return open_with_plugin(current_track, "", &open_album_covers_adapter);
 }
-#endif
-#endif /*defined(HAVE_HOTKEY) || defined(HAVE_TAGCACHE)*/
 
 static enum pv_context_result delete_track(int current_track_index,
                                           int index, bool current_was_playing)
@@ -686,9 +676,7 @@ static enum pv_context_result context_menu(int index)
                         ID2P(LANG_MENU_SHOW_ID3_INFO),
                         ID2P(LANG_SHUFFLE), ID2P(LANG_SAVE),
                         ID2P(LANG_PLAYLISTVIEWER_SETTINGS)
-#ifdef HAVE_TAGCACHE
                         ,ID2P(LANG_ONPLAY_PICTUREFLOW)
-#endif
                         );
     int sel = do_menu(&menu_items, NULL, NULL, false);
     if (sel == MENU_ATTACHED_USB)
@@ -740,10 +728,8 @@ static enum pv_context_result context_menu(int index)
                     return (sel == global_settings.playlist_viewer_track_display) ?
                            PV_CONTEXT_UNCHANGED : PV_CONTEXT_PL_UPDATE;
             }
-#ifdef HAVE_TAGCACHE
             case 8:
                 return open_pictureflow(current_track);
-#endif
         }
     }
     return PV_CONTEXT_UNCHANGED;
@@ -1104,10 +1090,8 @@ enum playlist_viewer_result playlist_viewer_ex(const char* filename,
                                                             &viewer.buffer,
                                                             viewer.selected_track);
                 enum pv_context_result (*do_plugin)(const struct playlist_entry *) = NULL;
-#ifdef HAVE_TAGCACHE
                 if (global_settings.hotkey_tree == HOTKEY_PICTUREFLOW)
                     do_plugin = &open_pictureflow;
-#endif
                 if (do_plugin != NULL)
                 {
                     int plugin_result = do_plugin(current_track);

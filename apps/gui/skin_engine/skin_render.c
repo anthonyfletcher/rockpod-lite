@@ -29,9 +29,7 @@
 #include "core_alloc.h"
 #include "kernel.h"
 #include "appevents.h"
-#ifdef HAVE_ALBUMART
 #include "albumart.h"
-#endif
 #include "settings.h"
 #include "skin_display.h"
 #include "skin_engine.h"
@@ -286,7 +284,6 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
             }
             break;
         }
-#ifdef HAVE_ALBUMART
         case SKIN_TOKEN_ALBUMART_DISPLAY:
         {
             /* now draw the AA */
@@ -318,7 +315,6 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
             }
             break;
         }
-#endif
         case SKIN_TOKEN_SPECTRUM_BARS:
         {
             data->spectrum_enabled = true;
@@ -490,13 +486,11 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                     }
                 }
             }
-#ifdef HAVE_ALBUMART
             else if (token->type == SKIN_TOKEN_ALBUMART_DISPLAY && data->albumart)
             {
                 draw_album_art(gwps,
                         playback_current_aa_hid(data->playback_aa_slot), true);
             }
-#endif
         skip:
             child = SKINOFFSETTOPTR(skin_buffer, child->next);
         }

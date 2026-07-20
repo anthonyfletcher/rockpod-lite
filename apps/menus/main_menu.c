@@ -469,9 +469,7 @@ MAKE_MENU(main_menu_, ID2P(LANG_SETTINGS), NULL,
         &sound_settings,
         &playback_settings,
         &settings_menu_item, &theme_menu,
-#ifdef HAVE_TAGCACHE
         &album_covers_menu,
-#endif
         &text_viewer_menu,
 #if CONFIG_RTC
         &timedate_item,

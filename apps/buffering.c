@@ -30,11 +30,9 @@
 #include "appevents.h"
 #include "metadata.h"
 #include "bmp.h"
-#ifdef HAVE_ALBUMART
 #include "albumart.h"
 #include "jpeg_load.h"
 #include "playback.h"
-#endif
 #include "buffering.h"
 #include "linked_list.h"
 
@@ -834,7 +832,6 @@ static bool fill_buffer(void)
     }
 }
 
-#ifdef HAVE_ALBUMART
 /* Given a file descriptor to a bitmap file, write the bitmap data to the
    buffer, with a struct bitmap and the actual data immediately following.
    Return value is the total size (struct + data). */
@@ -869,7 +866,6 @@ static int load_image(int fd, const char *path,
 
     return rc + (rc > 0 ? sizeof(struct bitmap) : 0);
 }
-#endif /* HAVE_ALBUMART */
 
 
 /*
@@ -946,7 +942,6 @@ int bufopen(const char *file, off_t offset, enum data_type type,
         return ERR_FILE_ERROR;
 
     size_t size = 0;
-#ifdef HAVE_ALBUMART
     if (type == TYPE_BITMAP) {
         /* Bitmaps are resized to the requested dimensions when loaded,
          * so the file size should not be used as it may be too large
@@ -963,7 +958,6 @@ int bufopen(const char *file, off_t offset, enum data_type type,
        /* resize_on_load requires space for 1 line + 2 spare lines */
         size += sizeof(struct uint32_argb) * 3 * aa->dim->width;
     }
-#endif /* HAVE_ALBUMART */
 
     if (size == 0)
         size = filesize(fd);
@@ -1021,7 +1015,6 @@ int bufopen(const char *file, off_t offset, enum data_type type,
     h->start = adjusted_offset;
     h->pos   = adjusted_offset;
 
-#ifdef HAVE_ALBUMART
     if (type == TYPE_BITMAP) {
         /* Bitmap file: we load the data instead of the file */
         int rc = load_image(fd, file, user_data, data, padded_size);
@@ -1034,7 +1027,6 @@ int bufopen(const char *file, off_t offset, enum data_type type,
         }
     }
     else
-#endif
     if (type == TYPE_CUESHEET) {
         h->fd = fd;
     }

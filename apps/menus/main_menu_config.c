@@ -50,11 +50,7 @@ static int menu_item_count;
  * (a real crash, not hypothetical -- this is exactly what happened before
  * this was fixed). Give it real headroom over the fixed-entry count rather
  * than guessing a bigger fixed number again. */
-#ifdef HAVE_TAGCACHE
 #define MAX_ITEMS (16 + TAGNAVI_MAIN_MENU_SLOTS)
-#else
-#define MAX_ITEMS 16
-#endif
 
 /* Same class of bug as MAX_ITEMS above, same fix: a fixed 128-byte buffer
  * for the "key, key, key, ..." string was sized back when this only ever

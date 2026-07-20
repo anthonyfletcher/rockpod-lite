@@ -41,9 +41,7 @@
 #define FAILSAFENAME "rockbox_failsafe"
 
 void skin_data_free_buflib_allocs(struct wps_data *wps_data);
-#ifdef HAVE_ALBUMART
 void playback_release_aa_slot(int slot);
-#endif
 char* wps_default_skin(enum screen_type screen);
 char* default_radio_skin(enum screen_type screen);
 static bool skins_initialised = false;
@@ -93,7 +91,6 @@ static void gui_skin_reset(struct gui_skin *skin)
     skin->failsafe_loaded = false;
     skin->needs_full_update = true;
     skin->gui_wps.data = data = &skin->data;
-#ifdef HAVE_ALBUMART
     struct skin_albumart *aa_save;
     unsigned char *buffer = get_skin_buffer(data);
     /* copy to temp var to protect against memset */
@@ -107,17 +104,14 @@ static void gui_skin_reset(struct gui_skin *skin)
         data->last_albumart_height = old_height;
     }
     else
-#endif
         memset(data, 0, sizeof(struct wps_data));
     skin->data.wps_loaded = false;
     skin->data.buflib_handle = -1;
     skin->data.tree = -1;
     skin->data.font_ids = -1;
     skin->data.images = -1;
-#ifdef HAVE_ALBUMART
     skin->data.albumart = -1;
     skin->data.playback_aa_slot = -1;
-#endif
 #ifdef HAVE_BACKDROP_IMAGE
     skin->gui_wps.data->backdrop_id = -1;
 #endif
@@ -150,10 +144,8 @@ void skin_unload_all(void)
 static void skin_reset_buffers(int item, int screen)
 {
     skin_data_free_buflib_allocs(&skins[item][screen].data);
-#ifdef HAVE_ALBUMART
     if (skins[item][screen].data.playback_aa_slot >= 0)
         playback_release_aa_slot(skins[item][screen].data.playback_aa_slot);
-#endif
 #ifdef HAVE_BACKDROP_IMAGE
     if (skins[item][screen].data.backdrop_id >= 0)
         skin_backdrop_unload(skins[item][screen].data.backdrop_id);

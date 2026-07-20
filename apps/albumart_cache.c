@@ -24,7 +24,6 @@
 #include <stdint.h>
 #include "config.h"
 
-#ifdef HAVE_ALBUMART
 
 #include "system.h"
 #include "kernel.h"
@@ -941,4 +940,3 @@ void albumart_cache_init(void)
     add_event(PLAYBACK_EVENT_TRACK_CHANGE, aa_track_change_cb);
 }
 
-#endif /* HAVE_ALBUMART */

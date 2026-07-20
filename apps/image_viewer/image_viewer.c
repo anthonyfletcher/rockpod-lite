@@ -54,10 +54,8 @@
 #include "tree.h"            /* tree_get_context/entries */
 #include "core_alloc.h"
 #include "audio.h"           /* audio_current_track, audio_status, audio_hard_stop */
-#ifdef HAVE_ALBUMART
 #include "albumart.h"        /* search_albumart_files */
 #include "metadata.h"        /* AA_TYPE_*, AA_CLEAR_FLAGS_MASK */
-#endif
 #include "image_viewer.h"
 #include "image_viewer_pub.h"
 #include "image_decoder.h"
@@ -693,10 +691,6 @@ reload_decoder:
 
 static bool find_album_art(int *offset, int *filesize, int *status)
 {
-#ifndef HAVE_ALBUMART
-    (void)offset;(void)filesize;(void)status;
-    return false;
-#else
     struct mp3entry *current_track = audio_current_track();
 
     if (current_track == NULL)
@@ -735,7 +729,6 @@ static bool find_album_art(int *offset, int *filesize, int *status)
     (*offset) = current_track->albumart.pos;
     (*filesize) = current_track->albumart.size;
     return true;
-#endif
 }
 
 /************************* iv_settings menu ***************************/

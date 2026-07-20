@@ -50,13 +50,9 @@
 #include "string-extra.h"
 #include <stdio.h>
 
-#ifdef HAVE_TAGCACHE
 #include "tagcache.h"
-#endif
 
-#ifdef HAVE_ALBUMART
 #include "albumart.h"
-#endif
 
 #ifdef HAVE_PLAY_FREQ
 #include "pcm_mixer.h"
@@ -173,7 +169,6 @@ static struct mutex id3_mutex SHAREDBSS_ATTR; /* (A,O)*/
 
 /** For album art support **/
 #define MAX_MULTIPLE_AA SKINNABLE_SCREENS_COUNT
-#ifdef HAVE_ALBUMART
 
 static int albumart_mode = -1;
 
@@ -202,7 +197,6 @@ static int last_embedded_aa_discnum = 0;
 static int last_embedded_aa_hid[MAX_MULTIPLE_AA] = {0};
 
 #define FOREACH_ALBUMART(i) for (int i = 0; i < MAX_MULTIPLE_AA; i++)
-#endif /* HAVE_ALBUMART */
 
 
 /** Information used for tracking buffer fills **/
@@ -221,11 +215,7 @@ static enum filling_state
 } filling = STATE_IDLE;
 
 /* Track info - holds information about each track in the buffer */
-#ifdef HAVE_ALBUMART
 #define TRACK_INFO_AA       MAX_MULTIPLE_AA
-#else
-#define TRACK_INFO_AA       0
-#endif
 
 #ifdef HAVE_CODEC_BUFFERING
 #define TRACK_INFO_CODEC    1
@@ -245,9 +235,7 @@ struct track_info
     struct {
     int id3_hid;                    /* Metadata handle ID */
     int cuesheet_hid;               /* Parsed cuesheet handle ID */
-#ifdef HAVE_ALBUMART
     int aa_hid[MAX_MULTIPLE_AA];    /* Album art handle IDs */
-#endif
 #ifdef HAVE_CODEC_BUFFERING
     int codec_hid;                  /* Buffered codec handle ID */
 #endif
@@ -685,7 +673,6 @@ static bool track_list_commit_buf_info(struct track_buf_info *tbip,
     return true;
 }
 
-#ifdef HAVE_ALBUMART
 static inline void clear_cached_aa_handles(int* aa_handles)
 {
     /* When a track is freed, don't bufclose() a handle that's cached for reuse
@@ -702,7 +689,6 @@ static inline void clear_cached_aa_handles(int* aa_handles)
             aa_handles[i] = 0;
     }
 }
-#endif //HAVE_ALBUMART
 
 /* Free the track buffer entry and possibly remove it from the list if it
    was succesfully added at some point */
@@ -745,9 +731,7 @@ static void track_list_free_buf_info(struct track_buf_info *tbip)
     /* No movement allowed during bufclose calls */
     buf_pin_handle(hid, true);
 
-#ifdef HAVE_ALBUMART
     clear_cached_aa_handles(tbip->info.aa_hid);
-#endif
     FOR_EACH_TRACK_INFO_HANDLE(i)
         bufclose(tbip->info.handle[i]);
 
@@ -935,7 +919,6 @@ size_t audio_buffer_available(void)
     return MAX(core_size, size);
 }
 
-#ifdef HAVE_ALBUMART
 static void clear_last_folder_album_art(void)
 {
     if(last_folder_aa_path[0] == 0)
@@ -961,7 +944,6 @@ static void clear_last_embedded_album_art(void)
         last_embedded_aa_hid[i] = 0;
     }
 }
-#endif
 
 /* Set up the audio buffer for playback
  * filebuflen must be pre-initialized with the maximum size */
@@ -999,10 +981,8 @@ static void audio_reset_buffer_noalloc(
     filebuf += allocsize;
     filebuflen -= allocsize;
 
-#ifdef HAVE_ALBUMART
     clear_last_folder_album_art();
     clear_last_embedded_album_art();
-#endif
 
     buffering_reset(filebuf, filebuflen);
 
@@ -1714,10 +1694,8 @@ static bool audio_get_track_metadata(int offset, struct mp3entry *id3)
     char path[MAX_PATH+1];
     if (playlist_peek(offset, path, sizeof (path)))
     {
-#if defined(HAVE_TC_RAMCACHE) && defined(HAVE_DIRCACHE)
         /* Try to get it from the database */
         if (!tagcache_fill_tags(id3, path))
-#endif
         {
             /* By now, filename is the only source of info */
             fill_metadata_from_path(id3, path);
@@ -1790,7 +1768,6 @@ static bool audio_init_codec(struct track_info *track_infop,
     (void)track_infop; /* When codec buffering isn't supported */
 }
 
-#ifdef HAVE_TAGCACHE
 /* Check settings for whether the file should be autoresumed */
 enum { AUTORESUMABLE_UNKNOWN = 0, AUTORESUMABLE_TRUE, AUTORESUMABLE_FALSE };
 static bool autoresumable(struct mp3entry *id3)
@@ -1840,7 +1817,6 @@ static bool autoresumable(struct mp3entry *id3)
 
     return is_resumable;
 }
-#endif  /* HAVE_TAGCACHE */
 
 /* Start the codec for the current track scheduled to be decoded */
 static bool audio_start_codec(bool auto_skip)
@@ -1861,7 +1837,6 @@ static bool audio_start_codec(bool auto_skip)
         return false;
     }
 
-    #ifdef HAVE_TAGCACHE
     bool autoresume_enable = !cur_id3->skip_resume_adjustments && global_settings.autoresume_enable;
 
     if (autoresume_enable && !(cur_id3->elapsed || cur_id3->offset))
@@ -1902,7 +1877,6 @@ static bool audio_start_codec(bool auto_skip)
         logf("%s: Set resume for %s to %lu %lX", __func__,
              cur_id3->title, cur_id3->elapsed, cur_id3->offset);
     }
-#endif /* HAVE_TAGCACHE */
 
     /* Rewind the required amount - if an autoresume was done, this also rewinds
        that by the setting's amount
@@ -1928,9 +1902,7 @@ static bool audio_start_codec(bool auto_skip)
     /* All required data is now available for the codec */
     codec_go();
 
-#ifdef HAVE_TAGCACHE
     if (!autoresume_enable || cur_id3->elapsed || cur_id3->offset)
-#endif
     {
         /* Send the "buffer" event now */
         send_track_event(PLAYBACK_EVENT_TRACK_BUFFER, 0, cur_id3);
@@ -2000,7 +1972,6 @@ static bool audio_load_cuesheet(struct track_info *infop,
     return true;
 }
 
-#ifdef HAVE_ALBUMART
 
 void set_albumart_mode(int setting)
 {
@@ -2148,7 +2119,6 @@ static int audio_load_albumart(struct track_info *infop,
 
     return true;
 }
-#endif /* HAVE_ALBUMART */
 
 #ifdef HAVE_CODEC_BUFFERING
 /* Load a codec for the file onto the buffer - assumes we're working from the
@@ -2426,7 +2396,6 @@ static int audio_finish_load_track(struct track_info *infop)
         goto audio_finish_load_track_exit;
     }
 
-#ifdef HAVE_ALBUMART
     /* Try to load album art for the track */
     int retval = audio_load_albumart(infop, track_id3, infop->self_hid == cur_info.self_hid);
     if (retval == ERR_BITMAP_TOO_LARGE)
@@ -2439,7 +2408,6 @@ static int audio_finish_load_track(struct track_info *infop)
         filling = STATE_FULL;
         goto audio_finish_load_track_exit;
     }
-#endif
 
     /* All handles available to external routines are ready - audio and codec
        information is private */
@@ -3298,10 +3266,8 @@ static void audio_stop_playback(void)
     play_status = PLAY_STOPPED;
 
     wipe_track_metadata(true);
-#ifdef HAVE_ALBUMART
     clear_last_folder_album_art();
     clear_last_embedded_album_art();
-#endif
     /* Go idle */
     filling = STATE_IDLE;
     cancel_cpu_boost();
@@ -4217,7 +4183,6 @@ void audio_flush_and_reload_tracks(void)
 
 /** --- Miscellaneous public interfaces --- **/
 
-#ifdef HAVE_ALBUMART
 /* Return which album art handle is current for the user in the given slot */
 int playback_current_aa_hid(int slot)
 {
@@ -4313,7 +4278,6 @@ void playback_update_aa_dims(void)
     LOGFQUEUE("audio >| audio Q_AUDIO_REMAKE_AUDIO_BUFFER");
     audio_queue_send(Q_AUDIO_REMAKE_AUDIO_BUFFER, 0);
 }
-#endif /* HAVE_ALBUMART */
 
 /* Return file byte offset */
 int audio_get_file_pos(void)

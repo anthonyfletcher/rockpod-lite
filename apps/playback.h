@@ -33,7 +33,6 @@
 #define AUDIO_FAST_SKIP_PREVIEW
 #endif
 
-#ifdef HAVE_ALBUMART
 
 #include "bmp.h"
 #include "metadata.h"
@@ -70,7 +69,6 @@ struct bufopen_bitmap_data {
     struct mp3_albumart *embedded_albumart;
 };
 
-#endif /* HAVE_ALBUMART */
 
 /* Functions */
 unsigned int audio_track_count(void);
@@ -85,9 +83,7 @@ void audio_set_crossfade(int enable);
 #ifdef HAVE_PLAY_FREQ
 void audio_set_playback_frequency(unsigned int sample_rate_hz);
 #endif
-#ifdef HAVE_ALBUMART
 void set_albumart_mode(int setting);
-#endif
 
 size_t audio_get_filebuflen(void);
 

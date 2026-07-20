@@ -190,10 +190,8 @@ struct skin_viewport {
     bool output_to_backdrop_buffer;
     bool fgbg_changed;
     struct gradient_config start_gradient;
-#ifdef HAVE_ALBUMART
     unsigned int dc_orig_fg; /* original parsed fg for dynamic colors */
     unsigned int dc_orig_bg; /* original parsed bg for dynamic colors */
-#endif
 };
 struct viewport_colour {
     unsigned colour;
@@ -208,7 +206,6 @@ struct playlistviewer {
 };
 
 
-#ifdef HAVE_ALBUMART
 
 /* albumart definitions */
 #define WPS_ALBUMART_NONE           0      /* WPS does not contain AA tag */
@@ -234,7 +231,6 @@ struct skin_albumart {
 
     int draw_handle;
 };
-#endif
 
 
 struct line {
@@ -310,13 +306,11 @@ struct wps_data
     bool use_extra_framebuffer;
 #endif
 
-#ifdef HAVE_ALBUMART
     OFFSETTYPE(struct skin_albumart *) albumart;
     int    playback_aa_slot;
     /* copy of albumart to survive skin resets, used to check if albumart
      * dimensions changed on skin change */
     int16_t last_albumart_width, last_albumart_height;
-#endif
 
 
     bool peak_meter_enabled;

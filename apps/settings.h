@@ -138,20 +138,16 @@ enum
 enum
 {
     BROWSER_DEFAULT_FILES = 0,
-#ifdef HAVE_TAGCACHE
     BROWSER_DEFAULT_DB,
-#endif
     BROWSER_DEFAULT_PL_CAT
 };
 
-#ifdef HAVE_ALBUMART
 enum
 {
     AA_OFF = 0,
     AA_PREFER_EMBEDDED,
     AA_PREFER_IMAGE_FILE
 };
-#endif
 
 enum
 {
@@ -334,9 +330,7 @@ struct system_status
 #endif
     int runtime;       /* current runtime since last charge */
     int topruntime;    /* top known runtime */
-#ifdef HAVE_DIRCACHE
     int dircache_size;      /* directory cache structure last size, 22 bits */
-#endif
     signed char last_screen;
     int  viewer_icon_count;
     int last_volume_change; /* tick the last volume change happened. skins use this */
@@ -483,13 +477,8 @@ struct user_settings
     int usemrb;             /* use MRB list: 0=No, 1=Yes, 2=One per playlist,
                                              3=One per playlist and track */
 
-#ifdef HAVE_DIRCACHE
     bool dircache;          /* enable directory cache */
-#endif
-#ifdef HAVE_TAGCACHE
-#ifdef HAVE_TC_RAMCACHE
     int tagcache_ram;        /* load tagcache to ram: 1=on, 2=quick (ignore dircache) */
-#endif
     bool tagcache_autoupdate; /* automatically keep tagcache in sync? */
     bool autoresume_enable;   /* enable auto-resume feature? */
     int autoresume_automatic; /* resume next track? 0=never, 1=always,
@@ -498,7 +487,6 @@ struct user_settings
     bool runtimedb;           /* runtime database active? */
     unsigned char tagcache_scan_paths[MAX_PATHLIST+1];
     unsigned char tagcache_db_path[MAX_PATHNAME+1];
-#endif /* HAVE_TAGCACHE */
 
     unsigned char backdrop_file[MAX_PATHNAME+1];  /* backdrop bitmap file */
 
@@ -508,9 +496,7 @@ struct user_settings
     int lse_color; /* end color for the selector gradient */
     int lst_color; /* color of the text for the selector */
     unsigned char colors_file[MAX_FILENAME+1];
-#ifdef HAVE_ALBUMART
     bool dynamic_colors; /* auto-color from album art */
-#endif
 
     /* Modal dialog chrome (apps/gui/dialog.h). Applied in settings_apply() via
      * dialog_set_default_style(). The metrics always apply; the colours only
@@ -531,7 +517,6 @@ struct user_settings
     int dialog_btn_bg_sel;
     int dialog_btn_border_sel;
 
-#ifdef HAVE_TAGCACHE
     /* apps/gui/album_covers.c settings -- see enum show_album_name_values /
      * sort_albums_by_values / year_sort_order_values in album_covers.h for
      * what the choice settings' integer values mean. */
@@ -545,7 +530,6 @@ struct user_settings
     int  album_covers_sort_albums_by;
     int  album_covers_year_sort_order;
     bool album_covers_show_year;
-#ifdef HAVE_ALBUMART
     /* Album covers in the database browser (tall rows + the skin's %La tag). On
      * by default; a theme sets it off in its .cfg for the stock/fast list. Off
      * also means faster scrolling (no cover decode). */
@@ -556,8 +540,6 @@ struct user_settings
     /* Uniform row height when album or artist art is on -- a little above the
      * cover size so the square fits. Ignored when both are off. */
     int  db_art_row_height;
-#endif
-#endif
 
     int browser_default;        /* Default browser when accessed from WPS */
 
@@ -573,9 +555,7 @@ struct user_settings
     bool keep_current_track_on_replace_playlist;
     bool show_shuffled_adding_options; /* whether to display options for adding shuffled tracks to dynamic playlist */
     int show_queue_options; /* how and whether to display options to queue tracks */
-#ifdef HAVE_ALBUMART
     int album_art; /* switch off album art display or choose preferred source */
-#endif
     bool rewind_across_tracks;
 
     /* playlist viewer settings */

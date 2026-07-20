@@ -33,11 +33,9 @@ struct entry {
     char *name;
     int attr; /* FAT attributes + file type flags */
     unsigned time_write; /* Last write time */
-    #ifdef HAVE_TAGCACHE
     int customaction; /* db use */
     char* album_name; /* db use */
     int idx_id; /* db use */
-    #endif
 };
 
 #define BROWSE_SELECTONLY       0x0001  /* exit on selecting a file */
@@ -91,11 +89,9 @@ struct tree_context {
     int filesindir; /* The number of files in the dircache */
     int dirsindir; /* file use */
     int dirlength; /* total number of entries in dir, incl. those not loaded */
-#ifdef HAVE_TAGCACHE
     int currtable; /* db use */
     int currextra; /* db use */
     int special_entry_count; /* db use */
-#endif
     int sort_dir; /* directory sort order */
     int out_of_tree; /* shortcut from elsewhere */
     struct tree_cache cache;

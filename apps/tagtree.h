@@ -18,7 +18,6 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#ifdef HAVE_TAGCACHE
 #ifndef _TAGTREE_H
 #define _TAGTREE_H
 
@@ -83,5 +82,4 @@ int tagtree_get_custom_action(struct tree_context* c);
 bool tagtree_get_subentry_filename(char *buf, size_t bufsize);
 bool tagtree_subentries_do_action(bool (*action_cb)(const char *file_name));
 
-#endif
 #endif

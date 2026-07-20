@@ -18,7 +18,6 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#ifdef HAVE_TAGCACHE
 #ifndef _TAGCACHE_H
 #define _TAGCACHE_H
 
@@ -195,13 +194,9 @@ void tagcache_remove_statefile(void);
 void tagcache_screensync_event(void);
 void tagcache_screensync_enable(bool state);
 
-#ifdef HAVE_TC_RAMCACHE
 bool tagcache_is_in_ram(void);
-#ifdef HAVE_DIRCACHE
 bool tagcache_fill_tags(struct mp3entry *id3, const char *filename);
-#endif
 void tagcache_unload_ramcache(void);
-#endif
 void tagcache_commit_finalize(void);
 void tagcache_init(void) INIT_ATTR;
 bool tagcache_is_initialized(void);
@@ -212,5 +207,4 @@ void tagcache_stop_scan(void);
 bool tagcache_update(void);
 bool tagcache_rebuild(void);
 int tagcache_get_max_commit_step(void);
-#endif
 #endif

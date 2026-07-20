@@ -46,9 +46,7 @@
 #include "shortcuts.h"
 #include "dircache.h"
 #include "viewport.h"
-#ifdef HAVE_TAGCACHE
 #include "tagcache.h"
-#endif
 #include "crc32.h"
 #include "logf.h"
 #include "disk.h"
@@ -1418,7 +1416,6 @@ static bool dbg_disk_info(void)
     return simplelist_show_list(&info);
 }
 
-#ifdef HAVE_DIRCACHE
 static int dircache_callback(int btn, struct gui_synclist *lists)
 {
     (void)lists;
@@ -1482,9 +1479,7 @@ static bool dbg_dircache_info(void)
     return simplelist_show_list(&info);
 }
 
-#endif /* HAVE_DIRCACHE */
 
-#ifdef HAVE_TAGCACHE
 static int database_callback(int btn, struct gui_synclist *lists)
 {
     (void)lists;
@@ -1556,7 +1551,6 @@ static bool dbg_tagcache_info(void)
     tagcache_screensync_enable(true);
     return simplelist_show_list(&info);
 }
-#endif
 
 #if defined(CPU_PP) && !(CONFIG_STORAGE & STORAGE_SD)
 static bool dbg_save_roms(void)
@@ -1979,12 +1973,8 @@ static const struct {
 #endif
 #endif
         { "Metadata log", dbg_metadatalog },
-#ifdef HAVE_DIRCACHE
         { "View dircache info", dbg_dircache_info },
-#endif
-#ifdef HAVE_TAGCACHE
         { "View database info", dbg_tagcache_info },
-#endif
         { "View buffering thread", dbg_buffering_thread },
 #ifdef PM_DEBUG
         { "pm histogram", peak_meter_histogram},

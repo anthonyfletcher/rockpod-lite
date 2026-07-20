@@ -41,12 +41,8 @@
 #include "appevents.h"
 #include "statusbar-skinned.h"
 #include "skin_engine/skin_albumart_color.h"
-#ifdef HAVE_TAGCACHE
 #include "tagcache.h"
-#endif
-#ifdef HAVE_ALBUMART
 #include "albumart_cache.h"
-#endif
 
 /* The minimum number of pending button events in queue before starting
  * to limit list drawing interval.
@@ -509,13 +505,11 @@ void gui_synclist_set_icon_callback(struct gui_synclist * lists,
     lists->callback_get_item_icon = icon_callback;
 }
 
-#ifdef HAVE_ALBUMART
 void gui_synclist_set_albumart_callback(struct gui_synclist * lists,
                                         list_get_albumart albumart_callback)
 {
     lists->callback_get_item_albumart = albumart_callback;
 }
-#endif
 
 void gui_synclist_set_row_height(struct gui_synclist * lists, int height)
 {
@@ -854,12 +848,8 @@ int list_do_action_timeout(struct gui_synclist *lists, int timeout)
      * long as any such work is busy. */
     {
         bool ui_busy = ui_working();
-#if defined(HAVE_TAGCACHE)
         ui_busy = ui_busy || tagcache_is_busy();
-#endif
-#if defined(HAVE_ALBUMART)
         ui_busy = ui_busy || albumart_cache_is_busy();
-#endif
         if (ui_busy)
         {
             int busy_timeout = HZ / 10;

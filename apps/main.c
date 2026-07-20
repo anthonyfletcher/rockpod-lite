@@ -64,13 +64,9 @@
 #include "plugin.h"
 #include "misc.h"
 #include "dircache.h"
-#ifdef HAVE_TAGCACHE
 #include "tagcache.h"
-#ifdef HAVE_ALBUMART
 #include "albumart_cache.h"
-#endif
 #include "tagtree.h"
-#endif
 #include "lang.h"
 #include "string.h"
 #include "splash.h"
@@ -175,7 +171,6 @@ int show_logo_boot( void )
     return 0;
 }
 
-#ifdef HAVE_DIRCACHE
 static int INIT_ATTR init_dircache(bool preinit)
 {
     if (preinit)
@@ -210,9 +205,7 @@ static int INIT_ATTR init_dircache(bool preinit)
 
     return result;
 }
-#endif /* HAVE_DIRCACHE */
 
-#ifdef HAVE_TAGCACHE
 static void init_tagcache(void) INIT_ATTR;
 static void init_tagcache(void)
 {
@@ -221,9 +214,7 @@ static void init_tagcache(void)
     long talked_tick = 0;
 #endif
     tagcache_init();
-#ifdef HAVE_ALBUMART
     albumart_cache_init();
-#endif
 
     while (!tagcache_is_initialized())
     {
@@ -269,7 +260,6 @@ static void init_tagcache(void)
         show_logo_boot();
     }
 }
-#endif /* HAVE_TAGCACHE */
 
 
 #include "errno.h"
@@ -495,29 +485,21 @@ static void init(void)
     CHART(">init_battery_tables");
     init_battery_tables();
     CHART("<init_battery_tables");
-#ifdef HAVE_DIRCACHE
     CHART(">init_dircache(true)");
     rc = init_dircache(true);
     CHART("<init_dircache(true)");
-#ifdef HAVE_TAGCACHE
     if (rc < 0)
         tagcache_remove_statefile();
-#endif /* HAVE_TAGCACHE */
-#endif /* HAVE_DIRCACHE */
 
     CHART(">settings_apply(true)");
     settings_apply(true);
     CHART("<settings_apply(true)");
-#ifdef HAVE_DIRCACHE
     CHART(">init_dircache(false)");
     init_dircache(false);
     CHART("<init_dircache(false)");
-#endif
-#ifdef HAVE_TAGCACHE
     CHART(">init_tagcache");
     init_tagcache();
     CHART("<init_tagcache");
-#endif
 
     playlist_init();
     tree_mem_init();

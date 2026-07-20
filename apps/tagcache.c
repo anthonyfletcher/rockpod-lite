@@ -302,7 +302,6 @@ struct master_header {
 
 static struct master_header current_tcmh;
 
-#ifdef HAVE_TC_RAMCACHE
 
 #define TC_ALIGN_PTR(p, type, gap_out_p) \
     ({ typeof (p) __p = (p);                                  \
@@ -312,11 +311,9 @@ static struct master_header current_tcmh;
 
 #define IF_TCRCDC(...) IF_DIRCACHE(__VA_ARGS__)
 
-#ifdef HAVE_DIRCACHE
 #define tcrc_dcfrefs \
     ((struct dircache_fileref *)(tcramcache.hdr->tags[tag_filename] + \
                                   sizeof (struct tagcache_header)))
-#endif /* HAVE_DIRCACHE */
 
 /* Header is created when loading database to ram. */
 struct ramcache_header {
@@ -343,11 +340,6 @@ static inline void tcrc_buffer_unlock(void)
     core_unpin(tcramcache.handle);
 }
 
-#else /* ndef HAVE_TC_RAMCACHE */
-
-#define IF_TCRCDC(...)
-
-#endif /* HAVE_TC_RAMCACHE */
 
 /**
  * Full tag entries stored in a temporary file waiting
@@ -782,7 +774,6 @@ static void free_tempbuf(void)
     tempbuf_size = 0;
 }
 
-#if defined(HAVE_TC_RAMCACHE) && defined(HAVE_DIRCACHE)
 /* find the ramcache entry corresponding to the file indicated by
  * filename and dc (it's corresponding dircache id). */
 static long find_entry_ram(const char *filename)
@@ -833,7 +824,6 @@ static long find_entry_ram(const char *filename)
 
     return -1;
 }
-#endif /* defined (HAVE_TC_RAMCACHE) && defined (HAVE_DIRCACHE) */
 
 static long find_entry_disk(const char *filename_raw, bool localfd)
 {
@@ -944,9 +934,7 @@ static int find_index(const char *filename)
 {
     long idx_id = -1;
 
-#if defined(HAVE_TC_RAMCACHE) && defined(HAVE_DIRCACHE)
     idx_id = find_entry_ram(filename);
-#endif
 
     if (idx_id < 0)
         idx_id = find_entry_disk(filename, true);
@@ -986,7 +974,6 @@ static bool get_index(int masterfd, int idxid,
         return false;
     }
 
-#ifdef HAVE_TC_RAMCACHE
     if (tc_stat.ramcache && use_ram)
     {
         if (tcramcache.hdr->indices[idxid].flag & FLAG_DELETED)
@@ -995,7 +982,6 @@ static bool get_index(int masterfd, int idxid,
         *idx = tcramcache.hdr->indices[idxid];
         return true;
     }
-#endif /* HAVE_TC_RAMCACHE */
 
     if (masterfd < 0)
     {
@@ -1039,7 +1025,6 @@ static bool write_index(int masterfd, int idxid, struct index_entry *idx)
         return false;
     }
 
-#ifdef HAVE_TC_RAMCACHE
     /* Only update numeric data. Writing the whole index to RAM by memcpy
      * destroys dircache pointers!
      */
@@ -1059,7 +1044,6 @@ static bool write_index(int masterfd, int idxid, struct index_entry *idx)
         idx_ram->flag = (idx->flag & 0x0000ffff)
             | (idx_ram->flag & (0xffff0000 | FLAG_DIRCACHE));
     }
-#endif /* HAVE_TC_RAMCACHE */
 
     lseek(masterfd, idxid * sizeof(struct index_entry)
           + sizeof(struct master_header), SEEK_SET);
@@ -1116,17 +1100,14 @@ static bool retrieve(struct tagcache_search *tcs, IF_DIRCACHE(int idx_id,)
         goto failure;
     }
 
-#ifdef HAVE_TC_RAMCACHE
     if (tcs->ramsearch)
     {
-#ifdef HAVE_DIRCACHE
         if (tag == tag_filename && (idx->flag & FLAG_DIRCACHE))
         {
             if (dircache_get_fileref_path(&tcrc_dcfrefs[idx_id], buf, bufsz) >= 0)
                 success = true;
         }
         else
-#endif /* HAVE_DIRCACHE */
         if (tag != tag_filename)
         {
             struct tagfile_entry *ep =
@@ -1135,7 +1116,6 @@ static bool retrieve(struct tagcache_search *tcs, IF_DIRCACHE(int idx_id,)
             success = true;
         }
     }
-#endif /* HAVE_TC_RAMCACHE */
 
     if (!success && open_files(tcs, tag))
     {
@@ -1486,7 +1466,6 @@ static bool check_clauses(struct tagcache_search *tcs,
         }
         seek = check_virtual_tags(clause->tag, tcs->idx_id, idx);
 
-#ifdef HAVE_TC_RAMCACHE
         if (tcs->ramsearch)
         {
             struct tagfile_entry *tfe;
@@ -1510,7 +1489,6 @@ static bool check_clauses(struct tagcache_search *tcs,
             }
         }
         else
-#endif /* HAVE_TC_RAMCACHE */
         {
             struct tagfile_entry tfe;
 
@@ -1626,7 +1604,6 @@ static bool build_lookup_list(struct tagcache_search *tcs)
 
     tcs->seek_list_count = 0;
 
-#ifdef HAVE_TC_RAMCACHE
     if (tcs->ramsearch)
     {
         tcrc_buffer_lock(); /* lock because below makes a pointer to movable data */
@@ -1676,7 +1653,6 @@ static bool build_lookup_list(struct tagcache_search *tcs)
 
         return tcs->seek_list_count > 0;
     }
-#endif /* HAVE_TC_RAMCACHE */
 
     if (tcs->masterfd < 0)
     {
@@ -1758,16 +1734,12 @@ bool tagcache_search(struct tagcache_search *tcs, int tag)
     for (i = 0; i < TAG_COUNT; i++)
         tcs->idxfd[i] = -1;
 
-#ifndef HAVE_TC_RAMCACHE
-    tcs->ramsearch = false;
-#else
     tcs->ramsearch = tc_stat.ramcache;
     if (tcs->ramsearch)
     {
         tcs->entry_count = tcramcache.hdr->entry_count[tcs->type];
     }
     else
-#endif
     {
         /* Always open as R/W so we can pass tcs to functions that modify data also
          * without failing. */
@@ -1868,23 +1840,17 @@ bool tagcache_search_add_clause(struct tagcache_search *tcs,
 static bool get_next(struct tagcache_search *tcs, bool is_numeric, char *buf, long bufsz)
 {
     struct tagfile_entry entry;
-#if defined(HAVE_TC_RAMCACHE) && defined(HAVE_DIRCACHE)
     long flag = 0;
-#endif
 
     if (tcs->idxfd[tcs->type] < 0 && !is_numeric
-#ifdef HAVE_TC_RAMCACHE
         && !tcs->ramsearch
-#endif
         )
         return false;
 
     /* Relative fetch. */
     if (tcs->filter_count > 0 || tcs->clause_count > 0 || is_numeric
-#if defined(HAVE_TC_RAMCACHE) && defined(HAVE_DIRCACHE)
         /* We need to retrieve flag status for dircache. */
         || (tcs->ramsearch && tcs->type == tag_filename)
-#endif
         )
     {
         struct tagcache_seeklist_entry *seeklist;
@@ -1903,9 +1869,7 @@ static bool get_next(struct tagcache_search *tcs, bool is_numeric, char *buf, lo
         }
 
         seeklist = &tcs->seeklist[tcs->list_position];
-#if defined(HAVE_TC_RAMCACHE) && defined(HAVE_DIRCACHE)
         flag = seeklist->flag;
-#endif
         tcs->position = seeklist->seek;
         tcs->idx_id = seeklist->idx_id;
         tcs->list_position++;
@@ -1932,10 +1896,8 @@ static bool get_next(struct tagcache_search *tcs, bool is_numeric, char *buf, lo
     }
 
     /* Direct fetch. */
-#ifdef HAVE_TC_RAMCACHE
     if (tcs->ramsearch)
     {
-#ifdef HAVE_DIRCACHE
         if (tcs->type == tag_filename && (flag & FLAG_DIRCACHE))
         {
             ssize_t len = dircache_get_fileref_path(&tcrc_dcfrefs[tcs->idx_id],
@@ -1949,7 +1911,6 @@ static bool get_next(struct tagcache_search *tcs, bool is_numeric, char *buf, lo
             }
             /* else do it the hard way */
         }
-#endif /* HAVE_DIRCACHE */
 
         if (tcs->type != tag_filename)
         {
@@ -1968,7 +1929,6 @@ static bool get_next(struct tagcache_search *tcs, bool is_numeric, char *buf, lo
             return true;
         }
     }
-#endif /* HAVE_TC_RAMCACHE */
 
     if (!open_files(tcs, tcs->type))
     {
@@ -2074,7 +2034,6 @@ void tagcache_search_finish(struct tagcache_search *tcs)
         write_lock--;
 }
 
-#if defined(HAVE_TC_RAMCACHE) && defined(HAVE_DIRCACHE)
 static struct tagfile_entry *get_tag(const struct index_entry *entry, int tag)
 {
     return (struct tagfile_entry *)&tcramcache.hdr->tags[tag][entry->tag_seek[tag]];
@@ -2167,7 +2126,6 @@ bool tagcache_fill_tags(struct mp3entry *id3, const char *filename)
 
     return true;
 }
-#endif /* defined(HAVE_TC_RAMCACHE) && defined(HAVE_DIRCACHE) */
 
 static inline void write_item(const char *item)
 {
@@ -2240,9 +2198,7 @@ static void NO_INLINE add_tagcache(char *path, unsigned long mtime)
         return ;
 
     /* Check if the file is already cached. */
-#if defined(HAVE_TC_RAMCACHE) && defined(HAVE_DIRCACHE)
     idx_id = find_entry_ram(path);
-#endif
 
     /* Be sure the entry doesn't exist. */
     if (filenametag_fd >= 0 && idx_id < 0)
@@ -3318,12 +3274,8 @@ static bool commit(void)
     int i, len, rc;
     int tmpfd;
     int masterfd;
-#ifdef HAVE_DIRCACHE
     bool dircache_buffer_stolen = false;
-#endif
-#ifdef HAVE_TC_RAMCACHE
     bool ramcache_buffer_stolen = false;
-#endif
     logf("committing tagcache");
 
     while (write_lock)
@@ -3370,16 +3322,13 @@ static bool commit(void)
 
 
     /* At first be sure to unload the ramcache! */
-#ifdef HAVE_TC_RAMCACHE
     tc_stat.ramcache = false;
-#endif
 
     /* Beyond here, jump to commit_error to undo locks and restore dircache */
     rc = false;
     read_lock++;
 
     /* Try to steal every buffer we can :) */
-#ifdef HAVE_DIRCACHE
     if (tempbuf_size == 0)
     {
         /* Suspend dircache to free its allocation. */
@@ -3388,9 +3337,7 @@ static bool commit(void)
 
         allocate_tempbuf();
     }
-#endif /* HAVE_DIRCACHE */
 
-#ifdef HAVE_TC_RAMCACHE
     if (tempbuf_size == 0 && tc_stat.ramcache_allocated > 0)
     {
         tcrc_buffer_lock();
@@ -3399,7 +3346,6 @@ static bool commit(void)
         tempbuf_size &= ~0x03;
         ramcache_buffer_stolen = true;
     }
-#endif /* HAVE_TC_RAMCACHE */
 
 #if defined(PLUGIN)
     if (tempbuf_size == 0)
@@ -3485,7 +3431,6 @@ static bool commit(void)
         logf("tagcache committed");
         tagcache_commit_finalize();
 
-#if defined(HAVE_TC_RAMCACHE)
         if (ramcache_buffer_stolen)
         {
             tempbuf = NULL;
@@ -3500,31 +3445,26 @@ static bool commit(void)
          * start_scan -> load_ramcache -> ... repeats forever. */
         if (tc_stat.ramcache_allocated > 0 && tch.entry_count > 0)
             tagcache_start_scan();
-#endif /* HAVE_TC_RAMCACHE */
 
         rc = true;
     } /*!USR_CANCEL*/
 
 commit_error:
-#ifdef HAVE_TC_RAMCACHE
     if (ramcache_buffer_stolen)
     {
         tempbuf = NULL;
         tempbuf_size = 0;
         tcrc_buffer_unlock();
     }
-#endif /* HAVE_TC_RAMCACHE */
 
     read_lock--;
 
-#ifdef HAVE_DIRCACHE
     /* Resume the dircache, if we stole the buffer. */
     if (dircache_buffer_stolen)
     {
         free_tempbuf();
         dircache_resume();
     }
-#endif /* HAVE_DIRCACHE */
 
     return rc;
 }
@@ -4023,11 +3963,9 @@ static bool delete_entry(long idx_id)
 
     logf("delete_entry(): %ld", idx_id);
 
-#ifdef HAVE_TC_RAMCACHE
     /* At first mark the entry removed from ram cache. */
     if (tc_stat.ramcache)
         tcramcache.hdr->indices[idx_id].flag |= FLAG_DELETED;
-#endif
 
     if ( (masterfd = open_master_fd(&myhdr, true) ) < 0)
         return false;
@@ -4062,12 +4000,10 @@ static bool delete_entry(long idx_id)
     {
         struct index_entry *idxp;
 
-#ifdef HAVE_TC_RAMCACHE
         /* Use RAM DB if available for greater speed */
         if (tc_stat.ramcache)
             idxp = &tcramcache.hdr->indices[i];
         else
-#endif
         {
             if (read_index_entries(masterfd, &idx, 1) != sizeof(struct index_entry))
             {
@@ -4104,7 +4040,6 @@ static bool delete_entry(long idx_id)
          * That way runtime statistics of moved or altered files can be
          * resurrected.
          */
-#ifdef HAVE_TC_RAMCACHE
         if (tc_stat.ramcache && tag != tag_filename)
         {
             struct tagfile_entry *tfe;
@@ -4116,7 +4051,6 @@ static bool delete_entry(long idx_id)
             myidx.tag_seek[tag] = *seek;
         }
         else
-#endif /* HAVE_TC_RAMCACHE */
         {
             struct tagfile_entry tfe;
 
@@ -4161,7 +4095,6 @@ static bool delete_entry(long idx_id)
             continue;
         }
 
-#ifdef HAVE_TC_RAMCACHE
         /* Delete from ram. */
         if (tc_stat.ramcache && tag != tag_filename)
         {
@@ -4169,7 +4102,6 @@ static bool delete_entry(long idx_id)
                     (struct tagfile_entry *)&tcramcache.hdr->tags[tag][oldseek];
             str_setlen(tagentry->tag_data, 0);
         }
-#endif /* HAVE_TC_RAMCACHE */
 
         /* Open the index file, which contains the tag names. */
         if (fd < 0)
@@ -4241,7 +4173,6 @@ static bool check_event_queue(void)
     return false;
 }
 
-#ifdef HAVE_TC_RAMCACHE
 
 static void fix_ramcache(void* old_addr, void* new_addr)
 {
@@ -4283,9 +4214,7 @@ static bool allocate_tagcache(void)
      */
     size_t alloc_size = tcmh.tch.datasize + 256 + TAGCACHE_RESERVE +
         sizeof(struct ramcache_header) + TAG_COUNT*sizeof(void *);
-#ifdef HAVE_DIRCACHE
     alloc_size += tcmh.tch.entry_count*sizeof(struct dircache_fileref);
-#endif
 
     /* Ensure enough memory remains for the audio buffer after allocation.
      * Without this check, a large database can consume so much RAM that
@@ -4324,10 +4253,8 @@ static bool load_tagcache(void)
     ssize_t bytesleft = tc_stat.ramcache_allocated - sizeof(struct ramcache_header);
     int fd;
 
-#ifdef HAVE_DIRCACHE
     /* Wait for any in-progress dircache build to complete */
     dircache_wait();
-#endif /* HAVE_DIRCACHE */
 
     logf("loading tagcache to ram...");
 
@@ -4454,7 +4381,6 @@ static bool load_tagcache(void)
                and dircache references are. */
             if (tag == tag_filename)
             {
-            #ifdef HAVE_DIRCACHE
                 if (idx->flag & FLAG_DIRCACHE)
                 {
                     /* This flag must not be used yet. */
@@ -4464,7 +4390,6 @@ static bool load_tagcache(void)
 
                 p += sizeof (struct dircache_fileref);
                 bytesleft -= sizeof (struct dircache_fileref);
-            #endif /* HAVE_DIRCACHE */
 
                 char filename[TAGCACHE_BUFSZ];
                 if (fe->tag_length >= (long)sizeof(filename)-1)
@@ -4521,10 +4446,8 @@ static bool load_tagcache(void)
             }
         }
 
-    #ifdef HAVE_DIRCACHE
         if (tag == tag_filename)
             p = (char *)&tcrc_dcfrefs[tcmh.tch.entry_count];
-    #endif /* HAVE_DIRCACHE */
 
         close(fd);
     }
@@ -4542,7 +4465,6 @@ failure:
     tcrc_buffer_unlock();
     return ok;
 }
-#endif /* HAVE_TC_RAMCACHE */
 
 static bool check_file_refs(bool auto_update)
 {
@@ -4555,17 +4477,12 @@ static bool check_file_refs(bool auto_update)
 
     logf("reverse scan...");
 
-#ifdef HAVE_DIRCACHE
     if (tcramcache.handle > 0)
         tcrc_buffer_lock();
     else
         return false;
     /* Wait for any in-progress dircache build to complete */
     dircache_wait();
-#else
-    if (!auto_update)
-        return false;
-#endif
 
     fd = open_tag_fd(&hdr, tag_filename, false); /* open read only*/
 
@@ -4603,7 +4520,6 @@ static bool check_file_refs(bool auto_update)
         }
 
         int idx_id = tfe.idx_id; /* dircache reference clobbers *tfe */
-#ifdef HAVE_DIRCACHE
         struct index_entry *idx = &tcramcache.hdr->indices[idx_id];
         unsigned int searchflag;
         if (!auto_update)
@@ -4629,9 +4545,6 @@ static bool check_file_refs(bool auto_update)
         else if (rc_cache == 0)     /* not in cache but okay */
         {;}
         else if (auto_update && rc_cache == ENOENT)
-#else
-        if (!file_exists(buf))
-#endif /* HAVE_DIRCACHE */
         {
             logf("Entry no longer valid.");
             logf("-> %s / %" PRId32, buf, tfe.tag_length);
@@ -4643,10 +4556,8 @@ static bool check_file_refs(bool auto_update)
 
 wend_finished:
 
-#ifdef HAVE_DIRCACHE
     if (tcramcache.handle > 0)
         tcrc_buffer_unlock();
-#endif
     close(fd);
     logf("done");
 
@@ -4793,9 +4704,7 @@ void do_tagcache_build(const char *path[])
     total_entry_count = 0;
     processed_dir_count = 0;
 
-#ifdef HAVE_DIRCACHE
     dircache_wait();
-#endif
 
     logf("updating tagcache");
 
@@ -4929,14 +4838,12 @@ void do_tagcache_build(const char *path[])
         logf("tagcache built!");
     }
 
-#ifdef HAVE_TC_RAMCACHE
     if (tcramcache.hdr)
     {
         /* Import runtime statistics if we just initialized the db. */
         if (current_tcmh.serial == 0)
             queue_post(&tagcache_queue, Q_IMPORT_CHANGELOG, 0);
     }
-#endif
 
     cpu_boost(false);
 }
@@ -4955,7 +4862,6 @@ void tagcache_build(void)
     tc_stat.scanning = false;
 }
 
-#ifdef HAVE_TC_RAMCACHE
 static void load_ramcache(void)
 {
     if (!tcramcache.hdr)
@@ -4986,7 +4892,6 @@ void tagcache_unload_ramcache(void)
     /* Just to make sure there is no statefile present. */
     // remove_db_file(TAGCACHE_STATEFILE);
 }
-#endif /* HAVE_TC_RAMCACHE */
 
 
 /*
@@ -5025,12 +4930,10 @@ static void tagcache_thread(void)
         }
     }
 
-#ifdef HAVE_TC_RAMCACHE
 
     /* Allocate space for the tagcache if found on disk. */
     if (global_settings.tagcache_ram && !tc_stat.ramcache)
         allocate_tagcache();
-#endif /* HAVE_TC_RAMCACHE */
 
     cpu_boost(false);
     tc_stat.initialized = true;
@@ -5062,9 +4965,7 @@ static void tagcache_thread(void)
 
             case Q_UPDATE:
                 tagcache_build();
-#ifdef HAVE_TC_RAMCACHE
                 load_ramcache();
-#endif
                 check_deleted_files();
                 break ;
 
@@ -5082,16 +4983,13 @@ static void tagcache_thread(void)
                 if (!tc_stat.ready)
                 {
                     tagcache_build();
-#ifdef HAVE_TC_RAMCACHE
                     if (global_settings.tagcache_ram)
                         load_ramcache();
-#endif
                     check_deleted_files();
                     check_done = true;
                     break ;
                 }
 
-#ifdef HAVE_TC_RAMCACHE
                 if (!tc_stat.ramcache && global_settings.tagcache_ram)
                 {
                     load_ramcache();
@@ -5101,7 +4999,6 @@ static void tagcache_thread(void)
                         tagcache_build();
                 }
                 else
-#endif /* HAVE_RC_RAMCACHE */
                 if (global_settings.tagcache_autoupdate)
                 {
                     tagcache_build();
@@ -5161,7 +5058,6 @@ static int get_progress(void)
 {
     int total_count = -1;
 
-#ifdef HAVE_DIRCACHE
     struct dircache_info dcinfo;
     dircache_get_info(&dcinfo);
     if (dcinfo.status != DIRCACHE_IDLE &&
@@ -5170,13 +5066,10 @@ static int get_progress(void)
         total_count = dcinfo.entry_count;
     }
     else
-#endif /* HAVE_DIRCACHE */
-#ifdef HAVE_TC_RAMCACHE
     {
         if (tcramcache.hdr && tc_stat.ramcache)
             total_count = current_tcmh.tch.entry_count;
     }
-#endif /* HAVE_TC_RAMCACHE */
 
     if (total_count < 0)
         return -1;
@@ -5261,12 +5154,10 @@ bool tagcache_is_usable(void)
 {
     return tc_stat.initialized && tc_stat.ready;
 }
-#ifdef HAVE_TC_RAMCACHE
 bool tagcache_is_in_ram(void)
 {
     return tc_stat.ramcache;
 }
-#endif
 int tagcache_get_commit_step(void)
 {
     return tc_stat.commit_step;

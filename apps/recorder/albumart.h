@@ -22,7 +22,6 @@
 #ifndef _ALBUMART_H_
 #define _ALBUMART_H_
 
-#if defined(HAVE_ALBUMART) || defined(PLUGIN)
 
 #include <stdbool.h>
 #include "metadata.h"
@@ -40,6 +39,5 @@ bool search_albumart_files(const struct mp3entry *id3, const char *size_string,
 
 void get_albumart_size(struct bitmap *bmp);
 
-#endif /* HAVE_ALBUMART */
 
 #endif /* _ALBUMART_H_ */

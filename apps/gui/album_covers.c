@@ -1163,13 +1163,11 @@ static int id3_get_index(struct mp3entry *id3)
 
 bool retrieve_id3(struct mp3entry *id3, const char* file)
 {
-#if defined (HAVE_TAGCACHE) && defined(HAVE_TC_RAMCACHE) && defined(HAVE_DIRCACHE)
     if (tagcache_fill_tags(id3, file))
     {
         strlcpy(id3->path, file, sizeof(id3->path));
         return true;
     }
-#endif
 
     return get_metadata(id3, -1, file);
 }

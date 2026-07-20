@@ -328,7 +328,5 @@ MAKE_MENU(theme_menu, ID2P(LANG_THEME_MENU),
             &cursor_style,
             &sep_menu,
             &colors_settings,
-#ifdef HAVE_ALBUMART
             &dynamic_colors,
-#endif
 );

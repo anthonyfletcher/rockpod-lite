@@ -57,7 +57,6 @@ enum synclist_cursor
  * Note : we use the ICON type because the real type depends of the plateform
  */
 typedef enum themable_icons list_get_icon(int selected_item, void * data);
-#ifdef HAVE_ALBUMART
 /*
  * Album art callback
  *  - selected_item : an integer that tells the number of the item to display
@@ -71,7 +70,6 @@ typedef enum themable_icons list_get_icon(int selected_item, void * data);
  */
 typedef const struct bitmap * list_get_albumart(int selected_item, void * data,
                                                 struct dim *size);
-#endif
 /*
  * Text callback
  *  - selected_item : an integer that tells the number of the item to display
@@ -178,9 +176,7 @@ struct gui_synclist
     long scheduled_talk_tick, last_talked_tick, dirty_tick;
 
     list_get_icon *callback_get_item_icon;
-#ifdef HAVE_ALBUMART
     list_get_albumart *callback_get_item_albumart;
-#endif
     /* Uniform row height override in pixels; 0 == use the skin/font height.
      * Lets a list (e.g. the database album list) ask for taller rows without a
      * per-item callback -- every row is this height. */
@@ -216,13 +212,11 @@ extern void gui_synclist_init(
     );
 extern void gui_synclist_set_nb_items(struct gui_synclist * lists, int nb_items);
 extern void gui_synclist_set_icon_callback(struct gui_synclist * lists, list_get_icon icon_callback);
-#ifdef HAVE_ALBUMART
 extern void gui_synclist_set_albumart_callback(struct gui_synclist * lists, list_get_albumart albumart_callback);
 /* Uniform row height in pixels; 0 restores the default skin/font height. */
 extern void gui_synclist_set_row_height(struct gui_synclist * lists, int height);
 /* The list's uniform row height (the override if set, else the skin/font height). */
 int list_item_height(struct gui_synclist *list, enum screen_type screen);
-#endif
 extern void gui_synclist_set_voice_callback(struct gui_synclist * lists, list_speak_item voice_callback);
 extern void gui_synclist_set_viewport_defaults(struct viewport *vp, enum screen_type screen);
 extern void gui_synclist_set_color_callback(struct gui_synclist * lists, list_get_color color_callback);
@@ -265,12 +259,10 @@ int skinlist_get_item_number(void);
 int skinlist_get_item_row(void);
 int skinlist_get_item_column(void);
 enum themable_icons skinlist_get_item_icon(int offset, bool wrap);
-#ifdef HAVE_ALBUMART
 const struct bitmap* skinlist_get_item_albumart(int offset, bool wrap, struct dim *size);
 /* True when the current skinned row is one drawn taller than the list config's
  * pitch (an album-art row). Backs the %?La conditional. */
 bool skinlist_item_is_art_row(enum screen_type screen, int offset, bool wrap);
-#endif
 bool skinlist_needs_scrollbar(enum screen_type screen);
 void skinlist_get_scrollbar(int* nb_item, int* first_shown, int* last_shown);
 int skinlist_get_line_count(enum screen_type screen, struct gui_synclist *list);

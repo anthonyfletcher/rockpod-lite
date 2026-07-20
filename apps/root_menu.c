@@ -57,10 +57,8 @@
 #ifdef HAVE_RTC_ALARM
 #include "rtc.h"
 #endif
-#ifdef HAVE_TAGCACHE
 #include "tagcache.h"
 #include "gui/album_covers.h"
-#endif
 #include "language.h"
 #include "plugin.h"
 #include "filetypes.h"
@@ -90,7 +88,6 @@ static void rootmenu_track_changed_callback(unsigned short id, void* param)
     struct mp3entry *id3 = ((struct track_event *)param)->id3;
     strmemccpy(current_track_path, id3->path, MAX_PATH);
 }
-#ifdef HAVE_TAGCACHE
 /* Waits for the tagcache to become usable, showing build/init progress as
  * needed. Returns false if the user aborted (caller should bail out). */
 static bool wait_for_tagcache_ready(void)
@@ -157,22 +154,17 @@ static bool wait_for_tagcache_ready(void)
     }
     return tagcache_is_usable();
 }
-#endif /*HAVE_TAGCACHE*/
 
 static int browser(void* param)
 {
     int ret_val;
-#ifdef HAVE_TAGCACHE
     struct tree_context* tc = tree_get_context();
-#endif
     int filter = SHOW_SUPPORTED;
     char folder[MAX_PATH] = "/";
     /* stuff needed to remember position in file browser */
     static char last_folder[MAX_PATH] = "/";
     /* and stuff for the database browser */
-#ifdef HAVE_TAGCACHE
     static int last_db_dirlevel = 0, last_db_selection = 0, last_ft_dirlevel = 0;
-#endif
 
     switch ((intptr_t)param)
     {
@@ -194,7 +186,6 @@ static int browser(void* param)
             }
             push_current_activity(ACTIVITY_FILEBROWSER);
         break;
-#ifdef HAVE_TAGCACHE
         case GO_TO_DBBROWSER:
             if (!wait_for_tagcache_ready())
                 return GO_TO_PREVIOUS;
@@ -252,7 +243,6 @@ static int browser(void* param)
             tc->currtable = 0;
             push_current_activity(ACTIVITY_DATABASEBROWSER);
         break;
-#endif /*HAVE_TAGCACHE*/
     }
 
     struct browse_context browse = {
@@ -281,7 +271,6 @@ static int browser(void* param)
                 last_folder[1] = '\0';
             }
         break;
-#ifdef HAVE_TAGCACHE
         case GO_TO_DBBROWSER:
             last_db_dirlevel = tc->dirlevel;
             last_db_selection = tc->selected_item;
@@ -357,7 +346,6 @@ static int browser(void* param)
             if (ret_val == GO_TO_ROOT)
                 ret_val = GO_TO_PREVIOUS;
         break;
-#endif
     }
     return ret_val;
 }
@@ -500,7 +488,6 @@ static int load_bmarks(void* param)
     return GO_TO_PREVIOUS;
 }
 
-#ifdef HAVE_TAGCACHE
 static int pictureflow_scrn(void* param)
 {
     (void)param;
@@ -512,15 +499,12 @@ static int artist_portraits_scrn(void* param)
     (void)param;
     return artist_portraits(NULL);
 }
-#endif
 
 /* These are all static const'd from apps/menus/ *.c
    so little hack so we can use them */
 extern struct menu_item_ex
         file_menu,
-#ifdef HAVE_TAGCACHE
         tagcache_menu,
-#endif
         main_menu_,
         manage_settings,
         playlist_options,
@@ -528,9 +512,7 @@ extern struct menu_item_ex
         system_menu;
 static const struct root_items items[] = {
     [GO_TO_FILEBROWSER] =   { browser, (void*)GO_TO_FILEBROWSER, &file_menu},
-#ifdef HAVE_TAGCACHE
     [GO_TO_DBBROWSER] =     { browser, (void*)GO_TO_DBBROWSER, &tagcache_menu },
-#endif
     [GO_TO_WPS] =           { wpsscrn, NULL, &playback_settings },
     [GO_TO_MAINMENU] =      { miscscrn, (struct menu_item_ex*)&main_menu_,
                                                             &manage_settings },
@@ -543,7 +525,6 @@ static const struct root_items items[] = {
     [GO_TO_PLAYLIST_VIEWER] = { playlist_view, NULL, &playlist_options },
     [GO_TO_SYSTEM_SCREEN] = { miscscrn, &info_menu, &system_menu },
     [GO_TO_SHORTCUTMENU] = { do_shortcut_menu, NULL, NULL },
-#ifdef HAVE_TAGCACHE
     [GO_TO_PICTUREFLOW] = { pictureflow_scrn, NULL, NULL },
     [GO_TO_ARTIST_PORTRAITS] = { artist_portraits_scrn, NULL, NULL },
     [GO_TO_ALBUM_COVERS_TRACKS] = { browser, (void*)GO_TO_ALBUM_COVERS_TRACKS, &tagcache_menu },
@@ -561,7 +542,6 @@ static const struct root_items items[] = {
     TAGNAVI_ITEMS_ENTRY(15), TAGNAVI_ITEMS_ENTRY(16), TAGNAVI_ITEMS_ENTRY(17),
     TAGNAVI_ITEMS_ENTRY(18), TAGNAVI_ITEMS_ENTRY(19),
 #undef TAGNAVI_ITEMS_ENTRY
-#endif
 
 };
 //static const int nb_items = sizeof(items)/sizeof(*items);
@@ -575,7 +555,6 @@ MENUITEM_RETURNVALUE(shortcut_menu, ID2P(LANG_SHORTCUTS), GO_TO_SHORTCUTMENU,
 
 MENUITEM_RETURNVALUE(file_browser, ID2P(LANG_DIR_BROWSER), GO_TO_FILEBROWSER,
                         NULL, Icon_file_view_menu);
-#ifdef HAVE_TAGCACHE
 MENUITEM_RETURNVALUE(db_browser, "Music", GO_TO_DBBROWSER,
                         NULL, Icon_Audio);
 MENUITEM_RETURNVALUE(pictureflow_item, ID2P(LANG_ALBUM_COVERS), GO_TO_PICTUREFLOW,
@@ -646,7 +625,6 @@ TAGNAVI_DECL(17)
 TAGNAVI_DECL(18)
 TAGNAVI_DECL(19)
 #undef TAGNAVI_DECL
-#endif
 static char *get_wps_item_name(int selected_item, void * data,
                                char *buffer, size_t buffer_len)
 {
@@ -672,18 +650,15 @@ static struct menu_callback_with_desc root_menu_desc = {
         item_callback, ID2P(LANG_ROCKBOX_TITLE), Icon_Rockbox };
 
 static struct menu_table menu_table[] = {
-#ifdef HAVE_TAGCACHE
     { "pictureflow", &pictureflow_item },
     { "artistportraits", &artist_portraits_item },
     { "database", &db_browser },
-#endif
     { "files", &file_browser },
     { "wps", &wps_item },
     { "playlists", &playlists },
     { "shortcuts", &shortcut_menu },
     { "settings", &menu_ },
     { "system_menu", &system_menu_ },
-#ifdef HAVE_TAGCACHE
     /* Kept last: root_menu_get_options()/root_menu_set_default() trim the
      * *tail* of this array down to however many of these are actually backed
      * by a tagnavi.config row (tagtree_get_main_menu_tag_row_count()), so any
@@ -697,7 +672,6 @@ static struct menu_table menu_table[] = {
     TAGNAVI_TABLE_ENTRY(15), TAGNAVI_TABLE_ENTRY(16), TAGNAVI_TABLE_ENTRY(17),
     TAGNAVI_TABLE_ENTRY(18), TAGNAVI_TABLE_ENTRY(19),
 #undef TAGNAVI_TABLE_ENTRY
-#endif
 };
 #define MAX_MENU_ITEMS (sizeof(menu_table) / sizeof(struct menu_table))
 static struct menu_item_ex *root_menu__[MAX_MENU_ITEMS];
@@ -725,9 +699,7 @@ static void root_menu_apply_canonical_order(void)
 {
     static const struct menu_item_ex * const before_tagnavi[] = {
         &wps_item,
-#ifdef HAVE_TAGCACHE
         &db_browser, &pictureflow_item, &artist_portraits_item,
-#endif
     };
     static const struct menu_item_ex * const after_tagnavi[] = {
         &playlists, &file_browser, &shortcut_menu,
@@ -838,17 +810,12 @@ static unsigned root_menu_build_display_list(bool *inserted_at_front)
  * slot is hidden until real data is available. */
 static int root_menu_active_count(void)
 {
-#ifdef HAVE_TAGCACHE
     int real = tagtree_get_main_menu_tag_row_count();
     if (real > TAGNAVI_MAIN_MENU_SLOTS)
         real = TAGNAVI_MAIN_MENU_SLOTS;
     return MAX_MENU_ITEMS - (TAGNAVI_MAIN_MENU_SLOTS - real);
-#else
-    return MAX_MENU_ITEMS;
-#endif
 }
 
-#ifdef HAVE_TAGCACHE
 /* settings_load() (via root_menu_set_default()/root_menu_load_from_cfg(),
  * both driven off the root_menu_customized CUSTOM_SETTING) runs before
  * tagtree_init() has parsed tagnavi.config, so root_menu_active_count()
@@ -906,7 +873,6 @@ static void root_menu_fixup_tagnavi_slots(void)
 
     root_menu_apply_canonical_order();
 }
-#endif
 
 struct menu_table *root_menu_get_options(int *nb_options)
 {
@@ -997,9 +963,7 @@ void root_menu_set_default(void* setting, void* defaultval)
 {
     unsigned i;
     int active_count = root_menu_active_count();
-#ifdef HAVE_TAGCACHE
     int tagnavi_start = MAX_MENU_ITEMS - TAGNAVI_MAIN_MENU_SLOTS;
-#endif
     unsigned out = 0;
     (void)defaultval;
 
@@ -1009,7 +973,6 @@ void root_menu_set_default(void* setting, void* defaultval)
 
     for (i=0; i<(unsigned)active_count; i++)
     {
-#ifdef HAVE_TAGCACHE
         /* Tagnavi rows start disabled on a fresh/default configuration --
          * opt in via Customize Main Menu, rather than every "main"
          * tagnavi.config row automatically cluttering the menu on first
@@ -1019,7 +982,6 @@ void root_menu_set_default(void* setting, void* defaultval)
          * not included here. */
         if ((int)i >= tagnavi_start)
             continue;
-#endif
         root_menu__[out++] = (struct menu_item_ex *)menu_table[i].item;
     }
     root_menu_.flags |= MENU_ITEM_COUNT(out);
@@ -1216,10 +1178,8 @@ static int browser_default(void)
 {
     switch (global_settings.browser_default)
     {
-#ifdef HAVE_TAGCACHE
         case BROWSER_DEFAULT_DB:
             return GO_TO_DBBROWSER;
-#endif
         case BROWSER_DEFAULT_PL_CAT:
             return GO_TO_PLAYLISTS_SCREEN;
         case BROWSER_DEFAULT_FILES:
@@ -1233,9 +1193,7 @@ void root_menu(void)
     int previous_browser = browser_default();
     int selected = 0;
 
-#ifdef HAVE_TAGCACHE
     root_menu_fixup_tagnavi_slots();
-#endif
     push_current_activity(ACTIVITY_MAINMENU);
     next_screen = root_menu_setup_screens();
 
@@ -1290,7 +1248,6 @@ void root_menu(void)
                 if (next_screen != GO_TO_PREVIOUS)
                     last_screen = GO_TO_ROOT;
                 break;
-#ifdef HAVE_TAGCACHE
             case GO_TO_DBBROWSER:
 #define TAGNAVI_CASE(n) case GO_TO_TAGNAVI_FIRST + (n):
             TAGNAVI_CASE(0)  TAGNAVI_CASE(1)  TAGNAVI_CASE(2)  TAGNAVI_CASE(3)
@@ -1299,7 +1256,6 @@ void root_menu(void)
             TAGNAVI_CASE(12) TAGNAVI_CASE(13) TAGNAVI_CASE(14) TAGNAVI_CASE(15)
             TAGNAVI_CASE(16) TAGNAVI_CASE(17) TAGNAVI_CASE(18) TAGNAVI_CASE(19)
 #undef TAGNAVI_CASE
-#endif
             case GO_TO_FILEBROWSER:
             case GO_TO_PLAYLISTS_SCREEN:
                 previous_browser = next_screen;

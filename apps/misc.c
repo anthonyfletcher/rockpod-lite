@@ -30,9 +30,7 @@
 #include "lcd.h"
 #include "language.h" /* is_lang_rtl() */
 
-#ifdef HAVE_DIRCACHE
 #include "dircache.h"
-#endif
 #include "file.h"
 #include "pathfuncs.h"
 #include "lang.h"
@@ -363,14 +361,12 @@ static bool clean_shutdown(enum shutdown_type sd_type,
         if (batt_safe)
         {
             int level;
-#ifdef HAVE_TAGCACHE
             if (!tagcache_prepare_shutdown())
             {
                 cancel_shutdown();
                 splash(HZ, ID2P(LANG_TAGCACHE_BUSY));
                 return false;
             }
-#endif
             level = battery_level();
             if (level > 10 || level < 0)
             {

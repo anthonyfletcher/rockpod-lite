@@ -52,9 +52,7 @@
 #include "pathfuncs.h"
 #include "bmp.h"
 
-#ifdef HAVE_ALBUMART
 #include "playback.h"
-#endif
 
 #include "backdrop.h"
 #include "statusbar-skinned.h"
@@ -1279,7 +1277,6 @@ failure:
     return 0;
 }
 
-#ifdef HAVE_ALBUMART
 
 static int parse_albumart_load(struct skin_element* element,
                                struct wps_token *token,
@@ -1363,7 +1360,6 @@ static int parse_albumart_load(struct skin_element* element,
     return 0;
 }
 
-#endif /* HAVE_ALBUMART */
 
 static bool check_feature_tag(const int type)
 {
@@ -1455,14 +1451,12 @@ static void skin_data_reset(struct wps_data *wps_data)
         skin_backdrop_unload(wps_data->backdrop_id);
     backdrop_filename = NULL;
 #endif
-#ifdef HAVE_ALBUMART
     wps_data->albumart = INVALID_OFFSET;
     if (wps_data->playback_aa_slot >= 0)
     {
         playback_release_aa_slot(wps_data->playback_aa_slot);
         wps_data->playback_aa_slot = -1;
     }
-#endif
 
     wps_data->peak_meter_enabled = false;
     wps_data->wps_sb_tag = false;
@@ -1721,10 +1715,8 @@ static int convert_viewport(struct wps_data *data, struct skin_element* element)
     skin_vp->start_gradient.start = global_settings.lss_color;
     skin_vp->start_gradient.end = global_settings.lse_color;
     skin_vp->start_gradient.text = global_settings.lst_color;
-#ifdef HAVE_ALBUMART
     skin_vp->dc_orig_fg = skin_vp->vp.fg_pattern;
     skin_vp->dc_orig_bg = skin_vp->vp.bg_pattern;
-#endif
 
 
     struct skin_tag_parameter *param = get_param(element, 0);
@@ -1956,11 +1948,9 @@ static int skin_element_callback(struct skin_element* element, void* data)
                 case SKIN_TOKEN_LIST_ITEM_CFG:
                     function = parse_listitemviewport;
                     break;
-#ifdef HAVE_ALBUMART
                 case SKIN_TOKEN_ALBUMART_LOAD:
                     function = parse_albumart_load;
                     break;
-#endif
                 default:
                     break;
             }

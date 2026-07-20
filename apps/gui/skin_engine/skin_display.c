@@ -52,9 +52,7 @@
 #include "spectrum_meter.h"
 /* Image stuff */
 #include "bmp.h"
-#ifdef HAVE_ALBUMART
 #include "albumart.h"
-#endif
 
 #include "cuesheet.h"
 #include "playback.h"
@@ -400,7 +398,6 @@ void wps_display_images(struct gui_wps *gwps, struct viewport* vp)
         }
         list = SKINOFFSETTOPTR(get_skin_buffer(data), list->next);
     }
-#ifdef HAVE_ALBUMART
     /* now draw the AA */
     struct skin_albumart *aa = SKINOFFSETTOPTR(get_skin_buffer(data), data->albumart);
     if (aa && aa->draw_handle >= 0)
@@ -408,7 +405,6 @@ void wps_display_images(struct gui_wps *gwps, struct viewport* vp)
         draw_album_art(gwps, aa->draw_handle, false);
         aa->draw_handle = -1;
     }
-#endif
 
     display->set_drawmode(DRMODE_SOLID);
 }
@@ -627,7 +623,6 @@ void draw_peakmeters(struct gui_wps *gwps, int line_number,
     }
 }
 
-#ifdef HAVE_ALBUMART
 /* Draw the album art bitmap from the given handle ID onto the given WPS.
    Call with clear = true to clear the bitmap instead of drawing it. */
 void draw_album_art(struct gui_wps *gwps, int handle_id, bool clear)
@@ -690,7 +685,6 @@ void draw_album_art(struct gui_wps *gwps, int handle_id, bool clear)
         gwps->display->set_drawmode(DRMODE_SOLID);
     }
 }
-#endif
 
 bool skin_has_sbs(struct gui_wps *gwps)
 {

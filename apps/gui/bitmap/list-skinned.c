@@ -123,7 +123,6 @@ enum themable_icons skinlist_get_item_icon(int offset, bool wrap)
     return current_list->callback_get_item_icon(item, current_list->data);
 }
 
-#ifdef HAVE_ALBUMART
 const struct bitmap* skinlist_get_item_albumart(int offset, bool wrap, struct dim *size)
 {
     int item = offset_to_item(offset, wrap);
@@ -148,7 +147,6 @@ bool skinlist_item_is_art_row(enum screen_type screen, int offset, bool wrap)
     }
     return list_item_height(current_list, screen) > listcfg[screen]->height;
 }
-#endif
 
 static bool is_selected = false;
 bool skinlist_is_selected_item(void)

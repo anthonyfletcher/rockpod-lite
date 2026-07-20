@@ -44,9 +44,7 @@
 #include "screens.h"
 #endif
 #include "quickscreen.h"
-#ifdef HAVE_DIRCACHE
 #include "dircache.h"
-#endif
 #ifndef HAS_BUTTON_HOLD
 #include "mask_select.h"
 #endif
@@ -112,7 +110,6 @@ int mask = global_settings.bt_selective_softlock_actions_mask;
 
 /***********************************/
 /*    TAGCACHE MENU                */
-#ifdef HAVE_TAGCACHE
 
 static void tagcache_rebuild_with_splash(void)
 {
@@ -142,9 +139,7 @@ static int dirs_to_scan(void)
     return 0;
 }
 
-#ifdef HAVE_TC_RAMCACHE
 MENUITEM_SETTING(tagcache_ram, &global_settings.tagcache_ram, NULL);
-#endif
 MENUITEM_SETTING(tagcache_autoupdate, &global_settings.tagcache_autoupdate, NULL);
 MENUITEM_FUNCTION(tc_init, 0, ID2P(LANG_TAGCACHE_FORCE_UPDATE),
                   (int(*)(void))tagcache_rebuild_with_splash, NULL, Icon_NOICON);
@@ -163,13 +158,10 @@ MENUITEM_FUNCTION(tc_paths, 0, ID2P(LANG_SELECT_DATABASE_DIRS),
                   dirs_to_scan, NULL, Icon_NOICON);
 
 MAKE_MENU(tagcache_menu, ID2P(LANG_TAGCACHE), 0, Icon_NOICON,
-#ifdef HAVE_TC_RAMCACHE
                 &tagcache_ram,
-#endif
                 &tagcache_autoupdate, &tc_init, &tc_update, &runtimedb,
                 &tc_export, &tc_import, &tc_paths
                 );
-#endif /* HAVE_TAGCACHE */
 /*    TAGCACHE MENU                */
 /***********************************/
 
@@ -272,7 +264,6 @@ MENUITEM_SETTING(usb_mode, &global_settings.usb_mode, NULL);
 MENUITEM_SETTING(disk_spindown, &global_settings.disk_spindown, NULL);
 MENUITEM_SETTING(storage_mode, &global_settings.storage_mode, NULL);
 #endif
-#ifdef HAVE_DIRCACHE
 static int dircache_callback(int action,
                              const struct menu_item_ex *this_item,
                              struct gui_synclist *this_list)
@@ -296,18 +287,13 @@ static int dircache_callback(int action,
     return action;
 }
 MENUITEM_SETTING(dircache, &global_settings.dircache, dircache_callback);
-#endif
-#if defined(HAVE_DIRCACHE) || defined(HAVE_DISK_STORAGE)
 MAKE_MENU(disk_menu, ID2P(LANG_DISK_MENU), 0, Icon_NOICON,
 #ifdef HAVE_DISK_STORAGE
           &disk_spindown,
           &storage_mode,
 #endif
-#ifdef HAVE_DIRCACHE
             &dircache,
-#endif
          );
-#endif
 
 /* Limits menu */
 MENUITEM_SETTING(max_files_in_dir, &global_settings.max_files_in_dir, NULL);
@@ -391,9 +377,7 @@ MAKE_MENU(system_menu, ID2P(LANG_SYSTEM),
 #if (BATTERY_CAPACITY_INC > 0) || defined(HAVE_USB_CHARGING_ENABLE)
             &battery_menu,
 #endif
-#if defined(HAVE_DIRCACHE) || defined(HAVE_DISK_STORAGE)
             &disk_menu,
-#endif
             &limits_menu,
 #ifdef HAVE_PERCEPTUAL_VOLUME
             &volume_adjust_mode,
@@ -553,7 +537,6 @@ MAKE_MENU(bookmark_settings_menu, ID2P(LANG_BOOKMARK_SETTINGS), 0,
 
 /***********************************/
 /*    AUTORESUME MENU              */
-#ifdef HAVE_TAGCACHE
 
 static int autoresume_callback(int action,
                                const struct menu_item_ex *this_item,
@@ -609,7 +592,6 @@ MAKE_MENU(autoresume_menu, ID2P(LANG_AUTORESUME),
           0, Icon_NOICON,
           &autoresume_enable, &autoresume_automatic);
 
-#endif /* HAVE_TAGCACHE */
 /*    AUTORESUME MENU              */
 /***********************************/
 
@@ -695,15 +677,11 @@ MAKE_MENU(settings_menu_item, ID2P(LANG_GENERAL_SETTINGS), 0,
           Icon_General_settings_menu,
           &wps_settings,
           &playlist_settings, &file_menu,
-#ifdef HAVE_TAGCACHE
           &tagcache_menu,
-#endif
           &display_menu, &system_menu,
           &startup_shutdown_menu,
           &bookmark_settings_menu,
-#ifdef HAVE_TAGCACHE
           &autoresume_menu,
-#endif
           &browse_langs, &voice_settings_menu,
           );
 /*    SETTINGS MENU                */

@@ -347,11 +347,9 @@ static bool assemble_track_info(const char *filename, struct dir_stats *stats)
     else if(props_type == PROPS_PLAYLIST &&
             !playlist_entries_iterate(filename, NULL, &mul_id3_add))
         return false;
-#ifdef HAVE_TAGCACHE
     else if (props_type == PROPS_MUL_ID3 &&
              !tagtree_subentries_do_action(&mul_id3_add))
         return false;
-#endif
 
     if (mul_id3_count == 0)
     {

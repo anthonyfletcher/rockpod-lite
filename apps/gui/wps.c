@@ -51,9 +51,7 @@
 #include "cuesheet.h"
 #include "ata_idle_notify.h"
 #include "root_menu.h"
-#ifdef HAVE_TAGCACHE
 #include "gui/album_covers.h"
-#endif
 #include "backdrop.h"
 #include "quickscreen.h"
 #include "shortcuts.h"
@@ -750,12 +748,9 @@ long gui_wps_show(void)
                 int sel_action = global_settings.wps_select_action;
                 if (sel_action == 1) /* database */
                 {
-#ifdef HAVE_TAGCACHE
                     gwps_leave_wps(true);
                     return GO_TO_DBBROWSER;
-#endif
                 }
-#ifdef HAVE_TAGCACHE
                 else if (sel_action == 2) /* coverflow */
                 {
                     int ret;
@@ -774,7 +769,6 @@ long gui_wps_show(void)
                     }
                     restore = true;
                 }
-#endif
                 else if (sel_action == 3) /* files */
                 {
                     gwps_leave_wps(true);
@@ -966,7 +960,6 @@ long gui_wps_show(void)
 
                 /* iPod Classic 6G custom: open Album covers instead of stopping */
             case ACTION_WPS_STOP:
-#ifdef HAVE_TAGCACHE
                 {
                     int ret;
                     theme_enabled = false;
@@ -986,7 +979,6 @@ long gui_wps_show(void)
                     }
                     restore = true;
                 }
-#endif
                 break;
 #if 0 /* original stop behavior */
             case ACTION_WPS_STOP:

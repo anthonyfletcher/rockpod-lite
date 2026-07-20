@@ -32,12 +32,10 @@ struct menu_table {
 
 struct menu_table *root_menu_get_options(int *nb_options);
 
-#ifdef HAVE_TAGCACHE
 /* Number of reserved root-menu shortcut slots for tagnavi.config's root
  * ("main") menu's direct tag-browse rows -- see the comment at
  * GO_TO_TAGNAVI_FIRST below. */
 #define TAGNAVI_MAIN_MENU_SLOTS 20
-#endif
 
 enum {
     /* from old menu api, but still required*/
@@ -50,9 +48,7 @@ enum {
     GO_TO_PREVIOUS = -2,
     GO_TO_ROOT = -1,
     GO_TO_FILEBROWSER = 0,
-#ifdef HAVE_TAGCACHE
     GO_TO_DBBROWSER,
-#endif
     GO_TO_WPS,
     GO_TO_MAINMENU,
     GO_TO_RECENTBMARKS,
@@ -66,7 +62,6 @@ enum {
     GO_TO_PLAYLIST_VIEWER,
     GO_TO_SYSTEM_SCREEN,
     GO_TO_SHORTCUTMENU,
-#ifdef HAVE_TAGCACHE
     GO_TO_PICTUREFLOW,
     /* Reserved block of main-menu shortcuts, one per direct tag-browse row of
      * tagnavi.config's root ("main") menu (Album/Artist/Genre/etc), looked up
@@ -89,7 +84,6 @@ enum {
      * reuses GO_TO_ALBUM_COVERS_TRACKS to open its album listing, and BACK
      * from there returns here via the normal previous-screen tracking. */
     GO_TO_ARTIST_PORTRAITS,
-#endif
 };
 #ifndef PLUGIN
 extern struct menu_item_ex root_menu_;

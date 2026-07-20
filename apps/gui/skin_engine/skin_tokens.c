@@ -369,7 +369,6 @@ const char *get_id3_token(struct wps_token *token, struct mp3entry *id3,
                 itoa_buf(buf, buf_size, id3->filesize / 1024);
                 return buf;
 
-#ifdef HAVE_TAGCACHE
         case SKIN_TOKEN_DATABASE_PLAYCOUNT:
             if (intval)
                 *intval = id3->playcount + 1;
@@ -385,7 +384,6 @@ const char *get_id3_token(struct wps_token *token, struct mp3entry *id3,
                 *intval = id3->score + 1;
             itoa_buf(buf, buf_size, id3->score);
             return buf;
-#endif
 
             default:
                 return get_filename_token(token, id3->path, buf, buf_size);
@@ -400,11 +398,9 @@ const char *get_id3_token(struct wps_token *token, struct mp3entry *id3,
             case SKIN_TOKEN_FILE_FREQUENCY:
             case SKIN_TOKEN_FILE_FREQUENCY_KHZ:
             case SKIN_TOKEN_FILE_SIZE:
-#ifdef HAVE_TAGCACHE
             case SKIN_TOKEN_DATABASE_PLAYCOUNT:
             case SKIN_TOKEN_DATABASE_RATING:
             case SKIN_TOKEN_DATABASE_AUTOSCORE:
-#endif
                 if (intval)
                     *intval = 0;
                 return "0";
@@ -439,9 +435,7 @@ static struct mp3entry* get_mp3entry_from_offset(int offset,
         *filename = (char*)fname;
 
         if (
-#if defined(HAVE_TC_RAMCACHE) && defined(HAVE_DIRCACHE)
             tagcache_fill_tags(bufid3, NULL) ||
-#endif
             audio_peek_track(bufid3, offset)
         )
         {
@@ -1023,7 +1017,6 @@ const char *get_token_value(struct gui_wps *gwps,
             numeric_buf = buf;
             goto gtv_ret_numeric_tag_info;
         }
-#ifdef HAVE_ALBUMART
         case SKIN_TOKEN_LIST_ITEM_ALBUMART:
         {
             /* value context (%?La): is this an album-art row? The draw context
@@ -1033,7 +1026,6 @@ const char *get_token_value(struct gui_wps *gwps,
             return skinlist_item_is_art_row(gwps->display->screen_type,
                                             li->offset, li->wrap) ? "a" : "";
         }
-#endif
         case SKIN_TOKEN_LIST_NEEDS_SCROLLBAR:
             return skinlist_needs_scrollbar(gwps->display->screen_type) ? "s" : "";
         case SKIN_TOKEN_PLAYLIST_NAME:
@@ -1102,7 +1094,6 @@ const char *get_token_value(struct gui_wps *gwps,
             }
             numeric_buf = buf;
             goto gtv_ret_numeric_tag_info;
-#ifdef HAVE_ALBUMART
         case SKIN_TOKEN_ALBUMART_FOUND:
             if (SKINOFFSETTOPTR(get_skin_buffer(data), data->albumart))
             {
@@ -1112,7 +1103,6 @@ const char *get_token_value(struct gui_wps *gwps,
                     return "C";
             }
             return NULL;
-#endif /* def HAVE_ALBUMART */
 
         case SKIN_TOKEN_BATTERY_PERCENT:
         {
@@ -1316,14 +1306,10 @@ const char *get_token_value(struct gui_wps *gwps,
         {
             /* database and/or thumbnail-cache background work in progress */
             bool building = false;
-#ifdef HAVE_TAGCACHE
             if (tagcache_is_busy())
                 building = true;
-#endif
-#ifdef HAVE_ALBUMART
             if (albumart_cache_is_busy())
                 building = true;
-#endif
             return building ? "b" : NULL;
         }
         case SKIN_TOKEN_VLED_WORKING:
