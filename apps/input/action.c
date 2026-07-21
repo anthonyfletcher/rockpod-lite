@@ -143,7 +143,6 @@ static bool is_action_filtered(int action, unsigned int mask, int context)
             match = has_flag(mask, SEL_ACTION_NOUNMAPPED);
             break;
         case ACTION_WPS_PLAY:
-        case ACTION_FM_PLAY:
             match = has_flag(mask, SEL_ACTION_PLAY);
             break;
         /* case ACTION_STD_PREVREPEAT:*/ /* seek not exempted outside of WPS */
@@ -157,8 +156,6 @@ static bool is_action_filtered(int action, unsigned int mask, int context)
         /* case ACTION_STD_NEXT: */ /* exempted outside of WPS */
         case ACTION_WPS_SKIPNEXT:
         case ACTION_WPS_SKIPPREV:
-        case ACTION_FM_NEXT_PRESET:
-        case ACTION_FM_PREV_PRESET:
             match = has_flag(mask, SEL_ACTION_SKIP);
             break;
         case ACTION_WPS_VOLUP:

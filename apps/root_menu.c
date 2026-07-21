@@ -78,8 +78,10 @@ static int last_screen = GO_TO_ROOT; /* unfortunatly needed so we can resume
                                         screen */
 
 static int previous_music = GO_TO_WPS; /* Toggles behavior of the return-to
-                                        * playback-button depending
-                                        * on FM radio */
+                                        * playback-button. Upstream this also
+                                        * tracked the FM screen; this fork has
+                                        * no tuner, so it only ever holds
+                                        * GO_TO_WPS. */
 
 static char current_track_path[MAX_PATH];
 static void rootmenu_track_changed_callback(unsigned short id, void* param)
