@@ -573,6 +573,12 @@ bool folder_select(char * header_text, char* setting, int setting_len)
         splash(HZ, "Out of memory");
         return false;
     }
+    /* PIN IT -- same reason as image_viewer.c. NULL ops means buflib may move
+     * this block freely, and we not only cache buffer_front/buffer_end but
+     * build the whole folder tree inside it, with every node pointing at other
+     * nodes by address. The list loop below yields, so a compaction while the
+     * picker is open would dangle all of them at once. */
+    core_pin(buf_handle);
     buffer_front = core_get_data(buf_handle);
     buffer_end = buffer_front + buf_size;
     logf("folder_select %d bytes free", (int)(buffer_end - buffer_front));
@@ -603,6 +609,7 @@ bool folder_select(char * header_text, char* setting, int setting_len)
         }
     }
 
+    core_unpin(buf_handle);
     core_free(buf_handle);
     return changed;
 }

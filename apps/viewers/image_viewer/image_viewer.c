@@ -878,6 +878,16 @@ int image_viewer(const char *file)
         splash(HZ * 2, "Out of Memory");
         return GO_TO_PREVIOUS;
     }
+
+    /* PIN IT. Passing NULL ops does not make an allocation immovable -- it
+     * makes it freely movable, because buflib's move_block() treats a missing
+     * move_callback as "no one needs telling" and relocates the block
+     * (firmware/buflib_mempool.c). We cache `buf` here and hold it, plus every
+     * pointer derived from it, for the whole viewing session; the session
+     * yields constantly and can run while playback is buffering, so a
+     * compaction is reachable and would leave all of them dangling. This is
+     * the failure that killed the ported video viewer. */
+    core_pin(buf_handle);
     buf = core_get_data(buf_handle);
 
     curfile = -1;
@@ -887,6 +897,7 @@ int image_viewer(const char *file)
 
     if (entries == 0)
     {
+        core_unpin(buf_handle);
         core_free(buf_handle);
         buf_handle = 0;
         splash(HZ, "No supported files");
@@ -919,6 +930,7 @@ int image_viewer(const char *file)
     viewportmanager_theme_undo(SCREEN_MAIN, false);
     pop_current_activity();
 
+    core_unpin(buf_handle);
     core_free(buf_handle);
     buf_handle = 0;
 
