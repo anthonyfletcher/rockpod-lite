@@ -1,30 +1,19 @@
-/* was: apps/recorder/jpeg_load.h */
 /***************************************************************************
-*             __________               __   ___.
-*   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
-*   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
-*   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
-*   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
-*                     \/            \/     \/    \/            \/
-* $Id$
-*
-* JPEG image viewer
-* (This is a real mess if it has to be coded in one single C file)
-*
-* File scrolling addition (C) 2005 Alexander Spyridakis
-* Copyright (C) 2004 Jörg Hohensohn aka [IDC]Dragon
-* Heavily borrowed from the IJG implementation (C) Thomas G. Lane
-* Small & fast downscaling IDCT (C) 2002 by Guido Vollbeding  JPEGclub.org
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
-* KIND, either express or implied.
-*
-****************************************************************************/
+ * RockPod-Lite
+ *
+ * Original code from RockBox
+ * was: apps/recorder/jpeg_load.h
+ * JPEG image viewer
+ * (This is a real mess if it has to be coded in one single C file)
+ *
+ * File scrolling addition (C) 2005 Alexander Spyridakis
+ * Copyright (C) 2004 Jörg Hohensohn aka [IDC]Dragon
+ * Heavily borrowed from the IJG implementation (C) Thomas G. Lane
+ * Small & fast downscaling IDCT (C) 2002 by Guido Vollbeding  JPEGclub.org
+ * GNU General Public License (version 2+)
+ *
+ * Interface to jpeg_load.c.
+ ****************************************************************************/
 
 #include "resize.h"
 #include "bmp.h"
