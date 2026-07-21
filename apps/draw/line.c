@@ -10,7 +10,7 @@
  * viewport. The primitive the list renderer is built on.
  ****************************************************************************/
 
-#include "draw/screen_access.h"
+#include "screen_access.h"
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>

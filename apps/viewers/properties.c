@@ -28,15 +28,15 @@
 #include "dir.h"             /* opendir/readdir/closedir, dir_get_info */
 #include "file.h"            /* MAX_PATH, MAX_FILENAME */
 #include "pathfuncs.h"       /* PATH_SEPCH */
-#include "screens/filetypes.h"       /* filetype_get_attr, FILE_ATTR_* */
+#include "files/filetypes.h"       /* filetype_get_attr, FILE_ATTR_* */
 #include "metadata.h"        /* struct mp3entry, get_metadata */
 #include "playlist/playlist.h"        /* playlist_entries_iterate */
-#include "database/tagtree.h"         /* tagtree_subentries_do_action */
+#include "screens/browse/browser_db.h"         /* tagtree_subentries_do_action */
 #include "draw/viewport.h"        /* viewportmanager_theme_enable/undo */
 #include "system/activity.h"
 #include "system/shutdown.h"
 #include "speech/talk.h"
-#include "screens/track_info.h"
+#include "screens/playback/track_info.h"
 #include "widgets/text_box.h"         /* browse_id3, view_text */
 #include "root_menu.h"       /* GO_TO_* */
 #include "widgets/list.h"        /* gui_synclist */

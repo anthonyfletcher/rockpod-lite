@@ -21,7 +21,7 @@
 #include "audio.h"
 #include "playlist/playlist.h"
 #include "settings/settings.h"
-#include "browser.h"
+#include "screens/browse/browser.h"
 #include "bookmark.h"
 #include "system.h"
 #include "draw/icon_bitmaps.h"

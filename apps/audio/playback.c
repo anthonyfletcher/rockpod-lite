@@ -28,7 +28,7 @@
 #include "buffering.h"
 #include "speech/talk.h"
 #include "playlist/playlist.h"
-#include "abrepeat.h"
+#include "ab_repeat.h"
 #include "pcm_mixer.h"
 #include "pcmbuf.h"
 #include "audio_thread.h"

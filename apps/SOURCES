@@ -11,7 +11,7 @@ root_menu.c
 
 /* -- the device ------------------------------------------------------- */
 
-audio/abrepeat.c
+audio/ab_repeat.c
 audio/audio_thread.c
 audio/buffering.c
 audio/codec_thread.c
@@ -30,7 +30,7 @@ audio/audio_path.c
 
 #ifdef HAVE_TAGCACHE
 database/tagcache.c
-database/tagtree.c
+screens/browse/browser_db.c
 #endif
 
 playlist/catalog.c
@@ -70,8 +70,8 @@ widgets/list_render.c
 widgets/list_skinned.c
 widgets/menu.c
 widgets/option_select.c
-widgets/peakmeter.c
-widgets/spectrum_meter.c
+audio/peak_meter.c
+audio/spectrum_meter.c
 widgets/splash.c
 widgets/text_box.c
 widgets/yesno.c
@@ -86,58 +86,58 @@ widgets/mask_select.c
 #endif
 
 screens/bookmark.c
-screens/browser.c
-screens/browser_files.c
+screens/browse/browser.c
+screens/browse/browser_disk.c
 screens/context_menu.c
-screens/debug_menu.c
-screens/fileop.c
-screens/filetypes.c
-screens/runtime_info.c
+screens/system/debug_menu.c
+files/file_ops.c
+files/filetypes.c
+screens/system/runtime_info.c
 screens/shortcuts.c
-screens/time_set.c
-screens/track_info.c
-screens/wps.c
+screens/system/time_set.c
+screens/playback/track_info.c
+screens/playback/wps.c
 #ifdef HAVE_RTC_ALARM
-screens/alarm.c
+screens/system/alarm.c
 #endif
 #ifdef ROCKBOX_HAS_LOGF
-screens/logfdisp.c
+screens/system/log_viewer.c
 #endif
 #ifdef HAVE_PITCHCONTROL
-screens/pitchscreen.c
+screens/playback/pitch_screen.c
 #endif
 #ifdef HAVE_QUICKSCREEN
-screens/quickscreen.c
+screens/playback/quick_screen.c
 #endif
 #ifndef USB_NONE
-screens/usb_screen.c
+screens/system/usb_screen.c
 #endif
 
 /* Core-linked "Album covers" screen, ported from the pictureflow plugin.
  * Gated on HAVE_TAGCACHE like the rest of the tag-database UI whose entry
  * point it replaced -- see root_menu.c's GO_TO_PICTUREFLOW. */
 #ifdef HAVE_TAGCACHE
-screens/album_covers.c
-screens/artist_portraits.c
-screens/carousel.c
+screens/covers/album_covers.c
+screens/covers/artist_portraits.c
+screens/covers/carousel.c
 #endif
 
-screens/menus/display_menu.c
-screens/menus/eq_menu.c
-screens/menus/main_menu.c
-screens/menus/main_menu_config.c
-screens/menus/menu_common.c
-screens/menus/playback_menu.c
-screens/menus/playlist_menu.c
-screens/menus/settings_menu.c
-screens/menus/sound_menu.c
-screens/menus/text_viewer_menu.c
-screens/menus/theme_menu.c
+screens/settings/display_settings.c
+screens/settings/eq_settings.c
+screens/main_menu.c
+screens/main_menu_config.c
+screens/settings/common_settings.c
+screens/settings/playback_settings.c
+screens/settings/playlist_settings.c
+screens/settings/general_settings.c
+screens/settings/sound_settings.c
+screens/settings/text_viewer_settings.c
+screens/settings/theme_settings.c
 #ifdef HAVE_TAGCACHE
-screens/menus/album_covers_menu.c
+screens/settings/album_covers_settings.c
 #endif
 #if CONFIG_RTC
-screens/menus/time_menu.c
+screens/settings/time_settings.c
 #endif
 
 viewers/credits.c

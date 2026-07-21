@@ -1,4 +1,3 @@
-/* was: apps/image_viewer/decoders/gif_hash.h */
 /******************************************************************************
 
 gif_hash.h - magfic constants and declarations for GIF LZW

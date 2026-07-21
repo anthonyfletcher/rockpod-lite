@@ -43,7 +43,7 @@
 #include "system/activity.h"
 #include "system/shutdown.h"
 #include "root_menu.h"       /* GO_TO_*, MENU_ATTACHED_USB */
-#include "screens/browser.h"            /* tree_get_context/entries */
+#include "screens/browse/browser.h"            /* tree_get_context/entries */
 #include "core_alloc.h"
 #include "audio.h"           /* audio_current_track, audio_status, audio_hard_stop */
 #include "metadata/albumart.h"        /* search_albumart_files */

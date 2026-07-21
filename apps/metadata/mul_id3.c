@@ -21,7 +21,7 @@
 #include "input/action.h"          /* get_action */
 #include "widgets/splash.h"          /* splashf, splash_progress */
 #include "dir.h"             /* opendir/readdir/closedir, dir_get_info */
-#include "screens/filetypes.h"       /* filetype_get_attr, FILE_ATTR_* */
+#include "files/filetypes.h"       /* filetype_get_attr, FILE_ATTR_* */
 #include "draw/viewport.h"        /* viewport_set_defaults */
 #include "draw/screen_access.h"   /* screens[], FOR_NB_SCREENS */
 #include "mul_id3.h"

@@ -1,4 +1,3 @@
-/* was: apps/image_viewer/decoders/gif_err.c */
 /*****************************************************************************
 
 gif_err.c - handle error reporting for the GIF library.

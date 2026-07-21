@@ -30,11 +30,11 @@
 #include "system/app_buffer.h"
 #include "audio/playback.h"
 #include "cuesheet.h"
-#include "screens/wps.h"
+#include "screens/playback/wps.h"
 #include "string-extra.h"
 #include "rbunicode.h"
 #include "screens/bookmark.h"
-#include "screens/browser.h"
+#include "screens/browse/browser.h"
 
 #define CUE_DIR ROCKBOX_DIR "/cue"
 

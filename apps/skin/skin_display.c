@@ -24,7 +24,7 @@
 #include "debug.h"
 #endif
 #include "input/action.h"
-#include "audio/abrepeat.h"
+#include "audio/ab_repeat.h"
 #include "lang.h"
 #include "speech/language.h"
 #include "statusbar.h"
@@ -39,8 +39,8 @@
 #include "widgets/option_select.h"
 #include "audio/buffering.h"
 
-#include "widgets/peakmeter.h"
-#include "widgets/spectrum_meter.h"
+#include "audio/peak_meter.h"
+#include "audio/spectrum_meter.h"
 /* Image stuff */
 #include "draw/bmp.h"
 #include "metadata/albumart.h"
@@ -51,7 +51,7 @@
 #include "draw/viewport.h"
 #include "root_menu.h"
 
-#include "screens/wps.h"
+#include "screens/playback/wps.h"
 #include "wps_internals.h"
 #include "skin_engine.h"
 #include "statusbar_skinned.h"

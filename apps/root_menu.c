@@ -37,21 +37,21 @@
 #include "widgets/yesno.h"
 #include "draw/viewport.h"
 
-#include "screens/browser.h"
-#include "database/tagtree.h"
-#include "screens/wps.h"
+#include "screens/browse/browser.h"
+#include "screens/browse/browser_db.h"
+#include "screens/playback/wps.h"
 #include "screens/bookmark.h"
 #include "playlist/playlist.h"
 #include "playlist/viewer.h"
 #include "playlist/catalog.h"
-#include "screens/menus/exported_menus.h"
+#include "screens/settings/exported_settings.h"
 #ifdef HAVE_RTC_ALARM
 #include "rtc.h"
 #endif
 #include "database/tagcache.h"
-#include "screens/album_covers.h"
+#include "screens/covers/album_covers.h"
 #include "speech/language.h"
-#include "screens/filetypes.h"
+#include "files/filetypes.h"
 #include "disk.h"
 #include "sound.h"
 

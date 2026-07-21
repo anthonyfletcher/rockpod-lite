@@ -35,13 +35,13 @@
 #include "audio/playback.h"
 #include "widgets/list.h"
 #include "rbunicode.h"
-#include "widgets/peakmeter.h"
-#include "screens/menus/eq_menu.h"
+#include "audio/peak_meter.h"
+#include "screens/settings/eq_settings.h"
 #include "iap.h"
 #include "skin/statusbar.h"
 #include "screens/context_menu.h"
 #include "playlist/playlist.h"
-#include "screens/browser.h"
+#include "screens/browse/browser.h"
 
 #include "audio/voice_thread.h"
 

@@ -1,4 +1,3 @@
-/* was: apps/image_viewer/decoders/gif_lib_private.h */
 /****************************************************************************
 
 gif_lib_private.h - internal giflib routines and structures

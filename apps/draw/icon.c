@@ -21,7 +21,7 @@
 #include "settings/settings.h"
 #include "rbpaths.h"
 #include "bmp.h"
-#include "screens/filetypes.h"
+#include "files/filetypes.h"
 #include "speech/language.h"
 #include "system/app_util.h"
 

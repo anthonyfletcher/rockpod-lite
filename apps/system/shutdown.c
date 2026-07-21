@@ -39,13 +39,13 @@
 #include "widgets/list.h"
 #include "playlist/playlist.h"
 #include "database/tagcache.h"
-#include "screens/usb_screen.h"
+#include "screens/system/usb_screen.h"
 #include "screens/bookmark.h"
-#include "screens/wps.h"      /* pause_action, unpause_action */
-#include "screens/browser.h"  /* tree_flush, tree_restore */
+#include "screens/playback/wps.h"      /* pause_action, unpause_action */
+#include "screens/browse/browser.h"  /* tree_flush, tree_restore */
 #include "audio/voice_thread.h" /* voice_wait */
-#include "system/activity.h"
-#include "system/app_util.h"
+#include "activity.h"
+#include "app_util.h"
 #include "shutdown.h"
 
 static void system_flush(void)

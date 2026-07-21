@@ -1,4 +1,3 @@
-/* was: apps/image_viewer/decoders/gif_lib.h */
 /******************************************************************************
  
 gif_lib.h - service library for decoding and encoding GIF images

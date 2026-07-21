@@ -19,7 +19,7 @@
 #include "crc32.h"
 #include "settings/settings.h"
 #include "rbpaths.h"
-#include "screens/wps.h"
+#include "screens/playback/wps.h"
 #include "file.h"
 #include "system/activity.h"
 #include "widgets/list.h"

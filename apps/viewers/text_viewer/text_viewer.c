@@ -43,7 +43,7 @@
 #include "system/strutil.h"
 #include "root_menu.h"       /* GO_TO_*, MENU_ATTACHED_USB */
 #include "widgets/menu.h"            /* do_menu */
-#include "screens/menus/exported_menus.h" /* text_viewer_menu */
+#include "screens/settings/exported_settings.h" /* text_viewer_menu */
 #include "txt_source.h"
 #include "ts_io_core.h"
 #include "text_viewer.h"

@@ -20,7 +20,7 @@
 #include "system/strutil.h"
 #include "pathfuncs.h"
 #include "settings/settings.h"
-#include "screens/wps.h"
+#include "screens/playback/wps.h"
 
 /* Define LOGF_ENABLE to enable logf output in this file */
 /*#define LOGF_ENABLE*/

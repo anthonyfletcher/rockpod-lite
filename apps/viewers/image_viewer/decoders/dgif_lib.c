@@ -1,4 +1,3 @@
-/* was: apps/image_viewer/decoders/dgif_lib.c */
 /******************************************************************************
 
 dgif_lib.c - GIF decoding

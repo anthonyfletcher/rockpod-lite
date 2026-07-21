@@ -29,13 +29,13 @@
 #include "metadata/cuesheet.h"
 #include "replaygain.h"
 #include "core_alloc.h"
-#include "audio/abrepeat.h"
+#include "audio/ab_repeat.h"
 #include "lang.h"
 #include "system/activity.h"
 #include "system/format_time.h"
 #include "system/volume.h"
 #include "led.h"
-#include "widgets/peakmeter.h"
+#include "audio/peak_meter.h"
 /* Image stuff */
 #include "metadata/albumart.h"
 #include "metadata/art_cache.h"
@@ -53,7 +53,7 @@
 #include "usb.h"
 #include "widgets/list.h"
 #include "widgets/option_select.h"
-#include "screens/wps.h"
+#include "screens/playback/wps.h"
 
 #define NOINLINE __attribute__ ((noinline))
 

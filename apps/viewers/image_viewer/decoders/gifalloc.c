@@ -1,4 +1,3 @@
-/* was: apps/image_viewer/decoders/gifalloc.c */
 /*****************************************************************************
 
  GIF construction tools

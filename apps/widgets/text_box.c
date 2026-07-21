@@ -30,7 +30,7 @@
 #include "diacritic.h"       /* is_diacritic */
 #include "draw/scrollbar.h"
 #include "system/shutdown.h"
-#include "screens/track_info.h"
+#include "screens/playback/track_info.h"
 #include "text_box.h"         /* view_text prototype */
 
 struct view_info {

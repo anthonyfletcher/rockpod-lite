@@ -13,7 +13,7 @@
  * Kevin Ferrare 2005/10/16
  * multi-screen support, rewrote a lot of code
  */
-#include "screens/track_info.h"
+#include "screens/playback/track_info.h"
 #include <string.h>
 #include "playlist.h"
 #include "audio.h"
@@ -23,7 +23,7 @@
 #include "widgets/menu.h"
 #include "system/app_buffer.h"
 #include "widgets/keyboard.h"
-#include "screens/filetypes.h"
+#include "files/filetypes.h"
 #include "screens/context_menu.h"
 #include "speech/talk.h"
 #include "system/activity.h"
@@ -42,12 +42,12 @@
 #include "widgets/list.h"
 #include "widgets/splash.h"
 #include "save_screen.h"
-#include "screens/menus/exported_menus.h"
+#include "screens/settings/exported_settings.h"
 #include "widgets/yesno.h"
 #include "audio/playback.h"
 #include "database/tagcache.h"
 #include "root_menu.h"
-#include "screens/album_covers.h"
+#include "screens/covers/album_covers.h"
 #include "string-extra.h"
 
 /* Maximum number of tracks we can have loaded at one time                   */

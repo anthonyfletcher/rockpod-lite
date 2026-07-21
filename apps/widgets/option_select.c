@@ -30,7 +30,7 @@
 #include "system/volume.h"
 #include "splash.h"
 #include "menu.h"
-#include "screens/quickscreen.h"
+#include "screens/playback/quick_screen.h"
 
 /* HASFLAG compares value to flags returns true if set, false otherwise */
 #define HASFLAG(settings_list, flag) ((settings_list->flags & (flag)) == (flag))

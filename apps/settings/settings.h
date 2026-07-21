@@ -19,7 +19,7 @@
 #include "config.h"
 #include "audiohw.h" /* for the AUDIOHW_* defines */
 #include "skin/statusbar.h" /* for the statusbar values */
-#include "screens/quickscreen.h"
+#include "screens/playback/quick_screen.h"
 #include "button.h"
 #include "audio.h"
 #include "dsp_proc_settings.h"

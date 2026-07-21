@@ -1,4 +1,3 @@
-/* was: apps/image_viewer/decoders/idct.c */
 /**********************************************************************************
 *  
 *   Scaled Integer 1-D IDCT based on the LLM-method that 
