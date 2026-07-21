@@ -25,6 +25,20 @@
 > `root_menu.c/.h` and the build files. Verified on both targets at every
 > stage; hardware-tested on ipodvideo (the only device available, see §9.1).
 >
+> **Backlog (post-layout cleanup), all seven stages complete:**
+>
+> | # | Stage | Commit |
+> |---|---|---|
+> | 1–3 | prune unused bitmaps; rehome `beep_play`; fix a format type | `7b3d888ce2` |
+> | 4 | pin the `core_alloc` buffers that were held raw | `ca6b89ecab` |
+> | 5 | retire the dead radio and recording enums | `f3a2bb7d20` |
+> | 6 | drop the dead remote and tuner browse modes | `e9c7a03b46` |
+> | 7 | include the headers we actually use (§9.3) | `b944e2c273` |
+>
+> Two candidates were dropped by the owner as not worth it: the duplicate
+> JPEG decode (the two decoders work differently) and the second vendored
+> TLSF.
+>
 > **Known follow-ups, deliberately not done** — each is its own decision:
 > - ~~~65 files still use `kernel.h`/`rbpaths.h`/`timefuncs.h` symbols without
 >   including them (§9.3).~~ **Done** in backlog stage 7: 51 includes across
