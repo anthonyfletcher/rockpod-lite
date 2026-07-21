@@ -10,7 +10,28 @@
  *
  * The playback engine: the track lifecycle from buffering through decode
  * to output, gapless handoff, seeking, and the album-art slots the skin
- * draws from.
+ * draws from. The largest file in audio/.
+ *
+ * Three threads meet here, and most of the complexity is keeping them apart.
+ * The audio thread (this file's event loop) decides what to buffer and when
+ * to change track; the codec thread decodes into pcmbuf; the PCM interrupt
+ * drains pcmbuf. Declarations carry a (A,C) style tag naming which threads
+ * touch them; the legend is above the state block below.
+ *
+ * "Track list" below is the central idea: buffered tracks live in a ring of
+ * slots, and the engine keeps read/write cursors into it rather than a single
+ * "current track", which is what makes gapless handoff and peek-ahead work.
+ *
+ * Parts, in order:
+ *   - module state, grouped by concern (buffer, play status, album art,
+ *     buffer-fill tracking, track change, codec status)
+ *   - mp3entry helpers, and the track info / track list ring
+ *   - the audio buffer: one big core_alloc block, carved up here
+ *   - track change notification, then the general helper layer
+ *   - the audio thread: its event loop and one handler per command
+ *     (by far the longest region)
+ *   - callbacks fired from elsewhere: buffering, codec, pcmbuf
+ *   - the public audio_* API, settings hooks, and startup
  ****************************************************************************/
 #include "config.h"
 #include "timefuncs.h" /* get_time, mktime */
@@ -391,9 +412,7 @@ static void buffer_event_finished_callback(unsigned short id, void *data);
 void audio_pcmbuf_sync_position(void);
 
 
-/**************************************/
-
-/** --- MP3Entry --- **/
+/** MP3Entry **/
 
 /* Does the mp3entry have enough info for us to use it? */
 static struct mp3entry * valid_mp3entry(const struct mp3entry *id3)
@@ -504,7 +523,7 @@ static void id3_write_locked(enum audio_id3_types id3_num,
 }
 
 
-/** --- Track info --- **/
+/** Track info **/
 
 /* Invalidate all members to initial values - does not close handles or sync */
 static void track_info_wipe(struct track_info *infop)
@@ -515,7 +534,7 @@ static void track_info_wipe(struct track_info *infop)
         infop->handle[i] = ERR_HANDLE_NOT_FOUND;
 }
 
-/** --- Track list --- **/
+/** Track list **/
 
 /* Clear tracks in the list, optionally preserving the current track -
    returns 'false' if the operation was changed */
@@ -838,7 +857,7 @@ static void track_list_clear(unsigned int action)
 }
 
 
-/** --- Audio buffer -- **/
+/** Audio buffer **/
 
 /* What size is needed for the scratch buffer? */
 static size_t scratch_mem_size(void)
@@ -1186,7 +1205,7 @@ static void audio_update_filebuf_watermark(int seconds)
 }
 
 
-/** -- Track change notification -- **/
+/** Track change notification **/
 
 /* Check the pcmbuf track changes and return write the message into the event
    if there are any */
@@ -1214,7 +1233,7 @@ static inline void audio_pcmbuf_track_change_post(void)
 }
 
 
-/** --- Helper functions --- **/
+/** Helper functions **/
 
 /* Removes messages that might end up in the queue before or while processing
    a manual track change. Responding to them would be harmful since they
@@ -1863,7 +1882,7 @@ static bool audio_start_codec(bool auto_skip)
 }
 
 
-/** --- Audio thread --- **/
+/** Audio thread **/
 
 /* Load and parse a cuesheet for the file - returns false if the buffer
    is full */
@@ -3747,7 +3766,7 @@ void audio_playback_handler(struct queue_event *ev)
 }
 
 
-/* --- Buffering callbacks --- */
+/** Buffering callbacks **/
 
 /* Called when fullness is below the watermark level */
 static void buffer_event_buffer_low_callback(unsigned short id, void *ev_data, void *user_data)
@@ -3802,7 +3821,7 @@ static void buffer_event_finished_callback(unsigned short id, void *ev_data)
 }
 
 
-/** -- Codec callbacks -- **/
+/** Codec callbacks **/
 
 /* Update elapsed time for next PCM insert */
 void audio_codec_update_elapsed(unsigned long elapsed)
@@ -3841,7 +3860,7 @@ void audio_codec_seek_complete(void)
 }
 
 
-/** --- Pcmbuf callbacks --- **/
+/** Pcmbuf callbacks **/
 
 /* Update the elapsed and offset from the information cached during the
    PCM buffer insert */
@@ -3888,7 +3907,7 @@ bool audio_pcmbuf_may_play(void)
 }
 
 
-/** -- External interfaces -- **/
+/** External interfaces **/
 
 /* Get a copy of the id3 data for the for current track + offset + skip delta */
 bool audio_peek_track(struct mp3entry *id3, int offset)
@@ -4103,7 +4122,7 @@ void audio_flush_and_reload_tracks(void)
     audio_queue_post(Q_AUDIO_FLUSH, 0);
 }
 
-/** --- Miscellaneous public interfaces --- **/
+/** Miscellaneous public interfaces **/
 
 /* Return which album art handle is current for the user in the given slot */
 int playback_current_aa_hid(int slot)
@@ -4230,7 +4249,7 @@ long audio_filebufused(void)
 }
 
 
-/** -- Settings -- **/
+/** Settings **/
 
 /* Enable or disable cuesheet support and allocate/don't allocate the
    extra associated resources */
@@ -4341,7 +4360,7 @@ unsigned int playback_status(void)
     return play_status;
 }
 
-/** -- Startup -- **/
+/** Startup **/
 void INIT_ATTR playback_init(void)
 {
     logf("playback: initializing");

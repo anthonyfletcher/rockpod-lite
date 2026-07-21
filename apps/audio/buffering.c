@@ -9,6 +9,28 @@
  * The buffering layer: manages the big audio buffer as handles, reads
  * files into it ahead of playback, and hands data to the codec. Also
  * buffers album art and cuesheets.
+ *
+ * This is a ring buffer carved into variable-length allocations, each named by
+ * an integer handle rather than a pointer -- callers hold the handle, because
+ * the data behind it moves. Its own thread fills handles ahead of playback;
+ * when space runs short it shrinks or drops handles nobody needs yet, and
+ * compacts by sliding the rest along the ring.
+ *
+ * Two consequences worth knowing before editing:
+ *   - Any pointer obtained from a handle is valid only until the next yield,
+ *     unless buf_pin_handle() is holding it still.
+ *   - The ringbuf_* helpers exist because ring arithmetic has two different
+ *     wrap rules depending on whether the buffer is treated as empty or full
+ *     at the point the indices coincide; picking the wrong one off-by-ones
+ *     the whole buffer. Use them rather than open-coding + and -.
+ *
+ * Parts, in order:
+ *   - handle and counter state, the thread stack
+ *   - ring arithmetic helpers and buffer occupancy
+ *   - the handle list: allocate, find, link/unlink, and move during compaction
+ *   - filling: reading a file into a handle, shrinking, and the fill policy
+ *   - the public buf* API: open, close, seek, read (see buffering.h)
+ *   - handle queries, watermark settings, and the buffering thread itself
  ****************************************************************************/
 #include "config.h"
 #include <string.h>
@@ -1520,7 +1542,7 @@ size_t buf_get_watermark(void)
     return BUF_WATERMARK;
 }
 
-/** -- buffer thread helpers -- **/
+/** buffer thread helpers **/
 static void shrink_buffer(void)
 {
     logf("shrink_buffer()");

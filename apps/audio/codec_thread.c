@@ -10,6 +10,23 @@
  *
  * The codec thread: loads a codec, runs its decode loop, and handles the
  * callbacks it makes back into the core.
+ *
+ * Control is inverted here, which is the thing to understand first. The core
+ * does not pull samples from the codec; it calls the codec's run_proc(), which
+ * does not return until the track is finished, and the codec pulls what it
+ * needs by calling back through the ci table (codecs.c) -- ci.read_filebuf for
+ * input, ci.pcmbuf_insert for output. Everything under "Codec API callbacks"
+ * is therefore running on this thread, inside that call, on the codec's stack.
+ *
+ * Variables carry a (C,A-) style tag naming the threads that touch them; the
+ * legend is below the logf macros.
+ *
+ * Parts, in order:
+ *   - state, the thread's queue and stack, and the load-request struct
+ *   - codec filename lookup and other small external helpers
+ *   - the ci callbacks the running codec calls into (seek, read, insert)
+ *   - the thread itself: load, run, unload, and its message loop
+ *   - the interface the audio thread uses to drive all of the above
  ****************************************************************************/
 
 #include "config.h"
@@ -60,7 +77,7 @@ struct codec_load_info
 };
 
 
-/** --- Main state control --- **/
+/** Main state control **/
 
 static int codec_type = AFMT_UNKNOWN; /* Codec type (C,A-) */
 
@@ -153,10 +170,7 @@ static inline bool type_is_encoder(int afmt)
     return false;
 }
 
-/**************************************/
-
-
-/** --- Miscellaneous external functions --- **/
+/** Miscellaneous external functions **/
 const char * get_codec_filename(int cod_spec)
 {
     const char *fname;
@@ -184,7 +198,7 @@ void codec_thread_do_callback(void (*fn)(void), unsigned int *id)
 }
 
 
-/** --- codec API callbacks --- **/
+/** Codec API callbacks **/
 
 static void codec_pcmbuf_insert_callback(
         const void *ch1, const void *ch2, int count)
@@ -396,7 +410,7 @@ void codec_strip_filesize_callback(off_t size)
         ci.filesize = size;
 }
 
-/** --- CODEC THREAD --- **/
+/** Codec thread **/
 
 /* Handle Q_CODEC_LOAD */
 static void load_codec(const struct codec_load_info *ev_data)
@@ -583,7 +597,7 @@ static void NORETURN_ATTR codec_thread(void)
 }
 
 
-/** --- Miscellaneous external interfaces -- **/
+/** Miscellaneous external interfaces **/
 
 /* Initialize playback's codec interface */
 void INIT_ATTR codec_thread_init(void)
@@ -627,7 +641,7 @@ int codec_thread_set_priority(int priority)
 }
 
 
-/** --- Functions for audio thread use --- **/
+/** Functions for audio thread use **/
 
 /* Load a decoder or encoder and set the format type */
 bool codec_load(int hid, int cod_spec)

@@ -9,6 +9,22 @@
  *
  * The PCM output ring buffer between the codec and the DAC. Owns crossfade
  * mixing, the watermark that drives refills, and elapsed-time reporting.
+ *
+ * The buffer is one flat allocation divided into fixed-size chunks, with a
+ * parallel array of chunk descriptors carrying each chunk's length and the
+ * elapsed time to report when it plays. The codec thread writes at chunk_widx
+ * and the PCM interrupt drains at chunk_ridx; nothing locks, so the two
+ * indices are the entire synchronisation scheme.
+ *
+ * Parts, in order:
+ *   - sizes, the chunk descriptor, and module state
+ *   - index arithmetic: chunk stepping, wrapping, and what counts as committed
+ *   - the write path the codec drives, and chunk commit
+ *   - init and buffer sizing
+ *   - track change: arming and cancelling the boundary callbacks
+ *   - playback: the PCM callback, start/stop/pause
+ *   - crossfade: the fader, and mixing the outgoing tail with the incoming track
+ *   - debug metrics, fade/volume control, position reporting, sample rate
  ****************************************************************************/
 #include <stdio.h>
 #include "config.h"
@@ -184,7 +200,7 @@ extern bool audio_pcmbuf_may_play(void);
 extern void audio_pcmbuf_sync_position(void);
 
 
-/**************************************/
+/** Index arithmetic and fill state **/
 
 /* start PCM if callback says it's alright */
 static void start_audio_playback(void)
@@ -307,7 +323,7 @@ void snip_buffer_tail(size_t index, int offset)
 }
 
 
-/** Accept new PCM data */
+/** Accept new PCM data **/
 
 /* Split the uncommitted data as needed into chunks, stopping when uncommitted
    data is below the threshold */
@@ -520,7 +536,7 @@ void pcmbuf_write_complete(int count, unsigned long elapsed, off_t offset)
 }
 
 
-/** Init */
+/** Init **/
 static unsigned int get_next_required_pcmbuf_chunks(void)
 {
     size_t size = MIN_BUFFER_SIZE;
@@ -587,7 +603,7 @@ size_t pcmbuf_init(void *bufend)
 }
 
 
-/** Track change */
+/** Track change **/
 
 /* Place a track change notification in a specific descriptor or post it
    immediately if the buffer is empty or the index is invalid */
@@ -749,7 +765,7 @@ void pcmbuf_start_track_change(enum pcm_track_change_type type)
 }
 
 
-/** Playback */
+/** Playback **/
 
 /* PCM driver callback */
 static void pcmbuf_pcm_callback(const void **start, size_t *size)
@@ -845,7 +861,7 @@ void pcmbuf_pause(bool pause)
 }
 
 
-/** Crossfade */
+/** Crossfade **/
 
 
 /* Initialize a fader */
@@ -1242,7 +1258,7 @@ bool pcmbuf_is_same_size(void)
 }
 
 
-/** Debug menu, other metrics */
+/** Debug menu, other metrics **/
 
 /* Amount of bytes left in the buffer, accounting for uncommitted bytes */
 size_t pcmbuf_free(void)
@@ -1269,7 +1285,7 @@ int pcmbuf_descs(void)
 }
 
 
-/** Fading and channel volume control */
+/** Fading and channel volume control **/
 
 /* Sync the channel amplitude to all states */
 static void pcmbuf_update_volume(void)
@@ -1359,7 +1375,7 @@ void pcmbuf_soft_mode(bool shhh)
 }
 
 
-/** Time and position */
+/** Time and position **/
 
 /* Return the current position key value */
 unsigned int pcmbuf_get_position_key(void)
@@ -1376,7 +1392,7 @@ void pcmbuf_sync_position_update(void)
 
 
 
-/** Misc */
+/** Fill level, latency mode and sample rate **/
 
 bool pcmbuf_is_lowdata(void)
 {

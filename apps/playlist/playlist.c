@@ -9,6 +9,31 @@
  * The playlist engine: the in-memory index of tracks, shuffle and repeat,
  * insert and move, and the on-disk .m3u representation including the
  * dynamic playlist.
+ *
+ * Two naming conventions run through the whole file, and neither is obvious:
+ *
+ *   - A "_unlocked" suffix means the function does NOT take the playlist
+ *     mutex and the caller must already hold it. Calling one from outside a
+ *     lock is a race; calling a non-suffixed public function while holding
+ *     the lock deadlocks. Nearly every static mutator is _unlocked, with the
+ *     public playlist_* wrapper doing the locking.
+ *   - The index array holds offsets into the on-disk playlist file, not track
+ *     names. Shuffling and moving permute this array; the file is untouched.
+ *     Track names are read back from the file on demand (get_track_filename).
+ *
+ * The dynamic playlist's control-file format is documented at length just
+ * below -- read that first if you are touching resume or the control file.
+ *
+ * Parts, in order:
+ *   - control-file format documentation, types and module state
+ *   - file handle helpers, dircache file references and their worker thread
+ *   - control file: creation, update, sync, and the resume bookkeeping
+ *   - path formatting and building the index from a file or directory
+ *   - directory traversal: finding the next dir, dirplay
+ *   - index mutation: add, remove, randomise, sort
+ *   - navigation: step counting and next-index selection, honouring repeat
+ *   - buflib allocation for the index and temporary load buffers
+ *   - the public playlist_* API (the second half of the file)
  ****************************************************************************/
 
 /*
@@ -1878,13 +1903,10 @@ static struct buflib_callbacks ops = {
     .shrink_callback = NULL,
 };
 
-/******************************************************************************/
-/******************************************************************************/
-/* ************************************************************************** */
-/* * PUBLIC INTERFACE FUNCTIONS * *********************************************/
-/* ************************************************************************** */
-/******************************************************************************/
-/******************************************************************************/
+/** Public interface **/
+
+/* Everything below takes the playlist mutex itself and may be called from any
+ * thread; everything above assumes it is already held. */
 /*
  * Initialize playlist entries at startup
  */

@@ -8,6 +8,17 @@
  *
  * Loading and linking of .codec modules: locates the file for a format and
  * binds it to the codec API struct.
+ *
+ * A codec is a separately-linked binary loaded into a fixed region (codecbuf,
+ * placed by the linker script). It cannot call into the core directly, so the
+ * core hands it a table of function pointers -- ci, below -- and the codec
+ * calls through that. Loading is therefore: read the image, sanity-check its
+ * header against this build, publish the table, then call its entry point.
+ *
+ * Parts, in order:
+ *   - ci: the API table handed to every codec
+ *   - codec buffer helpers: path building, and doling out leftover codec RAM
+ *   - load and call: header validation, the api writeback, run and unload
  ****************************************************************************/
 #include "config.h"
 
@@ -50,6 +61,11 @@ extern unsigned char codecbuf[];
 
 static size_t codec_size;
 
+/* Initialised by position, not by field name, so the order here must match
+ * struct codec_api in codecs.h exactly -- the trailing comments are the only
+ * thing tying an entry to its field. Inserting anything mid-list silently
+ * shifts every pointer below it, which compiles clean and fails at runtime.
+ * Add to the end (and bump CODEC_API_VERSION), as the closing note says. */
 struct codec_api ci = {
 
     0,    /* filesize */
@@ -121,6 +137,8 @@ struct codec_api ci = {
 
 };
 
+/** Codec buffer helpers **/
+
 void codec_get_full_path(char *path, const char *codec_root_fn)
 {
     snprintf(path, MAX_PATH-1, CODECS_DIR "/" CODEC_PREFIX "%s."
@@ -142,7 +160,7 @@ void *codec_get_buffer_callback(size_t *size)
     return buf;
 }
 
-/** codec loading and call interface **/
+/** Load and call **/
 static void *curr_handle = NULL;
 static struct codec_header *c_hdr = NULL;
 

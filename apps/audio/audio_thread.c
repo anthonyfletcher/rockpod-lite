@@ -113,7 +113,7 @@ void audio_error_clear(void)
 {
 }
 
-/** -- Startup -- **/
+/** Startup **/
 
 /* Initialize the audio system - called from init() in main.c */
 void INIT_ATTR audio_init(void)
