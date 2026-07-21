@@ -124,6 +124,13 @@ static inline bool has_flag(unsigned int value, unsigned int flag)
 */
 static bool is_action_filtered(int action, unsigned int mask, int context)
 {
+    /* context is now only read by the logf() in the default case below, which
+     * compiles away on targets without ROCKBOX_HAS_LOGF (ipodvideo). It used
+     * to be read unconditionally by the CONTEXT_FM test, which is gone with
+     * the tuner. Keep the parameter -- callers pass it and logf builds use it
+     * -- but silence the unused warning on the builds that do not. */
+    (void)context;
+
     bool match = false;
 
     switch (action)
@@ -154,11 +161,16 @@ static bool is_action_filtered(int action, unsigned int mask, int context)
         case ACTION_WPS_VOLDOWN:
             match = has_flag(mask, SEL_ACTION_VOL);
             break;
-        case ACTION_SETTINGS_INC:/*FMS*/
-        case ACTION_SETTINGS_INCREPEAT:/*FMS*/
-        case ACTION_SETTINGS_DEC:/*FMS*/
-        case ACTION_SETTINGS_DECREPEAT:/*FMS*/
-            match = (context == CONTEXT_FM) && has_flag(mask, SEL_ACTION_VOL);
+        case ACTION_SETTINGS_INC:
+        case ACTION_SETTINGS_INCREPEAT:
+        case ACTION_SETTINGS_DEC:
+        case ACTION_SETTINGS_DECREPEAT:
+            /* Upstream let these count as volume actions, but only inside the
+             * FM screen: "(context == CONTEXT_FM) && has_flag(...)". This fork
+             * has no tuner and CONTEXT_FM is gone, so the condition was always
+             * false. The cases stay -- dropping them would send these actions
+             * to default:, which logs instead of filtering. */
+            match = false;
             break;
         default:
             /* display action code of unfiltered actions */
@@ -685,7 +697,7 @@ static inline int do_backlight(action_last_t *last, action_cur_t *cur, int actio
     bl_is_off &= !(has_flag(last->backlight_mask, SEL_ACTION_NOEXT)
                      && power_input_present());
     /* skip if backlight on | incorrect context | SEL_ACTION_NOEXT + ext pwr */
-    if (bl_is_off && (cur->context == CONTEXT_FM || cur->context == CONTEXT_WPS ||
+    if (bl_is_off && (cur->context == CONTEXT_WPS ||
        cur->context == CONTEXT_MAINMENU))
     {
         filtered = is_action_filtered(action, last->backlight_mask, cur->context);

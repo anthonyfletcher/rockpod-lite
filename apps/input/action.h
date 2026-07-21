@@ -95,7 +95,6 @@ enum {
     CONTEXT_RECSCREEN,
     CONTEXT_KEYBOARD,
     CONTEXT_MORSE_INPUT,
-    CONTEXT_FM,
     CONTEXT_USB_HID,
     CONTEXT_USB_HID_MODE_MULTIMEDIA,
     CONTEXT_USB_HID_MODE_PRESENTATION,
@@ -172,13 +171,6 @@ enum {
     ACTION_TREE_STOP,
     ACTION_TREE_WPS,
     ACTION_TREE_HOTKEY,
-
-    /* recording screen */
-    ACTION_REC_LCD,
-    ACTION_REC_PAUSE,
-    ACTION_REC_NEWFILE,
-    ACTION_REC_F2,
-    ACTION_REC_F3,
 
     /* main menu */
     /* These are not strictly actions, but must be here

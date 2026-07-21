@@ -869,9 +869,20 @@ int image_viewer(const char *file)
         }
     }
 
-    /* Grab the largest free buffer for the file list + decoded images. When
-     * playback is stopped this is most of RAM; while playing it is whatever the
-     * audio buffer leaves free, and images are downscaled to fit. */
+    /* Grab the largest free buffer for the file list + decoded images.
+     *
+     * Note what this costs: core_alloc_maximum() runs
+     * buflib_compact_and_shrink() first (firmware/buflib_mempool.c), which
+     * invokes the shrink callback playback.c registers on the audio buffer.
+     * The audio buffer therefore gives up its space and PLAYBACK STOPS as the
+     * viewer opens -- observed on device, and unavoidable while we ask for the
+     * maximum.
+     *
+     * An earlier version of this comment claimed the viewer coexists with
+     * playback, taking only "whatever the audio buffer leaves free". That is
+     * not what happens; it takes most of RAM either way. If coexisting with
+     * playback is ever wanted, this needs to request a bounded size rather
+     * than the maximum. */
     buf_handle = core_alloc_maximum(&buf_size, NULL);
     if (buf_handle <= 0)
     {
