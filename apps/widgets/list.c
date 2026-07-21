@@ -36,7 +36,7 @@
 #include "skin/statusbar_skinned.h"
 #include "skin/skin_albumart_color.h"
 #include "database/tagcache.h"
-#include "metadata/albumart_cache.h"
+#include "metadata/art_cache.h"
 
 /* The minimum number of pending button events in queue before starting
  * to limit list drawing interval.
@@ -781,7 +781,7 @@ int list_do_action_timeout(struct gui_synclist *lists, int timeout)
     {
         bool ui_busy = ui_working();
         ui_busy = ui_busy || tagcache_is_busy();
-        ui_busy = ui_busy || albumart_cache_is_busy();
+        ui_busy = ui_busy || art_cache_is_busy();
         if (ui_busy)
         {
             int busy_timeout = HZ / 10;

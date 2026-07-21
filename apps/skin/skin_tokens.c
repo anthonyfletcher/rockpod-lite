@@ -38,7 +38,7 @@
 #include "widgets/peakmeter.h"
 /* Image stuff */
 #include "metadata/albumart.h"
-#include "metadata/albumart_cache.h"
+#include "metadata/art_cache.h"
 #include "playlist/playlist.h"
 #include "audio/playback.h"
 #include "tdspeed.h"
@@ -1241,7 +1241,7 @@ const char *get_token_value(struct gui_wps *gwps,
             bool building = false;
             if (tagcache_is_busy())
                 building = true;
-            if (albumart_cache_is_busy())
+            if (art_cache_is_busy())
                 building = true;
             return building ? "b" : NULL;
         }

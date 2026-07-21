@@ -18,7 +18,7 @@
 #include "settings/settings.h"
 #include "string-extra.h"
 #include "widgets/menu.h"
-#include "playlist/playlist_menu.h"
+#include "playlist/save_screen.h"
 
 #include "file.h"
 #include "widgets/keyboard.h"

@@ -6,8 +6,10 @@
  * Copyright (C) 2026 Rockpod
  * GNU General Public License (version 2+)
  *
- * The album-art disk cache: pre-scales art to the sizes skins ask for and
- * stores them, so browsing does not re-decode on every track.
+ * Disk cache for cover art -- BOTH album art and artist art. Pre-scales each
+ * image to the sizes skins ask for and stores it, so browsing does not
+ * re-decode on every track. Album art comes from the album folder, artist art
+ * from its parent; each has its own placeholder for when nothing is found.
  ****************************************************************************/
 
 #include <stdio.h>
@@ -27,8 +29,8 @@
 #include "rbpaths.h"
 #include "metadata.h"
 #include "albumart.h"
-#include "albumart_cache.h"
-#include "albumart_sizes.h"
+#include "art_cache.h"
+#include "art_sizes.h"
 #include "database/tagcache.h"
 #include "lcd.h"
 #include "draw/bmp.h"
@@ -48,8 +50,8 @@
 #define THUMBCACHE_DIR ROCKBOX_DIR "/thumbcache"
 #define AA_VERSION_FILE THUMBCACHE_DIR "/format.txt"
 
-/* On-disk thumbnail format (struct albumart_cache_header + row-major native
- * pixels) is declared in albumart_cache.h so consumers can read it. A
+/* On-disk thumbnail format (struct art_cache_header + row-major native
+ * pixels) is declared in art_cache.h so consumers can read it. A
  * magic/version lets a future format change be detected per file rather than
  * needing a global cache wipe. */
 
@@ -99,37 +101,37 @@ static struct
     int           flags;
 } aa_offer;
 
-bool albumart_cache_is_busy(void)
+bool art_cache_is_busy(void)
 {
     return cache_busy;
 }
 
-int albumart_cache_num_sizes(void)
+int art_cache_num_sizes(void)
 {
-    return ALBUMART_CACHE_NUM_SIZES;
+    return ART_CACHE_NUM_SIZES;
 }
 
-int albumart_cache_size_dim(int size_index)
+int art_cache_size_dim(int size_index)
 {
-    if (size_index < 0 || size_index >= ALBUMART_CACHE_NUM_SIZES)
+    if (size_index < 0 || size_index >= ART_CACHE_NUM_SIZES)
         return 0;
-    return albumart_sizes[size_index].dim;
+    return art_sizes[size_index].dim;
 }
 
-const char *albumart_cache_size_name(int size_index)
+const char *art_cache_size_name(int size_index)
 {
-    if (size_index < 0 || size_index >= ALBUMART_CACHE_NUM_SIZES)
+    if (size_index < 0 || size_index >= ART_CACHE_NUM_SIZES)
         return NULL;
-    return albumart_sizes[size_index].name;
+    return art_sizes[size_index].name;
 }
 
-int albumart_cache_size_index(const char *name)
+int art_cache_size_index(const char *name)
 {
     int i;
     if (!name)
         return -1;
-    for (i = 0; i < ALBUMART_CACHE_NUM_SIZES; i++)
-        if (!strcmp(albumart_sizes[i].name, name))
+    for (i = 0; i < ART_CACHE_NUM_SIZES; i++)
+        if (!strcmp(art_sizes[i].name, name))
             return i;
     return -1;
 }
@@ -157,7 +159,7 @@ static void aa_cache_path(char *out, int out_len, int size_index,
                           unsigned int arthash)
 {
     snprintf(out, out_len, THUMBCACHE_DIR "/%s/%08x.aat",
-             albumart_sizes[size_index].name, arthash);
+             art_sizes[size_index].name, arthash);
 }
 
 /* The shared placeholder thumbnail for a size. The "_" prefix cannot collide
@@ -165,7 +167,7 @@ static void aa_cache_path(char *out, int out_len, int size_index,
 static void aa_fallback_path(char *out, int out_len, int size_index)
 {
     snprintf(out, out_len, THUMBCACHE_DIR "/%s/_fallback.aat",
-             albumart_sizes[size_index].name);
+             art_sizes[size_index].name);
 }
 
 /* As aa_fallback_path, but the artist placeholder (a silhouette) -- a separate
@@ -173,23 +175,23 @@ static void aa_fallback_path(char *out, int out_len, int size_index)
 static void aa_artist_fallback_path(char *out, int out_len, int size_index)
 {
     snprintf(out, out_len, THUMBCACHE_DIR "/%s/_artist_fallback.aat",
-             albumart_sizes[size_index].name);
+             art_sizes[size_index].name);
 }
 
-bool albumart_cache_artist_fallback(int size_index, char *out, int out_len)
+bool art_cache_artist_fallback(int size_index, char *out, int out_len)
 {
-    if (size_index < 0 || size_index >= ALBUMART_CACHE_NUM_SIZES)
+    if (size_index < 0 || size_index >= ART_CACHE_NUM_SIZES)
         return false;
     aa_artist_fallback_path(out, out_len, size_index);
     return file_exists(out);
 }
 
-bool albumart_cache_lookup(const char *dir, int size_index,
+bool art_cache_lookup(const char *dir, int size_index,
                            char *out, int out_len, bool *is_fallback)
 {
     if (is_fallback)
         *is_fallback = false;
-    if (!dir || size_index < 0 || size_index >= ALBUMART_CACHE_NUM_SIZES)
+    if (!dir || size_index < 0 || size_index >= ART_CACHE_NUM_SIZES)
         return false;
 
     aa_cache_path(out, out_len, size_index, aa_hash(dir));
@@ -215,9 +217,9 @@ static void aa_ensure_dirs(void)
     int i;
     char p[MAX_PATH];
     mkdir(THUMBCACHE_DIR);
-    for (i = 0; i < ALBUMART_CACHE_NUM_SIZES; i++)
+    for (i = 0; i < ART_CACHE_NUM_SIZES; i++)
     {
-        snprintf(p, sizeof(p), THUMBCACHE_DIR "/%s", albumart_sizes[i].name);
+        snprintf(p, sizeof(p), THUMBCACHE_DIR "/%s", art_sizes[i].name);
         mkdir(p);
     }
 }
@@ -230,13 +232,13 @@ static void aa_purge_thumbs(void)
     char dirpath[MAX_PATH];
     char filepath[MAX_PATH];
 
-    for (i = 0; i < ALBUMART_CACHE_NUM_SIZES; i++)
+    for (i = 0; i < ART_CACHE_NUM_SIZES; i++)
     {
         DIR *d;
         struct dirent *e;
 
         snprintf(dirpath, sizeof(dirpath), THUMBCACHE_DIR "/%s",
-                 albumart_sizes[i].name);
+                 art_sizes[i].name);
         d = opendir(dirpath);
         if (!d)
             continue;
@@ -275,17 +277,17 @@ static void aa_check_format_version(void)
         close(fd);
     }
 
-    if (ver == ALBUMART_CACHE_FORMAT_VERSION)
+    if (ver == ART_CACHE_FORMAT_VERSION)
         return;
 
     logf("albumart cache: format %d -> %d, purging", ver,
-         ALBUMART_CACHE_FORMAT_VERSION);
+         ART_CACHE_FORMAT_VERSION);
     aa_purge_thumbs();
 
     fd = open(AA_VERSION_FILE, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (fd >= 0)
     {
-        n = snprintf(buf, sizeof(buf), "%d\n", ALBUMART_CACHE_FORMAT_VERSION);
+        n = snprintf(buf, sizeof(buf), "%d\n", ART_CACHE_FORMAT_VERSION);
         write(fd, buf, n);
         close(fd);
     }
@@ -326,7 +328,7 @@ static bool aa_seen(unsigned int *seen, unsigned int h)
 
 /* Where an album-art image comes from: a file on disk (folder art), or a JPEG
  * blob embedded in an audio file (emb_pos >= 0, reusing metadata already parsed
- * by playback -- see albumart_cache_offer_current()). */
+ * by playback -- see art_cache_offer_current()). */
 struct aa_src
 {
     const char   *path;      /* file to read: the folder image, or the track */
@@ -397,8 +399,8 @@ static bool aa_cover_dim(int sw, int sh, int dim, int *tw, int *th)
     if (*th < dim)
         *th = dim;
 
-    return *tw <= dim * ALBUMART_CACHE_COVER_MAX_ASPECT &&
-           *th <= dim * ALBUMART_CACHE_COVER_MAX_ASPECT;
+    return *tw <= dim * ART_CACHE_COVER_MAX_ASPECT &&
+           *th <= dim * ART_CACHE_COVER_MAX_ASPECT;
 }
 
 /* Centre-crop a tw x th image down to dim x dim, in place. Each output row sits
@@ -420,15 +422,15 @@ static void aa_crop_center(void *buf, int tw, int th, int dim)
  * followed by the pixels. Removes the file on a short write. */
 static bool aa_write_aat(const char *out_path, const struct bitmap *bm)
 {
-    struct albumart_cache_header hdr;
+    struct art_cache_header hdr;
     size_t bytes;
     bool ok;
     int fd = open(out_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (fd < 0)
         return false;
 
-    hdr.magic = ALBUMART_CACHE_MAGIC;
-    hdr.version = ALBUMART_CACHE_FORMAT_VERSION;
+    hdr.magic = ART_CACHE_MAGIC;
+    hdr.version = ART_CACHE_FORMAT_VERSION;
     hdr.width = bm->width;
     hdr.height = bm->height;
     bytes = (size_t)bm->width * bm->height * FB_DATA_SZ;
@@ -447,7 +449,7 @@ static bool aa_write_aat(const char *out_path, const struct bitmap *bm)
  * CONTAIN: fitted (aspect preserved) inside dim x dim, so the cached image is
  * only square when the source is.
  * COVER:   decoded to the cover size (shorter side == dim) and centre-cropped to
- * exactly dim x dim. A source wider than ALBUMART_CACHE_COVER_MAX_ASPECT falls
+ * exactly dim x dim. A source wider than ART_CACHE_COVER_MAX_ASPECT falls
  * back to CONTAIN rather than overrun the work buffer.
  *
  * Returns true on success. */
@@ -455,8 +457,8 @@ static bool aa_generate_one(const struct aa_src *src, int size_index,
                             const char *out_path, void *workbuf,
                             size_t workbuf_sz)
 {
-    int dim = albumart_sizes[size_index].dim;
-    bool cover = albumart_sizes[size_index].fit == AA_FIT_COVER;
+    int dim = art_sizes[size_index].dim;
+    bool cover = art_sizes[size_index].fit == AA_FIT_COVER;
     struct bitmap bm;
     int fmt = FORMAT_NATIVE | FORMAT_RESIZE | FORMAT_DITHER;
     int tw = dim, th = dim;
@@ -540,9 +542,9 @@ static void aa_render_placeholder(const fb_data *src, int sw, int sh,
     int s;
     char path[MAX_PATH];
 
-    for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
+    for (s = 0; s < ART_CACHE_NUM_SIZES; s++)
     {
-        int dim = albumart_sizes[s].dim;
+        int dim = art_sizes[s].dim;
         struct bitmap bm;
 
         pathfn(path, sizeof(path), s);
@@ -606,7 +608,7 @@ static void aa_cache_dir(const char *probe_path, unsigned int dh,
     int s;
     bool all_exist = true;
 
-    for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
+    for (s = 0; s < ART_CACHE_NUM_SIZES; s++)
     {
         aa_cache_path(aa_check_path, sizeof(aa_check_path), s, dh);
         if (!file_exists(aa_check_path))
@@ -627,7 +629,7 @@ static void aa_cache_dir(const char *probe_path, unsigned int dh,
         return;
 
     struct aa_src src = { aa_artpath, -1, 0, 0 };  /* folder image on disk */
-    for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
+    for (s = 0; s < ART_CACHE_NUM_SIZES; s++)
     {
         aa_cache_path(aa_check_path, sizeof(aa_check_path), s, dh);
         if (file_exists(aa_check_path))
@@ -664,9 +666,9 @@ static bool aa_run_pass(void)
      * longer side up to dim * COVER_MAX_ASPECT) before cropping it square, so
      * the buffer is sized for that worst case. Elongation on the other axis has
      * the same pixel count and a narrower row, so this covers both. */
-    worksz = BM_SCALED_SIZE(ALBUMART_CACHE_MAX_DIM *
-                                ALBUMART_CACHE_COVER_MAX_ASPECT,
-                            ALBUMART_CACHE_MAX_DIM, FORMAT_NATIVE, 0);
+    worksz = BM_SCALED_SIZE(ART_CACHE_MAX_DIM *
+                                ART_CACHE_COVER_MAX_ASPECT,
+                            ART_CACHE_MAX_DIM, FORMAT_NATIVE, 0);
     worksz += JPEG_DECODE_OVERHEAD;
 
     wh = core_alloc(worksz);
@@ -787,7 +789,7 @@ static void aa_handle_offer(void)
     aa_dirname(path, dir, sizeof(dir));
     dh = aa_hash(dir);
 
-    for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
+    for (s = 0; s < ART_CACHE_NUM_SIZES; s++)
     {
         aa_cache_path(aa_check_path, sizeof(aa_check_path), s, dh);
         if (!file_exists(aa_check_path))
@@ -799,9 +801,9 @@ static void aa_handle_offer(void)
     if (!need)
         return;   /* already cached (folder art wins) */
 
-    worksz = BM_SCALED_SIZE(ALBUMART_CACHE_MAX_DIM *
-                                ALBUMART_CACHE_COVER_MAX_ASPECT,
-                            ALBUMART_CACHE_MAX_DIM, FORMAT_NATIVE, 0);
+    worksz = BM_SCALED_SIZE(ART_CACHE_MAX_DIM *
+                                ART_CACHE_COVER_MAX_ASPECT,
+                            ART_CACHE_MAX_DIM, FORMAT_NATIVE, 0);
     worksz += JPEG_DECODE_OVERHEAD;
     wh = core_alloc(worksz);
     if (wh <= 0)
@@ -809,7 +811,7 @@ static void aa_handle_offer(void)
     workbuf = core_get_data_pinned(wh);
 
     aa_ensure_dirs();
-    for (s = 0; s < ALBUMART_CACHE_NUM_SIZES; s++)
+    for (s = 0; s < ART_CACHE_NUM_SIZES; s++)
     {
         aa_cache_path(aa_check_path, sizeof(aa_check_path), s, dh);
         if (file_exists(aa_check_path))
@@ -897,7 +899,7 @@ static void aa_thread(void)
     }
 }
 
-void albumart_cache_init(void)
+void art_cache_init(void)
 {
     cache_busy = false;
     queue_init(&aa_queue, true);

@@ -19,7 +19,6 @@
 #include "widgets/splash.h"
 #include "settings/settings.h"
 #include "widgets/menu.h"
-#include "settings/sound_menu.h"
 #include "kernel.h"
 #include "playlist/playlist.h"
 #include "audio.h"

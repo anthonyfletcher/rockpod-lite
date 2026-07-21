@@ -39,7 +39,7 @@
 #include "system/app_buffer.h"
 #include "file.h"
 #include "pathfuncs.h"
-#include "playlist/playlist_menu.h"
+#include "playlist/save_screen.h"
 
 /*#define LOGF_ENABLE*/
 #include "logf.h"

@@ -42,7 +42,7 @@
 #include "system/strutil.h"
 #include "context_menu.h"           /* onplay_show_playlist_cat_menu/menu */
 #include "metadata/albumart.h"         /* find_albumart / search_albumart_files */
-#include "metadata/albumart_cache.h"   /* shared database-driven thumbnail cache */
+#include "metadata/art_cache.h"   /* shared database-driven thumbnail cache */
 #include "metadata.h"         /* struct mp3entry, get_metadata */
 #include "dir.h"
 #include "file.h"

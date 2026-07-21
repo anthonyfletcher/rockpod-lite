@@ -43,7 +43,7 @@
 #include "system/strutil.h"
 #include "context_menu.h"           /* onplay_show_playlist_cat_menu/menu */
 #include "metadata/albumart.h"         /* find_albumart / search_albumart_files */
-#include "metadata/albumart_cache.h"   /* shared database-driven thumbnail cache */
+#include "metadata/art_cache.h"   /* shared database-driven thumbnail cache */
 #include "metadata.h"         /* struct mp3entry, get_metadata */
 #include "dir.h"
 #include "file.h"
@@ -344,7 +344,7 @@ unsigned long thread_stack[THREAD_STACK_SIZE / sizeof(long)];
 
 static int empty_slide_hid;
 
-/* Index of the "coverflow" size in the shared albumart cache (albumart_sizes.h),
+/* Index of the "coverflow" size in the shared albumart cache (art_sizes.h),
  * resolved once in init(); -1 if unavailable (falls back to the local pfraw
  * cache). */
 static int pf_cover_size_idx = -1;
@@ -1245,13 +1245,13 @@ static int read_pfraw(char* filename, int prio)
     return hid;
 }
 
-/* Read a shared-cache thumbnail (.aat: struct albumart_cache_header followed by
+/* Read a shared-cache thumbnail (.aat: struct art_cache_header followed by
  * row-major native pixels) into a buflib surface, transposing to the
  * column-major layout render_slide() expects. Returns a buflib handle,
  * empty_slide_hid on a missing/corrupt file, or -1 on allocation failure. */
 static int read_aat_transposed(const char *filename, int prio)
 {
-    struct albumart_cache_header hdr;
+    struct art_cache_header hdr;
     pix_t rowbuf[DISPLAY_WIDTH];
     int row, col, w, h, size, hid;
     int fh = open(filename, O_RDONLY);
@@ -1259,8 +1259,8 @@ static int read_aat_transposed(const char *filename, int prio)
         return empty_slide_hid;
 
     if (read(fh, &hdr, sizeof(hdr)) != sizeof(hdr) ||
-        hdr.magic != ALBUMART_CACHE_MAGIC ||
-        hdr.version != ALBUMART_CACHE_FORMAT_VERSION ||
+        hdr.magic != ART_CACHE_MAGIC ||
+        hdr.version != ART_CACHE_FORMAT_VERSION ||
         hdr.width == 0 || hdr.height == 0 ||
         hdr.width > DISPLAY_WIDTH || hdr.height > DISPLAY_HEIGHT)
     {
@@ -1318,7 +1318,7 @@ static inline bool load_and_prepare_surface(const int slide_index,
         char dir[MAX_PATH];
         char aat_file[MAX_PATH];
         if (model->slide_art(slide_index, dir, sizeof(dir)) &&
-            albumart_cache_lookup(dir, pf_cover_size_idx, aat_file,
+            art_cache_lookup(dir, pf_cover_size_idx, aat_file,
                                   sizeof(aat_file), NULL))
         {
             hid = read_aat_transposed(aat_file, prio);
@@ -2377,7 +2377,7 @@ static bool init(void)
     number_of_slides = model->count();
 
     /* Phase 3 v2: Cover Flow no longer generates its own thumbnails -- the
-     * background album-art cache (albumart_cache.c) does. Mark inspection
+     * background album-art cache (art_cache.c) does. Mark inspection
      * complete so the idle-loop generator never runs and the navigation
      * "wait for cache" splashes don't appear; slides come from the shared
      * .aat cache (with the old pfraw / empty slide as fallback). */
@@ -2402,7 +2402,7 @@ static bool init(void)
     pf_idx.buf += aa_bufsz;
     pf_idx.buf_sz -= aa_bufsz;
 
-    pf_cover_size_idx = albumart_cache_size_index("coverflow");
+    pf_cover_size_idx = art_cache_size_index("coverflow");
 
     buflib_init(&buf_ctx, (void *)pf_idx.buf, pf_idx.buf_sz);
     initialize_slide_cache();

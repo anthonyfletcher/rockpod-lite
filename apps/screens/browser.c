@@ -39,7 +39,7 @@
 #include "bookmark.h"
 #include "context_menu.h"
 #include "core_alloc.h"
-#include "metadata/albumart_cache.h"
+#include "metadata/art_cache.h"
 #include "power.h"
 #include "input/action.h"
 #include "speech/talk.h"
@@ -217,9 +217,9 @@ static bool tree_aa_ready(void)
 {
     if (tree_aa_size_idx == -2)
     {
-        tree_aa_size_idx = albumart_cache_size_index("list");
+        tree_aa_size_idx = art_cache_size_index("list");
         if (tree_aa_size_idx >= 0)
-            tree_aa_dim = albumart_cache_size_dim(tree_aa_size_idx);
+            tree_aa_dim = art_cache_size_dim(tree_aa_size_idx);
     }
     if (tree_aa_size_idx < 0)
         return false;
@@ -235,11 +235,11 @@ static bool tree_aa_ready(void)
 }
 
 /* Read a cached thumbnail into `slot`: a small header followed by row-major
- * native pixels (see albumart_cache.h). The read yields, so the store is pinned
+ * native pixels (see art_cache.h). The read yields, so the store is pinned
  * across it rather than trusting a pointer taken beforehand. */
 static bool tree_aa_load(const char *path, int slot)
 {
-    struct albumart_cache_header hdr;
+    struct art_cache_header hdr;
     size_t bytes = tree_aa_slot_bytes();
     bool ok = false;
     int fd = open(path, O_RDONLY);
@@ -248,8 +248,8 @@ static bool tree_aa_load(const char *path, int slot)
         return false;
 
     if (read(fd, &hdr, sizeof(hdr)) == (ssize_t)sizeof(hdr) &&
-        hdr.magic == ALBUMART_CACHE_MAGIC &&
-        hdr.version == ALBUMART_CACHE_FORMAT_VERSION &&
+        hdr.magic == ART_CACHE_MAGIC &&
+        hdr.version == ART_CACHE_FORMAT_VERSION &&
         hdr.width == tree_aa_dim && hdr.height == tree_aa_dim)
     {
         char *store = core_get_data_pinned(tree_aa_handle);
@@ -296,14 +296,14 @@ static const struct bitmap *tree_get_albumart(int selected_item, void * data,
      * substitute the dedicated artist silhouette instead. */
     if (artist)
     {
-        if (!albumart_cache_lookup(dir, tree_aa_size_idx, aat, sizeof(aat),
+        if (!art_cache_lookup(dir, tree_aa_size_idx, aat, sizeof(aat),
                                    &is_fallback) || is_fallback)
         {
-            if (!albumart_cache_artist_fallback(tree_aa_size_idx, aat, sizeof(aat)))
+            if (!art_cache_artist_fallback(tree_aa_size_idx, aat, sizeof(aat)))
                 return NULL;    /* silhouette not generated yet */
         }
     }
-    else if (!albumart_cache_lookup(dir, tree_aa_size_idx, aat, sizeof(aat), NULL))
+    else if (!art_cache_lookup(dir, tree_aa_size_idx, aat, sizeof(aat), NULL))
         return NULL;    /* no art and no placeholder generated yet */
 
     slot = tree_aa_victim;

@@ -19,7 +19,6 @@
 #include "input/action.h"
 #include "settings/settings.h"
 #include "widgets/menu.h"
-#include "settings/sound_menu.h"
 #include "eq_menu.h"
 #include "exported_menus.h"
 #include "menu_common.h"

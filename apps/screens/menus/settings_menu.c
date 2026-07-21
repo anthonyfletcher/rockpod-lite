@@ -21,7 +21,6 @@
 #include "rbpaths.h"
 #include "widgets/menu.h"
 #include "widgets/keyboard.h"
-#include "settings/sound_menu.h"
 #include "exported_menus.h"
 #include "screens/browser.h"
 #include "database/tagtree.h"

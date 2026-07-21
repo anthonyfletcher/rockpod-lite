@@ -54,7 +54,7 @@
 #include "system/shutdown.h"
 #include "dircache.h"
 #include "database/tagcache.h"
-#include "metadata/albumart_cache.h"
+#include "metadata/art_cache.h"
 #include "database/tagtree.h"
 #include "lang.h"
 #include "string.h"
@@ -193,7 +193,7 @@ static void init_tagcache(void)
     long talked_tick = 0;
 #endif
     tagcache_init();
-    albumart_cache_init();
+    art_cache_init();
 
     while (!tagcache_is_initialized())
     {

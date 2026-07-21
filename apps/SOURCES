@@ -41,7 +41,7 @@ metadata/cuesheet.c
 metadata/mul_id3.c
 #ifdef HAVE_ALBUMART
 metadata/albumart.c
-metadata/albumart_cache.c
+metadata/art_cache.c
 #endif
 
 /* -- the interface, by altitude --------------------------------------- */

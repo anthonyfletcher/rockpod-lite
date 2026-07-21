@@ -9,8 +9,8 @@
  * The album-art sizes this build caches, derived from the skins in use.
  ****************************************************************************/
 
-#ifndef _ALBUMART_SIZES_H_
-#define _ALBUMART_SIZES_H_
+#ifndef _ART_SIZES_H_
+#define _ART_SIZES_H_
 
 /* How a source image is fitted into the square NxN thumbnail.
  *
@@ -22,7 +22,7 @@
  *
  * COVER needs a non-square intermediate (N x N*aspect) before the crop, so it is
  * only applied while the source's aspect ratio is within
- * ALBUMART_CACHE_COVER_MAX_ASPECT; a more elongated source falls back to CONTAIN
+ * ART_CACHE_COVER_MAX_ASPECT; a more elongated source falls back to CONTAIN
  * rather than blow up the decode work buffer. Album art beyond 2:1 is vanishingly
  * rare, so raise the cap only if you actually hit it (it costs work-buffer bytes).
  */
@@ -32,7 +32,7 @@ enum albumart_fit
     AA_FIT_COVER,
 };
 
-struct albumart_size
+struct art_size
 {
     const char *name;       /* cache sub-folder name / stable identifier   */
     short       dim;        /* target square edge in pixels (NxN)          */
@@ -40,9 +40,9 @@ struct albumart_size
 };
 
 /* The set of thumbnail resolutions the cache generates. Edit this table to
- * add/remove/resize cached thumbnails. Keep ALBUMART_CACHE_MAX_DIM in sync
+ * add/remove/resize cached thumbnails. Keep ART_CACHE_MAX_DIM in sync
  * with the largest 'dim' below -- it sizes the decode work buffer. */
-static const struct albumart_size albumart_sizes[] =
+static const struct art_size art_sizes[] =
 {
     { "coverflow", 128, AA_FIT_COVER   },
     { "list",       48, AA_FIT_COVER   },   /* database album rows (tree.c) */
@@ -59,15 +59,15 @@ static const struct albumart_size albumart_sizes[] =
      * do it knowing that's the trade. */
 };
 
-#define ALBUMART_CACHE_NUM_SIZES \
-    ((int)(sizeof(albumart_sizes) / sizeof(albumart_sizes[0])))
+#define ART_CACHE_NUM_SIZES \
+    ((int)(sizeof(art_sizes) / sizeof(art_sizes[0])))
 
-/* Must be >= the largest 'dim' in albumart_sizes[] above. */
-#define ALBUMART_CACHE_MAX_DIM 128
+/* Must be >= the largest 'dim' in art_sizes[] above. */
+#define ART_CACHE_MAX_DIM 128
 
 /* Widest source aspect ratio AA_FIT_COVER will crop; beyond this the size falls
  * back to CONTAIN. Sizes the decode work buffer (see aa_run_pass()), so raising
  * it costs memory during cache generation. */
-#define ALBUMART_CACHE_COVER_MAX_ASPECT 2
+#define ART_CACHE_COVER_MAX_ASPECT 2
 
-#endif /* _ALBUMART_SIZES_H_ */
+#endif /* _ART_SIZES_H_ */

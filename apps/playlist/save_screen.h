@@ -6,11 +6,12 @@
  * Copyright (C) 2002 Björn Stenberg
  * GNU General Public License (version 2+)
  *
- * Declares the save-playlist screen shared between the playlist menu and
- * the viewer.
+ * Declares save_playlist_screen(), the "save current playlist" screen.
+ * Named for what it declares: it is a screen, not a menu, and is unrelated
+ * to the playlist settings screen that used to share its name.
  ****************************************************************************/
-#ifndef _PLAYLIST_MENU_H
-#define _PLAYLIST_MENU_H
+#ifndef _SAVE_SCREEN_H
+#define _SAVE_SCREEN_H
 
 #include "playlist.h"
 
