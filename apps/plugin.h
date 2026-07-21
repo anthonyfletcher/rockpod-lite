@@ -70,7 +70,6 @@ int plugin_open(const char *plugin, const char *parameter);
 #include "thread.h"
 #include "button.h"
 #include "action.h"
-#include "gesture.h"
 #include "load_code.h"
 #include "usb.h"
 #include "font.h"
@@ -150,12 +149,6 @@ enum plugin_status {
 };
 
 
-/*
- * The str() macro/functions is how to access strings that might be
- * translated. Use it like str(MACRO) and expect a string to be
- * returned!
- */
-#define str(x) language_strings[x]
 
 
 #endif

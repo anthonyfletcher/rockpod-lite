@@ -27,7 +27,6 @@
 
 #include "tag_table.h"
 #include "skin_parser.h"
-#include "gesture.h"
 #include "core_alloc.h"
 
 struct wps_data;
