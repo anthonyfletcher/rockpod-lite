@@ -25,7 +25,7 @@
 #include "config.h"
 #include "lang.h"
 #include "action.h"
-#include "splash.h"
+#include "gui/splash.h"
 #include "settings.h"
 #include "menu.h"
 #include "sound_menu.h"

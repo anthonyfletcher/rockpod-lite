@@ -30,7 +30,7 @@
 #include "kernel.h"
 #include "settings.h"
 #include "settings_list.h"
-#include "splash.h"
+#include "gui/splash.h"
 #include "voice_thread.h"
 #include "audio.h"
 #include "lang.h"

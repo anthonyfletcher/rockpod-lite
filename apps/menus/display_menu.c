@@ -29,14 +29,14 @@
 #include "settings.h"
 #include "menu.h"
 #include "tree.h"
-#include "list.h"
-#include "peakmeter.h"
+#include "gui/list.h"
+#include "recorder/peakmeter.h"
 #include "talk.h"
 #include "lcd.h"
-#include "mask_select.h"
-#include "splash.h"
-#include "viewport.h"
-#include "statusbar.h" /* statusbar_vals enum*/
+#include "gui/mask_select.h"
+#include "gui/splash.h"
+#include "gui/viewport.h"
+#include "gui/statusbar.h" /* statusbar_vals enum*/
 #include "rbunicode.h"
 
 static int selectivebacklight_callback(int action,

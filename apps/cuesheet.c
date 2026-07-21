@@ -30,7 +30,7 @@
 #include "logf.h"
 #include "misc.h"
 #include "screens.h"
-#include "list.h"
+#include "gui/list.h"
 #include "action.h"
 #include "lang.h"
 #include "debug.h"

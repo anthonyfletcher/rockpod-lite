@@ -23,7 +23,7 @@
 #include "file.h"
 #include "kernel.h"
 #include "system.h"      /* ARRAYLEN */
-#include "splash.h"
+#include "gui/splash.h"
 #include "image_viewer.h"
 #include "image_decoder.h"
 

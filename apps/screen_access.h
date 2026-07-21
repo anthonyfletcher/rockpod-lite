@@ -24,8 +24,8 @@
 
 #include "lcd.h"
 #include "scroll_engine.h"
-#include "backdrop.h"
-#include "line.h"
+#include "gui/backdrop.h"
+#include "gui/line.h"
 
 #define NB_SCREENS 1
 void screen_helper_setfont(int font);

@@ -23,7 +23,7 @@
 #define _PPM_DECODER_H
 
 #include "kernel.h"
-#include "splash.h"
+#include "gui/splash.h"
 
 /* Magic constants. */
 #define PPM_MAGIC1 'P'

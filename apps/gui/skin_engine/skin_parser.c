@@ -28,7 +28,7 @@
 #include "file.h"
 #include "misc.h"
 #include "app_buffer.h"
-#include "viewport.h"
+#include "gui/viewport.h"
 
 #include "skin_buffer.h"
 #include "skin_debug.h"
@@ -36,7 +36,7 @@
 #include "tag_table.h"
 
 #include "debug.h"
-#include "splash.h"
+#include "gui/splash.h"
 #include "lang.h"
 #include "language.h"
 
@@ -50,12 +50,12 @@
 #include "settings_list.h"
 #include "rbpaths.h"
 #include "pathfuncs.h"
-#include "bmp.h"
+#include "recorder/bmp.h"
 
 #include "playback.h"
 
-#include "backdrop.h"
-#include "statusbar-skinned.h"
+#include "gui/backdrop.h"
+#include "gui/statusbar-skinned.h"
 #include "string-extra.h"
 
 #define WPS_ERROR_INVALID_PARAM         -1

@@ -32,10 +32,10 @@
 #include "eq_menu.h"
 #include "exported_menus.h"
 #include "menu_common.h"
-#include "splash.h"
+#include "gui/splash.h"
 #include "kernel.h"
 #include "talk.h"
-#include "option_select.h"
+#include "gui/option_select.h"
 #include "misc.h"
 
 static const char* vol_limit_format(char* buffer, size_t buffer_size, int value,

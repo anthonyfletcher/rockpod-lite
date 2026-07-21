@@ -29,7 +29,7 @@
 #include "misc.h"
 #include "pathfuncs.h"
 #include "settings.h"
-#include "wps.h"
+#include "gui/wps.h"
 
 /* Define LOGF_ENABLE to enable logf output in this file */
 /*#define LOGF_ENABLE*/

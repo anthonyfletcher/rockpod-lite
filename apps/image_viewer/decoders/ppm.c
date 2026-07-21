@@ -25,7 +25,7 @@
 #include "system.h"
 #include "lcd.h"
 #include "file.h"
-#include "bmp.h"        /* struct bitmap */
+#include "recorder/bmp.h"        /* struct bitmap */
 #include "ppm_decoder.h"
 #include "../image_viewer.h"
 

@@ -44,8 +44,8 @@
 #include "lang.h"            /* str(), LANG_* */
 #include "settings.h"        /* global_settings, set_option/int/bool, ID2P */
 #include "talk.h"            /* STR() */
-#include "splash.h"
-#include "viewport.h"        /* viewportmanager_theme_*, viewport_set_fullscreen */
+#include "gui/splash.h"
+#include "gui/viewport.h"        /* viewportmanager_theme_*, viewport_set_fullscreen */
 #include "screen_access.h"   /* screens[] */
 #include "font.h"            /* font_get_ui_bold, FONT_UI */
 #include "menu.h"            /* do_menu, MENUITEM_STRINGLIST */
@@ -54,7 +54,7 @@
 #include "tree.h"            /* tree_get_context/entries */
 #include "core_alloc.h"
 #include "audio.h"           /* audio_current_track, audio_status, audio_hard_stop */
-#include "albumart.h"        /* search_albumart_files */
+#include "recorder/albumart.h"        /* search_albumart_files */
 #include "metadata.h"        /* AA_TYPE_*, AA_CLEAR_FLAGS_MASK */
 #include "image_viewer.h"
 #include "image_viewer_pub.h"

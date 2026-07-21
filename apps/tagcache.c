@@ -72,7 +72,7 @@
 #include "usb.h"
 #include "metadata.h"
 #include "tagcache.h"
-#include "yesno.h"
+#include "gui/yesno.h"
 #include "core_alloc.h"
 #include "crc32.h"
 #include "misc.h"

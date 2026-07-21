@@ -37,7 +37,7 @@
 #include "debug.h"
 #include "font.h"
 #include "icon.h"
-#include "icons.h"
+#include "recorder/icons.h"
 #include "option_select.h"
 #include "string-extra.h"
 #include "skin_engine/skin_albumart_color.h"

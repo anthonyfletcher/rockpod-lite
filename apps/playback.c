@@ -50,14 +50,14 @@
 
 #include "tagcache.h"
 
-#include "albumart.h"
+#include "recorder/albumart.h"
 
 #include "pcm_mixer.h"
 
 
 #ifdef USB_ENABLE_AUDIO
 #include "usbstack/usb_audio.h"
-#include "splash.h"
+#include "gui/splash.h"
 #include "lang.h"
 #endif
 

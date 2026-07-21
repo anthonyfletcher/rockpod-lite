@@ -38,8 +38,8 @@
 #include "file.h"            /* MAX_PATH */
 #include "lang.h"
 #include "settings.h"
-#include "splash.h"
-#include "yesno.h"
+#include "gui/splash.h"
+#include "gui/yesno.h"
 #include "gui/list.h"
 /*#define LOGF_ENABLE*/
 #include "logf.h"

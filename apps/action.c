@@ -34,7 +34,7 @@
 #include "kernel.h"
 #include "core_alloc.h"
 
-#include "splash.h"
+#include "gui/splash.h"
 #include "settings.h"
 #include "misc.h"
 #include "gui/skin_engine/skin_engine.h" /* skin_render_inhibit_flush */

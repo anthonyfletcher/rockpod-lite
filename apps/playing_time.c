@@ -31,15 +31,15 @@
 #include "language.h"        /* lang_is_rtl */
 #include "settings.h"        /* global_settings, SINGLE_MODE_* */
 #include "action.h"          /* get_action, action_userabort */
-#include "splash.h"          /* splash, splashf, splash_progress */
+#include "gui/splash.h"          /* splash, splashf, splash_progress */
 #include "talk.h"            /* talk_*, TALK_ID, TALK_IDARRAY, UNIT_* */
 #include "misc.h"            /* default_event_handler, format_time_auto, output_dyn_value */
 #include "metadata.h"        /* struct mp3entry, get_metadata */
 #include "playlist.h"        /* playlist_*, struct playlist_track_info */
 #include "audio.h"           /* audio_status, audio_current_track */
-#include "viewport.h"        /* viewportmanager_theme_enable/undo */
+#include "gui/viewport.h"        /* viewportmanager_theme_enable/undo */
 #include "screen_access.h"   /* FOR_NB_SCREENS */
-#include "icon.h"            /* Icon_NOICON, NOICON */
+#include "gui/icon.h"            /* Icon_NOICON, NOICON */
 #include "gui/list.h"        /* gui_synclist */
 #include "gui/statusbar-skinned.h" /* sb_set_persistent_title */
 #include "playing_time.h"

@@ -33,7 +33,7 @@
 #include "lang.h"            /* LANG_*, str */
 #include "settings.h"        /* global_settings, ID2P/P2ID/P2STR */
 #include "action.h"          /* get_action, action_userabort */
-#include "splash.h"          /* splash, splashf, splash_progress_set_delay */
+#include "gui/splash.h"          /* splash, splashf, splash_progress_set_delay */
 #include "dir.h"             /* opendir/readdir/closedir, dir_get_info */
 #include "file.h"            /* MAX_PATH, MAX_FILENAME */
 #include "pathfuncs.h"       /* PATH_SEPCH */
@@ -41,7 +41,7 @@
 #include "metadata.h"        /* struct mp3entry, get_metadata */
 #include "playlist.h"        /* playlist_entries_iterate */
 #include "tagtree.h"         /* tagtree_subentries_do_action */
-#include "viewport.h"        /* viewportmanager_theme_enable/undo */
+#include "gui/viewport.h"        /* viewportmanager_theme_enable/undo */
 #include "misc.h"            /* default_event_handler, MAKE_ACT_STR */
 #include "talk.h"
 #include "screens.h"         /* browse_id3, view_text */

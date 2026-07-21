@@ -32,7 +32,7 @@
 #define AUDIO_FAST_SKIP_PREVIEW
 
 
-#include "bmp.h"
+#include "recorder/bmp.h"
 #include "metadata.h"
 /*
  * Returns the handle id of the buffered albumart for the given slot id

@@ -7,7 +7,19 @@
 # $Id$
 #
 
-INCLUDES += -I$(APPSDIR) $(patsubst %,-I$(APPSDIR)/%,$(subst :, ,$(APPEXTRA)))
+# The apps/ include path is owned here, deliberately, rather than by
+# tools/configure's APPEXTRA variable. APPEXTRA was set to "recorder:gui:radio"
+# for these targets, which is both stale (apps/radio/ was removed long ago) and
+# harmful: putting apps/gui and apps/recorder on the search path let any file
+# include "splash.h" or "bmp.h" and get a header from a directory it never
+# named. Includes are now written relative to apps/ ("gui/splash.h"), so the
+# path needs only apps/ itself.
+#
+# apps/api comes first: it holds forwarding stubs for the handful of apps/
+# headers that firmware/ and lib/ include by bare name. Listing it first means
+# the build exercises those stubs, so a broken one fails here rather than in a
+# later refactor. See apps/api/README.
+INCLUDES += -I$(APPSDIR)/api -I$(APPSDIR)
 SRC += $(call preprocess, $(APPSDIR)/SOURCES)
 
 # apps/features.txt is a file that (is preprocessed and) lists named features

@@ -24,7 +24,7 @@
 
 
 #include "lcd.h"
-#include "bmp.h"
+#include "recorder/bmp.h"
 
 #define LCD_BACKDROP_BYTES (LCD_FBHEIGHT*LCD_FBWIDTH*sizeof(fb_data))
 bool backdrop_load(const char *filename, char* backdrop_buffer);

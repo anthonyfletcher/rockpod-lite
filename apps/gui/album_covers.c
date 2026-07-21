@@ -46,7 +46,7 @@
 #include "viewport.h"
 #include "misc.h"             /* default_event_handler, warn_on_pl_erase, fix_path_part */
 #include "onplay.h"           /* onplay_show_playlist_cat_menu/menu */
-#include "albumart.h"         /* find_albumart / search_albumart_files */
+#include "recorder/albumart.h"         /* find_albumart / search_albumart_files */
 #include "albumart_cache.h"   /* shared database-driven thumbnail cache */
 #include "metadata.h"         /* struct mp3entry, get_metadata */
 #include "dir.h"
@@ -59,11 +59,11 @@
 #include "audio.h"            /* audio_status, audio_current_track */
 #include "lcd.h"
 #include "font.h"
-#include "icons.h"
+#include "recorder/icons.h"
 #include "menu.h"             /* do_menu */
 #include "menus/exported_menus.h" /* album_covers_menu (shared settings menu) */
-#include "bmp.h"              /* read_bmp_file */
-#include "jpeg_load.h"        /* read_jpeg_file */
+#include "recorder/bmp.h"              /* read_bmp_file */
+#include "recorder/jpeg_load.h"        /* read_jpeg_file */
 #include "power.h"
 #include "powermgmt.h"        /* reset_poweroff_timer */
 #include "backlight.h"        /* backlight_set_timeout(_plugged) */

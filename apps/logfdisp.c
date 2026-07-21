@@ -25,7 +25,7 @@
 #include <timefuncs.h>
 #include <string.h>
 #include <kernel.h>
-#include <action.h>
+#include "action.h"
 
 #include <lcd.h>
 #include <font.h>
@@ -34,7 +34,7 @@
 #include "settings.h"
 #include "logfdisp.h"
 #include "action.h"
-#include "splash.h"
+#include "gui/splash.h"
 #include "misc.h"
 int compute_nb_lines(int w, struct font* font)
 {

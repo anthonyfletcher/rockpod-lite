@@ -24,7 +24,7 @@
 #include "settings.h"
 #include "storage.h"
 #include "lcd.h"
-#include "scrollbar.h"
+#include "gui/scrollbar.h"
 #include "string.h"
 #include "button.h"
 #include "system.h"

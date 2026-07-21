@@ -35,15 +35,15 @@
 #include "pathfuncs.h"
 #include "rbpaths.h"
 #include "metadata.h"
-#include "albumart.h"
+#include "recorder/albumart.h"
 #include "albumart_cache.h"
 #include "albumart_sizes.h"
 #include "tagcache.h"
 #include "lcd.h"
-#include "bmp.h"
+#include "recorder/bmp.h"
 #include "bitmaps/no_album_cover.h" /* compiled-in placeholder for aa_ensure_fallback */
 #include "bitmaps/rockpodnoartistcover.h" /* artist placeholder (silhouette) */
-#include "jpeg_load.h"
+#include "recorder/jpeg_load.h"
 #include "usb.h"
 #include "events.h"
 #include "appevents.h"

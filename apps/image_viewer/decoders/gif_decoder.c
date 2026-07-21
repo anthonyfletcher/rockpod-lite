@@ -20,8 +20,8 @@
 
 #include <string.h>
 #include "lcd.h"
-#include "resize.h"     /* format_native, scaler_context, recalc_dimension */
-#include "bmp.h"        /* struct uint8_rgb, struct bitmap */
+#include "recorder/resize.h"     /* format_native, scaler_context, recalc_dimension */
+#include "recorder/bmp.h"        /* struct uint8_rgb, struct bitmap */
 #include "../image_viewer.h"
 
 #include "gif_lib.h"    /* pulls in rb_glue.h: malloc->tlsf, etc. */

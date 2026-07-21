@@ -27,7 +27,7 @@
 
 #ifndef _JPEG_JPEG_DECODER_H
 #define _JPEG_JPEG_DECODER_H
-#include "jpeg_common.h"
+#include "recorder/jpeg_common.h"
 
 struct jpeg
 {

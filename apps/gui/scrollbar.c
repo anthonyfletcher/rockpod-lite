@@ -22,7 +22,7 @@
 #include "scrollbar.h"
 #include "config.h"
 #include "limits.h"
-#include "bmp.h"
+#include "recorder/bmp.h"
 
 /* calculates the start and size of the knob */
 static void scrollbar_helper(int min_shown, int max_shown, int items,

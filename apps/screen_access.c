@@ -25,14 +25,14 @@
 #include "scroll_engine.h"
 #include <font.h>
 #include <button.h>
-#include <settings.h>
+#include "settings.h"
 #include <kernel.h>
-#include <icons.h>
+#include "recorder/icons.h"
 
 #include "backlight.h"
 #include "screen_access.h"
-#include "backdrop.h"
-#include "viewport.h"
+#include "gui/backdrop.h"
+#include "gui/viewport.h"
 
 /* some helper functions to calculate metrics on the fly */
 static int screen_helper_getcharwidth(void)

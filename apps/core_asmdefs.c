@@ -1,5 +1,5 @@
 #include <config.h>
-#include <bmp.h>
+#include "recorder/bmp.h"
 
 /* To export a value for use in assembly files, define an int or unsigned here
  * named AD_<name> and include apps/core_asmdefs.h in the assembly file.

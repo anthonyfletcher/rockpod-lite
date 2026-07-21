@@ -40,7 +40,7 @@
 #include "panic.h"
 #include "settings.h"
 #include "settings_list.h"
-#include "option_select.h"
+#include "gui/option_select.h"
 #include "screens.h"
 #include "talk.h"
 #include "lang.h"
@@ -50,15 +50,15 @@
 #include "string.h"
 #include "root_menu.h"
 #include "audio.h"
-#include "viewport.h"
-#include "quickscreen.h"
+#include "gui/viewport.h"
+#include "gui/quickscreen.h"
 #include "shortcuts.h"
-#include "statusbar-skinned.h"
+#include "gui/statusbar-skinned.h"
 
-#include "icons.h"
+#include "recorder/icons.h"
 
 /* gui api */
-#include "list.h"
+#include "gui/list.h"
 
 #define MAX_MENUS 8
 /* used to allow for dynamic menus */

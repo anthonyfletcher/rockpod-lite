@@ -33,15 +33,15 @@
 
 #include "action.h"
 #include "screen_access.h"
-#include "list.h"
-#include "scrollbar.h"
+#include "gui/list.h"
+#include "gui/scrollbar.h"
 #include "lang.h"
 #include "sound.h"
 #include "misc.h"
-#include "viewport.h"
-#include "statusbar-skinned.h"
+#include "gui/viewport.h"
+#include "gui/statusbar-skinned.h"
 #include "debug.h"
-#include "line.h"
+#include "gui/line.h"
 #include "../skin_engine/skin_albumart_color.h"
 
 #define ICON_PADDING 1

@@ -26,7 +26,7 @@
 #include "system.h"
 #include "lcd.h"
 #include "file.h"
-#include "bmp.h"
+#include "recorder/bmp.h"
 #include "tinf.h"
 #include "png_decoder.h"
 #include "../image_viewer.h"

@@ -23,8 +23,8 @@
 #define __MENU_H__
 
 #include <stdbool.h>
-#include "icon.h"
-#include "icons.h"
+#include "gui/icon.h"
+#include "recorder/icons.h"
 #include "root_menu.h" /* needed for MENU_* return codes */
 #include "settings_list.h"
 #include "gui/list.h"

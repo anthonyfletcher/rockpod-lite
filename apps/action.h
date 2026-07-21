@@ -22,7 +22,7 @@
 
 #include "stdbool.h"
 #include "button.h"
-#include "viewport.h"
+#include "gui/viewport.h"
 
 #define TIMEOUT_BLOCK   -1
 #define TIMEOUT_NOBLOCK  0

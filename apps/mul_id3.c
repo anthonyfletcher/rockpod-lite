@@ -28,10 +28,10 @@
 #include "kernel.h"          /* current_tick, yield, HZ, TIME_AFTER */
 #include "lang.h"            /* LANG_*, str */
 #include "action.h"          /* get_action */
-#include "splash.h"          /* splashf, splash_progress */
+#include "gui/splash.h"          /* splashf, splash_progress */
 #include "dir.h"             /* opendir/readdir/closedir, dir_get_info */
 #include "filetypes.h"       /* filetype_get_attr, FILE_ATTR_* */
-#include "viewport.h"        /* viewport_set_defaults */
+#include "gui/viewport.h"        /* viewport_set_defaults */
 #include "screen_access.h"   /* screens[], FOR_NB_SCREENS */
 #include "mul_id3.h"
 

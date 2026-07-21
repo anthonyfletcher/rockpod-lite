@@ -23,7 +23,7 @@
 
 #include <stdbool.h>
 #include "config.h"
-#include <tree.h>
+#include "tree.h"
 
 /* using attribute bits not used by FAT (FAT uses lower 7) */
 #define FILE_ATTR_THUMBNAIL 0x0080 /* corresponding .talk file exists */

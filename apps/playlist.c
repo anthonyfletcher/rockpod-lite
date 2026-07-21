@@ -97,13 +97,13 @@
 #include "thread.h"
 #include "usb.h"
 #include "filetypes.h"
-#include "icons.h"
+#include "recorder/icons.h"
 #include "system.h"
 #include "misc.h"
 
 #include "lang.h"
 #include "talk.h"
-#include "splash.h"
+#include "gui/splash.h"
 #include "rbunicode.h"
 #include "root_menu.h"
 #include "logdiskf.h"
@@ -111,7 +111,7 @@
 #include "logf.h"
 #include "panic.h"
 #include "crc32.h"
-#include "yesno.h"
+#include "gui/yesno.h"
 #include "dir.h"
 
 #if 0//def ROCKBOX_HAS_LOGDISKF

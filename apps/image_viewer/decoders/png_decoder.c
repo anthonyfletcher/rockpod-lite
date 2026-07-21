@@ -71,9 +71,9 @@ You are free to name this file lodepng.cpp or lodepng.c depending on your usage.
 
 #include <string.h>
 #include "lcd.h"
-#include "resize.h"     /* recalc_dimension, struct dim (aspect correction) */
+#include "recorder/resize.h"     /* recalc_dimension, struct dim (aspect correction) */
 #include "tinf.h"
-#include "bmp.h"
+#include "recorder/bmp.h"
 #include "png_decoder.h"
 #include "../image_viewer.h"
 

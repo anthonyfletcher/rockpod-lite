@@ -53,10 +53,10 @@
 #include "action.h"
 #include "lang.h"
 #include "keyboard.h"
-#include "viewport.h"
-#include "splash.h"
-#include "yesno.h"
-#include "dialog.h"
+#include "gui/viewport.h"
+#include "gui/splash.h"
+#include "gui/yesno.h"
+#include "gui/dialog.h"
 
 #define KBD_MARGIN 12        /* horizontal gap from the display edge to the box */
 #define KBD_BTN_GAP 10       /* gap between the Cancel and OK buttons */

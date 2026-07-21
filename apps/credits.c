@@ -25,7 +25,7 @@
 #include "lcd.h"
 #include "action.h"
 #include "screen_access.h"
-#include "viewport.h"
+#include "gui/viewport.h"
 #include "settings.h"
 #include "backlight.h"
 #include "powermgmt.h"

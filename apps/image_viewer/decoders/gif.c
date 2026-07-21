@@ -22,7 +22,7 @@
 
 #include "system.h"
 #include "lcd.h"
-#include "bmp.h"        /* struct bitmap */
+#include "recorder/bmp.h"        /* struct bitmap */
 #include "../image_viewer.h"
 
 #include "gif_decoder.h"

@@ -49,9 +49,9 @@
 #endif
 #include "config.h"
 #include "system.h"
-#include <bmp.h>
+#include "bmp.h"
 #include "resize.h"
-#include <jpeg_load.h>
+#include "jpeg_load.h"
 
 #define MULUQ(a, b) ((a) * (b))
 #define MULQ(a, b) ((a) * (b))

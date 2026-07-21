@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include "config.h"
 #include "system.h"
-#include "icons.h"
+#include "recorder/icons.h"
 #include "font.h"
 #include "kernel.h"
 #include "misc.h"

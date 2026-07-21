@@ -32,7 +32,7 @@
 #include "action.h"
 #include "settings.h"        /* global_settings */
 #include "screen_access.h"   /* screens[] */
-#include "viewport.h"
+#include "gui/viewport.h"
 #include "rbunicode.h"       /* utf8decode, utf8seek */
 #include "diacritic.h"       /* is_diacritic */
 #include "gui/scrollbar.h"

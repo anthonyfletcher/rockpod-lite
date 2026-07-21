@@ -40,15 +40,15 @@
 #include "shortcuts.h"
 
 /* gui api */
-#include "list.h"
-#include "splash.h"
+#include "gui/list.h"
+#include "gui/splash.h"
 #include "action.h"
-#include "yesno.h"
-#include "viewport.h"
+#include "gui/yesno.h"
+#include "gui/viewport.h"
 
 #include "tree.h"
 #include "tagtree.h"
-#include "wps.h"
+#include "gui/wps.h"
 #include "bookmark.h"
 #include "playlist.h"
 #include "playlist_viewer.h"

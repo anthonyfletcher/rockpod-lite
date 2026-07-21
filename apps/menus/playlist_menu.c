@@ -37,7 +37,7 @@
 #include "playlist_viewer.h"
 #include "talk.h"
 #include "playlist_catalog.h"
-#include "splash.h"
+#include "gui/splash.h"
 #include "general.h"
 #include "pathfuncs.h"
 

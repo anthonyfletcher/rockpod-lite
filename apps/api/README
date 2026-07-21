@@ -1,0 +1,41 @@
+apps/api/ -- the boundary between apps/ and the rest of the firmware.
+
+Code outside apps/ includes a small number of apps/ headers by bare name, e.g.
+firmware/powermgmt.c has `#include "misc.h"`. Those includes resolve purely by
+luck of the -I search path, which means any reorganisation inside apps/ can
+break a file in firmware/ or lib/ -- and this fork's cleanup work is confined
+to apps/, so those files cannot be edited to compensate.
+
+This directory makes that contract explicit. Each header here is a one-line
+forwarding stub. apps/apps.make puts apps/api FIRST on the include path, so
+these stubs are what external code actually resolves to. When a real header
+moves inside apps/, update the stub here and nothing outside apps/ notices.
+
+The contract, as measured (grep every #include "*.h" under firmware/, lib/ and
+bootloader/ against the apps/ header set):
+
+  settings.h          firmware/backlight.c, firmware/scroll_engine.c,
+                      firmware/sound.c, firmware/usb.c,
+                      lib/rbcodec/dsp/{afr,pbe,surround,tdspeed}.c
+  misc.h              firmware/powermgmt.c, firmware/scroll_engine.c,
+                      firmware/usb.c
+  action.h            firmware/backlight.c
+  splash.h            firmware/powermgmt.c
+  buffering.h         lib/rbcodec/metadata/metadata.c
+  fracmul.h           lib/rbcodec/dsp/*.c (10 files)
+  rbcodecconfig.h     lib/rbcodec/codecs/codecs.h, lib/rbcodec/dsp/*.c,
+                      lib/rbcodec/platform.h
+  rbcodecplatform.h   lib/rbcodec/platform.h
+  plugin.h            lib/rbcodec/metadata/hes.c -- vestigial; the include
+                      needs nothing, and deleting that one line would let
+                      apps/plugin.h go entirely. lib/ is out of scope.
+
+Rules:
+
+  - Do not add a header here unless something OUTSIDE apps/ includes it by
+    bare name. This is not a general "public headers" directory; apps/ code
+    should include the real header by its path relative to apps/.
+  - Do not put declarations here. These files forward and nothing else.
+  - When a real header moves, fix the path in its stub in the same commit.
+
+See .specifications/REFACTOR_PROPOSAL.md section 3.4.

@@ -397,7 +397,15 @@ The move is the moment to fix the include style. Today almost every include is a
 
 Same-directory includes stay bare. This means the include path needs only `-I$(APPSDIR)` and `-I$(APPSDIR)/api` (§3.3), every include states where its target lives, and a moved file's references become impossible to leave stale — the build breaks loudly instead of silently resolving to the wrong header.
 
-Measured: **1,227 `#include` directives under `apps/` currently resolve to an `apps/` header**, all but a handful by bare basename. Same-directory ones stay as they are, so the actual edit count lands somewhere under that — but it is still the largest mechanical component of the work, and the reason stage 2 is scripted rather than hand-edited (§9).
+1,227 `#include` directives under `apps/` resolve to an `apps/` header. Most need no change: a header at the `apps/` root is *already* root-qualified by its bare name, and same-directory includes stay bare by policy. **The actual stage 2 edit was 259 directives across 95 files** — the ones naming a header in `gui/` or `recorder/`, which only resolved because `APPEXTRA` put those two directories on the search path.
+
+Three classes had to be handled, and the first scan caught only the first:
+
+1. **Bare basenames** (250) — `"splash.h"` → `"gui/splash.h"`.
+2. **Slash-bearing paths relative to `gui/`** (9) — `"skin_engine/skin_engine.h"` → `"gui/skin_engine/..."`. Easy to miss because they already contain a `/` and so look qualified. Files directly in `gui/` resolve these relatively and must be left alone; files in `gui/bitmap/` must not.
+3. **Angle-bracket includes of project-local headers** (8) — `<icons.h>`, `<bmp.h>`, `<jpeg_load.h>`, and five others. `<>` does not search the including file's directory, so even same-directory cases (`recorder/resize.c` including `<bmp.h>`) broke. All eight were converted to the quoted form; four were breaking the build and four were latent, since an angle include of a local header breaks silently the moment that header moves.
+
+The lesson for stage 3: "qualify the includes" is not one regex over `#include "..."`. Check the angle-bracket form and the already-has-a-slash form too.
 
 ---
 

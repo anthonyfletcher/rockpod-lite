@@ -30,8 +30,8 @@
 #include "config.h"
 #include "lcd.h"
 #include "kernel.h"     /* HZ, current_tick (decoders use HZ in splashf) */
-#include "splash.h"     /* splashf (decoders report errors) */
-#include "bmp.h"        /* struct bitmap */
+#include "gui/splash.h"     /* splashf (decoders report errors) */
+#include "recorder/bmp.h"        /* struct bitmap */
 
 /* JPEG colour/dither iv_settings (were in jpeg/yuv2rgb.h in the plugin). */
 enum color_modes

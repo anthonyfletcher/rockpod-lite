@@ -22,7 +22,7 @@
 #include "dir.h"
 #include "settings.h"
 #include "filetree.h"
-#include "wps.h"
+#include "gui/wps.h"
 #include "playback.h"
 #include "string-extra.h"
 

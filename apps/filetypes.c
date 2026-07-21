@@ -36,7 +36,7 @@
 #include "screens.h"
 #include "dir.h"
 #include "file.h"
-#include "icons.h"
+#include "recorder/icons.h"
 /*#define LOGF_ENABLE*/
 #include "logf.h"
 

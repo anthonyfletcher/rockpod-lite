@@ -28,7 +28,7 @@
 #include "settings.h"
 #include "viewport.h"
 #include "metadata.h"
-#include "icons.h"
+#include "recorder/icons.h"
 #include "powermgmt.h"
 #include "usb.h"
 #include "led.h"

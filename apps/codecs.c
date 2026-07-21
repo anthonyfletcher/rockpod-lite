@@ -47,7 +47,7 @@
 #include "powermgmt.h"
 #include "system.h"
 #include "sound.h"
-#include "splash.h"
+#include "gui/splash.h"
 #include "general.h"
 #include "rbpaths.h"
 

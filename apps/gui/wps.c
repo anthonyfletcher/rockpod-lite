@@ -39,7 +39,7 @@
 #include "storage.h"
 #include "screens.h"
 #include "playlist.h"
-#include "icons.h"
+#include "recorder/icons.h"
 #include "lang.h"
 #include "bookmark.h"
 #include "misc.h"

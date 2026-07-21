@@ -26,9 +26,9 @@
 #include "action.h"
 #include "settings.h"
 #include "menu.h"
-#include "yesno.h"
-#include "splash.h"
-#include "icons.h"
+#include "gui/yesno.h"
+#include "gui/splash.h"
+#include "recorder/icons.h"
 #include "gui/album_covers.h"
 
 MENUITEM_SETTING(album_covers_center_margin, &global_settings.album_covers_center_margin, NULL);

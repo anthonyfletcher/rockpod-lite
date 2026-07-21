@@ -38,7 +38,7 @@
 #include "language.h"
 #include "screens.h"
 #include "rolo.h"
-#include "splash.h"
+#include "gui/splash.h"
 #include "cuesheet.h"
 #include "filetree.h"
 #include "misc.h"
@@ -47,8 +47,8 @@
 
 #include "mv.h"
 
-#include "wps.h"
-#include "viewport.h"
+#include "gui/wps.h"
+#include "gui/viewport.h"
 #include "pathfuncs.h"
 #include "root_menu.h"
 

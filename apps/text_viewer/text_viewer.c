@@ -42,8 +42,8 @@
 #include "core_alloc.h"
 #include "settings.h"
 #include "lang.h"
-#include "splash.h"
-#include "viewport.h"
+#include "gui/splash.h"
+#include "gui/viewport.h"
 #include "font.h"
 #include "misc.h"            /* push_current_activity, read_line */
 #include "root_menu.h"       /* GO_TO_*, MENU_ATTACHED_USB */

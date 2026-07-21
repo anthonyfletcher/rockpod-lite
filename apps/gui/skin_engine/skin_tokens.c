@@ -41,25 +41,25 @@
 #include "lang.h"
 #include "misc.h"
 #include "led.h"
-#include "peakmeter.h"
+#include "recorder/peakmeter.h"
 /* Image stuff */
-#include "albumart.h"
+#include "recorder/albumart.h"
 #include "albumart_cache.h"
 #include "playlist.h"
 #include "playback.h"
 #include "tdspeed.h"
-#include "viewport.h"
+#include "gui/viewport.h"
 #include "tagcache.h"
 
 #include "wps_internals.h"
 #include "skin_engine.h"
-#include "statusbar-skinned.h"
+#include "gui/statusbar-skinned.h"
 #include "root_menu.h"
 #include "language.h"
 #include "usb.h"
-#include "list.h"
-#include "option_select.h"
-#include "wps.h"
+#include "gui/list.h"
+#include "gui/option_select.h"
+#include "gui/wps.h"
 
 #define NOINLINE __attribute__ ((noinline))
 

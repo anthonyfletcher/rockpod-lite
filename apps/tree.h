@@ -22,10 +22,10 @@
 #define _TREE_H_
 
 #include <stdbool.h>
-#include <applimits.h>
+#include "applimits.h"
 #include <file.h>
 #include "config.h"
-#include "icon.h"
+#include "gui/icon.h"
 
 /* keep this struct compatible (total size and name member)
  * with struct tagtree_entry (tagtree.h) */

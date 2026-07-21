@@ -27,7 +27,7 @@
 #include "tree.h"            /* browse_context, rockbox_browse */
 #include "filetypes.h"       /* SHOW_FONT */
 #include "rbpaths.h"         /* FONT_DIR */
-#include "icons.h"
+#include "recorder/icons.h"
 
 MENUITEM_SETTING(text_viewer_colour_mode,
                  &global_settings.text_viewer_colour_mode, NULL);

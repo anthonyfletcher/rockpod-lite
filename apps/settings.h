@@ -27,8 +27,8 @@
 #include "inttypes.h"
 #include "config.h"
 #include "audiohw.h" /* for the AUDIOHW_* defines */
-#include "statusbar.h" /* for the statusbar values */
-#include "quickscreen.h"
+#include "gui/statusbar.h" /* for the statusbar values */
+#include "gui/quickscreen.h"
 #include "button.h"
 #include "audio.h"
 #include "dsp_proc_settings.h"

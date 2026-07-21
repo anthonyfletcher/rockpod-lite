@@ -59,7 +59,7 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
 /* TODO: sort this mess out */
 
 #include "screen_access.h"
-#include "statusbar.h"
+#include "gui/statusbar.h"
 #include "metadata.h"
 
 #define TOKEN_VALUE_ONLY 0x0DEADC0D

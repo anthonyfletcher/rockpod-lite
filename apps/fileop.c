@@ -37,8 +37,8 @@
 
 #include "settings.h"
 #include "lang.h"
-#include "yesno.h"
-#include "splash.h"
+#include "gui/yesno.h"
+#include "gui/splash.h"
 #include "keyboard.h"
 #include "action.h"
 

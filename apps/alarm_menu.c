@@ -28,15 +28,15 @@
 #include <string.h>
 #include "settings.h"
 #include "power.h"
-#include "icons.h"
+#include "recorder/icons.h"
 #include "rtc.h"
 #include "misc.h"
 #include "screens.h"
 #include "talk.h"
 #include "lang.h"
 #include "alarm_menu.h"
-#include "splash.h"
-#include "viewport.h"
+#include "gui/splash.h"
+#include "gui/viewport.h"
 
 int alarm_screen(void)
 {

@@ -31,16 +31,16 @@
 
 #include "action.h"
 #include "screen_access.h"
-#include "list.h"
-#include "scrollbar.h"
+#include "gui/list.h"
+#include "gui/scrollbar.h"
 #include "lang.h"
 #include "sound.h"
 #include "misc.h"
-#include "viewport.h"
-#include "statusbar-skinned.h"
-#include "skin_engine/skin_engine.h"
-#include "skin_engine/skin_display.h"
-#include "skin_engine/skin_albumart_color.h"
+#include "gui/viewport.h"
+#include "gui/statusbar-skinned.h"
+#include "gui/skin_engine/skin_engine.h"
+#include "gui/skin_engine/skin_display.h"
+#include "gui/skin_engine/skin_albumart_color.h"
 #include "appevents.h"
 
 static struct listitem_viewport_cfg *listcfg[NB_SCREENS] = {NULL};

@@ -23,8 +23,8 @@
 #include "system.h"
 #include "lcd.h"
 #include "file.h"
-#include "bmp.h"        /* struct bitmap, read_bmp_fd, FORMAT_* */
-#include "resize.h"     /* format_native */
+#include "recorder/bmp.h"        /* struct bitmap, read_bmp_fd, FORMAT_* */
+#include "recorder/resize.h"     /* format_native */
 #include "../image_viewer.h"
 
 /************************* Types ***************************/
