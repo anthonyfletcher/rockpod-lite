@@ -1,2 +1,118 @@
-For general information see: docs/README
-For API information see: docs/API
+apps/ -- the application layer
+==============================
+
+This tree was reorganised from a flat ~95-file directory into the layout below.
+The full rationale, the file-by-file mapping and the verification method are in
+.specifications/REFACTOR_PROPOSAL.md; this file is the short version you need in
+order to find things and to put new code in the right place.
+
+
+Layout
+------
+
+  main.c, root_menu.c/.h    Startup and top-level navigation. The only code
+                            that belongs to no single domain.
+
+  -- the device --
+  audio/        The playback pipeline: playback, pcmbuf, buffering, codecs,
+                the codec and audio threads, voice, beep, A-B repeat.
+  database/     The tag database: tagcache, tagtree.
+  playlist/     Playlists in memory and on disk, plus the playlist viewer
+                and catalog.
+  metadata/     Per-track data: album art and its cache, cuesheets, multi-file
+                ID3 aggregation.
+
+  -- the interface, by altitude --
+  draw/         Stateless drawing. Knows pixels; knows nothing about features.
+                viewport, line, scrollbar, icon, bmp, resize, jpeg decode,
+                screen_access.
+  widgets/      Reusable controls. Called by someone else, hand control back.
+                list, dialog, yesno, splash, option_select, colour picker,
+                folder select, keyboard, menu, text_box, meters.
+  screens/      Full screens. Navigated TO; run their own loop until the user
+                leaves. wps, browser, context menu, quickscreen, bookmarks,
+                track info, debug menu, cover flow, and menus/ (the settings
+                menu tree).
+  viewers/      File-format applications: their own model, view and input.
+                text_viewer/ (streaming document engine), image_viewer/,
+                properties, playing_time, credits.
+  skin/         The skin interpreter, backdrops, and the skinned status bar.
+
+  -- services --
+  settings/     The settings model and its table.
+  input/        Buttons, actions, keymaps.
+  speech/       Voice output and translation.
+  system/       Cross-cutting glue: shutdown and system events, the activity
+                stack, string/path helpers, time formatting, volume,
+                and app_util (assorted small UI helpers).
+
+  -- boundaries --
+  iap/          Apple accessory protocol.
+  api/          The headers that firmware/ and lib/ include by name. READ
+                api/README before touching anything here.
+
+  -- pinned by the build system, not by code --
+  bitmaps/      tools/root.make:70
+  lang/         tools/root.make:129, tools/configure:1424
+  plugins/      Contains no plugin. tools/root.make:134-135 and
+                tools/buildzip.pl:497,550 name these paths, and plugin.lds is
+                the LIVE codec linker script. See plugins/README.
+
+
+Where does new code go?
+-----------------------
+
+The distinction that does the most work is draw -> widgets -> screens ->
+viewers. Apply it in that order:
+
+  Does it put pixels somewhere it was handed, with no input loop and no
+  knowledge of what it is drawing for?              -> draw/
+  Is it called by something else, and does it hand
+  control back when done (a question, a picker)?    -> widgets/
+  Is it navigated to, owning the screen until the
+  user leaves?                                      -> screens/
+  Does it also own a file format and a document
+  model?                                            -> viewers/
+
+Everything else goes by subject matter: audio code in audio/, settings code in
+settings/, and so on. If a file would land in system/, stop and check whether
+it really belongs to a domain -- system/ is the residue, not the default.
+
+
+Conventions
+-----------
+
+Includes are written relative to apps/:
+
+    #include "widgets/splash.h"      not "splash.h"
+    #include "draw/viewport.h"       not "viewport.h"
+
+Same-directory includes stay bare. The include path is deliberately only
+apps/ and apps/api (see apps.make); it is NOT taken from tools/configure's
+APPEXTRA, which is stale. Angle brackets are for firmware/ and lib/ headers
+only -- <> does not search the including file's directory, so a local header
+included that way breaks as soon as it moves.
+
+Declare what you use. A file that uses HZ should include kernel.h, even if it
+currently compiles without it because some other header drags it in. Several
+files still rely on that kind of luck; section 9.3 of the proposal has the
+counts. Every header move so far has broken a few apparently unrelated files
+because of it.
+
+Files that were moved or renamed carry their original location on line 1:
+
+    /* was: apps/gui/statusbar-skinned.c */
+
+That is permanent, and `grep -rn '^/\* was:'` is the whole move manifest.
+
+
+Two things that will surprise you
+---------------------------------
+
+fracmul.h sits at the apps/ root rather than in system/ where it belongs.
+lib/rbcodec/codecs/spc.c includes "../fracmul.h", and a "../" include resolves
+against each -I directory rather than by name, so no file inside api/ can
+satisfy it. lib/ is outside this fork's editable scope.
+
+tagnavi.config sits at the apps/ root rather than in database/. tools/buildzip.pl
+reads that exact path, and buildzip.pl is kept byte-identical to upstream.
