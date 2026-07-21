@@ -6,7 +6,7 @@
  * Copyright (C) 2005 by Björn Stenberg
  * GNU General Public License (version 2+)
  *
- * The browser's filesystem backend: reads a directory into the tree cache,
+ * The browser's filesystem backend: reads a directory into the browser cache,
  * decides what entering a file does, and builds playlists from a
  * directory.
  ****************************************************************************/
@@ -62,15 +62,15 @@ static int strnatcasecmp_n(const char *a, const char *b, size_t n)
      return strnatcasecmp(a, b);
 }
 
-int ft_build_playlist(struct tree_context* c, int start_index)
+int browser_disk_build_playlist(struct browser_context* c, int start_index)
 {
     int i;
     int start=start_index;
     int res;
     struct playlist_info *playlist = playlist_get_current();
 
-    tree_lock_cache(c);
-    struct entry *entries = tree_get_entries(c);
+    browser_lock_cache(c);
+    struct entry *entries = browser_get_entries(c);
     bool exceeds_pl = false;
     if (c->filesindir > playlist->max_playlist_size)
     {
@@ -114,7 +114,7 @@ int ft_build_playlist(struct tree_context* c, int start_index)
 
     playlist_insert_context_release(&pl_context);
 
-    tree_unlock_cache(c);
+    browser_unlock_cache(c);
     return start_index;
 }
 
@@ -126,7 +126,7 @@ int ft_build_playlist(struct tree_context* c, int start_index)
  * avoid allocating yet another path buffer on the stack (and save some
  * code; the caller typically needs to create the full pathname anyway)...
  */
-bool ft_play_playlist(char* pathname, char* dirname, char* filename)
+bool browser_disk_play_playlist(char* pathname, char* dirname, char* filename)
 {
     if (global_settings.party_mode && audio_status())
     {
@@ -153,7 +153,7 @@ bool ft_play_playlist(char* pathname, char* dirname, char* filename)
 }
 
 /* walk a directory and check all entries if a .talk file exists */
-static void check_file_thumbnails(struct tree_context* c)
+static void check_file_thumbnails(struct browser_context* c)
 {
     int i;
     struct dirent *entry;
@@ -164,8 +164,8 @@ static void check_file_thumbnails(struct tree_context* c)
     if(!dir)
         return;
     /* mark all files as non talking, except the .talk ones */
-    tree_lock_cache(c);
-    entries = tree_get_entries(c);
+    browser_lock_cache(c);
+    entries = browser_get_entries(c);
 
     for (i=0; i < c->filesindir; i++)
     {
@@ -210,7 +210,7 @@ static void check_file_thumbnails(struct tree_context* c)
             }
         }
     }
-    tree_unlock_cache(c);
+    browser_unlock_cache(c);
     closedir(dir);
 }
 
@@ -284,7 +284,7 @@ static int compare(const void* p1, const void* p2)
 }
 
 /* load and sort directory into the tree's cache. returns NULL on failure. */
-int ft_load(struct tree_context* c, const char* tempdir)
+int browser_disk_load(struct browser_context* c, const char* tempdir)
 {
     if (c->out_of_tree > 0) /* something else is loaded */
         return 0;
@@ -292,7 +292,7 @@ int ft_load(struct tree_context* c, const char* tempdir)
     int files_in_dir = 0;
     int name_buffer_used = 0;
     struct dirent *entry;
-    bool (*callback_show_item)(char *, int, struct tree_context *) = NULL;
+    bool (*callback_show_item)(char *, int, struct browser_context *) = NULL;
     DIR *dir;
 
     if (!c->is_browsing)
@@ -311,11 +311,11 @@ int ft_load(struct tree_context* c, const char* tempdir)
     c->dirsindir = 0;
     c->dirfull = false;
 
-    tree_lock_cache(c);
+    browser_lock_cache(c);
     while ((entry = readdir(dir))) {
         int len;
         struct dirinfo info;
-        struct entry* dptr = tree_get_entry_at(c, files_in_dir);
+        struct entry* dptr = browser_get_entry_at(c, files_in_dir);
         if (!dptr)
         {
             c->dirfull = true;
@@ -420,17 +420,17 @@ int ft_load(struct tree_context* c, const char* tempdir)
             cmp_data._compar = strncasecmp;
     }
 
-    qsort(tree_get_entries(c), files_in_dir, sizeof(struct entry), compare);
+    qsort(browser_get_entries(c), files_in_dir, sizeof(struct entry), compare);
 
     /* If thumbnail talking is enabled, make an extra run to mark files with
        associated thumbnails, so we don't do unsuccessful spinups later. */
     if (global_settings.talk_file_clip)
         check_file_thumbnails(c); /* map .talk to ours */
 
-    tree_unlock_cache(c);
+    browser_unlock_cache(c);
     return 0;
 }
-static void ft_load_font(char *file)
+static void browser_disk_load_font(char *file)
 {
     int current_font_id;
     enum screen_type screen = SCREEN_MAIN;
@@ -444,7 +444,7 @@ static void ft_load_font(char *file)
     viewportmanager_theme_changed(THEME_UI_VIEWPORT);
 }
 
-static void ft_apply_skin_file(char *buf, char *file)
+static void browser_disk_apply_skin_file(char *buf, char *file)
 {
     splash(0, ID2P(LANG_WAIT));
     set_file(buf, file);
@@ -462,7 +462,7 @@ static const char *strip_slash(const char *path, const char *def)
     return def;
 }
 
-int ft_assemble_path(char *buf, size_t bufsz, const char* currdir, const char* filename)
+int browser_disk_assemble_path(char *buf, size_t bufsz, const char* currdir, const char* filename)
 {
     size_t len;
     const char *cd = strip_slash(currdir, "");
@@ -502,12 +502,12 @@ int ft_assemble_path(char *buf, size_t bufsz, const char* currdir, const char* f
     return (int)len;
 }
 
-int ft_enter(struct tree_context* c)
+int browser_disk_enter(struct browser_context* c)
 {
     int rc = GO_TO_PREVIOUS;
     char buf[MAX_PATH];
 
-    struct entry* file = tree_get_entry_at(c, c->selected_item);
+    struct entry* file = browser_get_entry_at(c, c->selected_item);
     if (!file)
     {
         splashf(HZ, ID2P(LANG_READ_FAILED), str(LANG_UNKNOWN));
@@ -515,7 +515,7 @@ int ft_enter(struct tree_context* c)
     }
 
     int file_attr = file->attr;
-    ft_assemble_path(buf, sizeof(buf), c->currdir, file->name);
+    browser_disk_assemble_path(buf, sizeof(buf), c->currdir, file->name);
     if (file_attr & ATTR_DIRECTORY) {
         memcpy(c->currdir, buf, sizeof(c->currdir));
         if ( c->dirlevel < MAX_DIR_LEVELS )
@@ -530,7 +530,7 @@ int ft_enter(struct tree_context* c)
 
         switch ( file_attr & FILE_ATTR_MASK ) {
             case FILE_ATTR_M3U:
-                play = ft_play_playlist(buf, c->currdir, file->name);
+                play = browser_disk_play_playlist(buf, c->currdir, file->name);
 
                 if (play)
                 {
@@ -566,7 +566,7 @@ int ft_enter(struct tree_context* c)
                         *fp = '\0';
                     if (playlist_create(buf, NULL) != -1)
                     {
-                        start_index = ft_build_playlist(c, c->selected_item);
+                        start_index = browser_disk_build_playlist(c, c->selected_item);
                         if (global_settings.playlist_shuffle)
                         {
                             start_index = playlist_shuffle(seed, start_index);
@@ -583,11 +583,11 @@ int ft_enter(struct tree_context* c)
                 break;
             }
             case FILE_ATTR_SBS:
-                ft_apply_skin_file(buf, global_settings.sbs_file);
+                browser_disk_apply_skin_file(buf, global_settings.sbs_file);
                 break;
                 /* wps config file */
             case FILE_ATTR_WPS:
-                ft_apply_skin_file(buf, global_settings.wps_file);
+                browser_disk_apply_skin_file(buf, global_settings.wps_file);
                 break;
             case FILE_ATTR_CFG:
                 splash(0, ID2P(LANG_WAIT));
@@ -617,7 +617,7 @@ int ft_enter(struct tree_context* c)
                 break;
 
             case FILE_ATTR_FONT:
-                ft_load_font(buf);
+                browser_disk_load_font(buf);
                 break;
 
             case FILE_ATTR_KBD:
@@ -642,7 +642,7 @@ int ft_enter(struct tree_context* c)
                     break;
                 }
 
-                file = tree_get_entry_at(c, c->selected_item);
+                file = browser_get_entry_at(c, c->selected_item);
                 if (!file)
                 {
                     splashf(HZ, ID2P(LANG_READ_FAILED), str(LANG_UNKNOWN));
@@ -681,7 +681,7 @@ int ft_enter(struct tree_context* c)
     return rc;
 }
 
-int ft_exit(struct tree_context* c)
+int browser_disk_exit(struct browser_context* c)
 {
     extern char lastfile[]; /* from tree.c */
     char buf[MAX_PATH];

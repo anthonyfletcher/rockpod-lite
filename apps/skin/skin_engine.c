@@ -295,12 +295,12 @@ bool dbg_skin_engine(void)
                 simplelist_addline("Skin ID: %d, %zd allocations",
                         i, stats->buflib_handles);
                 simplelist_addline("\t%s: %zd bytes",
-                        "Skin", stats->tree_size);
+                        "Skin", stats->browser_size);
                 simplelist_addline("\t%s: %zd bytes",
                         "Images", stats->images_size);
                 simplelist_addline("\t%s: %zd bytes",
-                        "Total", stats->tree_size + stats->images_size);
-                total += stats->tree_size + stats->images_size;
+                        "Total", stats->browser_size + stats->images_size);
+                total += stats->browser_size + stats->images_size;
             }
         }
     }

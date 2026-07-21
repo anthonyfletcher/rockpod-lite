@@ -2095,7 +2095,7 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
         memcpy(core_get_data(wps_data->buflib_handle), skin_buffer,
                 skin_buffer_usage());
         stats->buflib_handles++;
-        stats->tree_size = skin_buffer_usage();
+        stats->browser_size = skin_buffer_usage();
     }
 
 

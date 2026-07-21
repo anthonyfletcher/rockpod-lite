@@ -756,7 +756,7 @@ static int check_subdir_for_music(char *dir, const char *subdir, bool recurse)
     struct entry *files;
     bool has_music = false;
     bool has_subdir = false;
-    struct tree_context* tc = tree_get_context();
+    struct browser_context* tc = browser_get_context();
 
     if (path_append(dir + dirlen, PA_SEP_HARD, subdir, MAX_PATH - dirlen) >=
             MAX_PATH - dirlen)
@@ -764,13 +764,13 @@ static int check_subdir_for_music(char *dir, const char *subdir, bool recurse)
         return 0;
     }
 
-    if (ft_load(tc, dir) < 0)
+    if (browser_disk_load(tc, dir) < 0)
     {
         return -2;
     }
 
-    tree_lock_cache(tc);
-    files = tree_get_entries(tc);
+    browser_lock_cache(tc);
+    files = browser_get_entries(tc);
     num_files = tc->filesindir;
 
     for (i=0; i<num_files; i++)
@@ -786,7 +786,7 @@ static int check_subdir_for_music(char *dir, const char *subdir, bool recurse)
 
     if (has_music)
     {
-        tree_unlock_cache(tc);
+        browser_unlock_cache(tc);
         return 0;
     }
 
@@ -808,7 +808,7 @@ static int check_subdir_for_music(char *dir, const char *subdir, bool recurse)
             }
         }
     }
-    tree_unlock_cache(tc);
+    browser_unlock_cache(tc);
 
     if (result < 0)
     {
@@ -822,7 +822,7 @@ static int check_subdir_for_music(char *dir, const char *subdir, bool recurse)
         }
 
         /* we now need to reload our current directory */
-        if(ft_load(tc, dir) < 0)
+        if(browser_disk_load(tc, dir) < 0)
             splash(HZ*2, ID2P(LANG_PLAYLIST_DIRECTORY_ACCESS_ERROR));
     }
     return result;
@@ -838,7 +838,7 @@ static int get_next_dir(char *dir, int direction)
     int result = -1;
     char *start_dir = NULL;
     bool exit = false;
-    struct tree_context* tc = tree_get_context();
+    struct browser_context* tc = browser_get_context();
     int saved_dirfilter = *(tc->dirfilter);
     unsigned int base_len;
 
@@ -936,15 +936,15 @@ static int get_next_dir(char *dir, int direction)
         int num_files = 0;
         int i;
 
-        if (ft_load(tc, (dir[0]=='\0')?"/":dir) < 0)
+        if (browser_disk_load(tc, (dir[0]=='\0')?"/":dir) < 0)
         {
             exit = true;
             result = -1;
             break;
         }
 
-        tree_lock_cache(tc);
-        files = tree_get_entries(tc);
+        browser_lock_cache(tc);
+        files = browser_get_entries(tc);
         num_files = tc->filesindir;
 
         for (i=0; i<num_files; i++)
@@ -972,7 +972,7 @@ static int get_next_dir(char *dir, int direction)
                     start_dir = NULL;
             }
         }
-        tree_unlock_cache(tc);
+        browser_unlock_cache(tc);
 
         if (!exit)
         {
@@ -1120,7 +1120,7 @@ static int create_and_play_dir(int direction, bool play_last)
 
     if (playlist_create(dir, NULL) != -1)
     {
-        ft_build_playlist(tree_get_context(), 0);
+        browser_disk_build_playlist(browser_get_context(), 0);
 
         if (global_settings.playlist_shuffle)
              playlist_shuffle(current_tick, -1);
@@ -2139,8 +2139,8 @@ int playlist_directory_tracksearch(const char* dirname, bool recurse,
     int result = 0;
     int num_files = 0;
     int i;;
-    struct tree_context* tc = tree_get_context();
-    struct tree_cache* cache = &tc->cache;
+    struct browser_context* tc = browser_get_context();
+    struct browser_cache* cache = &tc->cache;
     int old_dirfilter = *(tc->dirfilter);
 
     if (!callback)
@@ -2149,7 +2149,7 @@ int playlist_directory_tracksearch(const char* dirname, bool recurse,
     /* use the tree browser dircache to load files */
     *(tc->dirfilter) = SHOW_ALL;
 
-    if (ft_load(tc, dirname) < 0)
+    if (browser_disk_load(tc, dirname) < 0)
     {
         splash(HZ*2, ID2P(LANG_PLAYLIST_DIRECTORY_ACCESS_ERROR));
         *(tc->dirfilter) = old_dirfilter;
@@ -2189,7 +2189,7 @@ int playlist_directory_tracksearch(const char* dirname, bool recurse,
                     break;
 
                 /* we now need to reload our current directory */
-                if(ft_load(tc, dirname) < 0)
+                if(browser_disk_load(tc, dirname) < 0)
                 {
                     result = -1;
                     break;

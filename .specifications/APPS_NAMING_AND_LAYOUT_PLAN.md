@@ -238,7 +238,29 @@ So:
 | Stage kind | Valid gate |
 |---|---|
 | moves and file renames only (3-6) | whole-binary identity on ipodvideo |
-| function/symbol renames (7-9) | **per-object `.text` identity** -- whole-binary identity will NOT hold |
+| function/symbol renames (7-9) | **disassembly identity ignoring symbol names and `.word` literals** -- see below |
+
+Raw `.text` byte comparison is TOO STRICT for symbol renames, as stage 7-9
+showed. Two effects hide in it:
+
+1. ARM ELF uses REL relocations, so addends are stored inline in `.text`.
+2. Renaming a function changes what `__func__` expands to, changing string
+   lengths and therefore every `.rodata` offset after them.
+
+So a renamed function in a file that uses `__func__` will always trip a raw
+byte comparison while being perfectly behaviour-preserving. In stage 7-9,
+159 of 161 objects were byte-identical and the two that were not were exactly
+the two heaviest `__func__` users (8 and 13 uses).
+
+The correct check is to diff the disassembly with symbol names and literal
+pool words removed:
+
+```
+arm-elf-eabi-objdump -d foo.o | sed -E 's/^s*[0-9a-f]+:s+[0-9a-f ]+	//' \n  | sed -E -e 's/<[^>]*>//g' -e 's/;.*//'
+```
+
+Then every remaining difference must be a `.word` constant. Stage 7-9 result:
+0 non-`.word` differences, identical instruction counts (1878 and 3704).
 
 Extract a section with
 `arm-elf-eabi-objcopy -O binary --only-section=.text foo.o -` and compare.

@@ -617,7 +617,7 @@ int rename_file(const char *selected_file)
     if (strmemccpy(newname, selection, sizeof (newname)) == NULL)
         return FORC_PATH_TOO_LONG;
 
-    if ((*tree_get_context()->dirfilter > NUM_FILTER_MODES) &&
+    if ((*browser_get_context()->dirfilter > NUM_FILTER_MODES) &&
         (newext = strrchr(newbase, '.')))
         /* hide extension when renaming in lists restricted to a
         single file format, such as in the Playlists menu */

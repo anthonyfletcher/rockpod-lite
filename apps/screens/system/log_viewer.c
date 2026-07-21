@@ -72,7 +72,7 @@ int compute_nb_lines(int w, struct font* font)
     return nb_lines;
 }
 
-bool logfdisplay(void)
+bool log_viewer_show(void)
 {
     int action;
     int w, h, i, index;
@@ -181,7 +181,7 @@ bool logfdisplay(void)
     return false;
 }
 
-bool logfdump(void)
+bool log_viewer_dump(void)
 {
     int fd;
 

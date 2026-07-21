@@ -1690,8 +1690,8 @@ static const struct {
         { "View buflib allocs", dbg_buflib_allocs },
 #endif
 #ifdef ROCKBOX_HAS_LOGF
-        {"Show Log File", logfdisplay },
-        {"Dump Log File", logfdump },
+        {"Show Log File", log_viewer_show },
+        {"Dump Log File", log_viewer_dump },
 #endif
 #if defined(USB_ENABLE_AUDIO)
         {"USB-DAC", dbg_usb_audio},

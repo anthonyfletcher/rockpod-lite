@@ -6,12 +6,12 @@
  * Copyright (C) 2005 Daniel Stenberg
  * GNU General Public License (version 2+)
  *
- * Interface to logfdisp.c.
+ * Interface to log_viewer.c.
  ****************************************************************************/
-#ifndef LOGFDISP_H
-#define LOGFDISP_H
-bool logfdisplay(void);
-bool logfdump(void);
+#ifndef _LOG_VIEWER_H_
+#define _LOG_VIEWER_H_
+bool log_viewer_show(void);
+bool log_viewer_dump(void);
 
-#endif /* LOGFDISP_H */
+#endif /* _LOG_VIEWER_H_ */
 

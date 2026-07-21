@@ -144,7 +144,7 @@ static int filetype_inbuilt_index(int tree_attr)
     return -1;
 }
 
-long tree_get_filetype_voiceclip(int attr)
+long filetype_get_voiceclip(int attr)
 {
     if (global_settings.talk_filetype)
     {

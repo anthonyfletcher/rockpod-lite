@@ -752,7 +752,7 @@ int do_shortcut_menu(void *ignored)
                     }
                     else
                     {
-                        onplay_show_playlist_menu(sc->u.path,
+                        context_menu_show_playlist(sc->u.path,
                                                   dir_exists(sc->u.path) ? ATTR_DIRECTORY :
                                                   filetype_get_attr(sc->u.path),
                                                   NULL);

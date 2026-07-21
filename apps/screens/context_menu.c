@@ -2,7 +2,7 @@
  * RockPod-Lite
  *
  * Original code from RockBox
- * was: apps/onplay.c
+ * was: apps/context_menu_show.c
  * Copyright (C) 2002 Björn Stenberg
  * GNU General Public License (version 2+)
  *
@@ -63,7 +63,7 @@
 #include "string-extra.h"
 #include "dir.h"
 
-static int onplay_result = ONPLAY_OK;
+static int context_menu_result = ONPLAY_OK;
 static bool in_queue_submenu = false;
 
 static bool (*ctx_current_playlist_insert)(int position, bool queue, bool create_new);
@@ -264,7 +264,7 @@ static void op_playlist_insert_selected(int position, bool queue)
     }
     else if (selected_file.context == CONTEXT_ID3DB)
     {
-        tagtree_current_playlist_insert(position, queue);
+        browser_db_current_playlist_insert(position, queue);
         return;
     }
     if ((selected_file.attr & FILE_ATTR_MASK) == FILE_ATTR_AUDIO)
@@ -335,7 +335,7 @@ static int add_to_playlist(void* arg)
         if (global_settings.playlist_shuffle)
             playlist_shuffle(current_tick, -1);
         playlist_start(0, 0, 0);
-        onplay_result = ONPLAY_START_PLAY;
+        context_menu_result = ONPLAY_START_PLAY;
     }
 
     playlist_set_modified(NULL, true);
@@ -349,9 +349,9 @@ static bool view_playlist(void)
     result = playlist_viewer_ex(selected_file.path, NULL);
 
     if (result == PLAYLIST_VIEWER_OK &&
-        onplay_result == ONPLAY_OK)
+        context_menu_result == ONPLAY_OK)
         /* playlist was started from viewer */
-        onplay_result = ONPLAY_START_PLAY;
+        context_menu_result = ONPLAY_START_PLAY;
 
     return result;
 }
@@ -411,7 +411,7 @@ MENUITEM_FUNCTION_W_PARAM(replace_shuf_pl_item, 0, ID2P(LANG_PLAY_SHUFFLED),
                   add_to_playlist, &addtopl_replace_shuffled,
                   treeplaylist_callback, Icon_Playlist);
 
-MAKE_ONPLAYMENU(tree_playlist_menu, ID2P(LANG_PLAYING_NEXT),
+MAKE_ONPLAYMENU(browser_playlist_menu, ID2P(LANG_PLAYING_NEXT),
                 treeplaylist_callback, Icon_Playlist,
 
                 /* insert */
@@ -446,7 +446,7 @@ static int treeplaylist_callback(int action,
     switch (action)
     {
     case ACTION_REQUEST_MENUITEM:
-        if (this_item == &tree_playlist_menu)
+        if (this_item == &browser_playlist_menu)
         {
             if (sel_file_attr != FILE_ATTR_AUDIO &&
                 sel_file_attr != FILE_ATTR_M3U &&
@@ -502,12 +502,12 @@ static int treeplaylist_callback(int action,
     return action;
 }
 
-void onplay_show_playlist_menu(const char* path, int attr, void (*playlist_insert_cb))
+void context_menu_show_playlist(const char* path, int attr, void (*playlist_insert_cb))
 {
     ctx_current_playlist_insert = playlist_insert_cb;
     selected_file_set(CONTEXT_STD, path, attr);
     in_queue_submenu = false;
-    do_menu(&tree_playlist_menu, NULL, NULL, false);
+    do_menu(&browser_playlist_menu, NULL, NULL, false);
 }
 
 /* playlist catalog options */
@@ -535,7 +535,7 @@ MAKE_ONPLAYMENU(cat_playlist_menu, ID2P(LANG_ADD_TO_PL),
                 cat_playlist_callback, Icon_Playlist,
                 &cat_add_to_list, &cat_add_to_new);
 
-void onplay_show_playlist_cat_menu(const char* track_name, int attr, void (*add_to_pl_cb))
+void context_menu_show_playlist_cat(const char* track_name, int attr, void (*add_to_pl_cb))
 {
     ctx_add_to_playlist = add_to_pl_cb;
     selected_file_set(CONTEXT_STD, track_name, attr);
@@ -607,7 +607,7 @@ static int clipboard_paste(void)
         splash_cancelled();
         /* Fallthrough */
     case FORC_SUCCESS:
-        onplay_result = ONPLAY_RELOAD_DIR;
+        context_menu_result = ONPLAY_RELOAD_DIR;
         /* Fallthrough */
     case FORC_NOOP:
         clipboard_clear_selection(&clipboard);
@@ -617,7 +617,7 @@ static int clipboard_paste(void)
     default:
         if (rc < FORC_SUCCESS) {
             splash_failed(LANG_PASTE, rc);
-            onplay_result = ONPLAY_RELOAD_DIR;
+            context_menu_result = ONPLAY_RELOAD_DIR;
         }
     }
 
@@ -756,7 +756,7 @@ static int clipboard_delete_selected_fileobject(void)
     }
     if (rc != FORC_NOOP) {
         /* Could have failed after some but not all needed changes; reload */
-        onplay_result = ONPLAY_RELOAD_DIR;
+        context_menu_result = ONPLAY_RELOAD_DIR;
     }
     return 1;
 }
@@ -768,7 +768,7 @@ static void show_result(int rc, int lang_what)
     } else if (rc == FORC_CANCELLED) {
         /* splash_cancelled(); kbd_input() splashes it */
     } else if (rc == FORC_SUCCESS) {
-        onplay_result = ONPLAY_RELOAD_DIR;
+        context_menu_result = ONPLAY_RELOAD_DIR;
     }
 }
 
@@ -830,9 +830,9 @@ static bool prepare_database_sel(void *param)
                     || !tagcache_is_in_ram())
             )
                 splash(0, ID2P(LANG_WAIT));
-             if (!tagtree_get_subentry_filename(selected_file.buf, MAX_PATH))
+             if (!browser_db_get_subentry_filename(selected_file.buf, MAX_PATH))
             {
-                onplay_result = ONPLAY_RELOAD_DIR;
+                context_menu_result = ONPLAY_RELOAD_DIR;
                 return false;
             }
         }
@@ -843,11 +843,11 @@ static bool prepare_database_sel(void *param)
 }
 
 /* Properties is core-linked, not a loadable plugin, so it can't go through
- * filetype_load_plugin() -- mirror onplay_album_covers()'s structure
+ * filetype_load_plugin() -- mirror context_menu_album_covers()'s structure
  * (prepare_database_sel() to resolve selected_file.path in a database browse
- * context, the onplay_result side-channel) with properties()'s GO_TO_* return
+ * context, the context_menu_result side-channel) with properties()'s GO_TO_* return
  * values. */
-static bool onplay_properties(void *param)
+static bool context_menu_properties(void *param)
 {
     (void)param;
     if (!prepare_database_sel((void *)"properties"))
@@ -858,24 +858,24 @@ static bool onplay_properties(void *param)
 
     int ret = properties(selected_file.path);
     if (ret == GO_TO_ROOT)
-        onplay_result = ONPLAY_MAINMENU;
+        context_menu_result = ONPLAY_MAINMENU;
     return false;
 }
 
 MENUITEM_FUNCTION_W_PARAM(properties_item, 0, ID2P(LANG_PROPERTIES),
-                  onplay_properties, NULL,
+                  context_menu_properties, NULL,
                   clipboard_callback, Icon_NOICON);
 MENUITEM_FUNCTION_W_PARAM(track_info_item, 0, ID2P(LANG_MENU_SHOW_ID3_INFO),
-                  onplay_properties, NULL,
+                  context_menu_properties, NULL,
                   clipboard_callback, Icon_NOICON);
 /* Album covers is core-linked, not a loadable plugin, so this can't go
  * through filetype_load_plugin() like its siblings --
- * mirrors onplay_properties()'s structure (prepare_database_sel() to resolve
+ * mirrors context_menu_properties()'s structure (prepare_database_sel() to resolve
  * selected_file.path when launched from a database browse context, the
- * onplay_result side-channel since do_menu() ignores this function's own
+ * context_menu_result side-channel since do_menu() ignores this function's own
  * return value without MENU_FUNC_CHECK_RETVAL) with album_covers()'s
  * GO_TO_* return values in place of filetype_load_plugin()'s PLUGIN_* ones. */
-static bool onplay_album_covers(void *param)
+static bool context_menu_album_covers(void *param)
 {
     (void)param;
     if (!prepare_database_sel(NULL))
@@ -886,21 +886,21 @@ static bool onplay_album_covers(void *param)
 
     int ret = album_covers(selected_file.path);
     if (ret == GO_TO_ROOT)
-        onplay_result = ONPLAY_MAINMENU;
+        context_menu_result = ONPLAY_MAINMENU;
     else if (ret == GO_TO_WPS)
-        onplay_result = ONPLAY_START_PLAY;
+        context_menu_result = ONPLAY_START_PLAY;
     return false;
 }
 MENUITEM_FUNCTION_W_PARAM(pictureflow_item, 0, ID2P(LANG_ONPLAY_PICTUREFLOW),
-                  onplay_album_covers, NULL,
+                  context_menu_album_covers, NULL,
                   clipboard_callback, Icon_NOICON);
-static bool onplay_add_to_shortcuts(void)
+static bool context_menu_add_to_shortcuts(void)
 {
     shortcuts_add(SHORTCUT_BROWSER, selected_file.path);
     return false;
 }
 MENUITEM_FUNCTION(add_to_faves_item, 0, ID2P(LANG_ADD_TO_FAVES),
-                  onplay_add_to_shortcuts,
+                  context_menu_add_to_shortcuts,
                   clipboard_callback, Icon_NOICON);
 
 static void set_dir_helper(char* dirnamebuf, size_t bufsz)
@@ -1004,7 +1004,7 @@ static int clipboard_callback(int action,
                                     action : ACTION_EXIT_MENUITEM;
             }
             else if (this_item == &create_dir_item &&
-                     *tree_get_context()->dirfilter <= NUM_FILTER_MODES)
+                     *browser_get_context()->dirfilter <= NUM_FILTER_MODES)
             {
                 return action;
             }
@@ -1014,7 +1014,7 @@ static int clipboard_callback(int action,
                 if (this_item == &clipboard_cut_item ||
                     this_item == &clipboard_copy_item)
                 {
-                    if (*tree_get_context()->dirfilter != SHOW_M3U)
+                    if (*browser_get_context()->dirfilter != SHOW_M3U)
                         return action;
                 }
                 else if (this_item == &rename_file_item ||
@@ -1057,13 +1057,13 @@ static int clipboard_callback(int action,
     return action;
 }
 
-static int onplaymenu_callback(int action,
+static int context_menu_callback(int action,
                                const struct menu_item_ex *this_item,
                                struct gui_synclist *this_list);
 
-/* used when onplay() is called in the CONTEXT_WPS context */
-MAKE_ONPLAYMENU( wps_onplay_menu, ID2P(LANG_ONPLAY_MENU_TITLE),
-           onplaymenu_callback, Icon_Audio,
+/* used when context_menu_show() is called in the CONTEXT_WPS context */
+MAKE_ONPLAYMENU( wps_context_menu, ID2P(LANG_ONPLAY_MENU_TITLE),
+           context_menu_callback, Icon_Audio,
            &wps_playlist_menu, &cat_playlist_menu,
            &sound_settings, &playback_settings,
            &rating_item,
@@ -1082,7 +1082,7 @@ int sort_playlists_callback(int action,
     (void) this_item;
 
     if (action == ACTION_REQUEST_MENUITEM &&
-        *tree_get_context()->dirfilter != SHOW_M3U)
+        *browser_get_context()->dirfilter != SHOW_M3U)
     {
         return ACTION_EXIT_MENUITEM;
     }
@@ -1093,12 +1093,12 @@ MENUITEM_SETTING(sort_playlists, &global_settings.sort_playlists, sort_playlists
 
 MENUITEM_FUNCTION(view_playlist_item, 0, ID2P(LANG_VIEW),
                   view_playlist,
-                  onplaymenu_callback, Icon_Playlist);
+                  context_menu_callback, Icon_Playlist);
 
-/* used when onplay() is not called in the CONTEXT_WPS context */
-MAKE_ONPLAYMENU( tree_onplay_menu, ID2P(LANG_ONPLAY_MENU_TITLE),
-           onplaymenu_callback, Icon_file_view_menu,
-           &view_playlist_item, &tree_playlist_menu, &cat_playlist_menu,
+/* used when context_menu_show() is not called in the CONTEXT_WPS context */
+MAKE_ONPLAYMENU( browser_context_menu, ID2P(LANG_ONPLAY_MENU_TITLE),
+           context_menu_callback, Icon_file_view_menu,
+           &view_playlist_item, &browser_playlist_menu, &cat_playlist_menu,
            &rename_file_item, &clipboard_cut_item, &clipboard_copy_item,
            &clipboard_paste_item, &delete_file_item, &delete_dir_item,
            &create_dir_item, &properties_item, &track_info_item,
@@ -1106,7 +1106,7 @@ MAKE_ONPLAYMENU( tree_onplay_menu, ID2P(LANG_ONPLAY_MENU_TITLE),
            &set_backdrop_item,
            &add_to_faves_item, &set_as_dir_menu, &file_menu, &sort_playlists,
          );
-static int onplaymenu_callback(int action,
+static int context_menu_callback(int action,
                                const struct menu_item_ex *this_item,
                                struct gui_synclist *this_list)
 {
@@ -1114,11 +1114,11 @@ static int onplaymenu_callback(int action,
     switch (action)
     {
         case ACTION_STD_MENU:
-            if (this_item == &wps_onplay_menu)
+            if (this_item == &wps_context_menu)
                 return ACTION_STD_CANCEL;
             break;
         case ACTION_TREE_STOP:
-            if (this_item == &wps_onplay_menu)
+            if (this_item == &wps_context_menu)
             {
                 list_stop_handler();
                 return ACTION_STD_CANCEL;
@@ -1172,7 +1172,7 @@ static int hotkey_tree_pl_insert_shuffled(void)
 }
 
 /* Properties equivalent of hotkey_album_covers() below -- see
- * onplay_properties()'s comment for why this can't share a generic
+ * context_menu_properties()'s comment for why this can't share a generic
  * plugin-loading helper. */
 static int hotkey_properties(void *param)
 {
@@ -1186,7 +1186,7 @@ static int hotkey_properties(void *param)
 }
 
 /* Album covers equivalent of hotkey_properties() above -- see
- * onplay_album_covers()'s comment for why this can't share a generic
+ * context_menu_album_covers()'s comment for why this can't share a generic
  * plugin-loading helper. */
 static int hotkey_album_covers(void *param)
 {
@@ -1201,7 +1201,7 @@ static int hotkey_album_covers(void *param)
 
 #define HOTKEY_FUNC(func, param) {{(void *)func}, param}
 
-/* Any desired hotkey functions go here, in the enum in onplay.h,
+/* Any desired hotkey functions go here, in the enum in context_menu_show.h,
    and in the settings menu in settings_list.c.  The order here
    is not important. */
 static const struct hotkey_assignment hotkey_items[] = {
@@ -1299,16 +1299,16 @@ static int execute_hotkey(bool is_wps)
     return return_code;      /* or return the associated value */
 }
 
-int onplay(char* file, int attr, int from_context, bool hotkey, int customaction)
+int context_menu_show(char* file, int attr, int from_context, bool hotkey, int customaction)
 {
     const struct menu_item_ex *menu;
-    onplay_result = ONPLAY_OK;
+    context_menu_result = ONPLAY_OK;
     ctx_current_playlist_insert = NULL;
     selected_file_set(from_context, NULL, attr);
 
     if (from_context == CONTEXT_ID3DB)
     {
-        ctx_add_to_playlist = tagtree_add_to_playlist;
+        ctx_add_to_playlist = browser_db_add_to_playlist;
         if (file != NULL)
         {
             /* add a leading slash so that catalog_add_to_a_playlist
@@ -1342,9 +1342,9 @@ int onplay(char* file, int attr, int from_context, bool hotkey, int customaction
 
     push_current_activity(ACTIVITY_CONTEXTMENU);
     if (from_context == CONTEXT_WPS)
-        menu = &wps_onplay_menu;
+        menu = &wps_context_menu;
     else
-        menu = &tree_onplay_menu;
+        menu = &browser_context_menu;
     menu_selection = do_menu(menu, NULL, NULL, false);
 
     if (get_current_activity() == ACTIVITY_CONTEXTMENU) /* Activity may have been      */
@@ -1362,10 +1362,10 @@ int onplay(char* file, int attr, int from_context, bool hotkey, int customaction
     if (menu_selection == GO_TO_PLUGIN)
         return ONPLAY_PLUGIN;
 
-    return onplay_result;
+    return context_menu_result;
 }
 
-int get_onplay_context(void)
+int context_menu_get_source(void)
 {
     return selected_file.context;
 }

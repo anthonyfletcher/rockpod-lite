@@ -23,7 +23,7 @@
 #include "draw/screen_access.h"   /* screens[], SCREEN_MAIN */
 #include "lcd.h"
 #include "font.h"
-#include "screens/browse/browser_db.h"         /* tagtree_enter_artist_albums_on_next_load */
+#include "screens/browse/browser_db.h"         /* browser_db_enter_artist_albums_on_next_load */
 #include "root_menu.h"       /* GO_TO_ALBUM_COVERS_TRACKS */
 #include "string-extra.h"    /* strlcpy */
 #include "album_covers.h"    /* artist_portraits(), ALBUM_NAME_* */
@@ -112,7 +112,7 @@ static int artist_enter(int index)
 {
     pf_resume_album_index = index;
     pf_resume_last_album = true;
-    tagtree_enter_artist_albums_on_next_load(pf_idx.artist_index[index].seek,
+    browser_db_enter_artist_albums_on_next_load(pf_idx.artist_index[index].seek,
                                              artist_name(index));
     return GO_TO_ALBUM_COVERS_TRACKS;
 }

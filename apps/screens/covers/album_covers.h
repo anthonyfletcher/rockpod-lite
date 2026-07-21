@@ -34,7 +34,7 @@ enum year_sort_order_values {
     DESCENDING
 };
 
-/* selected_file: jump to this file's album on open (e.g. onplay.c's "Album
+/* selected_file: jump to this file's album on open (e.g. context_menu_show.c's "Album
  * covers" context-menu item on a specific track); NULL for the normal
  * entry paths (main menu, WPS shortcuts) -- falls back to the currently
  * playing track's album, or wherever was last viewed. */

@@ -55,17 +55,17 @@ enum {
     GO_TO_PICTUREFLOW,
     /* Reserved block of main-menu shortcuts, one per direct tag-browse row of
      * tagnavi.config's root ("main") menu (Album/Artist/Genre/etc), looked up
-     * by tagtree_get_main_menu_tag_row() rather than hardcoded per-tag cases
+     * by browser_db_get_main_menu_tag_row() rather than hardcoded per-tag cases
      * so they survive tagnavi.config edits/reordering. TAGNAVI_MAIN_MENU_SLOTS
      * covers today's 8 such rows with headroom for a customized
-     * tagnavi_user.config; tagtree_get_main_menu_tag_row_count() is used to
+     * tagnavi_user.config; browser_db_get_main_menu_tag_row_count() is used to
      * hide slots beyond the real row count from the Customize Main Menu
      * screen and the default-enabled root menu, not just cap this block. */
     GO_TO_TAGNAVI_FIRST,
     GO_TO_TAGNAVI_LAST = GO_TO_TAGNAVI_FIRST + TAGNAVI_MAIN_MENU_SLOTS - 1,
     /* Returned by album_covers.c's SELECT handler: enter the database
      * browser directly at the tapped album's track list (see
-     * tagtree_enter_album_tracks_on_next_load()). browser() special-cases
+     * browser_db_enter_album_tracks_on_next_load()). browser() special-cases
      * this so that backing all the way out of that browse session lands on
      * Album covers instead of the generic root menu. */
     GO_TO_ALBUM_COVERS_TRACKS,

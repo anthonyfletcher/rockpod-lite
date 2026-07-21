@@ -466,7 +466,7 @@ bool browse_id3_ex(struct mp3entry *id3, struct playlist_info *playlist,
     bool ret = false;
     /* "Live" mode -- exit when playback stops and re-read on track change -- only
      * when we're actually showing the currently playing track's id3. The live
-     * callers (wps.c, onplay.c) pass audio_current_track(); static viewers
+     * callers (wps.c, context_menu_show.c) pass audio_current_track(); static viewers
      * (properties, playlist viewer) pass their own id3. Deciding by identity is
      * robust; the old activity check treated any non-plugin caller as live,
      * which flashed-and-closed the core Properties -> Track Info view. */

@@ -2639,7 +2639,7 @@ static void audio_on_finish_load_track(int id3_hid)
     {
         if (is_user_current)
         {
-            /* Be sure all tagtree info is synchronized; it will be needed for the
+            /* Be sure all browser_db info is synchronized; it will be needed for the
                track finish event - the sync will happen when finalizing a track
                change otherwise */
             bool was_valid = valid_mp3entry(id3_get(PLAYING_ID3));

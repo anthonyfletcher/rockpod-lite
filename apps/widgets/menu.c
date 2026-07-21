@@ -583,7 +583,7 @@ int do_menu(const struct menu_item_ex *start_menu, int *start_selected,
                             break;
                     } /* switch(do_menu()) */
                     if (menu->flags & MENU_EXITAFTERTHISMENU)
-                        done = true; /* in case onplay menu contains setting */
+                        done = true; /* in case context_menu_show menu contains setting */
                     redraw_lists = true;
                 }
             } /* else if (!in_stringlist) */

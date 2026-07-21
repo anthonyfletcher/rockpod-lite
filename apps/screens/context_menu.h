@@ -2,11 +2,11 @@
  * RockPod-Lite
  *
  * Original code from RockBox
- * was: apps/onplay.h
+ * was: apps/context_menu_show.h
  * Copyright (C) 2002 Björn Stenberg
  * GNU General Public License (version 2+)
  *
- * Interface to context_menu.c (onplay) and its custom-action values.
+ * Interface to context_menu.c (context_menu_show) and its custom-action values.
  ****************************************************************************/
 #ifndef _CONTEXT_MENU_H_
 #define _CONTEXT_MENU_H_
@@ -19,8 +19,8 @@ enum {
     ONPLAY_CUSTOMACTION_FIRSTLETTER,
 };
 
-int onplay(char* file, int attr, int from_context, bool hotkey, int customaction);
-int get_onplay_context(void);
+int context_menu_show(char* file, int attr, int from_context, bool hotkey, int customaction);
+int context_menu_get_source(void);
 
 enum {
     ONPLAY_MAINMENU = -1,
@@ -66,8 +66,8 @@ struct hotkey_assignment {
 const struct hotkey_assignment *get_hotkey(int action);
 
 /* needed for the playlist viewer.. eventually clean this up */
-void onplay_show_playlist_cat_menu(const char* track_name, int attr,
+void context_menu_show_playlist_cat(const char* track_name, int attr,
                                    void (*add_to_pl_cb));
-void onplay_show_playlist_menu(const char* path, int attr, void (*playlist_insert_cb));
+void context_menu_show_playlist(const char* path, int attr, void (*playlist_insert_cb));
 
 #endif

@@ -151,7 +151,7 @@ static bool wait_for_tagcache_ready(void)
 static int browser(void* param)
 {
     int ret_val;
-    struct tree_context* tc = tree_get_context();
+    struct browser_context* tc = browser_get_context();
     int filter = SHOW_SUPPORTED;
     char folder[MAX_PATH] = "/";
     /* stuff needed to remember position in file browser */
@@ -202,7 +202,7 @@ static int browser(void* param)
 
             if (!wait_for_tagcache_ready())
                 return GO_TO_PREVIOUS;
-            if (!tagtree_get_main_menu_tag_row(slot, &target_tag, NULL))
+            if (!browser_db_get_main_menu_tag_row(slot, &target_tag, NULL))
                 return GO_TO_PREVIOUS; /* slot not backed by a real row */
 
             filter = SHOW_ID3DB;
@@ -211,15 +211,15 @@ static int browser(void* param)
              * menu, independent of the plain Database entry's own
              * last_db_dirlevel/selection resume memory. Looked up by tag
              * identity (not position) so it survives tagnavi.config
-             * reordering, and armed for tagtree_load() to apply on its next
+             * reordering, and armed for browser_db_load() to apply on its next
              * fresh root load -- rockbox_browse() (called below)
              * unconditionally resets dirlevel/selected_item to 0 for any
              * ID3-DB entry, but NOT currtable/currextra, so those must be
-             * forced back to the root here or tagtree_load() will just keep
+             * forced back to the root here or browser_db_load() will just keep
              * showing whatever table was last displayed and the armed
              * shortcut below will never see a fresh root load to apply on. */
             tc->currtable = 0;
-            tagtree_enter_by_tag_on_next_load(target_tag);
+            browser_db_enter_by_tag_on_next_load(target_tag);
             push_current_activity(ACTIVITY_DATABASEBROWSER);
         }
         break;
@@ -229,7 +229,7 @@ static int browser(void* param)
                 return GO_TO_PREVIOUS;
             filter = SHOW_ID3DB;
             last_ft_dirlevel = tc->dirlevel;
-            /* tagtree_enter_album_tracks_on_next_load() was already armed by
+            /* browser_db_enter_album_tracks_on_next_load() was already armed by
              * album_covers.c's SELECT handler before it returned this code --
              * just need the standard ID3DB browse boilerplate here, same as
              * the TAGNAVI_CASE block above. */
@@ -296,7 +296,7 @@ static int browser(void* param)
              * Music menu later, and it opens back into this exact album
              * even though dirlevel claims to be at the top, so BACK skips
              * straight past Artist/base-Music-menu to the main menu. Reset
-             * currtable to 0 (forces tagtree_load()'s fresh-root path) and
+             * currtable to 0 (forces browser_db_load()'s fresh-root path) and
              * clear the Music resume position so the next Music entry
              * always starts at the base Music menu rather than in an
              * inconsistent dirlevel/currtable state. */
@@ -306,7 +306,7 @@ static int browser(void* param)
             /* Unlike the general tag-tree browse cases above, redirecting
              * GO_TO_ROOT here is safe: this entry point is only ever reached
              * from Album covers (never from the main Music menu), and
-             * tagtree.c's enter_album_tracks_directly() never advances
+             * browser_db.c's enter_album_tracks_directly() never advances
              * dirlevel past 0 -- so there's no deeper history that a
              * redirect could hijack or trap the user in, unlike an earlier
              * version of this that tried the same translation for the
@@ -554,11 +554,11 @@ MENUITEM_RETURNVALUE(artist_portraits_item, ID2P(LANG_ARTIST_PORTRAITS), GO_TO_A
                         NULL, Icon_Rockbox);
 
 /* Dynamic-text menu items for the reserved GO_TO_TAGNAVI_FIRST.. slots: the
- * displayed name/voice for slot N is fetched fresh from tagtree's parsed
+ * displayed name/voice for slot N is fetched fresh from browser_db's parsed
  * "main" menu every time it's drawn (via list_get_name_data carrying the
  * slot index), rather than a compile-time string -- so these track
  * tagnavi.config's actual row names/order without needing a rebuild. A slot
- * with no backing row (index >= tagtree_get_main_menu_tag_row_count())
+ * with no backing row (index >= browser_db_get_main_menu_tag_row_count())
  * safely renders as blank rather than returning NULL. */
 static char *tagnavi_item_get_name(int selected_item, void *data,
                                     char *buffer, size_t buffer_len)
@@ -567,7 +567,7 @@ static char *tagnavi_item_get_name(int selected_item, void *data,
     int index = (int)(intptr_t)data;
     const unsigned char *name;
 
-    if (!tagtree_get_main_menu_tag_row(index, NULL, &name))
+    if (!browser_db_get_main_menu_tag_row(index, NULL, &name))
     {
         buffer[0] = '\0';
         return buffer;
@@ -582,7 +582,7 @@ static int tagnavi_item_speak(int selected_item, void *data)
     int index = (int)(intptr_t)data;
     const unsigned char *name;
 
-    if (tagtree_get_main_menu_tag_row(index, NULL, &name))
+    if (browser_db_get_main_menu_tag_row(index, NULL, &name))
     {
         int id = P2ID(name);
         if (id != -1)
@@ -652,7 +652,7 @@ static struct menu_table menu_table[] = {
     { "system_menu", &system_menu_ },
     /* Kept last: root_menu_get_options()/root_menu_set_default() trim the
      * *tail* of this array down to however many of these are actually backed
-     * by a tagnavi.config row (tagtree_get_main_menu_tag_row_count()), so any
+     * by a tagnavi.config row (browser_db_get_main_menu_tag_row_count()), so any
      * unbacked slots must be the last entries here, not mixed in earlier. */
 #define TAGNAVI_TABLE_ENTRY(n) { "tagnavi" #n, &tagnavi_item_##n }
     TAGNAVI_TABLE_ENTRY(0),  TAGNAVI_TABLE_ENTRY(1),  TAGNAVI_TABLE_ENTRY(2),
@@ -793,15 +793,15 @@ static unsigned root_menu_build_display_list(bool *inserted_at_front)
 }
 
 /* Of MAX_MENU_ITEMS, how many are actually usable right now -- hides any
- * trailing GO_TO_TAGNAVI_FIRST.. slots beyond tagtree's real row count (see
+ * trailing GO_TO_TAGNAVI_FIRST.. slots beyond browser_db's real row count (see
  * the comment on menu_table[] above) from both the Customize Main Menu
  * screen and the default-enabled root menu. Safe to call at any time: with
- * no tagcache/tagtree, or before tagtree_init() has parsed tagnavi.config,
- * tagtree_get_main_menu_tag_row_count() simply returns 0 and every reserved
+ * no tagcache/browser_db, or before browser_db_init() has parsed tagnavi.config,
+ * browser_db_get_main_menu_tag_row_count() simply returns 0 and every reserved
  * slot is hidden until real data is available. */
 static int root_menu_active_count(void)
 {
-    int real = tagtree_get_main_menu_tag_row_count();
+    int real = browser_db_get_main_menu_tag_row_count();
     if (real > TAGNAVI_MAIN_MENU_SLOTS)
         real = TAGNAVI_MAIN_MENU_SLOTS;
     return MAX_MENU_ITEMS - (TAGNAVI_MAIN_MENU_SLOTS - real);
@@ -809,15 +809,15 @@ static int root_menu_active_count(void)
 
 /* settings_load() (via root_menu_set_default()/root_menu_load_from_cfg(),
  * both driven off the root_menu_customized CUSTOM_SETTING) runs before
- * tagtree_init() has parsed tagnavi.config, so root_menu_active_count()
+ * browser_db_init() has parsed tagnavi.config, so root_menu_active_count()
  * would have seen zero real tagnavi rows at that point and any tagnavi
  * item the user's *saved* configuration explicitly wanted got silently
  * dropped by root_menu_load_from_cfg()'s own matching loop (it can only
  * match against menu_table[] entries root_menu_active_count() already
  * knows about). Called once from root_menu()'s first entry, well after
- * tagtree is guaranteed ready, this re-adds any now-available tagnavi slot
+ * the database browser is guaranteed ready, this re-adds any now-available tagnavi slot
  * the saved config wanted but couldn't find yet. No-op if it was already
- * there (i.e. tagtree happened to be ready by settings-load time after
+ * there (i.e. the database browser happened to be ready by settings-load time after
  * all).
  *
  * Skipped entirely on a still-default configuration: tagnavi rows start
@@ -829,7 +829,7 @@ static int root_menu_active_count(void)
 static void root_menu_fixup_tagnavi_slots(void)
 {
     unsigned count = MENU_GET_COUNT(root_menu_.flags);
-    int real = tagtree_get_main_menu_tag_row_count();
+    int real = browser_db_get_main_menu_tag_row_count();
     int tagnavi_start = MAX_MENU_ITEMS - TAGNAVI_MAIN_MENU_SLOTS;
     int n;
 

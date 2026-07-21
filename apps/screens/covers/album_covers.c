@@ -40,7 +40,7 @@
 #include "system/app_util.h"
 #include "system/shutdown.h"
 #include "system/strutil.h"
-#include "screens/context_menu.h"           /* onplay_show_playlist_cat_menu/menu */
+#include "screens/context_menu.h"           /* context_menu_show_playlist_cat/menu */
 #include "metadata/albumart.h"         /* find_albumart / search_albumart_files */
 #include "metadata/art_cache.h"   /* shared database-driven thumbnail cache */
 #include "metadata.h"         /* struct mp3entry, get_metadata */
@@ -240,7 +240,7 @@ enum ePFS{ePFS_ARTIST = 0, ePFS_ALBUM};
 /*
  * States: pf_idle <-> pf_scrolling (browsing covers); SELECT on a cover
  * jumps straight into the core database's track list for that album (see
- * tagtree_enter_album_tracks_on_next_load(), called from
+ * browser_db_enter_album_tracks_on_next_load(), called from
  * album_covers_loop()) instead of an in-house zoom animation and track-list
  * screen -- there are no separate cover-zoom/track-list browsing states
  * anymore, unlike the original plugin.
@@ -1494,7 +1494,7 @@ static bool reinit(void)
 
 /* carousel_model.enter for the album model: drill into the selected album's
  * track list. Identifies the album by its own tagcache seek, not by name --
- * tagtree.c filters directly on this, so there's no name/sort matching involved
+ * browser_db.c filters directly on this, so there's no name/sort matching involved
  * (the earlier, much more fragile design that this replaced). */
 static int album_enter(int index)
 {
@@ -1505,7 +1505,7 @@ static int album_enter(int index)
     pf_cfg.last_album = index;
     pf_resume_album_index = index;
     pf_resume_last_album = true;
-    tagtree_enter_album_tracks_on_next_load(album_seek, album);
+    browser_db_enter_album_tracks_on_next_load(album_seek, album);
     return GO_TO_ALBUM_COVERS_TRACKS;
 }
 

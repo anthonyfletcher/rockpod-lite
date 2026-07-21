@@ -64,7 +64,6 @@ Both are *sampled*, not *called*. They fail the widget test outright.
 
 ## Full inventory
 
-
 ### (root)  (4 files)
   fracmul.h                  Boundary shim. lib/rbcodec/codecs/spc.c includes "../fracmul.h", which resolves against the include path rather than by name, so this must sit at the apps/ root. The real header is system/fracmul.h.
   main.c                     Boot: brings up the hardware, filesystem, settings, playback and voice in order, shows the logo, then hands control to the root menu and never returns.
@@ -88,9 +87,9 @@ Both are *sampled*, not *called*. They fail the widget test outright.
 ### api/gui/skin_engine  (1 files)
   skin_engine.h              Boundary shim for a SLASHED path: firmware/usb.c:51 includes "gui/skin_engine/skin_engine.h", mirroring the pre-reorganisation layout. The real header is skin/skin_engine.h.
 
-### audio  (20 files)
-  abrepeat.c                 A-B repeat: stores the two markers and loops playback between them.
-  abrepeat.h                 Interface to abrepeat.c.
+### audio  (24 files)
+  ab_repeat.c                A-B repeat: stores the two markers and loops playback between them.
+  ab_repeat.h                Interface to abrepeat.c.
   audio_path.c               Selects the audio input source. Vestigial on these targets, which have no recording or line-in.
   audio_thread.c             The audio thread's event loop. Receives queued playback commands and dispatches them into playback.c; owns the audio status.
   audio_thread.h             Interface to audio_thread.c, plus audio_init()/playback_init().
@@ -102,19 +101,21 @@ Both are *sampled*, not *called*. They fail the widget test outright.
   codecs.c                   Loading and linking of .codec modules: locates the file for a format and binds it to the codec API struct.
   pcmbuf.c                   The PCM output ring buffer between the codec and the DAC. Owns crossfade mixing, the watermark that drives refills, and elapsed-time reporting.
   pcmbuf.h                   Interface to pcmbuf.c.
+  peak_meter.c               Audio peak meter. Samples the PCM peaks, converts to dB with a logarithmic scale, and draws the bar with peak-hold and clip indication.
+  peak_meter.h               Interface to peakmeter.c.
   play_status.c              The current playback mode (play, pause, ff/rewind) as the status bar and skin engine read it.
   play_status.h              The playmode enum and its accessors. The ordering is fixed -- the status bar icons and the skin %mp tag depend on it.
   playback.c                 The playback engine: the track lifecycle from buffering through decode to output, gapless handoff, seeking, and the album-art slots the skin draws from.
   playback.h                 Interface to playback.c.
   rbcodec_helpers.c          Glue the shared rbcodec library expects from the application: buffer allocation for the time-stretch DSP.
+  spectrum_meter.c           Spectrum analyser bars for the skin. Runs a Goertzel filter bank over recent PCM samples and exposes per-bar levels.
+  spectrum_meter.h           Interface to spectrum_meter.c.
   voice_thread.c             The voice thread: decodes and mixes spoken clips over the music, at its own priority so speech stays responsive.
   voice_thread.h             Interface to voice_thread.c.
 
-### database  (4 files)
+### database  (2 files)
   tagcache.c                 The tag database itself: builds and loads the on-disk index, and answers searches over it. The largest file in apps/.
   tagcache.h                 Interface to tagcache.c: the search context, the tag enum and the query API.
-  tagtree.c                  Turns database queries into a browsable tree, driven by tagnavi.config. The database equivalent of the filesystem browser's backend.
-  tagtree.h                  Interface to tagtree.c.
 
 ### draw  (20 files)
   bmp.c                      Reads Windows BMP files into a rockbox bitmap. Handles 1/4/8/16/24-bit input, RLE, palettes and dithering, and can scale on load via resize.c.
@@ -138,6 +139,12 @@ Both are *sampled*, not *called*. They fail the widget test outright.
   viewport.c                 Viewport manager. Owns theme enable/undo per screen, the viewport stack, and the screen area left over once the status bar is reserved.
   viewport.h                 Interface to viewport.c and the viewport helpers used to set up drawing areas.
 
+### files  (4 files)
+  file_ops.c                 File operations with progress and confirmation: copy, move, delete, rename, create directory. Used by the context menu.
+  file_ops.h                 Interface to fileop.c and its result codes.
+  filetypes.c                The filetype registry: maps extensions to attributes, icons, colours and the core viewer that opens them. Loads the colour and viewer theme files.
+  filetypes.h                Interface to filetypes.c and the FILE_ATTR_* attribute constants.
+
 ### iap  (8 files)
   iap-core.c                 The Apple accessory protocol core: framing, checksums, authentication and the device state shared by the lingo handlers.
   iap-core.h                 Interface to iap-core.c and the shared iAP state types.
@@ -160,9 +167,9 @@ Both are *sampled*, not *called*. They fail the widget test outright.
 ### metadata  (9 files)
   albumart.c                 Finds album art for a track: searches the conventional filenames and directories, and reports the best match for a requested size.
   albumart.h                 Interface to albumart.c.
-  albumart_cache.c           The album-art disk cache: pre-scales art to the sizes skins ask for and stores them, so browsing does not re-decode on every track.
-  albumart_cache.h           Interface to albumart_cache.c.
-  albumart_sizes.h           The album-art sizes this build caches, derived from the skins in use.
+  art_cache.c                Disk cache for cover art -- BOTH album art and artist art. Pre-scales each image to the sizes skins ask for and stores it, so browsing does not re-decode on every track. Album art comes from the album folder, artist art from its parent; each has its own placeholder for when nothing is found.
+  art_cache.h                Interface to art_cache.c.
+  art_sizes.h                The album-art sizes this build caches, derived from the skins in use.
   cuesheet.c                 Cuesheet support: finds and parses a .cue beside a track, then reports which indexed sub-track is playing so the UI can show it as a separate song.
   cuesheet.h                 Interface to cuesheet.c and the cuesheet types.
   mul_id3.c                  Aggregates tags across many files: walks a directory collecting counts, sizes and durations for the properties screen.
@@ -173,75 +180,80 @@ Both are *sampled*, not *called*. They fail the widget test outright.
   catalog.h                  Interface to catalog.c.
   playlist.c                 The playlist engine: the in-memory index of tracks, shuffle and repeat, insert and move, and the on-disk .m3u representation including the dynamic playlist.
   playlist.h                 Interface to playlist.c and the playlist_info type every playlist caller passes around.
-  playlist_menu.h            Declares the save-playlist screen shared between the playlist menu and the viewer.
+  save_screen.h              Declares save_playlist_screen(), the "save current playlist" screen. Named for what it declares: it is a screen, not a menu, and is unrelated to the playlist settings screen that used to share its name.
   viewer.c                   The playlist viewer screen: lists the current or a saved playlist, and allows moving, removing and searching entries.
   viewer.h                   Interface to viewer.c.
 
-### screens  (39 files)
-  alarm.c                    The RTC wake-up alarm screen. Sets the alarm time via the shared time picker and arms the hardware RTC.
-  alarm.h                    Interface to alarm.c.
+### screens  (8 files)
+  bookmark.c                 Bookmarks: creating, listing, loading and auto-bookmarking a playback position, including the most-recent list and the on-disk bookmark file format.
+  bookmark.h                 Interface to bookmark.c.
+  context_menu.c             The long-press context menu. Builds the item list appropriate to what was selected (file, directory, playlist entry) and runs the chosen operation.
+  context_menu.h             Interface to context_menu.c (context_menu_show) and its custom-action values.
+  main_menu.c                The main menu: system info, version, running time, credits, licences, and the manage-settings submenu.
+  main_menu_config.c         Lets the user reorder and hide main menu entries, persisting the arrangement.
+  shortcuts.c                The shortcuts menu: a user-editable list of jumps to files, directories, settings or screens, persisted to disk.
+  shortcuts.h                Interface to shortcuts.c.
+
+### screens/browse  (6 files)
+  browser.c                  The file browser screen. Owns the browser_context (current directory, selection, filter), the browse loop, and dispatch into the database browser or a viewer.
+  browser.h                  Interface to browser.c: browser_context, the browse_context entry point (rockbox_browse) and the dirfilter values.
+  browser_db.c               Turns database queries into a browsable tree, driven by tagnavi.config. The database equivalent of the filesystem browser's backend.
+  browser_db.h               Interface to browser_db.c.
+  browser_disk.c             The browser's filesystem backend: reads a directory into the browser cache, decides what entering a file does, and builds playlists from a directory.
+  browser_disk.h             Interface to browser_files.c (the ft_* entry points).
+
+### screens/covers  (5 files)
   album_covers.c             Cover-flow album browser built on carousel.c. Supplies the slide model -- album list, art loading and its disk cache, sort order -- and what happens on select.
   album_covers.h             Interface to album_covers.c and the album-name display setting values.
   artist_portraits.c         Cover-flow artist browser. A second carousel.c model, showing artist photos instead of album art.
-  bookmark.c                 Bookmarks: creating, listing, loading and auto-bookmarking a playback position, including the most-recent list and the on-disk bookmark file format.
-  bookmark.h                 Interface to bookmark.c.
-  browser.c                  The file browser screen. Owns the tree_context (current directory, selection, filter), the browse loop, and dispatch into the database browser or a viewer.
-  browser.h                  Interface to browser.c: tree_context, the browse_context entry point (rockbox_browse) and the dirfilter values.
-  browser_files.c            The browser's filesystem backend: reads a directory into the tree cache, decides what entering a file does, and builds playlists from a directory.
-  browser_files.h            Interface to browser_files.c (the ft_* entry points).
   carousel.c                 The cover-flow engine shared by album_covers.c and artist_portraits.c: slide cache, 3D projection, scrolling, input loop and worker thread. Each screen supplies a model.
   carousel.h                 The carousel model vtable and shared render state -- the interface between the engine and its two screens.
-  context_menu.c             The long-press context menu. Builds the item list appropriate to what was selected (file, directory, playlist entry) and runs the chosen operation.
-  context_menu.h             Interface to context_menu.c (onplay) and its custom-action values.
-  debug_menu.c               The debug menu and its screens: hardware state, buffers, threads, disk, battery and view-log entries. Development aid, not user-facing.
-  debug_menu.h               Interface to debug_menu.c.
-  fileop.c                   File operations with progress and confirmation: copy, move, delete, rename, create directory. Used by the context menu.
-  fileop.h                   Interface to fileop.c and its result codes.
-  filetypes.c                The filetype registry: maps extensions to attributes, icons, colours and the core viewer that opens them. Loads the colour and viewer theme files.
-  filetypes.h                Interface to filetypes.c and the FILE_ATTR_* attribute constants.
-  logfdisp.c                 On-device viewer and dumper for the circular logf() buffer. Only built when ROCKBOX_HAS_LOGF is set.
-  logfdisp.h                 Interface to logfdisp.c.
-  pitchscreen.c              Pitch and speed adjustment screen. Now a thin stub -- the interactive UI was a plugin and is gone; this resets pitch to normal.
-  pitchscreen.h              Interface to pitchscreen.c.
-  quickscreen.c              The quick screen: four settings bound to the directional buttons, edited in place without leaving playback.
-  quickscreen.h              Interface to quickscreen.c.
-  runtime_info.c             Running-time and top-time statistics screen, with the option to reset either counter.
-  runtime_info.h             Interface to runtime_info.c.
-  shortcuts.c                The shortcuts menu: a user-editable list of jumps to files, directories, settings or screens, persisted to disk.
-  shortcuts.h                Interface to shortcuts.c.
-  time_set.c                 The interactive date and time picker, with voiced feedback. Shared by the time menu and the alarm screen.
-  time_set.h                 Interface to time_set.c.
+
+### screens/playback  (8 files)
+  pitch_screen.c             Pitch and speed adjustment screen. Now a thin stub -- the interactive UI was a plugin and is gone; this resets pitch to normal.
+  pitch_screen.h             Interface to pitchscreen.c.
+  quick_screen.c             The quick screen: four settings bound to the directional buttons, edited in place without leaving playback.
+  quick_screen.h             Interface to quickscreen.c.
   track_info.c               The Track Info screen: lists an mp3entry's tags, speaks them on request, and opens any single field full-screen via the text box.
   track_info.h               Interface to track_info.c (browse_id3).
-  usb_screen.c               The USB connection screen shown while the device is mounted, including the logo or skinned variant and HID keypad handling.
-  usb_screen.h               Interface to usb_screen.c.
   wps.c                      The While Playing Screen: the playback UI loop. Handles all playback input and drives the skin engine to repaint; the layout itself lives in skin/.
   wps.h                      Interface to wps.c, including the wps_do_action() verbs other code uses to control playback.
 
-### screens/menus  (16 files)
-  album_covers_menu.c        Settings menu for the Album Covers screen.
-  display_menu.c             Display settings menu: backlight, LCD, scrolling, status bar and related options.
-  eq_menu.c                  Equaliser settings menu, including the per-band editor and preset load/save.
-  eq_menu.h                  Interface to eq_menu.c.
-  exported_menus.h           Declares the menu roots that other menus embed as submenus.
-  main_menu.c                The main menu: system info, version, running time, credits, licences, and the manage-settings submenu.
-  main_menu_config.c         Lets the user reorder and hide main menu entries, persisting the arrangement.
-  menu_common.c              Helpers shared by the menu definitions, chiefly the "do you want to apply now" prompts.
-  menu_common.h              Interface to menu_common.c.
-  playback_menu.c            Playback settings menu: shuffle, repeat, crossfade, replaygain, resume and buffering options.
-  playlist_menu.c            Playlist settings and the playlist catalogue menu entries.
-  settings_menu.c            The general settings menu: filesystem, database, language, voice, hotkey and startup options.
-  sound_menu.c               Sound settings menu: volume, bass, treble, balance and the channel/stereo options.
-  text_viewer_menu.c         Settings menu for the core text viewer.
-  theme_menu.c               Theme settings menu: skin selection, fonts, colours and backdrop.
-  time_menu.c                Time and date menu: sets the clock and, where fitted, the alarm.
+### screens/settings  (14 files)
+  album_covers_settings.c    Settings menu for the Album Covers screen.
+  common_settings.c          Helpers shared by the menu definitions, chiefly the "do you want to apply now" prompts.
+  common_settings.h          Interface to menu_common.c.
+  display_settings.c         Display settings menu: backlight, LCD, scrolling, status bar and related options.
+  eq_settings.c              Equaliser settings menu, including the per-band editor and preset load/save.
+  eq_settings.h              Interface to eq_menu.c.
+  exported_settings.h        Declares the menu roots that other menus embed as submenus.
+  general_settings.c         The general settings menu: filesystem, database, language, voice, hotkey and startup options.
+  playback_settings.c        Playback settings menu: shuffle, repeat, crossfade, replaygain, resume and buffering options.
+  playlist_settings.c        Playlist settings and the playlist catalogue menu entries.
+  sound_settings.c           Sound settings menu: volume, bass, treble, balance and the channel/stereo options.
+  text_viewer_settings.c     Settings menu for the core text viewer.
+  theme_settings.c           Theme settings menu: skin selection, fonts, colours and backdrop.
+  time_settings.c            Time and date menu: sets the clock and, where fitted, the alarm.
 
-### settings  (5 files)
+### screens/system  (12 files)
+  alarm.c                    The RTC wake-up alarm screen. Sets the alarm time via the shared time picker and arms the hardware RTC.
+  alarm.h                    Interface to alarm.c.
+  debug_menu.c               The debug menu and its screens: hardware state, buffers, threads, disk, battery and view-log entries. Development aid, not user-facing.
+  debug_menu.h               Interface to debug_menu.c.
+  log_viewer.c               On-device viewer and dumper for the circular logf() buffer. Only built when ROCKBOX_HAS_LOGF is set.
+  log_viewer.h               Interface to log_viewer.c.
+  runtime_info.c             Running-time and top-time statistics screen, with the option to reset either counter.
+  runtime_info.h             Interface to runtime_info.c.
+  time_set.c                 The interactive date and time picker, with voiced feedback. Shared by the time menu and the alarm screen.
+  time_set.h                 Interface to time_set.c.
+  usb_screen.c               The USB connection screen shown while the device is mounted, including the logo or skinned variant and HID keypad handling.
+  usb_screen.h               Interface to usb_screen.c.
+
+### settings  (4 files)
   settings.c                 Loads, saves and applies settings: the config file format, reading and writing config.cfg, and pushing changed values into the running system.
   settings.h                 The global_settings and global_status structures -- the entire persisted state of the device -- plus the settings API.
   settings_list.c            The settings table: one entry per setting giving its name, type, range, default, config-file representation and voice clip. The single source of truth for what a setting is.
   settings_list.h            The settings_list entry type and the macros each setting is declared with.
-  sound_menu.h               Declares the recording menu entry points. Vestigial on these targets, which cannot record.
 
 ### skin  (18 files)
   backdrop.c                 Loads a backdrop bitmap from disk and pushes it to the LCD. The plain, non-skin backdrop path.
@@ -351,7 +363,7 @@ Both are *sampled*, not *called*. They fail the widget test outright.
   ts_zipdoc.c                The zip-backed documents: EPUB, DOCX and .fb2.zip. Finds the content parts inside the container and feeds them through the markup path.
   txt_source.h               Public API of the ts_* text-extraction engine: open a document, read UTF-8 out of it, close it. The only header a caller needs.
 
-### widgets  (28 files)
+### widgets  (24 files)
   color_picker.c             Full-screen RGB colour chooser. Shows a live swatch and per-channel sliders; set_color() returns true if the user accepted.
   color_picker.h             Interface to color_picker.c.
   dialog.c                   Modal box primitive shared by the popup, yes/no and text-input dialogs. Draws a centred bordered box and returns its content viewport; owns the dialog style defaults.
@@ -370,10 +382,6 @@ Both are *sampled*, not *called*. They fail the widget test outright.
   menu.h                     The menu item type and the MENUITEM_* macros every menu is declared with, plus do_menu().
   option_select.c            Edits one setting's value: renders it as text or a chooser list, speaks it, and applies the result. The bridge between settings_list.c and the menu.
   option_select.h            Interface to option_select.c.
-  peakmeter.c                Audio peak meter. Samples the PCM peaks, converts to dB with a logarithmic scale, and draws the bar with peak-hold and clip indication.
-  peakmeter.h                Interface to peakmeter.c.
-  spectrum_meter.c           Spectrum analyser bars for the skin. Runs a Goertzel filter bank over recent PCM samples and exposes per-bar levels.
-  spectrum_meter.h           Interface to spectrum_meter.c.
   splash.c                   Transient centred message overlay -- splash(), splashf() and the progress variant. Saves and restores whatever it covers.
   splash.h                   Interface to splash.c.
   text_box.c                 Full-screen scrollable display for a string already in memory: word wraps, paginates and scrolls. Distinct from viewers/text_viewer, which streams documents from a file.

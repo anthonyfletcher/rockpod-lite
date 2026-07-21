@@ -24,7 +24,7 @@ struct wps_data;
 
 struct skin_stats {
     size_t buflib_handles;
-    size_t tree_size;
+    size_t browser_size;
     size_t images_size;
 };
 

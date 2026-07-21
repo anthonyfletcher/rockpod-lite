@@ -8,16 +8,16 @@
  *
  * Interface to browser_files.c (the ft_* entry points).
  ****************************************************************************/
-#ifndef BROWSER_FILES_H
-#define BROWSER_FILES_H
+#ifndef _BROWSER_DISK_H_
+#define _BROWSER_DISK_H_
 #include "browser.h"
 
-int ft_load(struct tree_context* c, const char* tempdir);
-int ft_enter(struct tree_context* c);
-int ft_exit(struct tree_context* c);
-int ft_assemble_path(char *buf, size_t bufsz,
+int browser_disk_load(struct browser_context* c, const char* tempdir);
+int browser_disk_enter(struct browser_context* c);
+int browser_disk_exit(struct browser_context* c);
+int browser_disk_assemble_path(char *buf, size_t bufsz,
                       const char* currdir, const char* filename);
-int ft_build_playlist(struct tree_context* c, int start_index);
-bool ft_play_playlist(char* pathname, char* dirname, char* filename);
+int browser_disk_build_playlist(struct browser_context* c, int start_index);
+bool browser_disk_play_playlist(char* pathname, char* dirname, char* filename);
 
 #endif

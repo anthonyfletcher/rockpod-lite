@@ -634,7 +634,7 @@ struct user_settings
     bool morse_input; /* text input method setting */
 
     /* hotkey assignments - acceptable values are in
-       hotkey_action enum in onplay.h */
+       hotkey_action enum in context_menu_show.h */
     int hotkey_wps;
     int hotkey_tree;
 

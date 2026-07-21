@@ -6,7 +6,7 @@
  * Copyright (C) 2002 Daniel Stenberg
  * GNU General Public License (version 2+)
  *
- * The file browser screen. Owns the tree_context (current directory,
+ * The file browser screen. Owns the browser_context (current directory,
  * selection, filter), the browse loop, and dispatch into the database
  * browser or a viewer.
  ****************************************************************************/
@@ -66,11 +66,11 @@
 
 #include "root_menu.h"
 
-static struct gui_synclist tree_lists;
+static struct gui_synclist browser_lists;
 
 /* I put it here because other files doesn't use it yet,
  * but should be elsewhere since it will be used mostly everywhere */
-static struct tree_context tc;
+static struct browser_context tc;
 
 char lastfile[MAX_PATH];
 static char lastdir[MAX_PATH];
@@ -82,27 +82,27 @@ static bool start_wps = false;
 static int curr_context = false;/* id3db or tree*/
 
 static int dirbrowse(void);
-static int ft_play_dirname(char* name);
-static int ft_play_filename(char *dir, char *file, int attr);
+static int browser_play_dirname(char* name);
+static int browser_play_filename(char *dir, char *file, int attr);
 static void say_filetype(int attr);
 
-struct entry* tree_get_entries(struct tree_context *t)
+struct entry* browser_get_entries(struct browser_context *t)
 {
     return core_get_data(t->cache.entries_handle);
 }
 
-struct entry* tree_get_entry_at(struct tree_context *t, int index)
+struct entry* browser_get_entry_at(struct browser_context *t, int index)
 {
     if(index < 0 || index >= t->cache.max_entries)
         return NULL; /* no entry */
-    struct entry* entries = tree_get_entries(t);
+    struct entry* entries = browser_get_entries(t);
     return &entries[index];
 }
 
 static struct entry *get_valid_entry(const char* funcname,
-                                     struct tree_context *t, int index)
+                                     struct browser_context *t, int index)
 {
-    struct entry *entry = tree_get_entry_at(t, index);
+    struct entry *entry = browser_get_entry_at(t, index);
     if (!entry)
         panicf("Invalid tree entry %s", funcname);
     /*DEBUGF("%s tc: %x idx: %d\n", funcname, t, index);*/
@@ -134,17 +134,17 @@ static bool ext_stripit(bool isdir, int attr, int dirfilter)
     return false;
 }
 
-static const char* tree_get_filename(int selected_item, void *data,
+static const char* browser_get_filename(int selected_item, void *data,
                                      char *buffer, size_t buffer_len)
 {
-    struct tree_context * local_tc=(struct tree_context *)data;
+    struct browser_context * local_tc=(struct browser_context *)data;
     char *name;
     int attr=0;
     bool id3db = *(local_tc->dirfilter) == SHOW_ID3DB;
 
     if (id3db)
     {
-        return tagtree_get_entry_name(&tc, selected_item, buffer, buffer_len);
+        return browser_db_get_entry_name(&tc, selected_item, buffer, buffer_len);
     }
     else
     {
@@ -160,22 +160,22 @@ static const char* tree_get_filename(int selected_item, void *data,
     return(name);
 }
 
-static int tree_get_filecolor(int selected_item, void * data)
+static int browser_get_filecolor(int selected_item, void * data)
 {
     if (*tc.dirfilter == SHOW_ID3DB)
         return -1;
-    struct tree_context * local_tc=(struct tree_context *)data;
+    struct browser_context * local_tc=(struct browser_context *)data;
     struct entry *entry = get_valid_entry(__func__, local_tc, selected_item);
 
     return filetype_get_color(entry->name, entry->attr);
 }
 
-static enum themable_icons tree_get_fileicon(int selected_item, void * data)
+static enum themable_icons browser_get_fileicon(int selected_item, void * data)
 {
-    struct tree_context * local_tc=(struct tree_context *)data;
+    struct browser_context * local_tc=(struct browser_context *)data;
     bool id3db = *(local_tc->dirfilter) == SHOW_ID3DB;
     if (id3db) {
-        return tagtree_get_icon(&tc);
+        return browser_db_get_icon(&tc);
     }
     else
     {
@@ -187,49 +187,49 @@ static enum themable_icons tree_get_fileicon(int selected_item, void * data)
 
 /* Album art for database album rows, drawn by the skin's %La tag.
  *
- * Resolving one row costs a tagcache search (tagtree_get_album_dir) plus a file
+ * Resolving one row costs a tagcache search (browser_db_get_album_dir) plus a file
  * read, and the skin asks for every visible row on every redraw -- so a few
  * decoded thumbnails are kept, keyed by list item, and thrown away whenever the
  * list reloads. A miss simply returns NULL: thumbnails are produced in the
  * background, so a row just has no cover until the cache catches up. */
 #define TREE_AA_SLOTS 8
 
-static int tree_aa_size_idx = -2;   /* -2 == not looked up, -1 == no such size */
-static int tree_aa_handle = -1;     /* pixel store for the slots */
-static int tree_aa_dim;
-static int tree_aa_item[TREE_AA_SLOTS];  /* item cached in each slot, -1 empty */
-static int tree_aa_victim;               /* round-robin replacement */
-static struct bitmap tree_aa_bm;         /* handed back; points into the store */
+static int browser_aa_size_idx = -2;   /* -2 == not looked up, -1 == no such size */
+static int browser_aa_handle = -1;     /* pixel store for the slots */
+static int browser_aa_dim;
+static int browser_aa_item[TREE_AA_SLOTS];  /* item cached in each slot, -1 empty */
+static int browser_aa_victim;               /* round-robin replacement */
+static struct bitmap browser_aa_bm;         /* handed back; points into the store */
 
-static void tree_aa_reset(void)
+static void browser_aa_reset(void)
 {
     for (int i = 0; i < TREE_AA_SLOTS; i++)
-        tree_aa_item[i] = -1;
-    tree_aa_victim = 0;
+        browser_aa_item[i] = -1;
+    browser_aa_victim = 0;
 }
 
-static size_t tree_aa_slot_bytes(void)
+static size_t browser_aa_slot_bytes(void)
 {
-    return (size_t)tree_aa_dim * tree_aa_dim * FB_DATA_SZ;
+    return (size_t)browser_aa_dim * browser_aa_dim * FB_DATA_SZ;
 }
 
-static bool tree_aa_ready(void)
+static bool browser_aa_ready(void)
 {
-    if (tree_aa_size_idx == -2)
+    if (browser_aa_size_idx == -2)
     {
-        tree_aa_size_idx = art_cache_size_index("list");
-        if (tree_aa_size_idx >= 0)
-            tree_aa_dim = art_cache_size_dim(tree_aa_size_idx);
+        browser_aa_size_idx = art_cache_size_index("list");
+        if (browser_aa_size_idx >= 0)
+            browser_aa_dim = art_cache_size_dim(browser_aa_size_idx);
     }
-    if (tree_aa_size_idx < 0)
+    if (browser_aa_size_idx < 0)
         return false;
 
-    if (tree_aa_handle <= 0)
+    if (browser_aa_handle <= 0)
     {
-        tree_aa_handle = core_alloc(TREE_AA_SLOTS * tree_aa_slot_bytes());
-        if (tree_aa_handle <= 0)
+        browser_aa_handle = core_alloc(TREE_AA_SLOTS * browser_aa_slot_bytes());
+        if (browser_aa_handle <= 0)
             return false;   /* no memory right now; try again next redraw */
-        tree_aa_reset();
+        browser_aa_reset();
     }
     return true;
 }
@@ -237,10 +237,10 @@ static bool tree_aa_ready(void)
 /* Read a cached thumbnail into `slot`: a small header followed by row-major
  * native pixels (see art_cache.h). The read yields, so the store is pinned
  * across it rather than trusting a pointer taken beforehand. */
-static bool tree_aa_load(const char *path, int slot)
+static bool browser_aa_load(const char *path, int slot)
 {
     struct art_cache_header hdr;
-    size_t bytes = tree_aa_slot_bytes();
+    size_t bytes = browser_aa_slot_bytes();
     bool ok = false;
     int fd = open(path, O_RDONLY);
 
@@ -250,9 +250,9 @@ static bool tree_aa_load(const char *path, int slot)
     if (read(fd, &hdr, sizeof(hdr)) == (ssize_t)sizeof(hdr) &&
         hdr.magic == ART_CACHE_MAGIC &&
         hdr.version == ART_CACHE_FORMAT_VERSION &&
-        hdr.width == tree_aa_dim && hdr.height == tree_aa_dim)
+        hdr.width == browser_aa_dim && hdr.height == browser_aa_dim)
     {
-        char *store = core_get_data_pinned(tree_aa_handle);
+        char *store = core_get_data_pinned(browser_aa_handle);
         ok = read(fd, store + (size_t)slot * bytes, bytes) == (ssize_t)bytes;
         core_put_data_pinned(store);
     }
@@ -261,33 +261,33 @@ static bool tree_aa_load(const char *path, int slot)
     return ok;
 }
 
-static const struct bitmap *tree_get_albumart(int selected_item, void * data,
+static const struct bitmap *browser_get_albumart(int selected_item, void * data,
                                               struct dim *size)
 {
-    struct tree_context *local_tc = (struct tree_context *)data;
+    struct browser_context *local_tc = (struct browser_context *)data;
     char dir[MAX_PATH];
     char aat[MAX_PATH];
     int slot;
 
     (void)size;   /* we always hand back dim x dim; the skin clips to its viewport */
 
-    if (selected_item < local_tc->special_entry_count || !tree_aa_ready())
+    if (selected_item < local_tc->special_entry_count || !browser_aa_ready())
         return NULL;
 
     for (slot = 0; slot < TREE_AA_SLOTS; slot++)
-        if (tree_aa_item[slot] == selected_item)
+        if (browser_aa_item[slot] == selected_item)
             goto hit;
 
     /* One list is either an album list or an artist list; resolve the row to the
      * matching folder (album folder, or its parent artist folder). */
-    bool artist = !tagtree_is_album_list(local_tc);
+    bool artist = !browser_db_is_album_list(local_tc);
     bool is_fallback = false;
     if (artist)
     {
-        if (!tagtree_get_artist_dir(local_tc, selected_item, dir, sizeof(dir)))
+        if (!browser_db_get_artist_dir(local_tc, selected_item, dir, sizeof(dir)))
             return NULL;
     }
-    else if (!tagtree_get_album_dir(local_tc, selected_item, dir, sizeof(dir)))
+    else if (!browser_db_get_album_dir(local_tc, selected_item, dir, sizeof(dir)))
         return NULL;
 
     /* Album rows want the placeholder returned transparently, so an album with
@@ -296,37 +296,37 @@ static const struct bitmap *tree_get_albumart(int selected_item, void * data,
      * substitute the dedicated artist silhouette instead. */
     if (artist)
     {
-        if (!art_cache_lookup(dir, tree_aa_size_idx, aat, sizeof(aat),
+        if (!art_cache_lookup(dir, browser_aa_size_idx, aat, sizeof(aat),
                                    &is_fallback) || is_fallback)
         {
-            if (!art_cache_artist_fallback(tree_aa_size_idx, aat, sizeof(aat)))
+            if (!art_cache_artist_fallback(browser_aa_size_idx, aat, sizeof(aat)))
                 return NULL;    /* silhouette not generated yet */
         }
     }
-    else if (!art_cache_lookup(dir, tree_aa_size_idx, aat, sizeof(aat), NULL))
+    else if (!art_cache_lookup(dir, browser_aa_size_idx, aat, sizeof(aat), NULL))
         return NULL;    /* no art and no placeholder generated yet */
 
-    slot = tree_aa_victim;
-    tree_aa_victim = (tree_aa_victim + 1) % TREE_AA_SLOTS;
-    tree_aa_item[slot] = -1;    /* in case the load fails partway */
+    slot = browser_aa_victim;
+    browser_aa_victim = (browser_aa_victim + 1) % TREE_AA_SLOTS;
+    browser_aa_item[slot] = -1;    /* in case the load fails partway */
 
-    if (!tree_aa_load(aat, slot))
+    if (!browser_aa_load(aat, slot))
         return NULL;
-    tree_aa_item[slot] = selected_item;
+    browser_aa_item[slot] = selected_item;
 
 hit:
-    tree_aa_bm.width  = tree_aa_dim;
-    tree_aa_bm.height = tree_aa_dim;
-    tree_aa_bm.format = FORMAT_NATIVE;
-    tree_aa_bm.data   = (unsigned char *)core_get_data(tree_aa_handle) +
-                        (size_t)slot * tree_aa_slot_bytes();
-    return &tree_aa_bm;
+    browser_aa_bm.width  = browser_aa_dim;
+    browser_aa_bm.height = browser_aa_dim;
+    browser_aa_bm.format = FORMAT_NATIVE;
+    browser_aa_bm.data   = (unsigned char *)core_get_data(browser_aa_handle) +
+                        (size_t)slot * browser_aa_slot_bytes();
+    return &browser_aa_bm;
 }
 
 
-static int tree_voice_cb(int selected_item, void * data)
+static int browser_voice_cb(int selected_item, void * data)
 {
-    struct tree_context * local_tc=(struct tree_context *)data;
+    struct browser_context * local_tc=(struct browser_context *)data;
     unsigned char *name;
     int attr=0;
     int customaction = ONPLAY_NO_CUSTOMACTION;
@@ -335,9 +335,9 @@ static int tree_voice_cb(int selected_item, void * data)
 
     if (id3db)
     {
-        attr = tagtree_get_attr(local_tc);
-        name = tagtree_get_entry_name(local_tc, selected_item, buf, sizeof(buf));
-        customaction = tagtree_get_custom_action(local_tc);
+        attr = browser_db_get_attr(local_tc);
+        name = browser_db_get_entry_name(local_tc, selected_item, buf, sizeof(buf));
+        customaction = browser_db_get_custom_action(local_tc);
 
         /* See if name is an encoded ID, if it is, then speak it normally */
         int lang_id = P2ID(name);
@@ -380,7 +380,7 @@ static int tree_voice_cb(int selected_item, void * data)
         if(global_settings.talk_dir_clip)
         {
             did_clip = true;
-            if (ft_play_dirname(name) <= 0)
+            if (browser_play_dirname(name) <= 0)
                 /* failed, not existing */
                 did_clip = false;
         }
@@ -388,7 +388,7 @@ static int tree_voice_cb(int selected_item, void * data)
         if (global_settings.talk_file_clip && (attr & FILE_ATTR_THUMBNAIL))
         {
             did_clip = true;
-            if (ft_play_filename(local_tc->currdir, name, attr) <= 0)
+            if (browser_play_filename(local_tc->currdir, name, attr) <= 0)
                 /* failed, not existing */
                 did_clip = false;
         }
@@ -461,24 +461,24 @@ bool check_rockboxdir(void)
 }
 
 /* do this really late in the init sequence */
-void tree_init(void)
+void browser_init(void)
 {
     check_rockboxdir();
     strcpy(tc.currdir, "/");
 }
 
-struct tree_context* tree_get_context(void)
+struct browser_context* browser_get_context(void)
 {
     return &tc;
 }
 
-void tree_lock_cache(struct tree_context *t)
+void browser_lock_cache(struct browser_context *t)
 {
     core_pin(t->cache.name_buffer_handle);
     core_pin(t->cache.entries_handle);
 }
 
-void tree_unlock_cache(struct tree_context *t)
+void browser_unlock_cache(struct browser_context *t)
 {
     core_unpin(t->cache.name_buffer_handle);
     core_unpin(t->cache.entries_handle);
@@ -488,12 +488,12 @@ void tree_unlock_cache(struct tree_context *t)
  * Returns the position of a given file in the current directory
  * returns -1 if not found
  */
-static int tree_get_file_position(char * filename)
+static int browser_get_file_position(char * filename)
 {
     int i, ret = -1;/* no file match, return undefined */
 
-    tree_lock_cache(&tc);
-    struct entry *entries = tree_get_entries(&tc);
+    browser_lock_cache(&tc);
+    struct entry *entries = browser_get_entries(&tc);
 
     /* use lastfile to determine the selected item (default=0) */
     for (i=0; i < tc.filesindir; i++)
@@ -504,7 +504,7 @@ static int tree_get_file_position(char * filename)
             break;
         }
     }
-    tree_unlock_cache(&tc);
+    browser_unlock_cache(&tc);
     return(ret);
 }
 
@@ -514,7 +514,7 @@ static int tree_get_file_position(char * filename)
  */
 static int update_dir(void)
 {
-    struct gui_synclist * const list = &tree_lists;
+    struct gui_synclist * const list = &browser_lists;
     int show_path_in_browser = global_settings.show_path_in_browser;
     bool changed = false;
 
@@ -529,7 +529,7 @@ static int update_dir(void)
             tc.currextra != lastextra ||
             reload_dir)
         {
-            if (tagtree_load(&tc) < 0)
+            if (browser_db_load(&tc) < 0)
                 return -1;
 
             lasttable = tc.currtable;
@@ -543,7 +543,7 @@ static int update_dir(void)
         /* if the tc.currdir has been changed, reload it ...*/
         if (reload_dir || strncmp(tc.currdir, lastdir, sizeof(lastdir)))
         {
-            if (ft_load(&tc, NULL) < 0)
+            if (browser_disk_load(&tc, NULL) < 0)
                 return -1;
             strmemccpy(lastdir, tc.currdir, MAX_PATH);
             changed = true;
@@ -552,13 +552,13 @@ static int update_dir(void)
     /* the list's contents moved under us, so cached thumbnails (keyed by item
      * index) no longer describe the rows they sit in */
     if (changed)
-        tree_aa_reset();
+        browser_aa_reset();
     /* if selected item is undefined */
     if (tc.selected_item == -1)
     {
         if (!id3db)
             /* use lastfile to determine the selected item */
-            tc.selected_item = tree_get_file_position(lastfile);
+            tc.selected_item = browser_get_file_position(lastfile);
 
         /* If the file doesn't exists, select the first one (default) */
         if(tc.selected_item < 0)
@@ -573,14 +573,14 @@ static int update_dir(void)
         }
     }
 
-    gui_synclist_init(list, &tree_get_filename, &tc, false, 1, NULL);
+    gui_synclist_init(list, &browser_get_filename, &tc, false, 1, NULL);
 
     if (id3db)
     {
         if (show_path_in_browser == SHOW_PATH_FULL
             || show_path_in_browser == SHOW_PATH_CURRENT)
         {
-            title = tagtree_get_title(&tc);
+            title = browser_db_get_title(&tc);
             icon = filetype_get_icon(ATTR_DIRECTORY);
         }
     }
@@ -631,7 +631,7 @@ static int update_dir(void)
 
     gui_synclist_set_nb_items(list, tc.filesindir);
     gui_synclist_set_icon_callback(list,
-                            global_settings.show_icons?tree_get_fileicon:NULL);
+                            global_settings.show_icons?browser_get_fileicon:NULL);
     /* Art (cover callback + tall uniform rows) on album lists (album art) and
      * artist lists (artist art), each behind its own toggle -- so ordinary lists
      * and the whole off path never touch the art-resolution code. */
@@ -639,20 +639,20 @@ static int update_dir(void)
         bool tall_rows = false;
         if (*tc.dirfilter == SHOW_ID3DB)
         {
-            if (global_settings.db_albumart && tagtree_is_album_list(&tc))
+            if (global_settings.db_albumart && browser_db_is_album_list(&tc))
                 tall_rows = true;
-            else if (global_settings.db_artistart && tagtree_is_artist_list(&tc))
+            else if (global_settings.db_artistart && browser_db_is_artist_list(&tc))
                 tall_rows = true;
         }
         gui_synclist_set_albumart_callback(list,
-                                    tall_rows ? tree_get_albumart : NULL);
+                                    tall_rows ? browser_get_albumart : NULL);
         /* Uniform tall rows so a cover fits (special rows included); 0 = the
          * skin's default height. */
         gui_synclist_set_row_height(list,
                                     tall_rows ? global_settings.db_art_row_height : 0);
     }
-    gui_synclist_set_voice_callback(list, &tree_voice_cb);
-    gui_synclist_set_color_callback(list, &tree_get_filecolor);
+    gui_synclist_set_voice_callback(list, &browser_voice_cb);
+    gui_synclist_set_color_callback(list, &browser_get_filecolor);
     if( tc.selected_item >= tc.filesindir)
         tc.selected_item=tc.filesindir-1;
 
@@ -682,16 +682,16 @@ void resume_directory(const char *dir)
      */
     if (!id3db)
         *tc.dirfilter = global_settings.dirfilter;
-    ret = ft_load(&tc, dir);
+    ret = browser_disk_load(&tc, dir);
     *tc.dirfilter = dirfilter;
     if (ret < 0)
         return;
     lastdir[0] = 0;
 
-    ft_build_playlist(&tc, 0);
+    browser_disk_build_playlist(&tc, 0);
 
     if (id3db)
-        tagtree_load(&tc);
+        browser_db_load(&tc);
 }
 
 /* Returns the current working directory and also writes cwd to buf if
@@ -726,7 +726,7 @@ char* get_current_file(char* buffer, size_t buffer_len)
     if( *tc.dirfilter == SHOW_ID3DB )
         return NULL;
 
-    struct entry *entry = tree_get_entry_at(&tc, tc.selected_item);
+    struct entry *entry = browser_get_entry_at(&tc, tc.selected_item);
     if (entry && getcwd(buffer, buffer_len))
     {
         if (!tc.dirlength)
@@ -817,9 +817,9 @@ static void set_current_file_ex(const char *path, const char *filename)
             }
         }
     }
-    if (ft_load(&tc, NULL) >= 0)
+    if (browser_disk_load(&tc, NULL) >= 0)
     {
-        tc.selected_item = tree_get_file_position(lastfile);
+        tc.selected_item = browser_get_file_position(lastfile);
         if (!tc.is_browsing && tc.out_of_tree == 0)
         {
             /* the browser is closed */
@@ -838,7 +838,7 @@ void set_current_file(const char *path)
 
 static int exit_to_new_screen(int screen)
 {
-    gui_synclist_scroll_stop(&tree_lists);
+    gui_synclist_scroll_stop(&browser_lists);
     return screen;
 }
 
@@ -884,17 +884,17 @@ static int dirbrowse(void)
         if (tc.dirlevel < 0)
             tc.dirlevel = 0; /* shouldnt be needed.. this code needs work! */
 
-        keyclick_set_callback(gui_synclist_keyclick_callback, &tree_lists);
+        keyclick_set_callback(gui_synclist_keyclick_callback, &browser_lists);
         button = get_action(CONTEXT_TREE|ALLOW_SOFTLOCK,
-                            list_do_action_timeout(&tree_lists, HZ/2));
+                            list_do_action_timeout(&browser_lists, HZ/2));
         oldbutton = button;
-        gui_synclist_do_button(&tree_lists, &button);
-        tc.selected_item = gui_synclist_get_sel_pos(&tree_lists);
+        gui_synclist_do_button(&browser_lists, &button);
+        tc.selected_item = gui_synclist_get_sel_pos(&browser_lists);
         int customaction = ONPLAY_NO_CUSTOMACTION;
         bool do_restore_display = true;
             if (id3db && (button == ACTION_STD_OK || button == ACTION_STD_CONTEXT))
             {
-                customaction = tagtree_get_custom_action(&tc);
+                customaction = browser_db_get_custom_action(&tc);
                 if (customaction == ONPLAY_CUSTOMACTION_SHUFFLE_SONGS)
                 {
                     /* The code to insert shuffled is on the context branch of the switch so we always go here */
@@ -919,7 +919,7 @@ static int dirbrowse(void)
                         return exit_to_new_screen(GO_TO_PREVIOUS);
                     }
                 }
-                switch (id3db ? tagtree_enter(&tc, true) : ft_enter(&tc))
+                switch (id3db ? browser_db_enter(&tc, true) : browser_disk_enter(&tc))
                 {
                     case GO_TO_FILEBROWSER: reload_dir = true; break;
                     case GO_TO_PLUGIN:
@@ -949,9 +949,9 @@ static int dirbrowse(void)
                 }
 
                 if (id3db)
-                    tagtree_exit(&tc, true);
+                    browser_db_exit(&tc, true);
                 else
-                    if (ft_exit(&tc) == 3)
+                    if (browser_disk_exit(&tc) == 3)
                         exit_func = true;
 
                 restore = do_restore_display;
@@ -1013,18 +1013,18 @@ static int dirbrowse(void)
             case ACTION_STD_CONTEXT:
             {
                 bool hotkey = button == ACTION_TREE_HOTKEY;
-                int onplay_result;
+                int context_menu_result;
                 int attr = 0;
 
                 if (tc.browse->flags & BROWSE_NO_CONTEXT_MENU)
                     break;
 
                 if(!numentries)
-                    onplay_result = onplay(NULL, 0, curr_context, hotkey, customaction);
+                    context_menu_result = context_menu_show(NULL, 0, curr_context, hotkey, customaction);
                 else {
                     if (id3db)
                     {
-                        if (tagtree_get_attr(&tc) == FILE_ATTR_AUDIO)
+                        if (browser_db_get_attr(&tc) == FILE_ATTR_AUDIO)
                         {
                             attr = FILE_ATTR_AUDIO;
 
@@ -1045,13 +1045,13 @@ static int dirbrowse(void)
                             if (tc.selected_item < tc.special_entry_count)
                             {
                                 title_len = snprintf(buf, sizeof(buf), "%s ",
-                                                     tagtree_get_title(&tc));
+                                                     browser_db_get_title(&tc));
                                 if (title_len < 0)
                                     title_len = 0;
                             }
 
                             if (title_len < (int) sizeof(buf))
-                                tagtree_get_entry_name(&tc, tc.selected_item,
+                                browser_db_get_entry_name(&tc, tc.selected_item,
                                                        buf + title_len,
                                                        sizeof(buf) - title_len);
 
@@ -1065,12 +1065,12 @@ static int dirbrowse(void)
 
                         attr = entry->attr;
 
-                        ft_assemble_path(buf, sizeof(buf), currdir, entry->name);
+                        browser_disk_assemble_path(buf, sizeof(buf), currdir, entry->name);
 
                     }
-                    onplay_result = onplay(buf, attr, curr_context, hotkey, customaction);
+                    context_menu_result = context_menu_show(buf, attr, curr_context, hotkey, customaction);
                 }
-                switch (onplay_result)
+                switch (context_menu_result)
                 {
                     case ONPLAY_MAINMENU:
                         return exit_to_new_screen(GO_TO_ROOT);
@@ -1134,8 +1134,8 @@ static int dirbrowse(void)
 
             if (!reload_dir)
             {
-                gui_synclist_select_item(&tree_lists, 0);
-                gui_synclist_draw(&tree_lists);
+                gui_synclist_select_item(&browser_lists, 0);
+                gui_synclist_draw(&browser_lists);
                 tc.selected_item = 0;
                 lastdir[0] = 0;
             }
@@ -1175,7 +1175,7 @@ int create_playlist(void)
 }
 
 #define NUM_TC_BACKUP   3
-static struct tree_context backups[NUM_TC_BACKUP];
+static struct browser_context backups[NUM_TC_BACKUP];
 /* do not make backup if it is not recursive call */
 static int backup_count = -1;
 int rockbox_browse(struct browse_context *browse)
@@ -1207,7 +1207,7 @@ int rockbox_browse(struct browse_context *browse)
          * what happens with the item is dependent on the browse context */
         tc.selected_item = tc.out_of_tree - 1;
         tc.out_of_tree = 0;
-        ret_val = ft_enter(&tc);
+        ret_val = browser_disk_enter(&tc);
     }
     else
     {
@@ -1245,7 +1245,7 @@ int rockbox_browse(struct browse_context *browse)
             tc.browse = browse;
             set_current_file(browse->root);
             if (browse->flags&BROWSE_RUNFILE)
-                ret_val = ft_enter(&tc);
+                ret_val = browser_disk_enter(&tc);
             else
                 ret_val = dirbrowse();
         }
@@ -1263,7 +1263,7 @@ int rockbox_browse(struct browse_context *browse)
 
 static int move_callback(int handle, void* current, void* new)
 {
-    struct tree_cache* cache = &tc.cache;
+    struct browser_cache* cache = &tc.cache;
     ptrdiff_t diff = new - current;
     /* FIX_PTR makes sure to not accidentally update static allocations */
 #define FIX_PTR(x) \
@@ -1285,10 +1285,10 @@ static struct buflib_callbacks ops = {
     .shrink_callback = NULL,
 };
 
-void tree_mem_init(void)
+void browser_mem_init(void)
 {
     /* initialize tree context struct */
-    struct tree_cache* cache = &tc.cache;
+    struct browser_cache* cache = &tc.cache;
     memset(&tc, 0, sizeof(tc));
     tc.dirfilter = &global_settings.dirfilter;
     tc.sort_dir = global_settings.sort_dir;
@@ -1386,10 +1386,10 @@ bool bookmark_play(char *resume_file, int index, unsigned long elapsed,
 
 static void say_filetype(int attr)
 {
-    talk_id(tree_get_filetype_voiceclip(attr), true);
+    talk_id(filetype_get_voiceclip(attr), true);
 }
 
-static int ft_play_dirname(char* name)
+static int browser_play_dirname(char* name)
 {
     int vol = path_get_volume_id(name);
     if (talk_volume_id(vol))
@@ -1401,14 +1401,14 @@ static int ft_play_dirname(char* name)
                      false);
 }
 
-static int ft_play_filename(char *dir, char *file, int attr)
+static int browser_play_filename(char *dir, char *file, int attr)
 {
     if (strlen(file) >= strlen(file_thumbnail_ext)
         && strcasecmp(&file[strlen(file) - strlen(file_thumbnail_ext)],
                       file_thumbnail_ext))
         /* file has no .talk extension */
         return talk_file(dir, NULL, file, file_thumbnail_ext,
-                         TALK_IDARRAY(tree_get_filetype_voiceclip(attr)), false);
+                         TALK_IDARRAY(filetype_get_voiceclip(attr)), false);
 
     /* it already is a .talk file, play this directly, but prefix it. */
     return talk_file(dir, NULL, file, NULL,
@@ -1416,7 +1416,7 @@ static int ft_play_filename(char *dir, char *file, int attr)
 }
 
 /* These two functions are called by the USB and shutdown handlers */
-void tree_flush(void)
+void browser_flush(void)
 {
      tc.is_browsing = false;/* clear browse to prevent reentry to a possibly missing file */
     tagcache_shutdown();
@@ -1444,7 +1444,7 @@ void tree_flush(void)
 
 }
 
-void tree_restore(void)
+void browser_restore(void)
 {
 
     tagcache_remove_statefile();

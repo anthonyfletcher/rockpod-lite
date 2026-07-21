@@ -15,12 +15,15 @@ Layout
 
   -- the device --
   audio/        The playback pipeline: playback, pcmbuf, buffering, codecs,
-                the codec and audio threads, voice, beep, A-B repeat.
-  database/     The tag database: tagcache, tagtree.
+                the codec and audio threads, voice, beep, A-B repeat, and the
+                peak/spectrum meters (they sample PCM; nothing calls them).
+  database/     The tag database itself: tagcache. (The database BROWSER is
+                screens/browse/browser_db.c -- it is a screen backend, not a
+                data layer.)
   playlist/     Playlists in memory and on disk, plus the playlist viewer
                 and catalog.
-  metadata/     Per-track data: album art and its cache, cuesheets, multi-file
-                ID3 aggregation.
+  metadata/     Per-track data: album art, the art cache (album AND artist),
+                cuesheets, multi-file ID3 aggregation.
 
   -- the interface, by altitude --
   draw/         Stateless drawing. Knows pixels; knows nothing about features.
@@ -28,11 +31,17 @@ Layout
                 screen_access.
   widgets/      Reusable controls. Called by someone else, hand control back.
                 list, dialog, yesno, splash, option_select, colour picker,
-                folder select, keyboard, menu, text_box, meters.
+                folder select, keyboard, menu, text_box.
   screens/      Full screens. Navigated TO; run their own loop until the user
-                leaves. wps, browser, context menu, quickscreen, bookmarks,
-                track info, debug menu, cover flow, and menus/ (the settings
-                menu tree).
+                leaves. Subdivided:
+                  browse/    the browser and its two backends (disk, db)
+                  covers/    cover flow: album covers, artist portraits
+                  playback/  wps, track info, quick screen, pitch screen
+                  settings/  the settings screens, every file *_settings
+                  system/    debug menu, log viewer, usb, runtime info,
+                             time set, alarm
+                and at the top level bookmark, context_menu, shortcuts,
+                main_menu.
   viewers/      File-format applications: their own model, view and input.
                 text_viewer/ (streaming document engine), image_viewer/,
                 properties, playing_time, credits.
@@ -99,11 +108,21 @@ files still rely on that kind of luck; section 9.3 of the proposal has the
 counts. Every header move so far has broken a few apparently unrelated files
 because of it.
 
-Files that were moved or renamed carry their original location on line 1:
+Every file carries a header giving provenance, attribution, licence and a
+description of what it does. The "was:" line records where the file
+ORIGINALLY lived and is permanent -- it is never updated to an intermediate
+location, so it stays a true record across repeated moves.
 
-    /* was: apps/gui/statusbar-skinned.c */
+    grep -rn '^ \* was:'        the whole move manifest
 
-That is permanent, and `grep -rn '^/\* was:'` is the whole move manifest.
+The descriptions are collected in .specifications/APPS_FILE_INVENTORY.md,
+generated FROM these headers -- regenerate it with
+.specifications/tools-extract-descriptions.pl rather than editing it, or it
+will drift.
+
+Third-party files (giflib, tlsf, jpeg81, idct, mempool, GETC) keep their own
+upstream headers and are deliberately excluded: they are not Rockbox-derived
+and are not GPLv2+.
 
 
 Two things that will surprise you

@@ -6,7 +6,7 @@
  * Copyright (C) 2002 Daniel Stenberg
  * GNU General Public License (version 2+)
  *
- * Interface to browser.c: tree_context, the browse_context entry point
+ * Interface to browser.c: browser_context, the browse_context entry point
  * (rockbox_browse) and the dirfilter values.
  ****************************************************************************/
 #ifndef _BROWSER_H_
@@ -19,7 +19,7 @@
 #include "draw/icon.h"
 
 /* keep this struct compatible (total size and name member)
- * with struct tagtree_entry (tagtree.h) */
+ * with struct browser_db_entry (browser_db.h) */
 struct entry {
     char *name;
     int attr; /* FAT attributes + file type flags */
@@ -31,14 +31,14 @@ struct entry {
 
 #define BROWSE_SELECTONLY       0x0001  /* exit on selecting a file */
 #define BROWSE_NO_CONTEXT_MENU  0x0002  /* disable context menu */
-#define BROWSE_RUNFILE          0x0004  /* do ft_open() on the file instead of browsing */
+#define BROWSE_RUNFILE          0x0004  /* open the file with its viewer instead of browsing */
 #define BROWSE_DIRFILTER        0x0080  /* override global_settings.dirfilter with browse_context.dirfilter */
 #define BROWSE_SELECTED         0x0100  /* this bit is set if user selected item */
 
 
-struct tree_context;
+struct browser_context;
 
-struct tree_cache {
+struct browser_cache {
     /* A big buffer with plenty of entry structs, contains all files and dirs
      * in the current dir (with filters applied)
      * Note that they're buflib-allocated and can therefore possibly move
@@ -52,7 +52,7 @@ struct tree_cache {
 struct browse_context {
     int dirfilter;
     unsigned flags;             /* ored BROWSE_* */
-    bool (*callback_show_item)(char *name, int attr, struct tree_context *tc);
+    bool (*callback_show_item)(char *name, int attr, struct browser_context *tc);
                                 /* callback function to determine to show/hide
                                    the item for custom browser */
     char *title;                /* title of the browser. if set to NULL,
@@ -65,7 +65,7 @@ struct browse_context {
 };
 
 /* browser context for file or db */
-struct tree_context {
+struct browser_context {
     /* The directory we are browsing */
     char currdir[MAX_PATH];
     /* the number of directories we have crossed from / */
@@ -85,7 +85,7 @@ struct tree_context {
     int special_entry_count; /* db use */
     int sort_dir; /* directory sort order */
     int out_of_tree; /* shortcut from elsewhere */
-    struct tree_cache cache;
+    struct browser_cache cache;
     bool dirfull;
     bool is_browsing; /* valid browse context? */
 
@@ -94,12 +94,12 @@ struct tree_context {
 
 /*
  * Call one of the two below after yields since the entrys may move inbetween */
-struct entry* tree_get_entries(struct tree_context *t);
+struct entry* browser_get_entries(struct browser_context *t);
 /* returns NULL on invalid index */
-struct entry* tree_get_entry_at(struct tree_context *t, int index);
+struct entry* browser_get_entry_at(struct browser_context *t, int index);
 
-void tree_mem_init(void) INIT_ATTR;
-void tree_init(void) INIT_ATTR;
+void browser_mem_init(void) INIT_ATTR;
+void browser_init(void) INIT_ATTR;
 char* get_current_file(char* buffer, size_t buffer_len);
 void set_dirfilter(int l_dirfilter);
 void set_current_file(const char *path);
@@ -107,8 +107,8 @@ int rockbox_browse(struct browse_context *browse);
 int create_playlist(void);
 void resume_directory(const char *dir);
 
-void tree_lock_cache(struct tree_context *t);
-void tree_unlock_cache(struct tree_context *t);
+void browser_lock_cache(struct browser_context *t);
+void browser_unlock_cache(struct browser_context *t);
 
 #ifdef WIN32
 /* it takes an int on windows */
@@ -124,9 +124,9 @@ char *getcwd(char *buf, getcwd_size_t size);
 #endif
 void reload_directory(void);
 bool check_rockboxdir(void);
-struct tree_context* tree_get_context(void);
-void tree_flush(void);
-void tree_restore(void);
+struct browser_context* browser_get_context(void);
+void browser_flush(void);
+void browser_restore(void);
 
 bool bookmark_play(char* resume_file, int index, unsigned long elapsed,
                    unsigned long offset, int seed, char *filename);

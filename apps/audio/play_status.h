@@ -27,8 +27,8 @@ enum playmode
     STATUS_RADIO_PAUSE
 };
 
-void status_set_ffmode(enum playmode mode);
-enum playmode status_get_ffmode(void);
+void play_status_set_ffmode(enum playmode mode);
+enum playmode play_status_get_ffmode(void);
 int current_playmode(void);
 
 

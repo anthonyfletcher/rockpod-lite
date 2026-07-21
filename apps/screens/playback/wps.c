@@ -156,7 +156,7 @@ static bool ffwd_rew(int button, bool seek_from_end)
 
     if (button == ACTION_NONE)
     {
-        status_set_ffmode(0);
+        play_status_set_ffmode(0);
         return usb;
     }
     while (!exit)
@@ -210,9 +210,9 @@ static bool ffwd_rew(int button, bool seek_from_end)
                     {
                         audio_pre_ff_rewind();
                         if (direction > 0)
-                            status_set_ffmode(STATUS_FASTFORWARD);
+                            play_status_set_ffmode(STATUS_FASTFORWARD);
                         else
-                            status_set_ffmode(STATUS_FASTBACKWARD);
+                            play_status_set_ffmode(STATUS_FASTBACKWARD);
 
                         ff_rewind = true;
 
@@ -249,13 +249,13 @@ static bool ffwd_rew(int button, bool seek_from_end)
                 audio_ff_rewind(id3->elapsed);
                 gstate->ff_rewind_count = 0;
                 ff_rewind = false;
-                status_set_ffmode(0);
+                play_status_set_ffmode(0);
                 exit = true;
                 break;
 
             default:
                 if(default_event_handler(button) == SYS_USB_CONNECTED) {
-                    status_set_ffmode(0);
+                    play_status_set_ffmode(0);
                     usb = true;
                     exit = true;
                 }
@@ -683,7 +683,7 @@ long gui_wps_show(void)
                     /* leave WPS without re-enabling theme */
                     theme_enabled = false;
                     gwps_leave_wps(theme_enabled);
-                    onplay(state->id3->path,
+                    context_menu_show(state->id3->path,
                            FILE_ATTR_AUDIO, CONTEXT_WPS, hotkey, ONPLAY_NO_CUSTOMACTION);
                     if (!audio_status())
                     {
@@ -699,7 +699,7 @@ long gui_wps_show(void)
             case ACTION_WPS_CONTEXT:
             {
                 gwps_leave_wps(true);
-                int retval = onplay(state->id3->path,
+                int retval = context_menu_show(state->id3->path,
                        FILE_ATTR_AUDIO, CONTEXT_WPS, hotkey, ONPLAY_NO_CUSTOMACTION);
                 /* if music is stopped in the context menu we want to exit the wps */
                 if (retval == ONPLAY_MAINMENU

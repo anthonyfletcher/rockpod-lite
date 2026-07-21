@@ -17,12 +17,12 @@
 
 static enum playmode ff_mode = 0;
 
-void status_set_ffmode(enum playmode mode)
+void play_status_set_ffmode(enum playmode mode)
 {
     ff_mode = mode; /* Either STATUS_FASTFORWARD or STATUS_FASTBACKWARD */
 }
 
-enum playmode status_get_ffmode(void)
+enum playmode play_status_get_ffmode(void)
 {
     /* only use this function for STATUS_FASTFORWARD or STATUS_FASTBACKWARD */
     /* use audio_status() for other modes */

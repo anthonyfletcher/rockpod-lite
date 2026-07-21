@@ -103,7 +103,7 @@ static void seek_to_playlist(unsigned long index)
                     get_playlist_name (selected_playlist + len + 1,
                                        index,
                                        MAX_PATH);
-                    ft_play_playlist(selected_playlist,
+                    browser_disk_play_playlist(selected_playlist,
                                      global_settings.playlist_catalog_dir,
                                      strrchr(selected_playlist, '/') + 1);
 }

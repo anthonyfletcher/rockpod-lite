@@ -41,7 +41,7 @@
 #include "system/app_util.h"
 #include "system/shutdown.h"
 #include "system/strutil.h"
-#include "screens/context_menu.h"           /* onplay_show_playlist_cat_menu/menu */
+#include "screens/context_menu.h"           /* context_menu_show_playlist_cat/menu */
 #include "metadata/albumart.h"         /* find_albumart / search_albumart_files */
 #include "metadata/art_cache.h"   /* shared database-driven thumbnail cache */
 #include "metadata.h"         /* struct mp3entry, get_metadata */
@@ -375,7 +375,7 @@ enum ePFS{ePFS_ARTIST = 0, ePFS_ALBUM};
 /*
  * States: pf_idle <-> pf_scrolling (browsing covers); SELECT on a cover
  * jumps straight into the core database's track list for that album (see
- * tagtree_enter_album_tracks_on_next_load(), called from
+ * browser_db_enter_album_tracks_on_next_load(), called from
  * album_covers_loop()) instead of an in-house zoom animation and track-list
  * screen -- there are no separate cover-zoom/track-list browsing states
  * anymore, unlike the original plugin.
@@ -2660,7 +2660,7 @@ int carousel_run(const struct carousel_model *m, const char *selected_file)
      * time between opening the carousel and the first MENU press. */
     sb_set_persistent_title(model->title, Icon_NOICON, SCREEN_MAIN);
 
-    /* Jump to selected_file's album if one was passed (e.g. onplay.c's
+    /* Jump to selected_file's album if one was passed (e.g. context_menu_show.c's
      * "Album covers" context-menu item on a specific track), otherwise the
      * currently-playing track's album, otherwise wherever was last viewed --
      * matching the old plugin's plugin_start() behavior exactly. */

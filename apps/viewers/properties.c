@@ -31,7 +31,7 @@
 #include "files/filetypes.h"       /* filetype_get_attr, FILE_ATTR_* */
 #include "metadata.h"        /* struct mp3entry, get_metadata */
 #include "playlist/playlist.h"        /* playlist_entries_iterate */
-#include "screens/browse/browser_db.h"         /* tagtree_subentries_do_action */
+#include "screens/browse/browser_db.h"         /* browser_db_subentries_do_action */
 #include "draw/viewport.h"        /* viewportmanager_theme_enable/undo */
 #include "system/activity.h"
 #include "system/shutdown.h"
@@ -330,7 +330,7 @@ static bool assemble_track_info(const char *filename, struct dir_stats *stats)
             !playlist_entries_iterate(filename, NULL, &mul_id3_add))
         return false;
     else if (props_type == PROPS_MUL_ID3 &&
-             !tagtree_subentries_do_action(&mul_id3_add))
+             !browser_db_subentries_do_action(&mul_id3_add))
         return false;
 
     if (mul_id3_count == 0)

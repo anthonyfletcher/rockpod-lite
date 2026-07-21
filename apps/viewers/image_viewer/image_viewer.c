@@ -43,7 +43,7 @@
 #include "system/activity.h"
 #include "system/shutdown.h"
 #include "root_menu.h"       /* GO_TO_*, MENU_ATTACHED_USB */
-#include "screens/browse/browser.h"            /* tree_get_context/entries */
+#include "screens/browse/browser.h"            /* browser_get_context/entries */
 #include "core_alloc.h"
 #include "audio.h"           /* audio_current_track, audio_status, audio_hard_stop */
 #include "metadata/albumart.h"        /* search_albumart_files */
@@ -127,8 +127,8 @@ static void get_pic_list(bool single_file)
         return;
     }
 
-    struct tree_context *tree = tree_get_context();
-    struct entry *dircache = tree_get_entries(tree);
+    struct browser_context *tree = browser_get_context();
+    struct entry *dircache = browser_get_entries(tree);
     int i;
     char *pname;
 

@@ -80,11 +80,11 @@ MENUITEM_FUNCTION(tc_update, 0, ID2P(LANG_TAGCACHE_UPDATE),
 MENUITEM_SETTING(runtimedb, &global_settings.runtimedb, NULL);
 
 MENUITEM_FUNCTION(tc_export, 0, ID2P(LANG_TAGCACHE_EXPORT),
-                  tagtree_export,
+                  browser_db_export,
                   NULL, Icon_NOICON);
 
 MENUITEM_FUNCTION(tc_import, 0, ID2P(LANG_TAGCACHE_IMPORT),
-                  tagtree_import,
+                  browser_db_import,
                   NULL, Icon_NOICON);
 MENUITEM_FUNCTION(tc_paths, 0, ID2P(LANG_SELECT_DATABASE_DIRS),
                   dirs_to_scan, NULL, Icon_NOICON);
@@ -140,8 +140,8 @@ static int filemenu_callback(int action,
     if (action == ACTION_REQUEST_MENUITEM &&
         this_item == &file_menu &&
         get_current_activity() != ACTIVITY_SETTINGS &&
-        (get_onplay_context() != CONTEXT_TREE
-         || *tree_get_context()->dirfilter == SHOW_M3U))
+        (context_menu_get_source() != CONTEXT_TREE
+         || *browser_get_context()->dirfilter == SHOW_M3U))
         return ACTION_EXIT_MENUITEM;
 
     return action;

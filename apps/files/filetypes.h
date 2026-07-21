@@ -43,7 +43,7 @@
 #define FILE_ATTR_IMG   0x1700 /* image handled by the core image viewer */
 #define FILE_ATTR_MASK  0xFF00 /* which bits tree.c uses for file types */
 
-long tree_get_filetype_voiceclip(int attr);
+long filetype_get_voiceclip(int attr);
 
 /* init the filetypes structs.
    uses audio buffer for storage, so call early in init... */

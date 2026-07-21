@@ -42,7 +42,7 @@
 #include "screens/system/usb_screen.h"
 #include "screens/bookmark.h"
 #include "screens/playback/wps.h"      /* pause_action, unpause_action */
-#include "screens/browse/browser.h"  /* tree_flush, tree_restore */
+#include "screens/browse/browser.h"  /* browser_flush, browser_restore */
 #include "audio/voice_thread.h" /* voice_wait */
 #include "activity.h"
 #include "app_util.h"
@@ -51,13 +51,13 @@
 static void system_flush(void)
 {
     playlist_shutdown();
-    tree_flush();
+    browser_flush();
     call_storage_idle_notifys(true); /*doesnt work on usb and shutdown from ata thread */
 }
 
 static void system_restore(void)
 {
-    tree_restore();
+    browser_restore();
 }
 
 static bool clean_shutdown(enum shutdown_type sd_type,

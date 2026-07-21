@@ -665,11 +665,11 @@ static enum pv_context_result context_menu(int index)
         {
             case 0:
                 /* Playing Next... menu */
-                onplay_show_playlist_menu(current_track->name, FILE_ATTR_AUDIO, NULL);
+                context_menu_show_playlist(current_track->name, FILE_ATTR_AUDIO, NULL);
                 return PV_CONTEXT_UNCHANGED;
             case 1:
                 /* Add to Playlist... menu */
-                onplay_show_playlist_cat_menu(current_track->name, FILE_ATTR_AUDIO, NULL);
+                context_menu_show_playlist_cat(current_track->name, FILE_ATTR_AUDIO, NULL);
                 return PV_CONTEXT_UNCHANGED;
             case 2:
                 return delete_track(current_track->index, index, current_was_playing);
@@ -1098,7 +1098,7 @@ enum playlist_viewer_result playlist_viewer_ex(const char* filename,
                     }
                 }
                 else
-                    onplay(current_track->name, FILE_ATTR_AUDIO, CONTEXT_STD, true, ONPLAY_NO_CUSTOMACTION);
+                    context_menu_show(current_track->name, FILE_ATTR_AUDIO, CONTEXT_STD, true, ONPLAY_NO_CUSTOMACTION);
                 break;
             }
             default:

@@ -5,7 +5,7 @@
  * was: apps/playing_time.c
  * Core "Playing Time" screen, ported from the playing_time plugin. Shows
  * total/elapsed playlist duration and other stats for the current playlist.
- * Entered as playing_time_screen() and reached directly from apps/onplay.c's
+ * Entered as playing_time_screen() and reached directly from apps/context_menu_show.c's
  * Current Playlist menu, no longer loaded as a .rock.
  * GNU General Public License (version 2+)
  *

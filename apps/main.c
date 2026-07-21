@@ -105,7 +105,7 @@ int main(void)
         screens[i].update();
     }
     list_init();
-    tree_init();
+    browser_init();
     /* Keep the order of this 3
      * Must be done before any code uses the multi-screen API */
     /* All threads should be created and public queues registered by now */
@@ -231,7 +231,7 @@ static void init_tagcache(void)
         }
         sleep(HZ/4);
     }
-    tagtree_init();
+    browser_db_init();
 
     if (clear)
     {
@@ -429,7 +429,7 @@ static void init(void)
     CHART("<init_tagcache");
 
     playlist_init();
-    tree_mem_init();
+    browser_mem_init();
     filetype_init();
 
     shortcuts_init();

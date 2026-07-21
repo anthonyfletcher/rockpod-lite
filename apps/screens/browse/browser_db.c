@@ -61,9 +61,9 @@
 #define TAGNAVI_DEFAULT_CONFIG  ROCKBOX_DIR "/tagnavi.config"
 #define TAGNAVI_USER_CONFIG     ROCKBOX_DIR "/tagnavi_user.config"
 
-static int tagtree_play_folder(struct tree_context* c);
+static int browser_db_play_folder(struct browser_context* c);
 
-/* reuse of tagtree data after tagtree_play_folder() */
+/* reuse of browser_db data after browser_db_play_folder() */
 static uint32_t loaded_entries_crc = 0;
 
 
@@ -86,7 +86,7 @@ struct tagentry {
                  * track-level (tag_title/tag_filename) rows. */
 };
 
-static struct tagentry* tagtree_get_entry(struct tree_context *c, int id);
+static struct tagentry* browser_db_get_entry(struct browser_context *c, int id);
 
 #define SEARCHSTR_SIZE 256
 
@@ -133,7 +133,7 @@ static uint32_t uniqbuf[UNIQBUF_SIZE / sizeof(uint32_t)];
 #define MAX_TAGS 5
 #define MAX_MENU_ID_SIZE 32
 
-#define RELOAD_TAGTREE (-1024)
+#define RELOAD_BROWSER_DB (-1024)
 
 static int(*qsort_fn)(const char*, const char*, size_t);
 /* dummmy functions to allow compatibility strncasecmp */
@@ -219,7 +219,7 @@ static int rootmenu;
 static int current_offset;
 static int current_entry_count;
 
-static struct tree_context *tc;
+static struct browser_context *tc;
 
 static int max_history_level; /* depth of menu levels with applicable history */
 static int selected_item_history[MAX_DIR_LEVELS];
@@ -227,8 +227,8 @@ static int table_history[MAX_DIR_LEVELS];
 static int extra_history[MAX_DIR_LEVELS];
 
 /* a few memory alloc helper */
-static int tagtree_handle;
-static size_t tagtree_bufsize, tagtree_buf_used;
+static int browser_db_handle;
+static size_t browser_db_bufsize, browser_db_buf_used;
 
 #define UPDATE(x, y) { x = (typeof(x))((char*)(x) + (y)); }
 static int move_callback(int handle, void* current, void* new)
@@ -296,12 +296,12 @@ static struct buflib_callbacks ops = {
     .shrink_callback = NULL,
 };
 
-static uint32_t tagtree_data_crc(struct tree_context* c)
+static uint32_t browser_db_data_crc(struct browser_context* c)
 {
     char* buf;
     uint32_t crc;
-    buf = core_get_data(tagtree_handle); /* data for the search clauses etc */
-    crc = crc_32(buf, tagtree_buf_used, c->dirlength);
+    buf = core_get_data(browser_db_handle); /* data for the search clauses etc */
+    crc = crc_32(buf, browser_db_buf_used, c->dirlength);
     buf = core_get_data(c->cache.name_buffer_handle); /* names */
     crc = crc_32(buf, c->cache.name_buffer_size, crc);
     buf = core_get_data(c->cache.entries_handle); /* tagentries */
@@ -310,30 +310,30 @@ static uint32_t tagtree_data_crc(struct tree_context* c)
     return crc;
 }
 
-static void* tagtree_alloc(size_t size)
+static void* browser_db_alloc(size_t size)
 {
     size = ALIGN_UP(size, sizeof(void*));
-    if (size > (tagtree_bufsize - tagtree_buf_used))
+    if (size > (browser_db_bufsize - browser_db_buf_used))
         return NULL;
 
-    char* buf = core_get_data(tagtree_handle) + tagtree_buf_used;
+    char* buf = core_get_data(browser_db_handle) + browser_db_buf_used;
 
-    tagtree_buf_used += size;
+    browser_db_buf_used += size;
     return buf;
 }
 
-static void* tagtree_alloc0(size_t size)
+static void* browser_db_alloc0(size_t size)
 {
-    void* ret = tagtree_alloc(size);
+    void* ret = browser_db_alloc(size);
     if (ret)
         memset(ret, 0, size);
     return ret;
 }
 
-static char* tagtree_strdup(const char* buf)
+static char* browser_db_strdup(const char* buf)
 {
     size_t len = strlen(buf) + 1;
-    char* dest = tagtree_alloc(len);
+    char* dest = browser_db_alloc(len);
     if (dest)
         strcpy(dest, buf);
     return dest;
@@ -546,17 +546,17 @@ static bool read_clause(struct tagcache_search_clause *clause)
     if (i<ARRAYLEN(id3_to_search_mapping)) /* runtime search operand found */
     {
         clause->source = source_runtime+i;
-        clause->str = tagtree_alloc(SEARCHSTR_SIZE);
+        clause->str = browser_db_alloc(SEARCHSTR_SIZE);
     }
     else
     {
         clause->source = source_constant;
-        clause->str = tagtree_strdup(buf);
+        clause->str = browser_db_strdup(buf);
     }
 
     if (!clause->str)
     {
-        logf("tagtree failed to allocate %s", "clause string");
+        logf("browser_db failed to allocate %s", "clause string");
         return false;
     }
     else if (TAGCACHE_IS_NUMERIC(clause->tag))
@@ -622,7 +622,7 @@ static int get_format_str(struct display_format *fmt)
     if (get_token_str(buf, sizeof buf) < 0)
         return -10;
 
-    fmt->formatstr = tagtree_strdup(buf);
+    fmt->formatstr = browser_db_strdup(buf);
 
     while (fmt->tag_count < MAX_TAGS)
     {
@@ -672,10 +672,10 @@ static int add_format(const char *buf)
     strp = buf;
 
     if (formats[format_count] == NULL)
-        formats[format_count] = tagtree_alloc0(sizeof(struct display_format));
+        formats[format_count] = browser_db_alloc0(sizeof(struct display_format));
     if (!formats[format_count])
     {
-        logf("tagtree failed to allocate %s", "format string");
+        logf("browser_db failed to allocate %s", "format string");
         return -2;
     }
     if (get_format_str(formats[format_count]) < 0)
@@ -694,7 +694,7 @@ static int add_format(const char *buf)
         int clause_count = 0;
         strp++;
 
-        core_pin(tagtree_handle);
+        core_pin(browser_db_handle);
         while (1)
         {
             struct tagcache_search_clause *new_clause;
@@ -705,10 +705,10 @@ static int add_format(const char *buf)
                 break;
             }
 
-            new_clause = tagtree_alloc(sizeof(struct tagcache_search_clause));
+            new_clause = browser_db_alloc(sizeof(struct tagcache_search_clause));
             if (!new_clause)
             {
-                logf("tagtree failed to allocate %s", "search clause");
+                logf("browser_db failed to allocate %s", "search clause");
                 return -3;
             }
             formats[format_count]->clause[clause_count] = new_clause;
@@ -717,7 +717,7 @@ static int add_format(const char *buf)
 
             clause_count++;
         }
-        core_unpin(tagtree_handle);
+        core_unpin(browser_db_handle);
 
         formats[format_count]->clause_count = clause_count;
     }
@@ -774,10 +774,10 @@ static int get_condition(struct search_instruction *inst)
         return -2;
     }
 
-    new_clause = tagtree_alloc0(sizeof(struct tagcache_search_clause));
+    new_clause = browser_db_alloc0(sizeof(struct tagcache_search_clause));
     if (!new_clause)
     {
-        logf("tagtree failed to allocate %s", "search clause");
+        logf("browser_db failed to allocate %s", "search clause");
         return -3;
     }
 
@@ -790,9 +790,9 @@ static int get_condition(struct search_instruction *inst)
     }
     else
     {
-        core_pin(tagtree_handle);
+        core_pin(browser_db_handle);
         bool ret = read_clause(new_clause);
-        core_unpin(tagtree_handle);
+        core_unpin(browser_db_handle);
         if (!ret)
             return -1;
     }
@@ -866,10 +866,10 @@ static bool parse_search(struct menu_entry *entry, const char *str)
         }
 
         /* Allocate a new menu unless link is found. */
-        menus[menu_count] = tagtree_alloc0(sizeof(struct menu_root));
+        menus[menu_count] = browser_db_alloc0(sizeof(struct menu_root));
         if (!menus[menu_count])
         {
-            logf("tagtree failed to allocate %s", "menu");
+            logf("browser_db failed to allocate %s", "menu");
             return false;
         }
         strmemccpy(menus[menu_count]->id, buf, MAX_MENU_ID_SIZE);
@@ -897,9 +897,9 @@ static bool parse_search(struct menu_entry *entry, const char *str)
 
         logf("tag: %d", inst->tagorder[inst->tagorder_count]);
 
-        core_pin(tagtree_handle);
+        core_pin(browser_db_handle);
         while ( (ret = get_condition(inst)) > 0 ) ;
-        core_unpin(tagtree_handle);
+        core_unpin(browser_db_handle);
 
         if (ret < 0)
             return false;
@@ -935,7 +935,7 @@ static int compare_with_albums(const void *p1, const void *p2)
     return qsort_fn(e1->name, e2->name, MAX_PATH);
 }
 
-static void tagtree_buffer_event(unsigned short id, void *ev_data)
+static void browser_db_buffer_event(unsigned short id, void *ev_data)
 {
     (void)id;
     struct tagcache_search tcs;
@@ -979,7 +979,7 @@ static void tagtree_buffer_event(unsigned short id, void *ev_data)
         {
             id3->elapsed = tagcache_get_numeric(&tcs, tag_lastelapsed);
 
-            logf("tagtree_buffer_event: Set elapsed for %s to %lX\n",
+            logf("browser_db_buffer_event: Set elapsed for %s to %lX\n",
                  str_or_empty(id3->title), id3->elapsed);
         }
 
@@ -987,7 +987,7 @@ static void tagtree_buffer_event(unsigned short id, void *ev_data)
         {
             id3->offset = tagcache_get_numeric(&tcs, tag_lastoffset);
 
-            logf("tagtree_buffer_event: Set offset for %s to %lX\n",
+            logf("browser_db_buffer_event: Set offset for %s to %lX\n",
                  str_or_empty(id3->title), id3->offset);
         }
     }
@@ -998,7 +998,7 @@ static void tagtree_buffer_event(unsigned short id, void *ev_data)
     tagcache_search_finish(&tcs);
 }
 
-static void tagtree_track_finish_event(unsigned short id, void *ev_data)
+static void browser_db_track_finish_event(unsigned short id, void *ev_data)
 {
     (void)id;
     struct track_event *te = (struct track_event *)ev_data;
@@ -1078,12 +1078,12 @@ static void tagtree_track_finish_event(unsigned short id, void *ev_data)
         tagcache_update_numeric(tagcache_idx, tag_lastelapsed, elapsed);
         tagcache_update_numeric(tagcache_idx, tag_lastoffset, offset);
 
-        logf("tagtree_track_finish_event: Save resume for %s: %lX %lX",
+        logf("browser_db_track_finish_event: Save resume for %s: %lX %lX",
              str_or_empty(id3->title), elapsed, offset);
     }
 }
 
-int tagtree_export(void)
+int browser_db_export(void)
 {
     struct tagcache_search tcs;
 
@@ -1096,7 +1096,7 @@ int tagtree_export(void)
     return 0;
 }
 
-int tagtree_import(void)
+int browser_db_import(void)
 {
     splash(0, ID2P(LANG_WAIT));
     if (!tagcache_import_changelog())
@@ -1114,22 +1114,22 @@ static bool alloc_menu_parse_buf(char *buf, int type)
     */
     /* Allocate */
     if (menu->items[menu->itemcount] == NULL)
-        menu->items[menu->itemcount] = tagtree_alloc0(sizeof(struct menu_entry));
+        menu->items[menu->itemcount] = browser_db_alloc0(sizeof(struct menu_entry));
     if (!menu->items[menu->itemcount])
     {
-        logf("tagtree failed to allocate %s", "menu items");
+        logf("browser_db failed to allocate %s", "menu items");
         return false;
     }
 
     /* Initialize */
-    core_pin(tagtree_handle);
+    core_pin(browser_db_handle);
     if (parse_search(menu->items[menu->itemcount], buf))
     {
         if (type >= 0)
             menu->items[menu->itemcount]->type = type;
         menu->itemcount++;
     }
-    core_unpin(tagtree_handle);
+    core_unpin(browser_db_handle);
     return true;
 }
 
@@ -1279,10 +1279,10 @@ static int parse_line(int n, char *buf, void *parameters)
 
                 if (menu == NULL)
                 {
-                    menus[menu_count] = tagtree_alloc0(sizeof(struct menu_root));
+                    menus[menu_count] = browser_db_alloc0(sizeof(struct menu_root));
                     if (!menus[menu_count])
                     {
-                        logf("tagtree failed to allocate %s", "menu");
+                        logf("browser_db failed to allocate %s", "menu");
                         return -2;
                     }
                     menu = menus[menu_count];
@@ -1384,22 +1384,22 @@ static bool parse_menu(const char *filename)
     return (rc >= 0);
 }
 
-static void tagtree_unload(struct tree_context *c)
+static void browser_db_unload(struct browser_context *c)
 {
     /* may be spurious... */
-    core_pin(tagtree_handle);
+    core_pin(browser_db_handle);
 
-    remove_event(PLAYBACK_EVENT_TRACK_BUFFER, tagtree_buffer_event);
-    remove_event(PLAYBACK_EVENT_TRACK_FINISH, tagtree_track_finish_event);
+    remove_event(PLAYBACK_EVENT_TRACK_BUFFER, browser_db_buffer_event);
+    remove_event(PLAYBACK_EVENT_TRACK_FINISH, browser_db_track_finish_event);
 
     if (c)
     {
-        tree_lock_cache(c);
+        browser_lock_cache(c);
         struct tagentry *dptr = core_get_data(c->cache.entries_handle);
         menu = menus[c->currextra];
         if (!menu)
         {
-            logf("tagtree menu doesn't exist");
+            logf("browser_db menu doesn't exist");
             return;
         }
 
@@ -1421,25 +1421,25 @@ static void tagtree_unload(struct tree_context *c)
         formats[i] = NULL;
     format_count = 0;
 
-    core_free(tagtree_handle);
-    tagtree_handle   = 0;
-    tagtree_buf_used = 0;
-    tagtree_bufsize  = 0;
+    core_free(browser_db_handle);
+    browser_db_handle   = 0;
+    browser_db_buf_used = 0;
+    browser_db_bufsize  = 0;
 
     if (c)
-        tree_unlock_cache(c);
+        browser_unlock_cache(c);
 }
 
-static bool initialize_tagtree(void) /* also used when user selects 'Reload' in 'custom menu'*/
+static bool initialize_browser_db(void) /* also used when user selects 'Reload' in 'custom menu'*/
 {
     max_history_level = 0;
     format_count = 0;
     menu_count = 0;
     menu = NULL;
     rootmenu = -1;
-    tagtree_handle = core_alloc_maximum(&tagtree_bufsize, &ops);
-    if (tagtree_handle < 0)
-        panicf("tagtree OOM");
+    browser_db_handle = core_alloc_maximum(&browser_db_bufsize, &ops);
+    if (browser_db_handle < 0)
+        panicf("browser_db OOM");
 
     /* Use the user tagnavi config if present, otherwise use the default. */
     const char* tagnavi_file;
@@ -1450,7 +1450,7 @@ static bool initialize_tagtree(void) /* also used when user selects 'Reload' in 
 
     if (!parse_menu(tagnavi_file))
     {
-        tagtree_unload(NULL);
+        browser_db_unload(NULL);
         return false;
     }
 
@@ -1464,16 +1464,16 @@ static bool initialize_tagtree(void) /* also used when user selects 'Reload' in 
     if (rootmenu < 0)
         rootmenu = 0;
 
-    add_event(PLAYBACK_EVENT_TRACK_BUFFER, tagtree_buffer_event);
-    add_event(PLAYBACK_EVENT_TRACK_FINISH, tagtree_track_finish_event);
+    add_event(PLAYBACK_EVENT_TRACK_BUFFER, browser_db_buffer_event);
+    add_event(PLAYBACK_EVENT_TRACK_FINISH, browser_db_track_finish_event);
 
-    core_shrink(tagtree_handle, NULL, tagtree_buf_used);
+    core_shrink(browser_db_handle, NULL, browser_db_buf_used);
     return true;
 }
 
-void tagtree_init(void)
+void browser_db_init(void)
 {
-    initialize_tagtree();
+    initialize_browser_db();
 }
 
 static int format_str(struct tagcache_search *tcs, struct display_format *fmt,
@@ -1569,7 +1569,7 @@ static int format_str(struct tagcache_search *tcs, struct display_format *fmt,
     return 0;
 }
 
-static struct tagentry* get_entries(struct tree_context *tc)
+static struct tagentry* get_entries(struct browser_context *tc)
 {
     return core_get_data(tc->cache.entries_handle);
 }
@@ -1587,7 +1587,7 @@ static void tcs_get_basename(struct tagcache_search *tcs, bool is_basename)
     }
 }
 
-static int retrieve_entries(struct tree_context *c, int offset, bool init)
+static int retrieve_entries(struct browser_context *c, int offset, bool init)
 {
     logf( "%s", __func__);
     char tcs_buf[TAGCACHE_BUFSZ];
@@ -1615,7 +1615,7 @@ static int retrieve_entries(struct tree_context *c, int offset, bool init)
         tag = csi->tagorder[level];
 
     if (tag == menu_reload)
-        return RELOAD_TAGTREE;
+        return RELOAD_BROWSER_DB;
 
     if (tag == tag_virt_basename) /* basename shortcut */
     {
@@ -1654,7 +1654,7 @@ static int retrieve_entries(struct tree_context *c, int offset, bool init)
 
     /* because tagcache saves the clauses, we need to lock the buffer
      * for the entire duration of the search */
-    core_pin(tagtree_handle);
+    core_pin(browser_db_handle);
     for (i = 0; i <= level; i++)
     {
         int j;
@@ -1698,7 +1698,7 @@ static int retrieve_entries(struct tree_context *c, int offset, bool init)
     }
 
     /* lock buflib out due to possible yields */
-    tree_lock_cache(c);
+    browser_lock_cache(c);
     struct tagentry *dptr = core_get_data(c->cache.entries_handle);
 
     if (tag != tag_title && tag != tag_filename)
@@ -1830,8 +1830,8 @@ static int retrieve_entries(struct tree_context *c, int offset, bool init)
 
                     logf("format_str() failed");
                     tagcache_search_finish(&tcs);
-                    tree_unlock_cache(c);
-                    core_unpin(tagtree_handle);
+                    browser_unlock_cache(c);
+                    core_unpin(browser_db_handle);
                     return 0;
                 }
             }
@@ -1896,8 +1896,8 @@ entry_skip_formatter:
     if (!init)
     {
         tagcache_search_finish(&tcs);
-        tree_unlock_cache(c);
-        core_unpin(tagtree_handle);
+        browser_unlock_cache(c);
+        core_unpin(browser_db_handle);
         return current_entry_count;
     }
 
@@ -1905,8 +1905,8 @@ entry_skip_formatter:
         total_count++;
 
     tagcache_search_finish(&tcs);
-    tree_unlock_cache(c);
-    core_unpin(tagtree_handle);
+    browser_unlock_cache(c);
+    core_unpin(browser_db_handle);
 
     if (!sort && (sort_inverse || sort_limit))
     {
@@ -1942,7 +1942,7 @@ entry_skip_formatter:
 
 }
 
-static int load_root(struct tree_context *c)
+static int load_root(struct browser_context *c)
 {
     struct tagentry *dptr = core_get_data(c->cache.entries_handle);
     int i;
@@ -1957,7 +1957,7 @@ static int load_root(struct tree_context *c)
         return 0;
 
     if (menu->itemcount > c->cache.max_entries)
-            panicf("%s tree_cache too small", __func__);
+            panicf("%s browser_cache too small", __func__);
 
     for (i = 0; i < menu->itemcount; i++)
     {
@@ -2003,16 +2003,16 @@ static int load_root(struct tree_context *c)
     return i;
 }
 
-/* Set by tagtree_enter_by_tag_on_next_load(); consumed the next time
- * tagtree_load() sees a fresh root load. -1 means none armed. */
+/* Set by browser_db_enter_by_tag_on_next_load(); consumed the next time
+ * browser_db_load() sees a fresh root load. -1 means none armed. */
 static int pending_root_shortcut_tag = -1;
 
-void tagtree_enter_by_tag_on_next_load(int tag)
+void browser_db_enter_by_tag_on_next_load(int tag)
 {
     pending_root_shortcut_tag = tag;
 }
 
-/* Set by tagtree_enter_album_tracks_on_next_load(); consumed on the next
+/* Set by browser_db_enter_album_tracks_on_next_load(); consumed on the next
  * fresh root load. -1 means none armed. */
 static long pending_album_seek = -1;
 static char pending_album_title[MENUENTRY_MAX_NAME];
@@ -2034,41 +2034,41 @@ static char pending_album_title[MENUENTRY_MAX_NAME];
  * the browse entirely, matching Album covers' own requirement that this
  * "specific entry point" not need to show or remember the intermediate
  * Album listing at all. */
-void tagtree_enter_album_tracks_on_next_load(long album_seek,
+void browser_db_enter_album_tracks_on_next_load(long album_seek,
                                              const char *album_title)
 {
     pending_album_seek = album_seek;
     strlcpy(pending_album_title, album_title ? album_title : "",
             sizeof(pending_album_title));
-    tagtree_enter_by_tag_on_next_load(tag_album);
+    browser_db_enter_by_tag_on_next_load(tag_album);
 }
 
-/* Set by tagtree_enter_artist_albums_on_next_load(); consumed on the next fresh
+/* Set by browser_db_enter_artist_albums_on_next_load(); consumed on the next fresh
  * root load. -1 means none armed. */
 static long pending_artist_seek = -1;
 static char pending_artist_title[MENUENTRY_MAX_NAME];
 
 /* Arms a direct jump from the root into a specific album-artist's own album
  * list -- the visual counterpart, for Artist portraits, of
- * tagtree_enter_album_tracks_on_next_load(). Same seek-based approach: the
+ * browser_db_enter_album_tracks_on_next_load(). Same seek-based approach: the
  * carousel already knows the album-artist by tagcache seek, so no name/position
  * matching is needed. Lands one level deep (the album listing) with dirlevel
  * still 0, so a single BACK returns to the carousel while selecting an album
  * still descends normally into its tracks. */
-void tagtree_enter_artist_albums_on_next_load(long albumartist_seek,
+void browser_db_enter_artist_albums_on_next_load(long albumartist_seek,
                                               const char *artist_title)
 {
     pending_artist_seek = albumartist_seek;
     strlcpy(pending_artist_title, artist_title ? artist_title : "",
             sizeof(pending_artist_title));
-    tagtree_enter_by_tag_on_next_load(tag_albumartist);
+    browser_db_enter_by_tag_on_next_load(tag_albumartist);
 }
 
 /* Finds the row in the currently-loaded root ("main") menu whose first tag
  * matches 'tag' (e.g. tag_album), independent of tagnavi.config's row order.
  * Returns the row index, or -1 if not found. Must be called after load_root()
  * has populated 'menu'. */
-static int tagtree_find_root_entry_by_tag(int tag)
+static int browser_db_find_root_entry_by_tag(int tag)
 {
     int i;
     if (!menu)
@@ -2089,10 +2089,10 @@ static int tagtree_find_root_entry_by_tag(int tag)
  * without ever entering/displaying the grouping level itself.
  *
  * Deliberately does NOT touch dirlevel/table_history/extra_history the way
- * tagtree_enter() would (leaves dirlevel at 0, wherever rockbox_browse()'s
+ * browser_db_enter() would (leaves dirlevel at 0, wherever rockbox_browse()'s
  * own reset left it) -- apps/tree.c's dirbrowse() only treats BACK as "exit
  * the browse" when dirlevel == 0; at any deeper level it instead pops one
- * level via tagtree_exit() and keeps browsing. Bumping dirlevel to 1 (tried
+ * level via browser_db_exit() and keeps browsing. Bumping dirlevel to 1 (tried
  * first) meant BACK from an album's tracks landed on the root Music menu
  * first, needing a second BACK to actually leave -- not the single-press
  * exit this entry point is supposed to give. Leaving dirlevel at 0 makes
@@ -2103,10 +2103,10 @@ static int tagtree_find_root_entry_by_tag(int tag)
  * Returns false if the root has no tag_album row or it isn't a plain
  * "album -> title" chain (e.g. tagnavi_user.config was customized away
  * from the shipped shape) -- caller falls back to just loading the root. */
-static bool enter_album_tracks_directly(struct tree_context *c, long album_seek,
+static bool enter_album_tracks_directly(struct browser_context *c, long album_seek,
                                         const char *album_title)
 {
-    int idx = tagtree_find_root_entry_by_tag(tag_album);
+    int idx = browser_db_find_root_entry_by_tag(tag_album);
     struct search_instruction *si;
 
     if (idx < 0)
@@ -2132,10 +2132,10 @@ static bool enter_album_tracks_directly(struct tree_context *c, long album_seek,
  * album-artist row's chain is albumartist -> album -> title, so currextra 1 is
  * the album listing. Leaves dirlevel at 0 (see enter_album_tracks_directly for
  * why). Returns false if the root has no such albumartist -> album chain. */
-static bool enter_artist_albums_directly(struct tree_context *c,
+static bool enter_artist_albums_directly(struct browser_context *c,
                                          long artist_seek, const char *artist_title)
 {
-    int idx = tagtree_find_root_entry_by_tag(tag_albumartist);
+    int idx = browser_db_find_root_entry_by_tag(tag_albumartist);
     struct search_instruction *si;
 
     if (idx < 0)
@@ -2162,7 +2162,7 @@ static bool enter_artist_albums_directly(struct tree_context *c,
  * two look directly at menus[rootmenu] (populated by parse_menu() at boot)
  * rather than the file-scope 'menu' pointer load_root() sets, since
  * root_menu.c may query this before any browsing has actually happened. */
-bool tagtree_get_main_menu_tag_row(int index, int *out_tag,
+bool browser_db_get_main_menu_tag_row(int index, int *out_tag,
                                    const unsigned char **out_name)
 {
     struct menu_root *root;
@@ -2194,7 +2194,7 @@ bool tagtree_get_main_menu_tag_row(int index, int *out_tag,
     return false;
 }
 
-int tagtree_get_main_menu_tag_row_count(void)
+int browser_db_get_main_menu_tag_row_count(void)
 {
     int i, count = 0;
     struct menu_root *root;
@@ -2215,7 +2215,7 @@ int tagtree_get_main_menu_tag_row_count(void)
     return count;
 }
 
-int tagtree_load(struct tree_context* c)
+int browser_db_load(struct browser_context* c)
 {
     logf( "%s", __func__);
 
@@ -2246,7 +2246,7 @@ int tagtree_load(struct tree_context* c)
         load_root(c);
 
         /* Album covers' jump (only ever paired with target_tag == tag_album)
-         * bypasses the normal single-hop tagtree_enter() below entirely --
+         * bypasses the normal single-hop browser_db_enter() below entirely --
          * it goes straight to the album's track level itself, never
          * entering/displaying the "Album" grouping listing at all. */
         if (target_tag == tag_album && pending_album_seek != -1)
@@ -2257,7 +2257,7 @@ int tagtree_load(struct tree_context* c)
             pending_album_seek = -1;
 
             if (enter_album_tracks_directly(c, album_seek, album_title))
-                return tagtree_load(c);
+                return browser_db_load(c);
             /* Root has no plain tag_album row to anchor on (e.g. tagnavi
              * customized away from the shipped shape) -- fall through to
              * the root menu instead of a dead end. */
@@ -2272,17 +2272,17 @@ int tagtree_load(struct tree_context* c)
             pending_artist_seek = -1;
 
             if (enter_artist_albums_directly(c, artist_seek, artist_title))
-                return tagtree_load(c);
+                return browser_db_load(c);
             /* No albumartist -> album row to anchor on -- fall through. */
         }
         else
         {
-            int idx = tagtree_find_root_entry_by_tag(target_tag);
+            int idx = browser_db_find_root_entry_by_tag(target_tag);
             if (idx >= 0)
             {
                 c->selected_item = idx;
-                tagtree_enter(c, false);
-                return tagtree_load(c);
+                browser_db_enter(c, false);
+                return browser_db_load(c);
             }
             /* Tag not found (e.g. removed from tagnavi_user.config) -- fall
              * through and show the root menu instead of a blank screen. */
@@ -2303,7 +2303,7 @@ int tagtree_load(struct tree_context* c)
 
             if (loaded_entries_crc != 0)
             {
-                if (loaded_entries_crc == tagtree_data_crc(c))
+                if (loaded_entries_crc == browser_db_data_crc(c))
                 {
                     count = c->dirlength;
                     logf("Reusing %d entries", count);
@@ -2330,10 +2330,10 @@ int tagtree_load(struct tree_context* c)
         /* No modal "Loading..."/"Database busy" splash here -- background
          * database activity is surfaced by the status-bar indicator (%ld)
          * instead. A busy load just recovers to the root level. */
-        if (count == RELOAD_TAGTREE) /* unload and re-init tagtree */
+        if (count == RELOAD_BROWSER_DB) /* unload and re-init the database browser */
         {
-            tagtree_unload(c);
-            if (!initialize_tagtree())
+            browser_db_unload(c);
+            if (!initialize_browser_db())
                 return 0;
         }
         c->dirlevel = 0;
@@ -2351,11 +2351,11 @@ int tagtree_load(struct tree_context* c)
  * Call this with the is_visible parameter set to false to
  * prevent selected_item_history from being updated or applied, in
  * case the menus aren't displayed to the user.
- * Before calling tagtree_enter again with the parameter set to
+ * Before calling browser_db_enter again with the parameter set to
  * true, make sure that you are back at the previous dirlevel, by
- * calling tagtree_exit as needed, with is_visible set to false.
+ * calling browser_db_exit as needed, with is_visible set to false.
  */
-int tagtree_enter(struct tree_context* c, bool is_visible)
+int browser_db_enter(struct browser_context* c, bool is_visible)
 {
     logf( "%s", __func__);
 
@@ -2368,7 +2368,7 @@ int tagtree_enter(struct tree_context* c, bool is_visible)
     bool is_random_item = false;
     bool adjust_selection = true;
 
-    dptr = tagtree_get_entry(c, c->selected_item);
+    dptr = browser_db_get_entry(c, c->selected_item);
 
     c->dirfull = false;
     seek = dptr->extraseek;
@@ -2378,7 +2378,7 @@ int tagtree_enter(struct tree_context* c, bool is_visible)
         if(c->filesindir<=c->special_entry_count) /* Menu contains only special entries */
             return 0;
         srand(current_tick);
-        dptr = (tagtree_get_entry(c, c->special_entry_count+(rand() % (c->filesindir-c->special_entry_count))));
+        dptr = (browser_db_get_entry(c, c->special_entry_count+(rand() % (c->filesindir-c->special_entry_count))));
         seek = dptr->extraseek;
     }
     newextra = dptr->newtable;
@@ -2416,8 +2416,8 @@ int tagtree_enter(struct tree_context* c, bool is_visible)
     }
 
     /* lock buflib for possible I/O to protect dptr */
-    tree_lock_cache(c);
-    core_pin(tagtree_handle);
+    browser_lock_cache(c);
+    core_pin(browser_db_handle);
 
     switch (c->currtable) {
         case TABLE_ROOT:
@@ -2494,9 +2494,9 @@ int tagtree_enter(struct tree_context* c, bool is_visible)
                             rc = kbd_input(searchstring, SEARCHSTR_SIZE, NULL);
                             if (rc < 0 || !searchstring[0])
                             {
-                                tagtree_exit(c, is_visible);
-                                tree_unlock_cache(c);
-                                core_unpin(tagtree_handle);
+                                browser_db_exit(c, is_visible);
+                                browser_unlock_cache(c);
+                                core_unpin(browser_db_handle);
                                 return 0;
                             }
                             if (csi->clause[i][j]->numeric)
@@ -2527,7 +2527,7 @@ int tagtree_enter(struct tree_context* c, bool is_visible)
                  allow user to cancel the operation */
                 if (!warn_on_pl_erase())
                     break;
-                if (tagtree_play_folder(c) >= 0)
+                if (browser_db_play_folder(c) >= 0)
                     rc = 2;
                 break;
             }
@@ -2559,14 +2559,14 @@ int tagtree_enter(struct tree_context* c, bool is_visible)
             c->selected_item = 0;
     }
 
-    tree_unlock_cache(c);
-    core_unpin(tagtree_handle);
+    browser_unlock_cache(c);
+    core_unpin(browser_db_handle);
 
     return rc;
 }
 
 /* Exits current database menu or table */
-void tagtree_exit(struct tree_context* c, bool is_visible)
+void browser_db_exit(struct browser_context* c, bool is_visible)
 {
     logf( "%s", __func__);
     if (is_visible) /* update selection history only for user-selected items */
@@ -2592,10 +2592,10 @@ void tagtree_exit(struct tree_context* c, bool is_visible)
     c->currextra = extra_history[c->dirlevel];
 }
 
-int tagtree_get_filename(struct tree_context* c, char *buf, int buflen)
+int browser_db_get_filename(struct browser_context* c, char *buf, int buflen)
 {
     struct tagcache_search tcs;
-    int extraseek = tagtree_get_entry(c, c->selected_item)->extraseek;
+    int extraseek = browser_db_get_entry(c, c->selected_item)->extraseek;
 
 
     if (!tagcache_search(&tcs, tag_filename))
@@ -2612,11 +2612,11 @@ int tagtree_get_filename(struct tree_context* c, char *buf, int buflen)
     return 0;
 }
 
-int tagtree_get_custom_action(struct tree_context* c)
+int browser_db_get_custom_action(struct browser_context* c)
 {
     if (c->dirlength == 0)
         return 0;
-    return tagtree_get_entry(c, c->selected_item)->customaction;
+    return browser_db_get_entry(c, c->selected_item)->customaction;
 }
 
 static void swap_array_bool(bool *a, bool *b)
@@ -2651,7 +2651,7 @@ static bool* fill_random_playlist_indexes(bool *bool_array, size_t arr_sz,
     return bool_array;
 }
 
-static bool insert_all_playlist(struct tree_context *c,
+static bool insert_all_playlist(struct browser_context *c,
                                 const char* playlist, bool new_playlist,
                                 int position, bool queue)
 {
@@ -2778,7 +2778,7 @@ static bool insert_all_playlist(struct tree_context *c,
             }
         }
 
-        if (!tagcache_retrieve(&tcs, tagtree_get_entry(c, i)->extraseek, tcs.type, buf, sizeof buf))
+        if (!tagcache_retrieve(&tcs, browser_db_get_entry(c, i)->extraseek, tcs.type, buf, sizeof buf))
             continue;
 
         if (playlist == NULL)
@@ -2826,9 +2826,9 @@ static bool goto_allsubentries(int newtable)
     while (i < 2 && (newtable == TABLE_NAVIBROWSE || newtable == TABLE_ALLSUBENTRIES
         || newtable == TABLE_ALLSUBENTRIES_SORTED_BY_ALBUMS))
     {
-        tagtree_enter(tc, false);
-        tagtree_load(tc);
-        newtable = tagtree_get_entry(tc, tc->selected_item)->newtable;
+        browser_db_enter(tc, false);
+        browser_db_load(tc);
+        newtable = browser_db_get_entry(tc, tc->selected_item)->newtable;
         i++;
     }
     return (newtable == TABLE_PLAYTRACK);
@@ -2837,12 +2837,12 @@ static bool goto_allsubentries(int newtable)
 static void reset_tc_to_prev(int dirlevel, int selected_item)
 {
     while (tc->dirlevel > dirlevel)
-        tagtree_exit(tc, false);
+        browser_db_exit(tc, false);
     tc->selected_item = selected_item;
-    tagtree_load(tc);
+    browser_db_load(tc);
 }
 
-static bool tagtree_insert_selection(int position, bool queue,
+static bool browser_db_insert_selection(int position, bool queue,
                                      const char* playlist, bool new_playlist)
 {
     char buf[MAX_PATH];
@@ -2855,11 +2855,11 @@ static bool tagtree_insert_selection(int position, bool queue,
         storage_disk_is_active()
         , 0, 0, 0);
 
-    newtable = tagtree_get_entry(tc, tc->selected_item)->newtable;
+    newtable = browser_db_get_entry(tc, tc->selected_item)->newtable;
 
     if (newtable == TABLE_PLAYTRACK) /* Insert a single track? */
     {
-        if (tagtree_get_filename(tc, buf, sizeof buf) < 0)
+        if (browser_db_get_filename(tc, buf, sizeof buf) < 0)
             return false;
 
         if (!playlist)
@@ -2888,7 +2888,7 @@ static bool tagtree_insert_selection(int position, bool queue,
  * callback function parameter. Parameter will be NULL for
  * entries whose filename couldn't be retrieved.
  */
-bool tagtree_subentries_do_action(bool (*action_cb)(const char *file_name))
+bool browser_db_subentries_do_action(bool (*action_cb)(const char *file_name))
 {
     struct tagcache_search tcs;
     int i, n;
@@ -2897,7 +2897,7 @@ bool tagtree_subentries_do_action(bool (*action_cb)(const char *file_name))
     int ret = true;
     int dirlevel = tc->dirlevel;
     int selected_item = tc->selected_item;
-    int newtable = tagtree_get_entry(tc, tc->selected_item)->newtable;
+    int newtable = browser_db_get_entry(tc, tc->selected_item)->newtable;
 
     cpu_boost(true);
     if (!goto_allsubentries(newtable))
@@ -2918,7 +2918,7 @@ bool tagtree_subentries_do_action(bool (*action_cb)(const char *file_name))
                 last_tick = current_tick;
             }
 
-            if (!action_cb(tagcache_retrieve(&tcs, tagtree_get_entry(tc, i)->extraseek,
+            if (!action_cb(tagcache_retrieve(&tcs, browser_db_get_entry(tc, i)->extraseek,
                                              tcs.type, buf, sizeof buf) ? buf : NULL))
             {
                 ret = false;
@@ -2941,34 +2941,34 @@ bool tagtree_subentries_do_action(bool (*action_cb)(const char *file_name))
 
 /* Try to return first subentry's filename for current selection
  */
-bool tagtree_get_subentry_filename(char *buf, size_t bufsize)
+bool browser_db_get_subentry_filename(char *buf, size_t bufsize)
 {
     int ret = true;
     int dirlevel = tc->dirlevel;
     int selected_item = tc->selected_item;
-    int newtable = tagtree_get_entry(tc, tc->selected_item)->newtable;
+    int newtable = browser_db_get_entry(tc, tc->selected_item)->newtable;
 
-    if (!goto_allsubentries(newtable) || tagtree_get_filename(tc, buf, bufsize) < 0)
+    if (!goto_allsubentries(newtable) || browser_db_get_filename(tc, buf, bufsize) < 0)
         ret = false;
 
     reset_tc_to_prev(dirlevel, selected_item);
     return ret;
 }
 
-bool tagtree_current_playlist_insert(int position, bool queue)
+bool browser_db_current_playlist_insert(int position, bool queue)
 {
-    return tagtree_insert_selection(position, queue, NULL, false);
+    return browser_db_insert_selection(position, queue, NULL, false);
 }
 
 
-int tagtree_add_to_playlist(const char* playlist, bool new_playlist)
+int browser_db_add_to_playlist(const char* playlist, bool new_playlist)
 {
     if (!new_playlist)
-        tagtree_load(tc); /* because display_playlists was called */
-    return tagtree_insert_selection(0, false, playlist, new_playlist) ? 0 : -1;
+        browser_db_load(tc); /* because display_playlists was called */
+    return browser_db_insert_selection(0, false, playlist, new_playlist) ? 0 : -1;
 }
 
-static int tagtree_play_folder(struct tree_context* c)
+static int browser_db_play_folder(struct browser_context* c)
 {
     logf( "%s", __func__);
     int start_index = c->selected_item;
@@ -3001,11 +3001,11 @@ static int tagtree_play_folder(struct tree_context* c)
     }
 
     playlist_start(start_index, 0, 0);
-    loaded_entries_crc = tagtree_data_crc(c); /* save crc in case we return */
+    loaded_entries_crc = browser_db_data_crc(c); /* save crc in case we return */
     return 0;
 }
 
-static struct tagentry* tagtree_get_entry(struct tree_context *c, int id)
+static struct tagentry* browser_db_get_entry(struct browser_context *c, int id)
 {
     struct tagentry *entry;
     int realid = id - current_offset;
@@ -3029,10 +3029,10 @@ static struct tagentry* tagtree_get_entry(struct tree_context *c, int id)
     return &entry[realid];
 }
 
-char* tagtree_get_entry_name(struct tree_context *c, int id,
+char* browser_db_get_entry_name(struct browser_context *c, int id,
                                     char* buf, size_t bufsize)
 {
-    struct tagentry *entry = tagtree_get_entry(c, id);
+    struct tagentry *entry = browser_db_get_entry(c, id);
     if (!entry)
         return NULL;
 
@@ -3052,7 +3052,7 @@ char* tagtree_get_entry_name(struct tree_context *c, int id,
 }
 
 
-char *tagtree_get_title(struct tree_context* c)
+char *browser_db_get_title(struct browser_context* c)
 {
     switch (c->currtable)
     {
@@ -3074,7 +3074,7 @@ char *tagtree_get_title(struct tree_context* c)
 /* True when this browse level is listing albums -- i.e. the rows that can carry
  * album art, and so the ones worth giving a taller row to. Kept here rather than
  * exposing csi/tagorder to callers. */
-bool tagtree_is_album_list(struct tree_context* c)
+bool browser_db_is_album_list(struct browser_context* c)
 {
     if (c->currtable != TABLE_NAVIBROWSE || !csi)
         return false;
@@ -3087,7 +3087,7 @@ bool tagtree_is_album_list(struct tree_context* c)
  * artist art, and so the ones worth a taller row. Covers every tag the default
  * menus group artists by: canonicalartist (the "Artist" menu and the artist
  * sublevels under Genre/Year), plus album-artist and plain artist. */
-bool tagtree_is_artist_list(struct tree_context* c)
+bool browser_db_is_artist_list(struct browser_context* c)
 {
     int tag;
     if (c->currtable != TABLE_NAVIBROWSE || !csi)
@@ -3111,7 +3111,7 @@ bool tagtree_is_artist_list(struct tree_context* c)
  *
  * This is a tagcache search, i.e. far too expensive to call per row per redraw;
  * callers are expected to cache the result. */
-static bool tagtree_get_track_dir(struct tree_context* c, int item,
+static bool browser_db_get_track_dir(struct browser_context* c, int item,
                                   char *buf, int buflen, int extra_parents)
 {
     struct tagcache_search tcs;
@@ -3121,7 +3121,7 @@ static bool tagtree_get_track_dir(struct tree_context* c, int item,
     bool ok = false;
     int i;
 
-    entry = tagtree_get_entry(c, item);
+    entry = browser_db_get_entry(c, item);
     if (!entry)
         return false;
 
@@ -3160,25 +3160,25 @@ static bool tagtree_get_track_dir(struct tree_context* c, int item,
 }
 
 /* The album folder of browse row `item` -- the album-art cache key. */
-bool tagtree_get_album_dir(struct tree_context* c, int item,
+bool browser_db_get_album_dir(struct browser_context* c, int item,
                            char *buf, int buflen)
 {
-    if (!tagtree_is_album_list(c) || item < c->special_entry_count)
+    if (!browser_db_is_album_list(c) || item < c->special_entry_count)
         return false;
-    return tagtree_get_track_dir(c, item, buf, buflen, 0);
+    return browser_db_get_track_dir(c, item, buf, buflen, 0);
 }
 
 /* The artist folder of browse row `item` -- the parent of the album folder for
  * <artist>/<album>/<track> layouts, i.e. the artist-art cache key. */
-bool tagtree_get_artist_dir(struct tree_context* c, int item,
+bool browser_db_get_artist_dir(struct browser_context* c, int item,
                             char *buf, int buflen)
 {
-    if (!tagtree_is_artist_list(c) || item < c->special_entry_count)
+    if (!browser_db_is_artist_list(c) || item < c->special_entry_count)
         return false;
-    return tagtree_get_track_dir(c, item, buf, buflen, 1);
+    return browser_db_get_track_dir(c, item, buf, buflen, 1);
 }
 
-int tagtree_get_attr(struct tree_context* c)
+int browser_db_get_attr(struct browser_context* c)
 {
     int attr = -1;
     switch (c->currtable)
@@ -3204,11 +3204,11 @@ int tagtree_get_attr(struct tree_context* c)
     return attr;
 }
 
-int tagtree_get_icon(struct tree_context* c)
+int browser_db_get_icon(struct browser_context* c)
 {
     int icon = Icon_Folder;
 
-    if (tagtree_get_attr(c) == FILE_ATTR_AUDIO)
+    if (browser_db_get_attr(c) == FILE_ATTR_AUDIO)
         icon = Icon_Audio;
 
     return icon;
