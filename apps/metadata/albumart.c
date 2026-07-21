@@ -66,6 +66,11 @@ static const char * const extensions[] = { "jpeg", "jpg", "bmp" };
 static const unsigned char extension_lens[] = { 4, 3, 3 };
 /* Try checking for several file extensions, return true if a file is found and
  * leaving the path modified to include the matching extension.
+ *
+ * Callers hand in a path ending in '.' and len counting that dot, so each
+ * candidate extension is written straight over the terminator in turn rather
+ * than rebuilding the whole path. path must therefore have room for the
+ * longest extension plus a NUL beyond len.
  */
 static bool try_exts(char *path, int len)
 {
@@ -80,6 +85,10 @@ static bool try_exts(char *path, int len)
     }
     return false;
 }
+
+/* Deliberately empty: it marks where an extension goes in the path-building
+ * format strings below, e.g. "%scover%s." EXT builds "...cover.100x100."
+ * for try_exts() to complete. */
 #define EXT
 
 /* Look for the first matching album art bitmap in the following list:

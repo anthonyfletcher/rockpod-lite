@@ -17,8 +17,7 @@
 #include "metadata.h"
 
 /* cue_draw_markers() takes a screen by pointer only, so a forward declaration
- * is enough. This used to arrive via screens.h, which cuesheet.h included
- * without needing anything else from it. */
+ * is enough and this header need not pull in screens.h. */
 struct screen;
 
 #define MAX_NAME 80    /* Max length of information strings */

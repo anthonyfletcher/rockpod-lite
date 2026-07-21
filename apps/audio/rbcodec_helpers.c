@@ -19,6 +19,11 @@
 
 static int handles[4] = { 0, 0, 0, 0 };
 
+/* core_alloc is a compacting allocator: it may relocate a block to close a
+ * gap, so the pointer core_get_data() returned earlier goes stale. Blocks
+ * allocated with core_alloc_ex() name a move_callback, which buflib calls
+ * with the old and new addresses so the owner can re-point anything that
+ * still refers to the block. */
 static int move_callback(int handle, void *current, void *new)
 {
 #if 0

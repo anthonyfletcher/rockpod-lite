@@ -17,25 +17,13 @@
 #include "general.h"
 #include "settings/settings.h"
 
-/* Some audio sources may require a boosted CPU */
-
-
-
-/**
- * Selects an audio source for recording or playback
- * powers/unpowers related devices and sets up monitoring.
- */
+/* With no recording, line-in or SPDIF on these targets there is nothing to
+ * power up or monitor, so this reduces to pointing the codec's input mux at
+ * the requested source. */
 void audio_set_input_source(int source, unsigned flags)
 {
-    /** Do power up/down of associated device(s) **/
-
-    /** SPDIF **/
-
-    /* Set the appropriate feed for spdif output */
-
-    /* set hardware inputs */
     audio_input_mux(source, flags);
-} /* audio_set_source */
+}
 
 
 

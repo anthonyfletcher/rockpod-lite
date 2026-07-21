@@ -1383,7 +1383,11 @@ void add_playbacklog(struct mp3entry *id3)
         }
         if (buf) /* we have a buffer allocd from core */
         {
-            buf = core_get_data_pinned(playback_log_handle); /* we might yield - pin it*/
+            /* write() can yield, and buflib may compact the pool while we are
+             * blocked, moving this allocation out from under us. Pinning holds
+             * it still for the duration; every _pinned get needs its matching
+             * core_put_data_pinned() or the pool can never compact again. */
+            buf = core_get_data_pinned(playback_log_handle);
             write(fd, buf, used);
             DEBUGF("%s Writing %lu bytes of buf:\n%s\n", __func__, used, buf);
             buf[0] = '\0';

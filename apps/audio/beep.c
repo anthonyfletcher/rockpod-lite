@@ -20,9 +20,11 @@
 /** Beep generation, CPU optimized **/
 #include "asm/beep.c"
 
+/* Phase accumulator: beep_phase is a 32-bit fixed-point angle that wraps
+ * naturally on overflow, and beep_step is how far it advances per sample.
+ * The square wave is then just the sign bit of the phase. */
 static uint32_t beep_phase;     /* Phase of square wave generator */
 static uint32_t beep_step;      /* Step of square wave generator on each sample */
-/* Optimized routines do XOR with phase sign bit in both channels at once */
 static uint32_t beep_amplitude; /* Amplitude of square wave generator */
 static int beep_count;          /* Number of samples remaining to generate */
 
@@ -66,6 +68,7 @@ void beep_play(unsigned int frequency, unsigned int duration,
     /* Setup the parameters for the square wave generator */
     uint32_t fout = mixer_get_frequency();
     beep_phase = 0;
+    /* frequency/fout as a 32-bit fraction: one full turn of phase per wave */
     beep_step = fp_div(frequency, fout, 32);
     beep_count = BEEP_COUNT(fout, duration);
 

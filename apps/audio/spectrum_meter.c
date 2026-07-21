@@ -84,11 +84,9 @@ static int goertzel_magnitude(const int16_t *samples, int count,
 
     /* Q1/Q2 grow proportional to (count/2 * amplitude) for a tone at the
      * target frequency -- e.g. at count=256 a full-scale (32767) signal
-     * pushes them to roughly 128x that. Left unnormalized, mag_sq blows
-     * past any sane clamp at a tiny fraction of real full-scale volume,
-     * which is why the bars used to peg at a fixed height for virtually
-     * any audible content instead of tracking actual loudness. Divide back
-     * down to an amplitude-comparable scale first. */
+     * pushes them to roughly 128x that. Divide that gain back out here, or
+     * mag_sq saturates the clamp below at a small fraction of full scale and
+     * every bar pegs at maximum instead of tracking loudness. */
     q1 /= (count / 2);
     q2 /= (count / 2);
 

@@ -52,6 +52,8 @@ void system_sound_play(enum system_sound sound)
 
     const struct beep_params *params = &beep_params[sound];
 
+    /* setting points at the global that controls this sound; it is both the
+     * on/off test and a 1-N loudness multiplier, so zero means silent. */
     if (*params->setting)
     {
         beep_play(params->frequency, params->duration,

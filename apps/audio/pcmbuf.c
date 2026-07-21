@@ -41,7 +41,10 @@
    smaller math - must be < 65536 bytes */
 #define PCMBUF_CHUNK_SIZE    8192u
 
-/* Small guard buf to give decent space near end */
+/* Spare region allocated immediately after the ring buffer. A writer nearing
+ * the end is allowed to run straight on into it instead of having to split its
+ * write in two; commit_chunks() then copies whatever landed in the guard back
+ * to the front of the ring. This is why writes appear to overrun the buffer. */
 #define PCMBUF_GUARD_SIZE    (PCMBUF_CHUNK_SIZE / 8)
 
 /* Mnemonics for common data commit thresholds */
@@ -197,6 +200,8 @@ static size_t pcmbuf_unplayed_bytes(void)
     size_t ridx = chunk_ridx;
     size_t widx = chunk_widx;
 
+    /* Writer has wrapped past the reader: unfold it into a straight line
+     * before subtracting, or the difference comes out negative. */
     if (ridx > widx)
         widx += pcmbuf_size;
 
@@ -248,7 +253,8 @@ static size_t index_chunk_offs(size_t index, int offset)
     {
         i = (i + offset) % (int)pcmbuf_desc_count;
 
-        /* remainder => modulus */
+        /* C's % keeps the sign of the dividend, so a negative offset yields a
+         * negative remainder; add the count back to get a true modulus. */
         if (i < 0)
             i += pcmbuf_desc_count;
     }

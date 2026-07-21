@@ -1844,6 +1844,9 @@ static void dc_thread_playlist(void)
  */
 static int alloc_tempbuf(size_t* buflen)
 {
+    /* buflib_ops_locked marks the block immovable, so the raw pointer stays
+     * valid across the yields that loading a playlist performs. Simpler than a
+     * move_callback here because the buffer is short-lived. */
     /* request a reasonable size first */
     int handle = core_alloc_ex(PLAYLIST_LOAD_BUFLEN, &buflib_ops_locked);
     if (handle > 0)

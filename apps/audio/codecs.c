@@ -178,6 +178,10 @@ static int codec_load_ram(struct codec_api *api)
 
     codec_size = hdr->end_addr - codecbuf;
 
+    /* This is the link step. A codec is compiled against a `struct codec_api *`
+     * of its own and exports its address in the header; writing the core's api
+     * table through it is what gives the codec access to core functions. Until
+     * this line runs, every core call inside the codec is a null deref. */
     *(c_hdr->api) = api;
 
     logf("Codec: calling entrypoint");

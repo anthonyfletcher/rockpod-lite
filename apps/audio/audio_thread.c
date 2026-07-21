@@ -49,7 +49,10 @@ unsigned int audio_thread_id = 0;
 static void NORETURN_ATTR audio_thread(void)
 {
     struct queue_event ev;
-    ev.id = Q_NULL; /* something not in switch below */
+    /* The loop dispatches before it waits, so seed ev with an id no case
+     * matches: the first pass falls straight through to queue_wait(). Cases
+     * that `continue` re-dispatch the same event without waiting. */
+    ev.id = Q_NULL;
 
     pcm_postinit();
 
@@ -99,13 +102,13 @@ intptr_t audio_queue_send(long id, intptr_t data)
     return queue_send(&audio_queue, id, data);
 }
 
-/* Return the playback and recording status */
 int audio_status(void)
 {
     return playback_status();
 }
 
-/* Clear all accumulated audio errors for playback and recording */
+/* Empty: the error state this cleared belonged to recording, which these
+ * targets do not have. Declared in firmware/export/audio.h; no callers remain. */
 void audio_error_clear(void)
 {
 }
