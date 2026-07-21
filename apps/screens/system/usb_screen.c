@@ -29,10 +29,10 @@
 #include "system/shutdown.h"
 #include "draw/icon_bitmaps.h"
 
-/* This fork ships a full-screen custom USB (eject) screen for the 320x240
- * iPods, drawn as a plain bitmap + caption. It is NOT drawn via the skin
- * engine -- the skin engine must not run during the USB screen on PP502x, it
- * breaks enumeration (see the guard in usb_screen_fix_viewports()). */
+/* The USB (eject) screen is a full-screen bitmap plus caption, drawn directly
+ * rather than through the skin engine. The skin engine must not run during the
+ * USB screen on PP502x -- it breaks enumeration (see the guard in
+ * usb_screen_fix_viewports()). */
 #define HAVE_ROCKPOD_USB_SCREEN
 #include "bitmaps/rockpodusb.h"
 
@@ -98,16 +98,14 @@ static void usb_screen_fix_viewports(struct screen *screen,
     struct viewport *parent = &usb_screen_vps->parent;
     struct viewport *logo = &usb_screen_vps->logo;
 
-    /* Upstream drew a usblogo bitmap here and sized this viewport from it.
-     * This fork draws bm_rockpodusb full-screen instead (see usb_screens_draw
-     * below), so the logo bitmap was never displayed and has been deleted.
-     * The dimensions it had are kept as literals because the HID title
-     * viewport is still positioned relative to them, and that viewport is
-     * passed to scroll_stop_viewport(). Nothing is drawn into either, so this
-     * is vestigial -- but it is left intact rather than unpicked, because the
-     * USB screen is delicate on PP502x (see the note below). */
-    logo_width  = 176;   /* was BMPWIDTH_usblogo  */
-    logo_height = 48;    /* was BMPHEIGHT_usblogo */
+    /* Vestigial: nothing is drawn into the logo viewport, because the screen
+     * is a single full-screen bitmap (usb_screens_draw below). The literals
+     * stay because the HID title viewport is positioned relative to them and
+     * is passed to scroll_stop_viewport(), so the geometry still has to come
+     * out the same. Left intact rather than unpicked -- this screen is
+     * delicate on PP502x, see the note below. */
+    logo_width  = 176;   /* dimensions of the logo bitmap this replaced */
+    logo_height = 48;
 
     /* Draw the USB screen WITHOUT the theme (full screen, no SBS/backdrop).
      *

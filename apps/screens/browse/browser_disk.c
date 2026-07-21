@@ -9,6 +9,21 @@
  * The browser's filesystem backend: reads a directory into the browser cache,
  * decides what entering a file does, and builds playlists from a
  * directory.
+ *
+ * The counterpart to browser_db.c: same interface (load, enter, exit) onto
+ * the filesystem instead of the database, which is how browser.c can drive
+ * either without caring which it has.
+ *
+ * "Entering" a file is dispatch by file type, not by extension parsing at the
+ * call site: browser_disk_enter() switches on the attribute the filetype
+ * table assigned during load, and hands off to a viewer, the playlist code,
+ * or a settings loader.
+ *
+ * Parts, in order:
+ *   - building a playlist from the current directory
+ *   - reading a directory into the cache: filtering, sorting, thumbnails
+ *   - path assembly helpers
+ *   - browser_disk_enter(): the per-filetype dispatch
  ****************************************************************************/
 #include <stdlib.h>
 #include <file.h>

@@ -9,6 +9,24 @@
  * The While Playing Screen: the playback UI loop. Handles all playback
  * input and drives the skin engine to repaint; the layout itself lives in
  * skin/.
+ *
+ * This file owns behaviour, not appearance. It decides what a button does and
+ * when a repaint is needed; what the screen looks like is entirely the .wps
+ * skin's business. So there is almost no drawing here -- the loop asks the
+ * skin engine to render and the skin pulls whatever values it wants through
+ * the tag callbacks in skin/.
+ *
+ * gui_wps_show() is the loop and is most of the file. Entering and leaving
+ * the WPS is not just a screen push: the theme is torn down and restored
+ * around it (gwps_enter_wps / gwps_leave_wps), because the WPS owns the whole
+ * display including the status bar.
+ *
+ * Parts, in order:
+ *   - state init and the track-change event hook
+ *   - seeking: ff/rewind, track skip, and the "hop" by time or track
+ *   - backlight and LCD activation handling
+ *   - entering and leaving: theme teardown, restore, and exit paths
+ *   - gui_wps_show(): the input loop, one case per action
  ****************************************************************************/
 #include <stdio.h>
 #include <string.h>

@@ -94,8 +94,7 @@ static int selectivebacklight_set_mask(void* param)
 }
 
 
-/***********************************/
-/*    LCD MENU                     */
+/** LCD menu **/
 MENUITEM_SETTING(backlight_timeout, &global_settings.backlight_timeout, NULL);
 MENUITEM_SETTING(backlight_timeout_plugged,
                 &global_settings.backlight_timeout_plugged, NULL);
@@ -141,13 +140,10 @@ MAKE_MENU(lcd_settings,ID2P(LANG_LCD_MENU),
             ,&lcd_sleep_after_backlight_off
             ,&brightness_item
          );
-/*    LCD MENU                    */
-/***********************************/
 
 
 
-/***********************************/
-/*    SCROLL MENU                  */
+/** Scroll menu **/
 MENUITEM_SETTING_W_TEXT(scroll_speed, &global_settings.scroll_speed,
                          ID2P(LANG_SCROLL), NULL);
 MENUITEM_SETTING(scroll_delay, &global_settings.scroll_delay, NULL);
@@ -174,11 +170,8 @@ MAKE_MENU(scroll_settings_menu, ID2P(LANG_SCROLL_MENU), 0, Icon_NOICON,
           &list_wraparound,
           &list_order,
           );
-/*    SCROLL MENU                  */
-/***********************************/
 
-/***********************************/
-/*    PEAK METER MENU              */
+/** Peak meter menu **/
 
 static int peakmeter_callback(int action,
                               const struct menu_item_ex *this_item,
@@ -331,8 +324,6 @@ MAKE_MENU(peak_meter_menu, ID2P(LANG_PM_MENU), NULL, Icon_NOICON,
           &peak_meter_release, &peak_meter_hold,
           &peak_meter_clip_hold,
           &peak_meter_scale_item, &peak_meter_min_item, &peak_meter_max_item);
-/*    PEAK METER MENU              */
-/***********************************/
 
 
 

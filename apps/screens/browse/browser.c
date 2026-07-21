@@ -9,6 +9,26 @@
  * The file browser screen. Owns the browser_context (current directory,
  * selection, filter), the browse loop, and dispatch into the database
  * browser or a viewer.
+ *
+ * The list widget does not hold the directory. It asks for one item at a
+ * time through the callbacks near the top -- name, icon, colour, album art,
+ * voice -- each taking a selected_item index that this file resolves against
+ * the cached directory entries. That cache is a buflib allocation shared with
+ * the database browser, which is why it is taken and released around use
+ * (browser_lock_cache) and why it has a move_callback.
+ *
+ * dirbrowse() is the screen's event loop and the file's centre of gravity.
+ *
+ * Parts, in order:
+ *   - browser_context accessors and directory-entry lookup
+ *   - the list callbacks: filename, colour, icon, album art, voice
+ *   - album art slots for the browsing screen
+ *   - init, cache locking, and the buflib move callback
+ *   - update_dir(): reading a directory into the cache and configuring the list
+ *   - current-file and current-directory tracking, including getcwd wrapping
+ *   - dirbrowse(): the browse loop and its actions
+ *   - rockbox_browse(): the entry point other screens call
+ *   - resuming a bookmark, playing a file or directory, and flush/restore
  ****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -696,8 +716,14 @@ void resume_directory(const char *dir)
         browser_db_load(&tc);
 }
 
-/* Returns the current working directory and also writes cwd to buf if
-   non-NULL.  In case of error, returns NULL. */
+/* This is the whole firmware's getcwd(): there is no per-process working
+ * directory to ask about, so "the current directory" is defined to be the one
+ * the browser is showing. Passing buf == NULL returns the internal string
+ * directly rather than copying, which is why callers must not hold it across
+ * a directory change.
+ *
+ * Returns the current working directory and also writes cwd to buf if
+ * non-NULL.  In case of error, returns NULL. */
 #ifdef CTRU
 char *__wrap_getcwd(char *buf, getcwd_size_t size)
 #else

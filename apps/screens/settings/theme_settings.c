@@ -141,12 +141,9 @@ MAKE_MENU(colors_settings, ID2P(LANG_COLORS_MENU),
             &set_bg_col, &set_fg_col, &reset_colors
          );
 
-/*    LCD MENU                    */
-/***********************************/
 
 
-/************************************/
-/*    BARS MENU                     */
+/** Bars menu **/
 /*                                  */
 
 static int statusbar_callback_ex(int action,const struct menu_item_ex *this_item,
@@ -190,8 +187,6 @@ MAKE_MENU(bars_menu, ID2P(LANG_BARS_MENU), 0, Icon_NOICON,
           );
 
 /*                                  */
-/*    BARS MENU                     */
-/************************************/
 
 static struct browse_folder_info fonts = {FONT_DIR, SHOW_FONT};
 static struct browse_folder_info sbs   = {SBS_DIR, SHOW_SBS};

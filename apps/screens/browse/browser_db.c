@@ -8,6 +8,33 @@
  *
  * Turns database queries into a browsable tree, driven by tagnavi.config.
  * The database equivalent of the filesystem browser's backend.
+ * The largest file in screens/.
+ *
+ * There is no fixed menu structure here. tagnavi.config describes the tree --
+ * which tag each level browses, how entries are formatted, what conditions
+ * filter them -- and roughly the first third of this file is the parser for
+ * that config. The rest answers the browser's requests by running a tagcache
+ * search for the current level and formatting the results.
+ *
+ * Two things to know before editing:
+ *   - Parsed config (menus, formats, search clauses) lives in one buflib
+ *     allocation, sub-allocated by browser_db_alloc() bumping a pointer.
+ *     Nothing is individually freed; the whole block is dropped and reparsed.
+ *     move_callback() fixes up the internal pointers when buflib moves it.
+ *   - The parser functions read from a shared cursor over the config text,
+ *     not from arguments, so their order of call matters.
+ *
+ * Parts, in order:
+ *   - types: tag entries, the table/variable enums, formats and menu roots
+ *   - the buflib block and its bump allocator
+ *   - tagnavi.config parser: tokens, tags, clauses, formats, conditions
+ *   - buffering and track-finish event handlers
+ *   - config import/export, and building the generated first-letter menu
+ *   - init, reload and unload
+ *   - retrieving and formatting entries for the current level
+ *   - "enter by tag" entry points used to jump straight to an album/artist
+ *   - the browser_db_* API the browser calls: load, enter, exit, queries
+ *   - playlist insertion, including the shuffled all-subentries path
  ****************************************************************************/
 
 /**
@@ -311,6 +338,11 @@ static uint32_t browser_db_data_crc(struct browser_context* c)
     return crc;
 }
 
+/* Bump allocator over the single buflib block: hands out the next `size`
+ * bytes and never frees. Everything it returns is released at once by
+ * browser_db_unload() dropping the whole handle, so the returned pointers
+ * must not outlive a reload -- and, being raw pointers into a movable
+ * allocation, must not be held across a yield. */
 static void* browser_db_alloc(size_t size)
 {
     size = ALIGN_UP(size, sizeof(void*));

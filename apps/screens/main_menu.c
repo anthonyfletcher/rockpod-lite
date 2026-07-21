@@ -46,8 +46,7 @@
 
 static const struct browse_folder_info config = {ROCKBOX_DIR, SHOW_CFG};
 static int show_info(void);
-/***********************************/
-/*    MANAGE SETTINGS MENU        */
+/** Manage settings menu **/
 
 static int reset_settings(void)
 {
@@ -102,11 +101,8 @@ MENUITEM_FUNCTION(reset_settings_item, 0, ID2P(LANG_RESET),
 MAKE_MENU(manage_settings, ID2P(LANG_MANAGE_MENU), NULL, Icon_Config,
           &browse_configs, &reset_settings_item,
           &save_settings_item, &save_sound_item, &save_theme_item);
-/*    MANAGE SETTINGS MENU        */
-/**********************************/
 
-/***********************************/
-/*      INFO MENU                  */
+/** Info menu **/
 
 static int show_credits(void)
 {
@@ -398,14 +394,11 @@ MAKE_MENU(info_menu, ID2P(LANG_SYSTEM), 0, Icon_System_menu,
           &show_info_item, &show_credits_item,
           &show_runtime_item, &show_license_item,
           &show_third_party_licenses_item, &debug_menu_item);
-/*      INFO MENU                  */
-/***********************************/
 
 MENUITEM_FUNCTION(main_menu_config_item, 0, ID2P(LANG_MAIN_MENU_SETTINGS),
                   main_menu_config, NULL, Icon_Rockbox);
 
-/***********************************/
-/*    MAIN MENU                    */
+/** Main menu **/
 
 MAKE_MENU(main_menu_, ID2P(LANG_SETTINGS), NULL,
         Icon_Submenu_Entered,
@@ -418,5 +411,3 @@ MAKE_MENU(main_menu_, ID2P(LANG_SETTINGS), NULL,
         &main_menu_config_item,
         &manage_settings,
         );
-/*    MAIN MENU                    */
-/***********************************/

@@ -8,6 +8,20 @@
  *
  * Equaliser settings menu, including the per-band editor and preset
  * load/save.
+ *
+ * The band editor is not a plain settings list. Its list has one row per
+ * band, but selecting a band expands it into that band's cutoff/gain/Q rows
+ * in place -- so a list index does not map to a fixed item. selection_to_
+ * banditem() does that mapping, and every list callback goes through it.
+ *
+ * Gains are in tenths of a decibel throughout (EQ_USER_DIVISOR), so a
+ * displayed "-4.5 dB" is -45 here.
+ *
+ * Parts, in order:
+ *   - applying settings to the DSP, and the simple (gain-only) menu
+ *   - the advanced menu: the expand-in-place list and its index mapping
+ *   - the graphical editor: slider drawing and its input loop
+ *   - preset load/save/reset, and the menu declarations
  ****************************************************************************/
 
 #include "config.h"

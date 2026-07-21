@@ -75,8 +75,7 @@ static int volume_limit_callback(int action,
     return action;
 }
 
-/***********************************/
-/*    SOUND MENU                   */
+/** Sound menu **/
 MENUITEM_SETTING(volume, &global_status.volume, NULL);
 MENUITEM_SETTING(volume_limit, &global_settings.volume_limit, volume_limit_callback);
 MENUITEM_SETTING(bass, &global_settings.bass,

@@ -8,6 +8,25 @@
  *
  * The shortcuts menu: a user-editable list of jumps to files, directories,
  * settings or screens, persisted to disk.
+ *
+ * Shortcuts are held in a chain of small buflib allocations rather than one
+ * array, because the list grows as the user adds entries. Each handle holds
+ * SHORTCUTS_PER_HANDLE shortcuts plus the *handle id* of the next, so
+ * get_shortcut() walks the chain to reach an index. Linking by id rather than
+ * by pointer is what lets buflib move the blocks freely -- the chain never
+ * needs fixing up.
+ *
+ * What does need care is the pointer get_shortcut() returns, which is raw and
+ * dies at the next yield. This file guards it with buflib_move_lock, a
+ * hand-rolled pin: the move_callback refuses every move while the count is
+ * above zero. Increment it around anything that yields (file I/O) while
+ * holding a shortcut pointer, and decrement it on every path out.
+ *
+ * Parts, in order:
+ *   - the handle chain: allocate, look up by index, remove, and the move veto
+ *   - reading shortcuts.txt into the chain, and writing it back
+ *   - the list screen: names, icons, voicing and per-item actions
+ *   - do_shortcut_menu(), which runs a chosen shortcut
  ****************************************************************************/
 
 #include <stdbool.h>

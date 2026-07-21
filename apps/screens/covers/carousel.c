@@ -15,6 +15,30 @@
  * The cover-flow engine shared by album_covers.c and artist_portraits.c:
  * slide cache, 3D projection, scrolling, input loop and worker thread.
  * Each screen supplies a model.
+ *
+ * There is no floating point here. Positions and angles are PFreal, a signed
+ * fixed-point long with PFREAL_SHIFT (10) fractional bits -- so PFREAL_ONE is
+ * 1.0, and the fmul/fdiv/fsin/fcos helpers below are the arithmetic. Angles
+ * are 0..IANGLE_MAX (1024) for a full turn, not radians or degrees, so they
+ * mask instead of wrapping.
+ *
+ * Slides are decoded on a worker thread into a fixed set of cache slots.
+ * Which slot holds which slide is tracked by the lla_* helpers -- a doubly
+ * linked list whose "pointers" are array indices rather than addresses, so
+ * the whole structure survives being moved and costs no allocation. Reading
+ * the cache requires buf_ctx_lock().
+ *
+ * Parts, in order:
+ *   - fixed-point and geometry constants, module state, theme colours
+ *   - config load/save, and the database availability check
+ *   - fixed-point arithmetic and trig
+ *   - pixel row output helpers for the three source formats
+ *   - scrolling text lines
+ *   - the slide cache: the .pfraw format, the worker thread, and the
+ *     index-linked-list that tracks slot use
+ *   - the projection: offsets, per-slide render, and the full-screen compose
+ *   - animation: stepping between slides and settling
+ *   - init and cleanup, then the input loop and carousel_run() entry point
  ****************************************************************************/
 
 #include <stdio.h>
@@ -187,18 +211,16 @@ static void pf_update_dynamic_colors(void)
 
 /* Not theme-controlled: layout is fixed/proportional (see init()) and
  * colours come from the theme's normal fg/bg + the dynamic (album-art
- * derived) colour scheme, same as everywhere else. An earlier version
- * tried to let the theme drive layout, colours and text rendering via
- * declaration-only SBS viewports (Album_Covers_Viewport/Panel/Name/Artist)
- * that this screen read once and then drew into itself -- reverted, since
- * every attempt to route any part of this through the skin engine at
- * runtime (colours inherited from ambient, non-deterministic SBS viewport
- * state; skin_update()-rendered text racing this screen's own lcd_update();
- * %Vd()'d content left "shown" by whatever screen preceded this one
- * bleeding through) turned out to fight this screen's own per-frame
- * raw-framebuffer redraw model. None of that is fixable while this screen
- * keeps redrawing its own pixels every frame outside the SBS's normal
- * render cycle, so it isn't themeable beyond the theme's plain fg/bg. */
+ * derived) colour scheme, same as everywhere else.
+ *
+ * It cannot be themed further while it draws the way it does. This screen
+ * repaints its own pixels every frame, straight to the framebuffer, outside
+ * the SBS's render cycle -- so anything routed through the skin engine at
+ * runtime fights it: colours arrive inherited from ambient, SBS viewport
+ * state is non-deterministic, skin_update()-rendered text races this
+ * screen's own lcd_update(), and %Vd()'d content left "shown" by whatever
+ * screen preceded this one bleeds through. Themeable layout means giving up
+ * the per-frame raw redraw first. */
 #define THREAD_STACK_SIZE DEFAULT_STACK_SIZE + 0x200
 #define CACHE_PREFIX ROCKBOX_DIR "/album_covers"
 #define ALBUM_INDEX CACHE_PREFIX "/album_covers.idx"
@@ -325,10 +347,8 @@ static int slide_frame;
 static int step;
 static int target;
 static int fade;
-/* Always 0 in this port -- the old in-house zoom-in/zoom-out cover
- * animation that used to drive this was removed along with the in-house
- * track list, but render_all_slides's fade math still references it
- * verbatim, so it's kept as a no-op. */
+/* Always 0: nothing sets it any more, but render_all_slides()'s fade
+ * arithmetic still reads it, so it stays as a no-op term. */
 static int extra_fade;
 int center_index = 0; /* index of the slide that is in the center */
 static int itilt;
@@ -2655,10 +2675,10 @@ int carousel_run(const struct carousel_model *m, const char *selected_file)
         return GO_TO_PREVIOUS;
     }
 
-    /* Was previously only set after returning from the in-screen menu (see
-     * the PF_MENU case in album_covers_loop()) -- meaning the status bar
-     * showed whatever title the previous screen left behind for the entire
-     * time between opening the carousel and the first MENU press. */
+    /* Set here, before the loop starts, so the status bar carries this
+     * screen's title from the moment it opens rather than whatever the
+     * previous screen left behind. The PF_MENU case in album_covers_loop()
+     * re-sets it on the way back from the in-screen menu. */
     sb_set_persistent_title(model->title, Icon_NOICON, SCREEN_MAIN);
 
     /* Jump to selected_file's album if one was passed (e.g. context_menu_show.c's

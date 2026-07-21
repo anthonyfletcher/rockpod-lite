@@ -8,6 +8,24 @@
  *
  * The debug menu and its screens: hardware state, buffers, threads, disk,
  * battery and view-log entries. Development aid, not user-facing.
+ *
+ * Almost every entry is one self-contained dbg_*() function that puts up a
+ * list and returns when the user backs out, so entries are largely
+ * independent of one another and of everything else -- read only the one you
+ * care about. Screens that refresh live do so by returning a formatted string
+ * from a getname callback the list widget polls, rather than drawing.
+ *
+ * The menu itself is assembled at the very bottom of the file; that is the
+ * index to what is here.
+ *
+ * Parts, in order:
+ *   - threads, OS and CPU state
+ *   - buffering, buflib allocations and partitions
+ *   - power: PMU registers, CPU frequency, battery history
+ *   - disk: SMART attributes, identify data, dircache and tagcache stats
+ *   - dumps and logs: ROM, screendump, metadata log
+ *   - input, voice, USB and stored config
+ *   - the menu declaration tying them together
  ****************************************************************************/
 
 #include "config.h"
@@ -1651,7 +1669,7 @@ static bool dbg_bootflash_dump(void) {
 #endif
 
 
-/****** The menu *********/
+/** The menu **/
 static const struct {
     unsigned char *desc; /* string or ID */
     bool (*function) (void); /* return true if USB was connected */

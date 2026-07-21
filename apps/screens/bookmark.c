@@ -9,6 +9,23 @@
  * Bookmarks: creating, listing, loading and auto-bookmarking a playback
  * position, including the most-recent list and the on-disk bookmark file
  * format.
+ *
+ * A bookmark is one line of colon-separated fields naming a playlist, an
+ * index into it, and an elapsed time. Most of the parsing here is walking
+ * that line with skip_tokens()/int_token()/long_token(), which advance a
+ * cursor as they read -- so the order the fields are read in *is* the format.
+ *
+ * Bookmarks for a playlist live in a file beside it; the "most recent" list
+ * is one shared file. Adding to either is a rewrite: the new entry is written
+ * to a temporary file along with the retained old ones, which is then renamed
+ * over the original.
+ *
+ * Parts, in order:
+ *   - hashing and the token-cursor parser for a bookmark line
+ *   - writing: building a bookmark from playback state, and the temp-file swap
+ *   - naming: deriving the bookmark filename for a playlist
+ *   - the bookmark list screen: buffering entries, formatting, voicing, delete
+ *   - loading a bookmark back into playback, and the auto-bookmark prompts
  ****************************************************************************/
 
 #include <stdio.h>

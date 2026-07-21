@@ -15,6 +15,24 @@
  * Cover-flow album browser built on carousel.c. Supplies the slide model
  * -- album list, art loading and its disk cache, sort order -- and what
  * happens on select.
+ *
+ * carousel.c owns the rendering and the input loop; this file only answers
+ * its questions. The link is album_model at the bottom, a struct of function
+ * pointers the carousel calls to ask how many slides there are, what a slide
+ * looks like, and what to do when one is chosen. artist_portraits.c is the
+ * other implementation of the same model.
+ *
+ * The album list is built once by scanning tagcache and written to an index
+ * file, so subsequent opens read the index instead of rescanning. Slide
+ * images are cached to disk as .pfraw (pre-scaled raw pixels) for the same
+ * reason -- decoding album art per frame would be far too slow.
+ *
+ * Parts, in order:
+ *   - the album index: building it from tagcache, sorting, and the on-disk form
+ *   - locating cover art for an album, and rendering it into the slide cache
+ *   - the text drawn under the slides
+ *   - the model callbacks: counts, names, sort order, select and menu
+ *   - album_model itself, and album_covers() which runs the carousel with it
  ****************************************************************************/
 
 #include <stdio.h>
@@ -127,18 +145,16 @@
 
 /* Not theme-controlled: layout is fixed/proportional (see init()) and
  * colours come from the theme's normal fg/bg + the dynamic (album-art
- * derived) colour scheme, same as everywhere else. An earlier version
- * tried to let the theme drive layout, colours and text rendering via
- * declaration-only SBS viewports (Album_Covers_Viewport/Panel/Name/Artist)
- * that this screen read once and then drew into itself -- reverted, since
- * every attempt to route any part of this through the skin engine at
- * runtime (colours inherited from ambient, non-deterministic SBS viewport
- * state; skin_update()-rendered text racing this screen's own lcd_update();
- * %Vd()'d content left "shown" by whatever screen preceded this one
- * bleeding through) turned out to fight this screen's own per-frame
- * raw-framebuffer redraw model. None of that is fixable while this screen
- * keeps redrawing its own pixels every frame outside the SBS's normal
- * render cycle, so it isn't themeable beyond the theme's plain fg/bg. */
+ * derived) colour scheme, same as everywhere else.
+ *
+ * It cannot be themed further while it draws the way it does. This screen
+ * repaints its own pixels every frame, straight to the framebuffer, outside
+ * the SBS's render cycle -- so anything routed through the skin engine at
+ * runtime fights it: colours arrive inherited from ambient, SBS viewport
+ * state is non-deterministic, skin_update()-rendered text races this
+ * screen's own lcd_update(), and %Vd()'d content left "shown" by whatever
+ * screen preceded this one bleeds through. Themeable layout means giving up
+ * the per-frame raw redraw first. */
 #define THREAD_STACK_SIZE DEFAULT_STACK_SIZE + 0x200
 #define CACHE_PREFIX ROCKBOX_DIR "/album_covers"
 #define ALBUM_INDEX CACHE_PREFIX "/album_covers.idx"
@@ -1154,7 +1170,8 @@ bool retrieve_id3(struct mp3entry *id3, const char* file)
 /* Index building shows the theme's generic "working" indicator (the %lw
  * virtual LED / %la spinner, gated on ui_working()) instead of a covering
  * progress splash. Forcing a status-bar refresh here advances the spinner as
- * the build progresses; the step/count/msg args are no longer used. */
+ * the build progresses. The step/count/msg args are unused, kept because the
+ * callback signature is shared with the other progress reporters. */
 static void draw_progressbar(int step, int count, char *msg)
 {
     (void)step; (void)count; (void)msg;

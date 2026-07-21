@@ -9,6 +9,23 @@
  * The long-press context menu. Builds the item list appropriate to what
  * was selected (file, directory, playlist entry) and runs the chosen
  * operation.
+ *
+ * Menus here are built from static MENUITEM_* macro declarations rather than
+ * assembled at runtime. Each macro declares a struct at file scope, and which
+ * items actually appear is decided by each item's callback returning
+ * ACTION_EXIT_MENUITEM to hide itself -- so reading this file means reading
+ * the callbacks, not looking for list-building code.
+ *
+ * The caller sets the target through selected_file_set() before showing the
+ * menu; the operations below then act on that stored path rather than taking
+ * it as a parameter.
+ *
+ * Parts, in order:
+ *   - the selected-file target, and the cut/copy/paste clipboard
+ *   - playlist operations: insert, queue, add to a named or new playlist
+ *   - bookmark, playback and rating items with their visibility callbacks
+ *   - file operations: cut, copy, paste, delete, rename, properties
+ *   - the menu declarations, and context_menu_show*() which run them
  ****************************************************************************/
 #include <errno.h>
 #include <stdio.h>

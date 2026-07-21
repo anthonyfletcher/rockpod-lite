@@ -41,8 +41,7 @@
 #include "pathfuncs.h"
 
 
-/***********************************/
-/*    TAGCACHE MENU                */
+/** Tagcache menu **/
 
 static void tagcache_rebuild_with_splash(void)
 {
@@ -95,11 +94,8 @@ MAKE_MENU(tagcache_menu, ID2P(LANG_TAGCACHE), 0, Icon_NOICON,
                 &tagcache_autoupdate, &tc_init, &tc_update, &runtimedb,
                 &tc_export, &tc_import, &tc_paths
                 );
-/*    TAGCACHE MENU                */
-/***********************************/
 
-/***********************************/
-/*    FILE VIEW MENU               */
+/** File view menu **/
 MENUITEM_SETTING(sort_case, &global_settings.sort_case, NULL);
 MENUITEM_SETTING(sort_dir, &global_settings.sort_dir, NULL);
 MENUITEM_SETTING(sort_file, &global_settings.sort_file, NULL);
@@ -148,12 +144,9 @@ static int filemenu_callback(int action,
     return action;
 }
 
-/*    FILE VIEW MENU               */
-/***********************************/
 
 
-/***********************************/
-/*    SYSTEM MENU                  */
+/** System menu **/
 
 /* Battery */
 #if BATTERY_CAPACITY_INC > 0
@@ -282,11 +275,8 @@ MAKE_MENU(system_menu, ID2P(LANG_SYSTEM),
             &wps_select_action,
          );
 
-/*    SYSTEM MENU                  */
-/***********************************/
 
-/***********************************/
-/*    STARTUP/SHUTDOWN MENU      */
+/** Startup/shutdown menu **/
 
 
 char* sleeptimer_getname(int selected_item, void * data,
@@ -360,11 +350,8 @@ MAKE_MENU(startup_shutdown_menu, ID2P(LANG_STARTUP_SHUTDOWN),
 #endif
          );
 
-/*    STARTUP/SHUTDOWN MENU      */
-/***********************************/
 
-/***********************************/
-/*    BOOKMARK MENU                */
+/** Bookmark menu **/
 static int bmark_callback(int action,
                           const struct menu_item_ex *this_item,
                           struct gui_synclist *this_list)
@@ -393,11 +380,8 @@ MENUITEM_SETTING(usemrb, &global_settings.usemrb, NULL);
 MAKE_MENU(bookmark_settings_menu, ID2P(LANG_BOOKMARK_SETTINGS), 0,
           Icon_Bookmark,
           &autocreatebookmark, &autoupdatebookmark, &autoloadbookmark, &usemrb);
-/*    BOOKMARK MENU                */
-/***********************************/
 
-/***********************************/
-/*    AUTORESUME MENU              */
+/** Autoresume menu **/
 
 static int autoresume_callback(int action,
                                const struct menu_item_ex *this_item,
@@ -453,11 +437,8 @@ MAKE_MENU(autoresume_menu, ID2P(LANG_AUTORESUME),
           0, Icon_NOICON,
           &autoresume_enable, &autoresume_automatic);
 
-/*    AUTORESUME MENU              */
-/***********************************/
 
-/***********************************/
-/*    VOICE MENU                   */
+/** Voice menu **/
 static int talk_callback(int action,
                          const struct menu_item_ex *this_item,
                          struct gui_synclist *this_list);
@@ -500,11 +481,8 @@ MAKE_MENU(voice_settings_menu, ID2P(LANG_VOICE), 0, Icon_Voice,
           &talk_menu_item, &talk_dir_item, &talk_dir_clip_item,
           &talk_file_item, &talk_file_clip_item, &talk_filetype_item,
           &talk_battery_level_item, &talk_mixer_amp_item);
-/*    VOICE MENU                   */
-/***********************************/
 
-/***********************************/
-/*    WPS Settings MENU            */
+/** WPS settings menu **/
 
 MENUITEM_SETTING(browser_default,
                  &global_settings.browser_default, NULL);
@@ -516,12 +494,9 @@ MAKE_MENU(wps_settings, ID2P(LANG_WPS), 0, Icon_Playback_menu
             ,&hotkey_wps_item
             );
 
-/*    WPS Settings MENU            */
-/***********************************/
 
 
-/***********************************/
-/*    SETTINGS MENU                */
+/** Settings menu **/
 
 static struct browse_folder_info langs = { LANG_DIR, SHOW_LNG };
 
@@ -539,5 +514,3 @@ MAKE_MENU(settings_menu_item, ID2P(LANG_GENERAL_SETTINGS), 0,
           &autoresume_menu,
           &browse_langs, &voice_settings_menu,
           );
-/*    SETTINGS MENU                */
-/***********************************/

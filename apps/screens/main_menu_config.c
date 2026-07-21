@@ -35,27 +35,23 @@ static struct menu_table *menu_table;
 static int menu_item_count;
 
 #define MAX_ITEM_NAME 64
-/* root_menu.c's menu_table[] now holds the ~9 fixed entries plus one slot
- * per tagnavi.config root-menu row (TAGNAVI_MAIN_MENU_SLOTS, see
- * root_menu.h) -- this used to be a safe fixed 16, but the tagnavi slots
- * alone can already exceed that, silently overflowing menu_items[] below
- * (a real crash, not hypothetical -- this is exactly what happened before
- * this was fixed). Give it real headroom over the fixed-entry count rather
- * than guessing a bigger fixed number again. */
+/* Must scale with TAGNAVI_MAIN_MENU_SLOTS, never be a fixed number.
+ * root_menu.c's menu_table[] holds ~9 fixed entries plus one slot per
+ * tagnavi.config root-menu row (see root_menu.h), and the tagnavi slots
+ * alone can exceed any fixed guess -- which silently overflows menu_items[]
+ * below rather than failing cleanly. */
 #define MAX_ITEMS (16 + TAGNAVI_MAIN_MENU_SLOTS)
 
-/* Same class of bug as MAX_ITEMS above, same fix: a fixed 128-byte buffer
- * for the "key, key, key, ..." string was sized back when this only ever
- * held a handful of fixed entries, long before tagnavi slots existed. With
- * MAX_ITEMS now up to 36, a fully-populated list (keys up to 11 chars,
- * e.g. "pictureflow"/"system_menu"/"tagnavi19", plus ", ") can need over
- * 400 bytes -- root_menu_write_to_cfg()'s own buf_len bookkeeping doesn't
- * defend against running past the end of an undersized buffer (int
- * buf_len going negative on overflow, then reinterpreted as a huge size_t
- * by the next snprintf() call), so this was a real, silent stack buffer
- * overflow whenever enough items were enabled at once -- not merely a
- * truncated string. 13 bytes/item is the worst case above with a small
- * safety margin. */
+/* Sized per item, for the same reason as MAX_ITEMS above. This buffer holds
+ * the "key, key, key, ..." config string; with keys up to 11 chars
+ * ("pictureflow", "system_menu", "tagnavi19") plus ", ", 13 bytes per item
+ * is the worst case with a small margin.
+ *
+ * It must not be undersized: root_menu_write_to_cfg()'s buf_len bookkeeping
+ * does not defend against running past the end. buf_len is an int, goes
+ * negative on overflow, and the next snprintf() reinterprets it as a huge
+ * size_t -- so the failure is a silent stack overflow, not a truncated
+ * string. */
 #define CFG_STR_SIZE (MAX_ITEMS * 13)
 
 struct items
