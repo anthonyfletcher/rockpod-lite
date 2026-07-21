@@ -1,5 +1,6 @@
-default_icons.bmp
+/* Monochrome bitmaps compiled into the core build.
+ *
+ * The upstream osx_dummy.bmp entry was for hosted Apple builds, which this
+ * bare-metal-only fork cannot produce; it and its conditional are gone. */
 
-#if (CONFIG_PLATFORM & PLATFORM_HOSTED) && defined(__APPLE__)
-osx_dummy.bmp
-#endif
+default_icons.bmp

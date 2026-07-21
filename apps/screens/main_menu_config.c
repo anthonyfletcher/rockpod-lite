@@ -80,7 +80,14 @@ static const char * menu_get_name(int selected_item, void * data,
     unsigned char *p = menu_items[selected_item].name;
     int id = P2ID(p);
 
-    snprintf(buffer, buffer_len, "%s: %s", (id != -1) ? str(id) : (char *)p,
+    /* Both branches point at the same kind of string, but str() yields
+     * "unsigned char *" while p was cast to "char *". Mixing them in one
+     * conditional makes the result "void *", which %s cannot be given.
+     * Behaviour was correct -- the pointer is valid either way -- but the
+     * types have to agree, so settle on const char * for both. */
+    const char *label = (id != -1) ? (const char *)str(id) : (const char *)p;
+
+    snprintf(buffer, buffer_len, "%s: %s", label,
              menu_items[selected_item].enabled ?
              str(LANG_ON) : str(LANG_OFF));
 

@@ -46,8 +46,6 @@ int confirm_delete_yesno(const char *name, const char *title);
 /* only used in USB HID and set_time screen */
 int clamp_value_wrap(int value, int max, int min);
 
-void beep_play(unsigned int frequency, unsigned int duration,
-               unsigned int amplitude);
 
 
 enum core_load_bmp_error

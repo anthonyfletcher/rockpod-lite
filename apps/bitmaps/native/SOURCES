@@ -1,22 +1,10 @@
-/* The Sony NWZ linux bootloader needs icons to display a menu */
-#if defined(BOOTLOADER)
-#if defined(SONY_NWZ_LINUX)
-rockboxicon.130x130x16.bmp
-toolsicon.130x130x16.bmp
-#elif defined(AGPTEK_ROCKER)
-hibyicon.70x70x16.bmp
-rockboxicon.70x70x16.bmp
-toolsicon.70x70x16.bmp
-#elif (defined(XDUOO_X3II) || defined(XDUOO_X20) || defined(EROS_Q) || defined(SURFANS_F28) || defined(HIBY_R3PROII) || defined(HIBY_R1))
-hibyicon.130x130x16.bmp
-rockboxicon.130x130x16.bmp
-toolsicon.130x130x16.bmp
-#elif defined(FIIO_M3K_LINUX)
-fiioicon.130x130x16.bmp
-rockboxicon.130x130x16.bmp
-toolsicon.130x130x16.bmp
-#endif
-#endif
+/* Bitmaps compiled into the core build for the native (colour) LCD.
+ *
+ * This fork targets the iPod Video 5G/5.5G and iPod Classic 6G/7G only, both
+ * 320x240 16-bit. The upstream variants for every other screen size, and the
+ * bootloader menu icons for the Sony/AGPTek/xDuoo/FiiO players, have been
+ * deleted -- they were never selected here. The size conditionals below are
+ * kept only where a real choice remains. */
 
 #ifndef BOOTLOADER  /* We don't need these for the bootloader */
 
@@ -24,11 +12,11 @@ toolsicon.130x130x16.bmp
 rockpodlogo.bmp
 
 /* Album covers' "no artwork found" placeholder slide -- see
- * create_empty_slide() in apps/gui/album_covers.c */
+ * create_empty_slide() in apps/screens/covers/album_covers.c */
 #ifdef HAVE_TAGCACHE
 no_album_cover.bmp
 /* "No artist photo" placeholder for database artist rows -- see
- * aa_ensure_fallback() in apps/albumart_cache.c */
+ * aa_ensure_fallback() in apps/metadata/art_cache.c */
 rockpodnoartistcover.bmp
 #endif
 
@@ -42,6 +30,7 @@ rockpodusb.bmp
 rockpodtext.bmp
 #endif
 
+/* Full-screen loading splash for the core image viewer (320x240 iPods) */
 #if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
 rockpodpicture.bmp
 #endif
@@ -49,29 +38,6 @@ rockpodpicture.bmp
 /* Left-hand artwork panel for the core credits screen (320x240 iPods) */
 #if defined(HAVE_LCD_COLOR) && (LCD_WIDTH == 320) && (LCD_HEIGHT == 240)
 rockpodcredits.bmp
-#endif
-
-/* USB logo */
-#ifdef HAVE_LCD_COLOR
-#if LCD_WIDTH > 176
-usblogo.176x48x16.bmp
-#elif LCD_WIDTH >= 128
-usblogo.128x37x16.bmp
-#elif LCD_WIDTH >= 88
-usblogo.88x24x16.bmp
-#endif
-#elif LCD_DEPTH > 1 /* greyscale */
-#ifdef IPOD_1G2G /* use firewire logo */
-usblogo.fw.128x39x2.bmp
-#else
-usblogo.128x33x2.bmp
-#endif
-#else /* monochrome */
-#if LCD_WIDTH == 112
-usblogo.100x20x1.bmp
-#else
-usblogo.104x27x1.bmp
-#endif
 #endif
 
 #endif /* BOOTLOADER */

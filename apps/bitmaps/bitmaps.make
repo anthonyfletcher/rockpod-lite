@@ -18,18 +18,16 @@ endif
 ifneq ($(strip $(BMP2RB_NATIVE)),)
 BMP += $(call preprocess, $(BITMAPDIR)/native/SOURCES)
 endif
-ifneq ($(strip $(BMP2RB_REMOTEMONO)),)
-BMP += $(call preprocess, $(BITMAPDIR)/remote_mono/SOURCES)
-endif
-ifneq ($(strip $(BMP2RB_REMOTENATIVE)),)
-BMP += $(call preprocess, $(BITMAPDIR)/remote_native/SOURCES)
-endif
+# No remote_mono / remote_native stanzas: these targets have no remote LCD, so
+# tools/configure leaves BMP2RB_REMOTEMONO and BMP2RB_REMOTENATIVE empty and
+# those SOURCES were never read. Both directories have been deleted.
 
 BMPOBJ = $(call full_path_subst,$(ROOTDIR)/%.bmp,$(BUILDDIR)/%.o,$(BMP))
 
-BMPHFILES = $(BMPINCDIR)/usblogo.h $(BMPINCDIR)/remote_usblogo.h \
-	$(BMPINCDIR)/default_icons.h $(BMPINCDIR)/remote_default_icons.h \
-	$(BMPINCDIR)/rockboxicon.h $(BMPINCDIR)/toolsicon.h \
+# The generated headers the core build includes. usblogo.h, remote_usblogo.h,
+# remote_default_icons.h, rockboxicon.h and toolsicon.h were listed here
+# upstream but can never be produced now -- their bitmaps are gone.
+BMPHFILES = $(BMPINCDIR)/default_icons.h \
 	$(BMPINCDIR)/rockpodlogo.h $(BMPINCDIR)/rockpodcredits.h \
 	$(BMPINCDIR)/rockpodusb.h $(BMPINCDIR)/rockpodtext.h \
 	$(BMPINCDIR)/rockpodpicture.h $(BMPINCDIR)/no_album_cover.h \

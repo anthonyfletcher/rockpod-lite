@@ -19,6 +19,7 @@
 #include "input/action.h"
 #include "system/app_util.h"
 #include "piezo.h"
+#include "beep.h"
 #include "sound_feedback.h"
 
 void system_sound_play(enum system_sound sound)
