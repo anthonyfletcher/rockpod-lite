@@ -75,8 +75,8 @@ static const struct filetype_inbuilt inbuilt_filetypes[] = {
 #ifdef BOOTFILE_EXT
     { BOOTFILE_EXT,  FILE_ATTR_MOD },
 #endif
-    /* Types owned by the core-linked viewers. These used to be supplied by
-     * viewers.config, back when a viewer was a .rock named in that file. */
+    /* Types owned by the core-linked viewers. Compiled in here rather than
+     * read from a config file, because the viewers are part of the binary. */
     { "txt",  FILE_ATTR_TXT },
     { "md",   FILE_ATTR_TXT },
     { "nfo",  FILE_ATTR_TXT },

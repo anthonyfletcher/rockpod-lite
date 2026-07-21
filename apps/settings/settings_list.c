@@ -9,6 +9,23 @@
  * The settings table: one entry per setting giving its name, type, range,
  * default, config-file representation and voice clip. The single source of
  * truth for what a setting is.
+ *
+ * Almost the entire file is one array, settings[], built from the
+ * *_SETTING macros defined at the top. Each macro fills a struct
+ * settings_list, so reading an entry means reading the macro that made it --
+ * the arguments are positional and there are a lot of them.
+ *
+ * Adding a setting means: a field in struct user_settings (settings.h), an
+ * entry here, and a lang id. Nothing stores a setting's index -- lookups
+ * scan the table, by cfg_name for config files and by the address of the
+ * variable for find_setting() -- so entries can be reordered freely. What
+ * order does affect is the order settings are written into config.cfg.
+ *
+ * Parts, in order:
+ *   - the value-wrapper and *_SETTING macros that build each entry
+ *   - table data shared by several settings (choice strings, ranges)
+ *   - settings[]: the table itself, grouped roughly as the menus present it
+ *   - lookup helpers over the table
  ****************************************************************************/
 
 #include "config.h"

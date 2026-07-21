@@ -35,10 +35,9 @@
 #define FILE_ATTR_SBS   0x0F00 /* statusbar file */
 #define FILE_ATTR_RSBS  0x1000 /* remote statusbar file */
 #define FILE_ATTR_LUA   0x1100 /* Lua rockbox plugin */
-/* 0x1200 and 0x1300 were FILE_ATTR_FMS / FILE_ATTR_RFMS, the FM screen skin
- * files. This fork has no tuner and nothing referenced them. The values are
- * left unreused so that the remaining constants keep their numbers -- these
- * are explicit, not sequential, so nothing shifted when they went. */
+/* 0x1200 and 0x1300 are deliberately unused. These constants are explicit
+ * rather than sequential, and the gap keeps every value below stable; do not
+ * fill it in or renumber to close it. */
 #define FILE_ATTR_OPX   0x1400 /* open plugins shortcut */
 #define FILE_ATTR_LOG   0x1500 /* log file */
 #define FILE_ATTR_TXT   0x1600 /* document handled by the core text viewer */

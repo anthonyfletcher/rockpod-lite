@@ -8,6 +8,31 @@
  *
  * The tag database itself: builds and loads the on-disk index, and answers
  * searches over it. The largest file in apps/.
+ *
+ * The diagram below is the component view; this is where those components
+ * live in the file, in order:
+ *   - on-disk structs, byte-swapping, and the typed read/write helpers
+ *   - opening the master and per-tag database files
+ *   - the temporary buffer used during commit, and the yield helper
+ *   - lookup: finding an entry by filename, in RAM or on disk
+ *   - search: running a query's clauses and retrieving matching tags
+ *   - modification: writing tags back, and deleting entries
+ *   - the builder: scanning the tree into a temporary DB
+ *   - commit: sorting, uniquing and writing the real index
+ *   - the RAM DB loader, and the control thread that drives build/commit
+ *
+ * Things that shape the whole file:
+ *   - There is one file per tag plus a master index. A "seek" in a search
+ *     result is a byte offset into one of those files, not a record number.
+ *   - Everything on disk is written in the target's native byte order and
+ *     swapped on read if the header says otherwise, which is why the typed
+ *     read and write helpers exist rather than plain read() and write().
+ *   - Building the database is long and must not block playback, so it runs
+ *     on its own thread and calls do_timed_yield() throughout. Anything added
+ *     to the build or commit path needs to keep doing that.
+ *   - The RAM DB is optional: when it is loaded, lookups go through memory
+ *     (find_entry_ram) and otherwise through the files (find_entry_disk).
+ *     Most search code has to work either way.
  ****************************************************************************/
 
 /*

@@ -10,6 +10,26 @@
  * Turns raw button events into context-sensitive actions: applies the
  * keymap for the current context, handles repeat and long-press, and
  * drives the backlight and keyclick.
+ *
+ * A keymap is a flat table of {action, button, prerequisite-button} rows,
+ * searched in order for the first row matching the button just pressed. The
+ * prerequisite field is what expresses "this combination" and "this button
+ * after that one"; BUTTON_NONE means no prerequisite. Contexts fall back to
+ * one another, so a context need only list what it changes and the search
+ * continues into the parent context on no match.
+ *
+ * Long presses cannot be recognised on press, only on release or on the
+ * repeat timer, so get_action() holds state between calls -- the last button,
+ * when it went down, and whether its action has already been reported. That
+ * state is why the action layer must be driven from one place and why
+ * get_action() is not reentrant.
+ *
+ * Parts, in order:
+ *   - the pending-action state carried between calls
+ *   - keymap lookup and context fallback
+ *   - press, repeat, release and long-press timing
+ *   - software keylock and the action filters
+ *   - get_action()/get_custom_action() and the touch/scroll helpers
  ****************************************************************************/
 #include <stdio.h>
 #include <string.h>
@@ -165,11 +185,8 @@ static bool is_action_filtered(int action, unsigned int mask, int context)
         case ACTION_SETTINGS_INCREPEAT:
         case ACTION_SETTINGS_DEC:
         case ACTION_SETTINGS_DECREPEAT:
-            /* Upstream let these count as volume actions, but only inside the
-             * FM screen: "(context == CONTEXT_FM) && has_flag(...)". This fork
-             * has no tuner and CONTEXT_FM is gone, so the condition was always
-             * false. The cases stay -- dropping them would send these actions
-             * to default:, which logs instead of filtering. */
+            /* Never a volume action here. Listed explicitly rather than left
+             * to default:, which logs every action it sees as unfiltered. */
             match = false;
             break;
         default:

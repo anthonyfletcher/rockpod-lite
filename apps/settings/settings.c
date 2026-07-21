@@ -8,6 +8,24 @@
  *
  * Loads, saves and applies settings: the config file format, reading and
  * writing config.cfg, and pushing changed values into the running system.
+ *
+ * Settings live in one global struct, global_settings. This file moves values
+ * between that struct, the config file, and the hardware -- it does not
+ * define what a setting is; settings_list.c does, and everything here works
+ * by walking that table.
+ *
+ * Storing a value and acting on it are separate steps. Writing to
+ * global_settings changes nothing audible or visible until the matching
+ * apply function runs, which is why load and reset both end by applying
+ * everything.
+ *
+ * Parts, in order:
+ *   - config file parsing: one line at a time, matched against the table
+ *   - writing config.cfg, and the "changed from default" test that decides
+ *     what gets written
+ *   - loading and saving, including the .cfg-file-in-the-browser path
+ *   - reset to defaults
+ *   - the apply functions: sound, display, language, and settings_apply()
  ****************************************************************************/
 /* Define LOGF_ENABLE to enable logf output in this file */
 /*#define LOGF_ENABLE*/

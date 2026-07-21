@@ -476,9 +476,7 @@ static int copy_move_directory(struct file_op_params *src,
     return rc;
 }
 
-/************************************************************************************/
-/* PUBLIC FUNCTIONS                                                                 */
-/************************************************************************************/
+/** Public functions **/
 
 /* Copy or move a file or directory see: file_op_flags */
 int copy_move_fileobject(const char *src_path, const char *dst_path, unsigned int flags)
