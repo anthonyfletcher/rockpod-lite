@@ -41,6 +41,7 @@
 #include "system.h"
 #include "general.h"
 #include "system/app_util.h"
+#include "draw/color.h"
 #include "system/strutil.h"
 #include "system/volume.h"
 #include "draw/icon_bitmaps.h"

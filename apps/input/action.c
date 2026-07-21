@@ -29,6 +29,7 @@
 #include "widgets/splash.h"
 #include "settings/settings.h"
 #include "system/app_util.h"
+#include "audio/sound_feedback.h"
 #include "system/shutdown.h"
 #include "skin/skin_engine.h" /* skin_render_inhibit_flush */
 

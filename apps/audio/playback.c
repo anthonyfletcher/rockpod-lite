@@ -35,6 +35,7 @@
 #include "playback.h"
 #include "storage.h"
 #include "system/app_util.h"
+#include "audio/sound_feedback.h"
 #include "settings/settings.h"
 #include "audiohw.h"
 #include "general.h"

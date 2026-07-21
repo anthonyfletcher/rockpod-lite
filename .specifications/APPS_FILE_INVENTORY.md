@@ -23,7 +23,7 @@ fails its own directory's test.
 
 Grouped by the *kind* of mismatch, because they want deciding as groups.
 
-### 1. In `screens/`, but they serve screens rather than being screens
+### 1. RESOLVED -- in screens/, but serving screens rather than being screens
 
 | File | What it actually is | Suggested |
 |---|---|---|
@@ -34,7 +34,7 @@ Grouped by the *kind* of mismatch, because they want deciding as groups.
 The strongest option is probably a `files/` directory holding `browser_files`,
 `fileop` and `filetypes`, leaving `screens/browser.c` as the screen alone.
 
-### 2. In `widgets/`, but they are not UI control flow at all
+### 2. RESOLVED -- in widgets/, but not UI control flow at all
 
 | File | What it actually is | Suggested |
 |---|---|---|
@@ -43,14 +43,18 @@ The strongest option is probably a `files/` directory holding `browser_files`,
 
 Both are *sampled*, not *called*. They fail the widget test outright.
 
-### 3. Singletons worth a decision
+### 3. Singletons -- one fixed, three dismissed on the evidence
 
-| File | Issue |
+| File | Verdict |
 |---|---|
-| `draw/viewport.c` | Owns theme enable/undo, the viewport stack and status-bar area reservation, and calls into the skin engine. `draw/` is supposed to know nothing about features. Note `viewport.h`'s plain helpers (`viewport_set_defaults`, `viewport_set_fullscreen`) *are* primitives — the file may be two things that should separate. |
-| `widgets/menu.c` | The menu engine: walks the `menu_item_ex` tree and owns a navigation loop (scene-like), but is the substrate every settings screen is built on (widget-like). Genuinely on the boundary; possibly its own layer. |
-| `draw/screen_access.c` | Builds the `screens[]` display vtable everything draws *through* — an abstraction rather than a drawing routine. Probably right where it is, as `draw/`'s foundation, but it is a different kind of thing from its neighbours. |
-| `system/app_util.c` | 437 lines, ~17 functions: colour parsing, `core_load_bmp`, keyclick, system sounds, value formatting, small prompts. The residual grab-bag — `misc.c`'s sin at smaller scale. Colour and bitmap loading arguably belong in `draw/`. |
+| `system/app_util.c` | **FIXED.** Was 437 lines / 15 functions. Colour parsing (`hex_to_rgb`, `parse_color`, `hex2dec`) went to `draw/color.c`; system sounds and keyclick went to `audio/sound_feedback.c` — input triggers them, audio produces them, and they were only in `system/` because `misc.c` was. Now 273 lines / 9 functions: a genuine small residue rather than a dumping ground. |
+| `draw/viewport.c` | **LEAVE — the suggested split does not work.** The claim above was that `viewport_*` are primitives and `viewportmanager_*` are the theme manager. False: `viewport_set_defaults`, the most-called function in the file, depends on `is_theme_enabled` and `sb_skin_get_info_vp`, because the default drawing area *is* whatever the status bar leaves. It is inherently theme-aware. The file is one coherent thing — the viewport manager — and splitting it would strand its most-used function away from every caller. |
+| `widgets/menu.c` | **LEAVE — it passes the widget test.** `do_menu()` is called and returns a value to its caller. Running a loop internally does not make it a scene, any more than `gui_syncyesno_run()` is one. |
+| `draw/screen_access.c` | **LEAVE.** It builds the `screens[]` display vtable that everything draws through — `draw/`'s foundation rather than a misplacement. |
+
+Three of the four were me over-applying the taxonomy rather than real problems.
+Recorded with the reasoning, so the same suspicions are not re-raised later
+without the evidence that settled them.
 
 ### 4. Forced placements — correct, and must not be "tidied"
 
@@ -87,7 +91,7 @@ Both are *sampled*, not *called*. They fail the widget test outright.
 ### api/gui/skin_engine  (1 files)
   skin_engine.h              Boundary shim for a SLASHED path: firmware/usb.c:51 includes "gui/skin_engine/skin_engine.h", mirroring the pre-reorganisation layout. The real header is skin/skin_engine.h.
 
-### audio  (24 files)
+### audio  (26 files)
   ab_repeat.c                A-B repeat: stores the two markers and loops playback between them.
   ab_repeat.h                Interface to abrepeat.c.
   audio_path.c               Selects the audio input source. Vestigial on these targets, which have no recording or line-in.
@@ -108,6 +112,8 @@ Both are *sampled*, not *called*. They fail the widget test outright.
   playback.c                 The playback engine: the track lifecycle from buffering through decode to output, gapless handoff, seeking, and the album-art slots the skin draws from.
   playback.h                 Interface to playback.c.
   rbcodec_helpers.c          Glue the shared rbcodec library expects from the application: buffer allocation for the time-stretch DSP.
+  sound_feedback.c           The sounds the UI makes: the standard system sounds and the keyclick, both produced through the beep generator. Input triggers them, audio produces them, which is why they live here rather than with the widgets.
+  sound_feedback.h           Interface to sound_feedback.c.
   spectrum_meter.c           Spectrum analyser bars for the skin. Runs a Goertzel filter bank over recent PCM samples and exposes per-bar levels.
   spectrum_meter.h           Interface to spectrum_meter.c.
   voice_thread.c             The voice thread: decodes and mixes spoken clips over the music, at its own priority so speech stays responsive.
@@ -117,9 +123,11 @@ Both are *sampled*, not *called*. They fail the widget test outright.
   tagcache.c                 The tag database itself: builds and loads the on-disk index, and answers searches over it. The largest file in apps/.
   tagcache.h                 Interface to tagcache.c: the search context, the tag enum and the query API.
 
-### draw  (20 files)
+### draw  (22 files)
   bmp.c                      Reads Windows BMP files into a rockbox bitmap. Handles 1/4/8/16/24-bit input, RLE, palettes and dithering, and can scale on load via resize.c.
   bmp.h                      Interface to bmp.c, plus the shared image types (uint8_rgb, dim, rowset) and IMG_* load flags used by every image path.
+  color.c                    Parses colours from text: "#rrggbb" hex into a native pixel value, and the named/hex forms skins and theme files use.
+  color.h                    Interface to color.c.
   icon.c                     Draws themable icons and the list cursor onto a screen. Owns the active icon set, whether built-in or a user-supplied bitmap strip.
   icon.h                     Interface to icon.c and the themable_icons enum -- the canonical list of icon slots the UI and skins refer to.
   icon_bitmaps.c             The built-in monochrome icon bitmaps (5x8 and 7x8 tables, the disk icon) and the core bitmap registry.

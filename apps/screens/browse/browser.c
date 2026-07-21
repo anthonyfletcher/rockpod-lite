@@ -45,6 +45,7 @@
 #include "speech/talk.h"
 #include "files/filetypes.h"
 #include "system/app_util.h"
+#include "audio/sound_feedback.h"
 #include "system/shutdown.h"
 #include "system/strutil.h"
 #include "pathfuncs.h"

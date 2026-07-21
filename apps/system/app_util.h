@@ -39,13 +39,9 @@ bool warn_on_pl_erase(void);
 
 bool show_search_progress(bool init, int count, int current, int total);
 
-int hex_to_rgb(const char* hex, int* color);
-
 /* Note: Don't rely on title being visible. It is not
          displayed on Android, or if SBS has no title. */
 int confirm_delete_yesno(const char *name, const char *title);
-
-bool parse_color(enum screen_type screen, char *text, int *value);
 
 /* only used in USB HID and set_time screen */
 int clamp_value_wrap(int value, int max, int min);
@@ -53,22 +49,6 @@ int clamp_value_wrap(int value, int max, int min);
 void beep_play(unsigned int frequency, unsigned int duration,
                unsigned int amplitude);
 
-enum system_sound
-{
-    SOUND_KEYCLICK = 0,
-    SOUND_TRACK_SKIP,
-    SOUND_TRACK_NO_MORE,
-    SOUND_LIST_EDGE_BEEP_WRAP,
-    SOUND_LIST_EDGE_BEEP_NOWRAP,
-};
-
-/* Play a standard sound */
-void system_sound_play(enum system_sound sound);
-
-typedef bool (*keyclick_callback)(int action, void* data);
-void keyclick_set_callback(keyclick_callback cb, void* data);
-/* Produce keyclick based upon button and global settings */
-void keyclick_click(bool rawbutton, int action);
 
 enum core_load_bmp_error
 {

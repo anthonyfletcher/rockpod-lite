@@ -36,6 +36,7 @@
 #include "screens/bookmark.h"
 #include "system/activity.h"
 #include "system/app_util.h"
+#include "audio/sound_feedback.h"
 #include "system/shutdown.h"
 #include "system/volume.h"
 #include "sound.h"

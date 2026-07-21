@@ -233,6 +233,8 @@ speech/talk.c
 system/activity.c
 system/app_buffer.c
 system/app_util.c
+draw/color.c
+audio/sound_feedback.c
 system/format_time.c
 system/shutdown.c
 system/strutil.c

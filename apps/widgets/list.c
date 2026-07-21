@@ -29,6 +29,7 @@
 #include "sound.h"
 #include "system/activity.h"
 #include "system/app_util.h"
+#include "audio/sound_feedback.h"
 #include "system/shutdown.h"
 #include "speech/talk.h"
 #include "draw/viewport.h"

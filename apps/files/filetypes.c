@@ -23,6 +23,7 @@
 #include "lang.h"
 #include "kernel.h"
 #include "system/app_util.h"
+#include "draw/color.h"
 #include "system/strutil.h"
 #include "filetypes.h"
 #include "viewers/text_viewer/text_viewer.h"
