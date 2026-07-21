@@ -10,6 +10,25 @@
  * Resolves each skin tag to a value -- track title, elapsed time, battery,
  * and the rest. The bridge between the skin language and the running
  * system.
+ *
+ * Effectively one very large switch over the token enum. get_token_value()
+ * is called during every repaint, once per tag on screen, so the cases are
+ * written to read existing state rather than compute or block.
+ *
+ * A case returns a string, and optionally writes an integer through intval
+ * for tags usable as a conditional or a bar value. Which integer depends on
+ * how the tag was invoked: when limit == TOKEN_VALUE_ONLY it is the raw
+ * value, otherwise it is a 1-based option number, because skin conditionals
+ * count their branches from 1 (see skin_display.c). Returning NULL means the
+ * tag has nothing to show, which the renderer treats differently from an
+ * empty string.
+ *
+ * Parts, in order:
+ *   - helpers for formatting values into the shared numeric buffer
+ *   - track metadata and playback position tags
+ *   - battery, disk, time and system state tags
+ *   - playlist, database and file tags
+ *   - get_token_value(): the dispatch every repaint goes through
  ****************************************************************************/
 #include "font.h"
 #include <stdio.h>

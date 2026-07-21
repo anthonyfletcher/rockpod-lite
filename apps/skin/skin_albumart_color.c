@@ -8,6 +8,24 @@
  *
  * Extracts a dominant colour palette from the current album art and
  * exposes it to skins as dynamic colours, with fading between tracks.
+ *
+ * Extraction runs once per track, not per frame: the art is sampled into
+ * coarse colour buckets, the most populous are picked as the palette, then
+ * adjusted for contrast so text drawn in them stays readable against the
+ * background. Skins read the result through the dynamic-colour tags.
+ *
+ * The fade between tracks is not animated by a timer. start_fade() records
+ * the old and new palettes and a start tick; every colour lookup during the
+ * fade interpolates between them by however far current_tick has got. So the
+ * fade advances only as fast as the screen is repainted, and asking for a
+ * colour is what makes it progress.
+ *
+ * Parts, in order:
+ *   - luminance, interpolation and fade progress helpers
+ *   - extract_colors(): sampling the bitmap and choosing the palette
+ *   - track-change hook and theme colour save/restore
+ *   - the accessors skins resolve their colour tags through, which also
+ *     report whether a fade is still in flight and needs another repaint
  ****************************************************************************/
 
 #include "config.h"

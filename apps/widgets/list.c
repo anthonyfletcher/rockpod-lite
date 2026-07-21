@@ -9,6 +9,25 @@
  * The scrollable list widget: state, selection, scrolling, voicing, and
  * the standard input loop (list_do_action, simplelist_show_list).
  * Delegates painting to list_render.c or list_skinned.c.
+ *
+ * The list never holds the items. Callers give it a count and a set of
+ * callbacks -- get_name, get_icon, get_color, get_talk -- and it asks for one
+ * item at a time by index, only for the rows currently on screen. That is why
+ * a list of ten thousand tracks costs nothing to open, and why the callbacks
+ * must be cheap and must not yield.
+ *
+ * "Synclist" means synchronised across screens: one logical list can be shown
+ * on the main LCD and the remote at once, so per-screen state (which line is
+ * at the top, how many lines fit) is arrays indexed by screen, while the
+ * selection is shared. Most FOR_NB_SCREENS loops here exist for that reason.
+ *
+ * Parts, in order:
+ *   - geometry: item height, how many lines fit, title space
+ *   - init and display settings
+ *   - selection and scrolling, keeping the selection on screen
+ *   - voicing the selected item
+ *   - list_do_action(): turning button actions into list movement
+ *   - simplelist_*: the convenience wrapper for a quick list screen
  ****************************************************************************/
 #include <stdarg.h>
 #include <stdio.h>

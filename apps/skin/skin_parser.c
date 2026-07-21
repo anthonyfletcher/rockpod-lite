@@ -9,6 +9,25 @@
  *
  * Parses a .wps/.sbs skin file into the internal element tree: tags,
  * viewports, conditionals, images and their buflib allocations.
+ *
+ * The whole parsed tree lives inside one movable buflib allocation, which is
+ * why nothing in it is linked by pointer. Every reference is an *offset* from
+ * the base of that block, declared OFFSETTYPE(x) and dereferenced through
+ * SKINOFFSETTOPTR(skin_buffer, off) -- see lib/skin_parser/skin_parser.h.
+ * Offsets survive the block being moved; pointers would not. A negative
+ * offset means NULL. Storing a raw pointer into the tree is the mistake to
+ * watch for here.
+ *
+ * Parsing is table-driven: each skin tag names a parse function in the tag
+ * table, and adding a tag means adding an entry plus its parse_*() below.
+ *
+ * Parts, in order:
+ *   - parameter accessors and the offset-linked token lists
+ *   - image, font and album-art loading (the tags that own resources)
+ *   - viewport tags: colours, gradients, text style, rectangles
+ *   - conditionals, logical operators and timeouts
+ *   - progress bars and the list/spectrum display tags
+ *   - the tag table, and skin_parse() driving the whole thing
  ****************************************************************************/
 
 #include <stdio.h>

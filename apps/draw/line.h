@@ -20,8 +20,7 @@
 #include "lcd.h"
 
 /* put_line()/vput_line() take a screen by pointer only, so a forward
- * declaration is enough. This used to arrive via screens.h, which line.h
- * included without needing anything else from it. */
+ * declaration is enough and this header need not pull in screens.h. */
 struct screen;
 
 /* Possible line decoration styles. Specify one of

@@ -9,6 +9,21 @@
  * The menu engine. Walks a static menu_item_ex tree, renders it as a list,
  * dispatches callbacks, and hands settings items to the option/value
  * screens.
+ *
+ * Menus are declared, not built. The MENUITEM_* macros in menu.h construct
+ * const structs at file scope, so a menu costs no RAM and cannot be edited at
+ * runtime -- what varies is decided by each item's callback, which can hide
+ * the item (ACTION_EXIT_MENUITEM) or act when it is entered. Finding out what
+ * a menu does means reading its callbacks.
+ *
+ * do_menu() is re-entered recursively for submenus, so one call sits on the
+ * stack per level of menu depth.
+ *
+ * Parts, in order:
+ *   - resolving an item's title, icon and voice id from its type
+ *   - the list callbacks that present the menu as a list
+ *   - item visibility and callback dispatch
+ *   - do_menu(): the loop, including descent into submenus and settings
  ****************************************************************************/
 /*
 2005 Kevin Ferrare :

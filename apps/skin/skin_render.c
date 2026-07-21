@@ -10,6 +10,26 @@
  *
  * Walks the parsed element tree and draws it: viewports, conditionals,
  * alternators and progress bars, resolving each tag as it goes.
+ *
+ * The counterpart to skin_parser.c: that file builds the tree, this one
+ * executes it, once per repaint. It recurses through the tree structure, so a
+ * conditional's branches and a viewport's contents are walked by the same
+ * code as the top level.
+ *
+ * Rendering is two passes over each line. The first evaluates tags into a
+ * text buffer and notes what is dynamic; the second draws. That split is what
+ * lets a line containing a scrolling tag be handed to the scroller as a whole
+ * rather than redrawn piecemeal.
+ *
+ * Same offset rule as the parser: the tree is in a movable buflib block, so
+ * everything is reached through SKINOFFSETTOPTR rather than by pointer.
+ *
+ * Parts, in order:
+ *   - the render state carried down the walk
+ *   - evaluating conditionals and alternators to pick a branch
+ *   - building a line's text from its tags
+ *   - drawing a line, including the scrolling case
+ *   - viewport handling and the top-level skin_render() entry points
  ****************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>

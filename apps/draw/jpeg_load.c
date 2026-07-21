@@ -6,6 +6,28 @@
  * JPEG image viewer
  * (This is a real mess if it has to be coded in one single C file)
  *
+ * A baseline JPEG decoder that decodes straight to the target size rather
+ * than decoding full-size and scaling afterwards -- there is not enough RAM
+ * to hold a full-resolution photo. That is what the "fractional decode" in
+ * the credits below means: the IDCT can emit an 8x8 block as 1x1, 2x2, 4x4,
+ * 8x8 or 16x16 pixels, so choosing a scale factor happens before decoding,
+ * in calc_scale(), and the rest of the pipeline follows it.
+ *
+ * Output is produced a row at a time through a callback rather than into a
+ * whole-image buffer, which is why store_row_jpeg() exists and why the
+ * decoder is driven from outside rather than looping to completion itself.
+ *
+ * Parts, in order:
+ *   - IDCT: the scaled inverse DCT, vertical then horizontal pass
+ *   - input: buffered reads, including the ID3 unsync and base64 variants
+ *   - markers: parsing headers, quantisation and Huffman tables
+ *   - Huffman decoding: derived tables, the bit buffer, restart markers
+ *   - store_row_jpeg(): handing decoded rows out
+ *   - read_jpeg_file()/read_jpeg_fd(): scale selection and the entry points
+ *
+ * The maths below is inherited from the IJG implementation and is best read
+ * against that; the comments in it are the original authors'.
+ *
  * Copyright (C) 2009 Andrew Mahone fractional decode, split IDCT - 16-point
  *   IDCT based on IJG jpeg-7 pre-release
  * File scrolling addition (C) 2005 Alexander Spyridakis
