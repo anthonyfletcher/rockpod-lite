@@ -56,4 +56,4 @@ $(BUILDDIR)/credits.raw credits.raw: $(DOCSDIR)/CREDITS
 
 $(BUILDDIR)/apps/credits.o: $(BUILDDIR)/credits.raw
 
-ASMDEFS_SRC += $(APPSDIR)/core_asmdefs.c
+ASMDEFS_SRC += $(APPSDIR)/system/core_asmdefs.c

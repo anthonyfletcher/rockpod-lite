@@ -23,7 +23,7 @@
 #include <string.h>
 #include "timefuncs.h"
 #include "metadata.h"
-#include "playlist.h"
+#include "playlist/playlist.h"
 #include "iap.h"
 
 /* #define LOGF_ENABLE */

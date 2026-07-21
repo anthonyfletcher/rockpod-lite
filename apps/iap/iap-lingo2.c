@@ -29,7 +29,7 @@
 #include "system.h"
 #include "button.h"
 #include "audio.h"
-#include "settings.h"
+#include "settings/settings.h"
 #include "tuner.h"
 
 /*

@@ -28,7 +28,35 @@ bootloader/ against the apps/ header set):
   rbcodecplatform.h   lib/rbcodec/platform.h
   plugin.h            lib/rbcodec/metadata/hes.c -- vestigial; the include
                       needs nothing, and deleting that one line would let
-                      apps/plugin.h go entirely. lib/ is out of scope.
+                      apps/plugin.h go entirely. lib/ is out of scope. This
+                      stub forwards to nothing; it IS the empty header.
+
+Outside code also reaches in by SLASHED path, not just bare name. These
+mirror the pre-reorganisation directory layout:
+
+  gui/yesno.h                     firmware/usb.c:48   -> widgets/yesno.h
+  gui/skin_engine/skin_engine.h   firmware/usb.c:51   -> skin/skin_engine.h
+
+Those two were missed by the first survey, which scanned only for bare
+basenames. If you add a stub here, check BOTH forms:
+
+  grep -rn '#include "[a-z0-9_]*\.h"'                firmware/ lib/ bootloader/
+  grep -rn '#include "[a-z0-9_]*/[a-z0-9_/-]*\.h"'   firmware/ lib/ bootloader/
+
+One member of the contract cannot live in this directory:
+
+  fracmul.h   lib/rbcodec/codecs/spc.c:29 says #include "../fracmul.h". A
+              "../" include resolves against each -I directory, not by name,
+              so no file in apps/api/ can satisfy it. The shim lives at
+              apps/fracmul.h -- see the comment in that file.
+
+Known but NOT stubbed, because these files are never compiled for this fork's
+two targets (iPod Video 5G/5.5G and iPod Classic 6G/7G):
+
+  list.h      firmware/target/arm/stm32/debug-stm32h7.c
+              firmware/target/mips/ingenic_jz47xx/debug-jz4760.c
+              firmware/target/mips/ingenic_x1000/debug-x1000.c
+              (the real header is apps/widgets/list.h)
 
 Rules:
 

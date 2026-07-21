@@ -1,50 +1,18 @@
-#ifndef _FRACMUL_H
-#define _FRACMUL_H
-
-#include <stdint.h>
-#include "gcc_extensions.h"
-
-/** FRACTIONAL MULTIPLICATION
- *  Multiply two fixed point numbers with 31 fractional bits:
- *      FRACMUL(x, y)
+/* apps/ -> outside-world boundary shim. See apps/api/README.
  *
- *  Multiply two fixed point numbers with 31 fractional bits,
- *          then shift left by z bits:
- *      FRACMUL_SHL(x, y, z)
- *          NOTE: z must be in the range 1-8 on Coldfire targets.
+ * This is the one boundary header that cannot live in apps/api/, because its
+ * consumer does not name it by a plain path:
+ *
+ *     lib/rbcodec/codecs/spc.c:29   #include "../fracmul.h"
+ *
+ * A "../" include is resolved against each -I directory in turn, so it only
+ * ever worked because tools/configure put apps/gui on the include path and
+ * apps/gui/../fracmul.h landed here. apps.make now supplies -I$(APPSDIR)/api
+ * instead, so apps/api/../fracmul.h lands here just the same -- but only for
+ * as long as SOME apps/ subdirectory is on the include path. Keep the api
+ * entry in apps.make's INCLUDES or this breaks.
+ *
+ * The real header is apps/system/fracmul.h. lib/ is outside the scope this
+ * fork's cleanup is confined to, so spc.c cannot be edited to say so.
  */
-
-
-/* A bunch of fixed point assembler helper macros */
-
-/* Multiply two S.31 fractional integers and return the sign bit and the
- * 31 most significant bits of the result.
- */
-static inline int32_t FRACMUL(int32_t x, int32_t y)
-{
-    int32_t t, t2;
-    asm ("smull    %[t], %[t2], %[a], %[b]\n\t"
-         "mov      %[t2], %[t2], asl #1\n\t"
-         "orr      %[t], %[t2], %[t], lsr #31\n\t"
-         : [t] "=&r" (t), [t2] "=&r" (t2)
-         : [a] "r" (x), [b] "r" (y));
-    return t;
-}
-
-/* Multiply two S.31 fractional integers, and return the 32 most significant
- * bits after a shift left by the constant z.
- */
-static FORCE_INLINE int32_t FRACMUL_SHL(int32_t x, int32_t y, int z)
-{
-    int32_t t, t2;
-    asm ("smull    %[t], %[t2], %[a], %[b]\n\t"
-         "mov      %[t2], %[t2], asl %[c]\n\t"
-         "orr      %[t], %[t2], %[t], lsr %[d]\n\t"
-         : [t] "=&r" (t), [t2] "=&r" (t2)
-         : [a] "r" (x), [b] "r" (y),
-           [c] "Mr" ((z) + 1), [d] "Mr" (31 - (z)));
-    return t;
-}
-
-
-#endif
+#include "system/fracmul.h"

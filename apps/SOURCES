@@ -1,64 +1,64 @@
 #ifdef ROCKBOX_HAS_LOGF
-logfdisp.c
+screens/logfdisp.c
 #endif
-action.c
+input/action.c
 #ifdef HAVE_RTC_ALARM
-alarm_menu.c
+screens/alarm_menu.c
 #endif
-abrepeat.c
-bookmark.c
-core_keymap.c
-credits.c
-debug_menu.c
-filetypes.c
-fileop.c
-language.c
+audio/abrepeat.c
+screens/bookmark.c
+input/core_keymap.c
+viewers/credits.c
+screens/debug_menu.c
+screens/filetypes.c
+screens/fileop.c
+speech/language.c
 main.c
-menu.c
-menus/menu_common.c
-menus/display_menu.c
-menus/theme_menu.c
+widgets/menu.c
+screens/menus/menu_common.c
+screens/menus/display_menu.c
+screens/menus/theme_menu.c
 #ifdef HAVE_TAGCACHE
-menus/album_covers_menu.c
+screens/menus/album_covers_menu.c
 #endif
-menus/text_viewer_menu.c
-menus/eq_menu.c
-buffering.c
-voice_thread.c
-rbcodec_helpers.c
-menus/main_menu.c
-menus/main_menu_config.c
-menus/playback_menu.c
-menus/playlist_menu.c
-menus/settings_menu.c
-menus/sound_menu.c
+screens/menus/text_viewer_menu.c
+screens/menus/eq_menu.c
+audio/buffering.c
+audio/voice_thread.c
+audio/rbcodec_helpers.c
+screens/menus/main_menu.c
+screens/menus/main_menu_config.c
+screens/menus/playback_menu.c
+screens/menus/playlist_menu.c
+screens/menus/settings_menu.c
+screens/menus/sound_menu.c
 #if CONFIG_RTC
-menus/time_menu.c
+screens/menus/time_menu.c
 #endif
-misc.c
-onplay.c
-playlist.c
-playlist_catalog.c
-playlist_viewer.c
-app_buffer.c
+system/misc.c
+screens/onplay.c
+playlist/playlist.c
+playlist/playlist_catalog.c
+playlist/playlist_viewer.c
+system/app_buffer.c
 root_menu.c
-screens.c
-view_text.c
-properties.c
-mul_id3.c
-playing_time.c
-settings.c
-settings_list.c
-shortcuts.c
-status.c
-cuesheet.c
-talk.c
-tree.c
+screens/screens.c
+widgets/view_text.c
+viewers/properties.c
+metadata/mul_id3.c
+viewers/playing_time.c
+settings/settings.c
+settings/settings_list.c
+screens/shortcuts.c
+audio/status.c
+metadata/cuesheet.c
+speech/talk.c
+screens/tree.c
 #ifdef HAVE_TAGCACHE
-tagtree.c
-folder_select.c
+database/tagtree.c
+widgets/folder_select.c
 #endif
-filetree.c
+screens/filetree.c
 #ifdef IPOD_ACCESSORY_PROTOCOL
 iap/iap-core.c
 iap/iap-lingo0.c
@@ -66,58 +66,58 @@ iap/iap-lingo2.c
 iap/iap-lingo3.c
 iap/iap-lingo4.c
 #endif
-screen_access.c
-gui/icon.c
-gui/list.c
-gui/line.c
-gui/bitmap/list.c
-gui/bitmap/list-skinned.c
-gui/option_select.c
+draw/screen_access.c
+draw/icon.c
+widgets/list.c
+draw/line.c
+widgets/list_render.c
+widgets/list-skinned.c
+widgets/option_select.c
 #ifdef HAVE_PITCHCONTROL
-gui/pitchscreen.c
+screens/pitchscreen.c
 #endif
 #ifdef HAVE_QUICKSCREEN
-gui/quickscreen.c
+screens/quickscreen.c
 #endif
 #if defined(HAVE_BACKLIGHT) || !defined(HAS_BUTTON_HOLD)
-gui/mask_select.c
+widgets/mask_select.c
 #endif
 
-gui/wps.c
-gui/scrollbar.c
-gui/dialog.c
-gui/splash.c
-gui/statusbar.c
-gui/statusbar-skinned.c
-gui/yesno.c
-gui/viewport.c
+screens/wps.c
+draw/scrollbar.c
+widgets/dialog.c
+widgets/splash.c
+skin/statusbar.c
+skin/statusbar-skinned.c
+widgets/yesno.c
+draw/viewport.c
 
 /* Core-linked "Album covers" screen (ported from apps/plugins/pictureflow/,
  * which remains in-tree but is no longer reachable from the main menu).
  * Gated on HAVE_TAGCACHE like the rest of the tag-database UI it replaces
  * the old plugin's entry point for -- see root_menu.c's GO_TO_PICTUREFLOW. */
 #ifdef HAVE_TAGCACHE
-gui/carousel.c
-gui/album_covers.c
-gui/artist_portraits.c
+screens/carousel.c
+screens/album_covers.c
+screens/artist_portraits.c
 #endif
 
 /* Streaming text-extraction engine behind the core-linked text viewer. Turns
  * plain/markdown/html/rtf/fb2/epub/docx/pdf into a stream of UTF-8. Platform
  * coupling is confined to ts_io_core.c; ts_io_rockbox.c (plugin API) and
  * ts_io_stdio.c (host test harness) are deliberately not built here. */
-text_viewer/ts_charset.c
-text_viewer/ts_core.c
-text_viewer/ts_inflate.c
-text_viewer/ts_io_core.c
-text_viewer/ts_markup.c
-text_viewer/ts_pdf.c
-text_viewer/ts_pdffont.c
-text_viewer/ts_tags.c
-text_viewer/ts_text.c
-text_viewer/ts_zip.c
-text_viewer/ts_zipdoc.c
-text_viewer/text_viewer.c
+viewers/text_viewer/ts_charset.c
+viewers/text_viewer/ts_core.c
+viewers/text_viewer/ts_inflate.c
+viewers/text_viewer/ts_io_core.c
+viewers/text_viewer/ts_markup.c
+viewers/text_viewer/ts_pdf.c
+viewers/text_viewer/ts_pdffont.c
+viewers/text_viewer/ts_tags.c
+viewers/text_viewer/ts_text.c
+viewers/text_viewer/ts_zip.c
+viewers/text_viewer/ts_zipdoc.c
+viewers/text_viewer/text_viewer.c
 
 /* Core-linked image viewer (ported from the imageviewer plugin). Colour
  * targets only -- the greylib paths of the original are gone. Reuses the core
@@ -125,93 +125,93 @@ text_viewer/text_viewer.c
  * (recorder/resize.c); ships its own scaler, panning, decoders, and a vendored
  * TLSF pool for giflib. */
 #ifdef HAVE_LCD_COLOR
-image_viewer/image_viewer.c
-image_viewer/image_decoder.c
-image_viewer/resize.c
-image_viewer/xlcd.c
-image_viewer/tlsf.c
-image_viewer/decoders/bmp.c
-image_viewer/decoders/ppm.c
-image_viewer/decoders/ppm_decoder.c
-image_viewer/decoders/png.c
-image_viewer/decoders/png_decoder.c
-image_viewer/decoders/tinflate.c
-image_viewer/decoders/tinfzlib.c
-image_viewer/decoders/crc32.c
-image_viewer/decoders/gif.c
-image_viewer/decoders/gif_decoder.c
-image_viewer/decoders/dgif_lib.c
-image_viewer/decoders/gifalloc.c
-image_viewer/decoders/gif_err.c
-image_viewer/decoders/jpeg.c
-image_viewer/decoders/jpeg_decoder.c
-image_viewer/decoders/yuv2rgb.c
-image_viewer/decoders/jpegp.c
-image_viewer/decoders/jpeg81.c
-image_viewer/decoders/idct.c
-image_viewer/decoders/mempool.c
-image_viewer/decoders/BUFFILEGETC.c
+viewers/image_viewer/image_viewer.c
+viewers/image_viewer/image_decoder.c
+viewers/image_viewer/resize.c
+viewers/image_viewer/xlcd.c
+viewers/image_viewer/tlsf.c
+viewers/image_viewer/decoders/bmp.c
+viewers/image_viewer/decoders/ppm.c
+viewers/image_viewer/decoders/ppm_decoder.c
+viewers/image_viewer/decoders/png.c
+viewers/image_viewer/decoders/png_decoder.c
+viewers/image_viewer/decoders/tinflate.c
+viewers/image_viewer/decoders/tinfzlib.c
+viewers/image_viewer/decoders/crc32.c
+viewers/image_viewer/decoders/gif.c
+viewers/image_viewer/decoders/gif_decoder.c
+viewers/image_viewer/decoders/dgif_lib.c
+viewers/image_viewer/decoders/gifalloc.c
+viewers/image_viewer/decoders/gif_err.c
+viewers/image_viewer/decoders/jpeg.c
+viewers/image_viewer/decoders/jpeg_decoder.c
+viewers/image_viewer/decoders/yuv2rgb.c
+viewers/image_viewer/decoders/jpegp.c
+viewers/image_viewer/decoders/jpeg81.c
+viewers/image_viewer/decoders/idct.c
+viewers/image_viewer/decoders/mempool.c
+viewers/image_viewer/decoders/BUFFILEGETC.c
 #endif
 
-gui/skin_engine/skin_backdrops.c
-gui/skin_engine/skin_display.c
-gui/skin_engine/skin_engine.c
-gui/skin_engine/custom_tags.c
-gui/skin_engine/skin_parser.c
-gui/skin_engine/skin_render.c
-gui/skin_engine/skin_tokens.c
+skin/skin_backdrops.c
+skin/skin_display.c
+skin/skin_engine.c
+skin/custom_tags.c
+skin/skin_parser.c
+skin/skin_render.c
+skin/skin_tokens.c
 
 #if (LCD_DEPTH > 1)
-gui/backdrop.c
+skin/backdrop.c
 #endif
 
-recorder/bmp.c
-recorder/icons.c
-recorder/keyboard.c
-recorder/peakmeter.c
-recorder/spectrum_meter.c
+draw/bmp.c
+draw/icons.c
+widgets/keyboard.c
+widgets/peakmeter.c
+widgets/spectrum_meter.c
 #if defined(HAVE_ALBUMART) || defined(HAVE_JPEG)
-recorder/resize.c
+draw/resize.c
 #endif
 #ifdef HAVE_JPEG
-recorder/jpeg_load.c
+draw/jpeg_load.c
 #ifdef CPU_ARM
-recorder/jpeg_idct_arm.S
+draw/jpeg_idct_arm.S
 #endif
 #endif
 #ifdef HAVE_ALBUMART
-recorder/albumart.c
-albumart_cache.c
+metadata/albumart.c
+metadata/albumart_cache.c
 #endif
 #ifdef HAVE_LCD_COLOR
-gui/color_picker.c
+widgets/color_picker.c
 #ifdef HAVE_ALBUMART
-gui/skin_engine/skin_albumart_color.c
+skin/skin_albumart_color.c
 #endif
 #endif
 
 #if INPUT_SRC_CAPS != 0
-audio_path.c
+audio/audio_path.c
 #endif /* INPUT_SRC_CAPS != 0 */
-audio_thread.c
-pcmbuf.c
-codec_thread.c
-playback.c
-codecs.c
+audio/audio_thread.c
+audio/pcmbuf.c
+audio/codec_thread.c
+audio/playback.c
+audio/codecs.c
 #ifndef HAVE_HARDWARE_BEEP
-beep.c
+audio/beep.c
 #endif
 #ifdef USB_ENABLE_HID
-usb_keymaps.c
+input/usb_keymaps.c
 #endif
 #ifndef USB_NONE
-gui/usb_screen.c
+screens/usb_screen.c
 #endif
 #ifdef HAVE_TAGCACHE
-tagcache.c
+database/tagcache.c
 #endif
 #if (CONFIG_KEYPAD == IPOD_4G_PAD)
-keymaps/keymap-ipod.c
+input/keymap-ipod.c
 #else
 #error "Unsupported CONFIG_KEYPAD for this fork (expected IPOD_4G_PAD)"
 #endif

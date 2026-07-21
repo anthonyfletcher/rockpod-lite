@@ -5,4 +5,4 @@
  * the case, so this stub is now load-bearing rather than merely documentary.
  * Update the path below when the real header moves.
  */
-#include "../gui/splash.h"
+#include "../widgets/splash.h"

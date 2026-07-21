@@ -20,10 +20,10 @@
 #include "iap-core.h"
 #include "iap-lingo.h"
 #include "dir.h"
-#include "settings.h"
-#include "filetree.h"
-#include "gui/wps.h"
-#include "playback.h"
+#include "settings/settings.h"
+#include "screens/filetree.h"
+#include "screens/wps.h"
+#include "audio/playback.h"
 #include "string-extra.h"
 
 /*

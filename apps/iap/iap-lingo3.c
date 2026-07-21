@@ -35,9 +35,9 @@
 #include "system.h"
 #include "audio.h"
 #include "powermgmt.h"
-#include "settings.h"
+#include "settings/settings.h"
 #include "metadata.h"
-#include "playback.h"
+#include "audio/playback.h"
 #ifdef USB_ENABLE_AUDIO
 bool usb_audio_get_active(void);
 #endif

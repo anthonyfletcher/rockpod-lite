@@ -142,7 +142,25 @@ Found by cross-referencing every `#include "…h"` under `firmware/`, `lib/`, an
 | `rbcodecplatform.h` | `lib/rbcodec/platform.h` |
 | `plugin.h` | `lib/rbcodec/metadata/hes.c` — vestigial; the local file is already an empty 46-line stub |
 
-These nine headers are the **entire contract** between `apps/` and the rest of the firmware. Today that contract is invisible: it exists only as a side effect of `-Iapps` and `-Iapps/gui` happening to find the right files.
+> **Corrected after stage 3.** The table above was produced by grepping for `#include "name.h"` — bare basenames only — and it is **incomplete**. Outside code also reaches in by *slashed* path and by *`../`-relative* path, neither of which that regex matches. The full contract is:
+>
+> | Also reaching in | Consumer |
+> |---|---|
+> | `"gui/yesno.h"` | `firmware/usb.c:48` |
+> | `"gui/skin_engine/skin_engine.h"` | `firmware/usb.c:51` |
+> | `"../fracmul.h"` | `lib/rbcodec/codecs/spc.c:29` |
+> | `"list.h"` | three `firmware/target/` debug files this fork never builds |
+>
+> The `../fracmul.h` case is the nastiest: a `../` include is resolved against each `-I` directory in turn, **not by name**, so it only ever worked because `apps/gui` was on the path and `apps/gui/../fracmul.h` landed on `apps/fracmul.h`. No file inside `apps/api/` can satisfy it — the shim must sit at the `apps/` root. That is the one loose header the design cannot eliminate.
+>
+> When surveying this contract, run **all three** forms:
+> ```
+> grep -rn '#include "[a-z0-9_]*\.h"'              firmware/ lib/ bootloader/
+> grep -rn '#include "[a-z0-9_]*/[a-z0-9_/-]*\.h"' firmware/ lib/ bootloader/
+> grep -rn '#include "\.\./'                       firmware/ lib/ bootloader/
+> ```
+
+These headers are the **entire contract** between `apps/` and the rest of the firmware. Today that contract is invisible: it exists only as a side effect of `-Iapps` and `-Iapps/gui` happening to find the right files.
 
 **Workaround, and an improvement: `apps/api/`.** Create one directory holding exactly these nine headers, put it on the include path, and document at the top of each that it is consumed from outside `apps/` and therefore cannot move or be renamed. Two shapes are possible:
 
@@ -506,7 +524,21 @@ Each stage is one or a few commits, builds on both targets, and boots. Stages 1 
 | 7 | **Sweep the radio action enum** (§6.5). Its own commit, keymap read carefully. | builds both; every button in WPS and browser behaves |
 | 8 | **Write `apps/README`** describing the sixteen directories and the three-altitude UI rule, so the structure is documented where a reader will find it. | n/a |
 
-Stage 2's byte-identical-binary check is the key safety property: it proves the include rewrite changed nothing semantic before any file moves. Stage 4 gets the same check.
+Stage 2's byte-identical-binary check is the key safety property: it proves the include rewrite changed nothing semantic before any file moves.
+
+### 9.1 The byte-identity gate: what it can and cannot prove
+
+Learned the hard way during stages 2 and 3. Read this before relying on it in stage 4.
+
+**On ipod6g, moving or renaming a file changes the binary, legitimately.** `firmware/export/system.h:54` defines `CPU_BOOST_LOGGING` when `HAVE_ADJUSTABLE_CPU_FREQ && ROCKBOX_HAS_LOGF && NUM_CORES == 1`, and under it `cpu_boost(x)` expands to `cpu_boost_(x, __FILE__, __LINE__)`. **ipod6g sets `ROCKBOX_HAS_LOGF`; ipodvideo does not.** So on 6g every `cpu_boost()` caller embeds its own absolute source path in the image. Nineteen `apps/` files call it, so nineteen path strings move with them, and the `.text` size shifts by the change in total path length (+124 bytes in stage 3).
+
+Consequences:
+
+- **ipodvideo is the byte-identity target.** It has no `__FILE__` expansion in `apps/`, so a pure move or rename *must* reproduce its binary exactly. Stage 3 did.
+- **ipod6g needs the object-level check instead**: compare per-object hashes, mapping old paths to new. Stage 3's result was 0/558 non-apps objects changed, 134/153 apps objects identical, and the 19 differing ones diffing only in the embedded path string.
+- Grepping `apps/` for `__FILE__` is **not** sufficient to predict this — the expansion lives in a `firmware/` macro. Check the macros `apps/` *uses*, not just the text it contains.
+
+**The control must clear everything it claims to.** The stage 2 control deleted only `apps/*.o`, `apps/gui/*.o` and `apps/menus/*.o`, leaving `recorder/`, `iap/`, `image_viewer/` and `text_viewer/` objects in place, and so proved less than it appeared to. Stage 3 also hit a stale `make.dep` that resurrected a deleted header as a phantom make target (`-MG` records unresolvable includes as build-dir-relative dependencies, so they persist). **Use `make clean`, not selective deletion.**
 
 ---
 

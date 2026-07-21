@@ -5,4 +5,4 @@
  * lives inside apps/, so apps/ can be reorganised without editing files
  * outside it. Update the path below when the real header moves.
  */
-#include "../rbcodecconfig.h"
+#include "../system/rbcodecconfig.h"
