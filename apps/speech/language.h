@@ -1,4 +1,11 @@
-/* was: apps/language.h */
+/***************************************************************************
+ * RockPod-Lite
+ *
+ * was: apps/language.h
+ * GNU General Public License (version 2+)
+ *
+ * Interface to language.c.
+ ****************************************************************************/
 #ifndef __LANGUAGE_H
 #define __LANGUAGE_H
 /***************************************************************************

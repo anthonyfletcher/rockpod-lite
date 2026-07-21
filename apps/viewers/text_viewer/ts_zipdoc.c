@@ -1,10 +1,12 @@
-/* was: apps/text_viewer/ts_zipdoc.c */
-/* ts_zipdoc.c -- the zip-backed documents: EPUB, DOCX and .fb2.zip.
+/***************************************************************************
+ * RockPod-Lite
  *
- * An EPUB is read the way the spec says to read it: container.xml names the
- * OPF, the OPF's manifest maps ids to files and its spine gives reading order.
- * The spine is then walked one document at a time through a single markup
- * filter, so a 500-chapter book costs no more memory than a one-page one. */
+ * was: apps/text_viewer/ts_zipdoc.c
+ * GNU General Public License (version 2+)
+ *
+ * The zip-backed documents: EPUB, DOCX and .fb2.zip. Finds the content
+ * parts inside the container and feeds them through the markup path.
+ ****************************************************************************/
 
 #include "ts_internal.h"
 

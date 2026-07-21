@@ -1,7 +1,5 @@
 /* was: apps/image_viewer/decoders/mempool.c */
-/* Simple bump allocator over the image buffer, used by the progressive JPEG
- * (RAINBOW) decoder. Renamed from malloc/calloc to jpegp_* so it does not
- * shadow the firmware allocator in the core build. */
+/* Simple bump allocator over the image buffer, used by the progressive JPEG (RAINBOW) decoder. Renamed from malloc/calloc to jpegp_* so it does not shadow the firmware allocator in the core build. */
 
 #include <inttypes.h>
 #include <string.h>

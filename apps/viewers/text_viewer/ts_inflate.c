@@ -1,10 +1,12 @@
-/* was: apps/text_viewer/ts_inflate.c */
-/* ts_inflate.c -- streaming DEFLATE (RFC 1951) and zlib (RFC 1950).
+/***************************************************************************
+ * RockPod-Lite
  *
- * Output is produced one byte at a time into a 32 KiB circular window and
- * copied straight out, so decompression can be suspended at any byte when the
- * caller's buffer fills. Nothing is ever buffered whole: peak cost is the
- * window plus ~1.5 KiB of tables. */
+ * was: apps/text_viewer/ts_inflate.c
+ * GNU General Public License (version 2+)
+ *
+ * Streaming DEFLATE and zlib decompressor, used by the zip-backed document
+ * formats.
+ ****************************************************************************/
 
 #include "ts_internal.h"
 #include <stddef.h>   /* offsetof */

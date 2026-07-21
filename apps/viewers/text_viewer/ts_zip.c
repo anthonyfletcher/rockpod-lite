@@ -1,9 +1,12 @@
-/* was: apps/text_viewer/ts_zip.c */
-/* ts_zip.c -- just enough ZIP to walk EPUB/DOCX containers.
+/***************************************************************************
+ * RockPod-Lite
  *
- * The central directory is indexed once into the arena; member data is then
- * streamed through the shared inflate stage. Only STORE and DEFLATE are
- * supported, which is all the OCF and OOXML specs permit. */
+ * was: apps/text_viewer/ts_zip.c
+ * GNU General Public License (version 2+)
+ *
+ * Just enough ZIP to walk an EPUB or DOCX container: central directory,
+ * entry lookup, and stream-per-entry.
+ ****************************************************************************/
 
 #include "ts_internal.h"
 

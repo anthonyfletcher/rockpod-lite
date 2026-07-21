@@ -1,8 +1,10 @@
-/* apps/ -> outside-world boundary. See apps/api/README.
+/***************************************************************************
+ * RockPod-Lite
  *
- * firmware/ and/or lib/ include "settings.h" by bare name. This stub keeps that
- * name resolvable from the include path no matter where the real header
- * lives inside apps/, so apps/ can be reorganised without editing files
- * outside it. Update the path below when the real header moves.
- */
+ * GNU General Public License (version 2+)
+ *
+ * Boundary shim. firmware/ and lib/rbcodec/dsp include "settings.h" by
+ * bare name; the real header is settings/settings.h. Update the path below
+ * when it moves.
+ ****************************************************************************/
 #include "../settings/settings.h"

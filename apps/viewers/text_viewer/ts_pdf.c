@@ -1,30 +1,12 @@
-/* was: apps/text_viewer/ts_pdf.c */
-/* ts_pdf.c -- text extraction from PDF.
+/***************************************************************************
+ * RockPod-Lite
  *
- * Deliberately does not parse the cross-reference table. A viewer only needs
- * the words in file order, and xref parsing would mean supporting classic
- * tables, xref streams, object streams, incremental updates and broken
- * generators -- a lot of code and a lot of RAM for no extra text. Instead the
- * file is scanned front to back for stream objects whose dictionary marks them
- * as content, each is decompressed through the shared inflate stage, and the
- * page description operators are tokenised for their text-showing arguments.
+ * was: apps/text_viewer/ts_pdf.c
+ * GNU General Public License (version 2+)
  *
- * Glyph codes are decoded through the font's /ToUnicode CMap (see
- * ts_pdffont.c), because in a subset font the codes are arbitrary. Line
- * breaks come from the text position, never from the operators: generators
- * split one visual line across many text objects, and Chrome places every
- * single glyph with its own Td.
- *
- * Known limits, in rough order of how often they bite:
- *   - a font with no /ToUnicode and a non-standard encoding is undecodable;
- *     so is one whose CMap has holes (real files do: Chrome has been seen to
- *     omit the mapping for a letter, which then cannot be recovered by any
- *     extractor).
- *   - encrypted PDFs are not decrypted.
- *   - LZWDecode and RunLengthDecode content streams are skipped.
- *   - reading order is file order, which is page order in almost every file
- *     but is not guaranteed by the format.
- */
+ * Text extraction from PDF: object parsing, stream filters, content-stream
+ * tokenising and text positioning.
+ ****************************************************************************/
 
 #include "ts_internal.h"
 

@@ -1,7 +1,10 @@
-/* apps/ -> outside-world boundary. See apps/api/README.
+/***************************************************************************
+ * RockPod-Lite
  *
- * firmware/usb.c:48 includes "gui/yesno.h". The real header is now
- * apps/widgets/yesno.h; this keeps the old path resolvable without editing
- * firmware/, which is outside this fork's cleanup scope.
- */
+ * GNU General Public License (version 2+)
+ *
+ * Boundary shim for a SLASHED path: firmware/usb.c:48 includes
+ * "gui/yesno.h", mirroring the pre-reorganisation layout. The real header
+ * is widgets/yesno.h.
+ ****************************************************************************/
 #include "../../widgets/yesno.h"

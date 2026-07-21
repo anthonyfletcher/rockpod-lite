@@ -1,5 +1,11 @@
-/* was: apps/text_viewer/ts_markup.c */
-/* ts_markup.c -- the loose (non-container) markup formats. */
+/***************************************************************************
+ * RockPod-Lite
+ *
+ * was: apps/text_viewer/ts_markup.c
+ * GNU General Public License (version 2+)
+ *
+ * Back end for loose markup: HTML and XHTML read directly from the file.
+ ****************************************************************************/
 
 #include "ts_internal.h"
 

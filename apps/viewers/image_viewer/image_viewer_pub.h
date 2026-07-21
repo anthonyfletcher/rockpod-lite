@@ -1,24 +1,14 @@
-/* was: apps/image_viewer/image_viewer_pub.h */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
+ * RockPod-Lite
  *
+ * Original code from RockBox
+ * was: apps/image_viewer/image_viewer_pub.h
  * Public entry point for the core-linked image viewer. Kept separate from
  * image_viewer.h (which defines internal status codes that would clash with
  * plugin.h) so call sites that also include plugin.h can use it.
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * The image viewer's public entry point, for callers outside viewers/.
  ****************************************************************************/
 
 #ifndef _IMAGE_VIEWER_PUB_H_

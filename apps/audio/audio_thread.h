@@ -1,25 +1,14 @@
-/* was: apps/audio_thread.h */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
- * $Id$
+ * RockPod-Lite
  *
+ * Original code from RockBox
+ * was: apps/audio_thread.h
  * Copyright (C) 2005-2007 Miika Pekkarinen
  * Copyright (C) 2007-2008 Nicolas Pennequin
  * Copyright (C) 2011-2013 Michael Sevakis
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * Interface to audio_thread.c, plus audio_init()/playback_init().
  ****************************************************************************/
 #ifndef AUDIO_THREAD_H
 #define AUDIO_THREAD_H

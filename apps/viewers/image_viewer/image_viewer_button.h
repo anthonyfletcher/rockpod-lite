@@ -1,25 +1,15 @@
-/* was: apps/image_viewer/image_viewer_button.h */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
- * $Id$
+ * RockPod-Lite
  *
+ * Original code from RockBox
+ * was: apps/image_viewer/image_viewer_button.h
  * Button definitions for the core image viewer.
  *
  * Only the iPod 4G pad (used by iPod Video 5G and Classic 6G/7G) is kept.
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * Button mapping for the image viewer, kept separate so the keypad
+ * bindings are all in one place.
  ****************************************************************************/
 
 #ifndef _IMAGE_VIEWER_BUTTONS_H

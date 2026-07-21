@@ -1,20 +1,11 @@
-/* was: apps/text_viewer/text_viewer.h */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
+ * RockPod-Lite
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Original code from RockBox
+ * was: apps/text_viewer/text_viewer.h
+ * GNU General Public License (version 2+)
  *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * Interface to text_viewer.c.
  ****************************************************************************/
 #ifndef _TEXT_VIEWER_H_
 #define _TEXT_VIEWER_H_

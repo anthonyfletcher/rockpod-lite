@@ -1,26 +1,16 @@
-/* was: apps/playing_time.c */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
- * $Id$
+ * RockPod-Lite
  *
+ * Original code from RockBox
+ * was: apps/playing_time.c
  * Core "Playing Time" screen, ported from the playing_time plugin. Shows
  * total/elapsed playlist duration and other stats for the current playlist.
  * Entered as playing_time_screen() and reached directly from apps/onplay.c's
  * Current Playlist menu, no longer loaded as a .rock.
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * Playing-time statistics for the current playlist: elapsed, remaining and
+ * total time, track counts and sizes.
  ****************************************************************************/
 
 #include <stdio.h>

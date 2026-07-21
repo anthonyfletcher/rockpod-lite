@@ -1,13 +1,8 @@
-/* was: apps/app_buffer.c */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
- * $Id$
+ * RockPod-Lite
  *
+ * Original code from RockBox
+ * was: apps/app_buffer.c
  * Copyright (C) 2002 Björn Stenberg
  *
  * The plugin system has been removed from this fork. All that remains of it in
@@ -36,15 +31,10 @@
  * mean threading ownership through four unrelated call sites for no gain --
  * and a missed release would panic during ordinary use, which is a worse
  * failure than the one being prevented.
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * Hands out the linker-reserved scratch buffer to whichever screen needs a
+ * large temporary allocation, guarding against two owners at once.
  ****************************************************************************/
 #include "config.h"
 #include "panic.h"

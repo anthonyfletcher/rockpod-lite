@@ -1,27 +1,17 @@
-/* was: apps/image_viewer/image_viewer.h */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
- * $Id$
+ * RockPod-Lite
  *
+ * Original code from RockBox
+ * was: apps/image_viewer/image_viewer.h
  * Core image viewer -- shared definitions.
  *
  * Ported from the imageviewer plugin (apps/plugins/imageviewer) into a plain
  * core app. Targets are the colour 320x240 iPods only, so the greylib
  * (USEGSLIB) and non-colour code paths of the original are gone.
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * Shared interface between the image viewer and its decoders: the decoder
+ * vtable, the shared buffer, and the progress callback.
  ****************************************************************************/
 
 #ifndef _IMAGE_VIEWER_H

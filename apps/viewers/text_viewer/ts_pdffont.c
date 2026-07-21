@@ -1,19 +1,12 @@
-/* was: apps/text_viewer/ts_pdffont.c */
-/* ts_pdffont.c -- /ToUnicode CMaps and the page resources that name them.
+/***************************************************************************
+ * RockPod-Lite
  *
- * Why this exists: in a subset font the glyph codes are arbitrary. Chrome's
- * print-to-PDF gives each run its own Type3 subset, so code 0x08 may be "n"
- * in one font and something else in the next. The content stream carries only
- * those codes, which makes the font's /ToUnicode CMap the sole decoding key.
- * Without this layer such documents extract as mojibake, and they are the
- * commonest PDFs in the wild.
+ * was: apps/text_viewer/ts_pdffont.c
+ * GNU General Public License (version 2+)
  *
- * Still no xref parsing: two sequential scans of the file find everything.
- * The first collects font->ToUnicode links, page resource maps and each
- * page's /Contents; the second decodes the CMap streams it now knows it
- * wants. Neither needs the cross-reference table to be present or correct,
- * which is just as well, because in damaged files it often isn't.
- */
+ * PDF font handling: /ToUnicode CMaps and the page resources that name
+ * them, so extracted glyphs map back to characters.
+ ****************************************************************************/
 
 #include "ts_internal.h"
 #include "string-extra.h"   /* strlcpy (strncpy isn't linkable in -nostdlib core) */

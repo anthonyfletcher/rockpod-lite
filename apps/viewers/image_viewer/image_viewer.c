@@ -1,13 +1,8 @@
-/* was: apps/image_viewer/image_viewer.c */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
- * $Id$
+ * RockPod-Lite
  *
+ * Original code from RockBox
+ * was: apps/image_viewer/image_viewer.c
  * Core image viewer -- scene / event loop.
  *
  * Ported from the imageviewer plugin. Notable differences from the plugin:
@@ -19,15 +14,10 @@
  *   - it owns the whole screen (theme disabled), shows a branded splash on
  *     first load, and uses the shared splash_progress dialog for decode/zoom
  *     progress over the retained image instead of blanking the screen.
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * The image viewer UI: loads a picture through the decoder registry, then
+ * handles zoom, pan, slideshow and next/previous within a directory.
  ****************************************************************************/
 
 #include <stdbool.h>

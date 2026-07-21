@@ -1,24 +1,15 @@
-/* was: apps/gui/skin_engine/skin_tokens.c */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
- * $Id$
+ * RockPod-Lite
  *
+ * Original code from RockBox
+ * was: apps/gui/skin_engine/skin_tokens.c
  * Copyright (C) 2002-2007 Björn Stenberg
  * Copyright (C) 2007-2008 Nicolas Pennequin
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * Resolves each skin tag to a value -- track title, elapsed time, battery,
+ * and the rest. The bridge between the skin language and the running
+ * system.
  ****************************************************************************/
 #include "font.h"
 #include <stdio.h>

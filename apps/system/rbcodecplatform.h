@@ -1,4 +1,11 @@
-/* was: apps/rbcodecplatform.h */
+/***************************************************************************
+ * RockPod-Lite
+ *
+ * was: apps/rbcodecplatform.h
+ * GNU General Public License (version 2+)
+ *
+ * Platform hooks the shared rbcodec library expects from the application.
+ ****************************************************************************/
 #ifndef RBCODECPLATFORM_H_INCLUDED
 #define RBCODECPLATFORM_H_INCLUDED
 #if 0

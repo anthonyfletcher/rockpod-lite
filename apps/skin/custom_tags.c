@@ -1,22 +1,16 @@
-/* was: apps/gui/skin_engine/custom_tags.c */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
+ * RockPod-Lite
  *
+ * Original code from RockBox
+ * was: apps/gui/skin_engine/custom_tags.c
  * This build's extra skin tags, kept out of lib/skin_parser/tag_table.c so
  * that file can track rockpod unchanged. find_tag() falls back to
  * find_custom_tag() (weak-linked there) when a tag isn't in the upstream
  * table.
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
+ * Registry of this fork's non-upstream skin tags, kept separate so the
+ * additions are visible in one place.
  ****************************************************************************/
 
 #include <string.h>

@@ -1,24 +1,12 @@
-/* was: apps/text_viewer/txt_source.h */
-/* txt_source.h -- streaming text extraction engine for the Rockbox viewer.
+/***************************************************************************
+ * RockPod-Lite
  *
- * The engine turns an arbitrary supported document into a stream of UTF-8
- * text. It never allocates: all working memory comes from a caller-supplied
- * arena, and all I/O goes through a caller-supplied vtable, so the same code
- * builds against Rockbox's plugin API and against stdio on the host.
+ * was: apps/text_viewer/txt_source.h
+ * GNU General Public License (version 2+)
  *
- * Typical use:
- *
- *     static char arena[TS_ARENA_RECOMMENDED];
- *     ts_config cfg = ts_config_default();
- *     ts_source *s;
- *     if (ts_open(&s, &io, "book.epub", arena, sizeof arena, &cfg) == TS_OK) {
- *         char buf[1024];
- *         long n;
- *         while ((n = ts_read(s, buf, sizeof buf)) > 0)
- *             consume(buf, n);
- *         ts_close(s);
- *     }
- */
+ * Public API of the ts_* text-extraction engine: open a document, read
+ * UTF-8 out of it, close it. The only header a caller needs.
+ ****************************************************************************/
 #ifndef TXT_SOURCE_H
 #define TXT_SOURCE_H
 

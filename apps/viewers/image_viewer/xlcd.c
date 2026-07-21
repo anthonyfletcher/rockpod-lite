@@ -1,29 +1,19 @@
-/* was: apps/image_viewer/xlcd.c */
 /***************************************************************************
-*             __________               __   ___.
-*   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
-*   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
-*   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
-*   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
-*                     \/            \/     \/    \/            \/
-* $Id$
-*
-* Framebuffer access and hardware scrolling used to pan a zoomed image.
-* Ported from apps/plugins/lib/xlcd_core.c and xlcd_scroll.c; the plugin API
-* indirection (rb->) is gone and only the >= 8bpp code paths are kept, since
-* the only targets are the 16bpp iPods.
-*
-* Copyright (C) 2005 Jens Arnold
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
-* KIND, either express or implied.
-*
-****************************************************************************/
+ * RockPod-Lite
+ *
+ * Original code from RockBox
+ * was: apps/image_viewer/xlcd.c
+ * Framebuffer access and hardware scrolling used to pan a zoomed image.
+ * Ported from apps/plugins/lib/xlcd_core.c and xlcd_scroll.c; the plugin API
+ * indirection (rb->) is gone and only the >= 8bpp code paths are kept, since
+ * the only targets are the 16bpp iPods.
+ *
+ * Copyright (C) 2005 Jens Arnold
+ * GNU General Public License (version 2+)
+ *
+ * Hardware-assisted LCD block scrolling, used to pan a large image without
+ * redrawing it.
+ ****************************************************************************/
 
 #include <string.h>
 #include "lcd.h"

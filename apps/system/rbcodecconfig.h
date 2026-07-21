@@ -1,4 +1,11 @@
-/* was: apps/rbcodecconfig.h */
+/***************************************************************************
+ * RockPod-Lite
+ *
+ * was: apps/rbcodecconfig.h
+ * GNU General Public License (version 2+)
+ *
+ * Configuration the shared rbcodec library expects from the application.
+ ****************************************************************************/
 #ifndef RBCODECCONFIG_H_INCLUDED
 #define RBCODECCONFIG_H_INCLUDED
 

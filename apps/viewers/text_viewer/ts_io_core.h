@@ -1,10 +1,11 @@
-/* was: apps/text_viewer/ts_io_core.h */
-/* ts_io_core.h -- ts_io over the core file API.
+/***************************************************************************
+ * RockPod-Lite
  *
- * The core-build counterpart of ts_io_rockbox.c (which is built only against
- * the plugin API and is not in apps/SOURCES). The file handle is caller-owned
- * and must stay valid until ts_close(), so unlike the plugin version the type
- * has to be visible here rather than hidden in the .c. */
+ * was: apps/text_viewer/ts_io_core.h
+ * GNU General Public License (version 2+)
+ *
+ * Interface to ts_io_core.c.
+ ****************************************************************************/
 #ifndef TS_IO_CORE_H
 #define TS_IO_CORE_H
 

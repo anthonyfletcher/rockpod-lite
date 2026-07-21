@@ -1,28 +1,18 @@
-/* was: apps/image_viewer/decoders/jpeg.c */
 /***************************************************************************
-*             __________               __   ___.
-*   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
-*   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
-*   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
-*   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
-*                     \/            \/     \/    \/            \/
-* $Id$
-*
-* JPEG image viewer (baseline decoder, core build).
-* Ported from the imageviewer plugin.
-*
-* Copyright (C) 2004 Jörg Hohensohn aka [IDC]Dragon
-* Heavily borrowed from the IJG implementation (C) Thomas G. Lane
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
-* KIND, either express or implied.
-*
-****************************************************************************/
+ * RockPod-Lite
+ *
+ * Original code from RockBox
+ * was: apps/image_viewer/decoders/jpeg.c
+ * JPEG image viewer (baseline decoder, core build).
+ * Ported from the imageviewer plugin.
+ *
+ * Copyright (C) 2004 Jörg Hohensohn aka [IDC]Dragon
+ * Heavily borrowed from the IJG implementation (C) Thomas G. Lane
+ * GNU General Public License (version 2+)
+ *
+ * Baseline JPEG back end for the image viewer, separate from the album-art
+ * decoder in draw/.
+ ****************************************************************************/
 
 #include <string.h>
 #include "system.h"

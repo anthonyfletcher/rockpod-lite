@@ -1,8 +1,5 @@
 /* was: apps/image_viewer/decoders/BUFFILEGETC.c */
-/* Simple buffered version of file reader.
- * JPEG decoding seems to work faster with it.
- * Not fully tested. In case of any issues try FILEGETC (see SOURCES)
- * */
+/* Simple buffered version of file reader. JPEG decoding seems to work faster with it. Not fully tested. In case of any issues try FILEGETC (see SOURCES) */
 #include "jpegp_glue.h"
 
 static int fd;

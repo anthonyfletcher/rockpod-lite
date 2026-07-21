@@ -1,5 +1,12 @@
-/* was: apps/text_viewer/ts_core.c */
-/* ts_core.c -- arena, helpers, file stream, probing, public entry points. */
+/***************************************************************************
+ * RockPod-Lite
+ *
+ * was: apps/text_viewer/ts_core.c
+ * GNU General Public License (version 2+)
+ *
+ * The engine core: arena allocation, the file stream, format probing, and
+ * the public entry points from txt_source.h.
+ ****************************************************************************/
 
 #include "ts_internal.h"
 

@@ -1,5 +1,12 @@
-/* was: apps/text_viewer/ts_charset.c */
-/* ts_charset.c -- detection and conversion of the input encoding to UTF-8. */
+/***************************************************************************
+ * RockPod-Lite
+ *
+ * was: apps/text_viewer/ts_charset.c
+ * GNU General Public License (version 2+)
+ *
+ * Detects the input encoding (BOM, UTF-8 validity, codepage heuristics)
+ * and converts it to UTF-8.
+ ****************************************************************************/
 
 #include "ts_internal.h"
 

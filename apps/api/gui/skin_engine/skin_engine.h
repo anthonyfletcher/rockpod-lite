@@ -1,7 +1,10 @@
-/* apps/ -> outside-world boundary. See apps/api/README.
+/***************************************************************************
+ * RockPod-Lite
  *
- * firmware/usb.c:51 includes "gui/skin_engine/skin_engine.h". The real header
- * is now apps/skin/skin_engine.h; this keeps the old path resolvable without
- * editing firmware/, which is outside this fork's cleanup scope.
- */
+ * GNU General Public License (version 2+)
+ *
+ * Boundary shim for a SLASHED path: firmware/usb.c:51 includes
+ * "gui/skin_engine/skin_engine.h", mirroring the pre-reorganisation
+ * layout. The real header is skin/skin_engine.h.
+ ****************************************************************************/
 #include "../../../skin/skin_engine.h"

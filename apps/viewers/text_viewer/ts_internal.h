@@ -1,5 +1,12 @@
-/* was: apps/text_viewer/ts_internal.h */
-/* ts_internal.h -- shared internals. Not part of the public API. */
+/***************************************************************************
+ * RockPod-Lite
+ *
+ * was: apps/text_viewer/ts_internal.h
+ * GNU General Public License (version 2+)
+ *
+ * Shared internals of the ts_* engine -- stream types and per-stage
+ * restart hooks. Not part of the public API.
+ ****************************************************************************/
 #ifndef TS_INTERNAL_H
 #define TS_INTERNAL_H
 

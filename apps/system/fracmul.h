@@ -1,4 +1,11 @@
-/* was: apps/fracmul.h */
+/***************************************************************************
+ * RockPod-Lite
+ *
+ * was: apps/fracmul.h
+ * GNU General Public License (version 2+)
+ *
+ * Fixed-point fractional multiply helpers used by the DSP and scalers.
+ ****************************************************************************/
 #ifndef _FRACMUL_H
 #define _FRACMUL_H
 

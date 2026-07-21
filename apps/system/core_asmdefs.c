@@ -1,4 +1,12 @@
-/* was: apps/core_asmdefs.c */
+/***************************************************************************
+ * RockPod-Lite
+ *
+ * was: apps/core_asmdefs.c
+ * GNU General Public License (version 2+)
+ *
+ * Emits struct offsets as assembler constants, generating core_asmdefs.h
+ * for the ARM assembly routines to include.
+ ****************************************************************************/
 #include <config.h>
 #include "draw/bmp.h"
 

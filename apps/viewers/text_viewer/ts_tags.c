@@ -1,10 +1,12 @@
-/* was: apps/text_viewer/ts_tags.c */
-/* ts_tags.c -- turns tagged markup into flowing text.
+/***************************************************************************
+ * RockPod-Lite
  *
- * One byte-at-a-time state machine serves HTML/XHTML, FB2 and WordprocessingML
- * because the differences between them are entirely in the tag table:
- * which names break a line, which ones hide their contents, and (for DOCX)
- * which one is the only element that holds text at all. */
+ * was: apps/text_viewer/ts_tags.c
+ * GNU General Public License (version 2+)
+ *
+ * Turns tagged markup into flowing text: strips tags, resolves entities,
+ * and applies block and whitespace rules.
+ ****************************************************************************/
 
 #include "ts_internal.h"
 

@@ -1,35 +1,25 @@
-/* was: apps/image_viewer/resize.c */
 /***************************************************************************
-*             __________               __   ___.
-*   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
-*   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
-*   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
-*   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
-*                     \/            \/     \/    \/            \/
-* $Id$
-*
-* Bilinear image scaler (Imlib2-derived), used for zooming BMP images.
-* Ported verbatim from apps/plugins/lib/bmp_smooth_scale.c -- it uses no
-* plugin API, only the core FB_UNPACK / FB_RGBPACK pixel macros, so the body
-* is unchanged.
-*
-* Code for the scaling algorithm:
-* Imlib2 is (C) Carsten Haitzler and various contributors. The MMX code
-* is by Willem Monsuwe <willem@stack.nl>. Additional modifications are by
-* (C) Daniel M. Duley.
-*
-* Port to Rockbox
-* Copyright (C) 2007 Jonas Hurrelmann (j@outpo.st)
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
-* KIND, either express or implied.
-*
-****************************************************************************/
+ * RockPod-Lite
+ *
+ * Original code from RockBox
+ * was: apps/image_viewer/resize.c
+ * Bilinear image scaler (Imlib2-derived), used for zooming BMP images.
+ * Ported verbatim from apps/plugins/lib/bmp_smooth_scale.c -- it uses no
+ * plugin API, only the core FB_UNPACK / FB_RGBPACK pixel macros, so the body
+ * is unchanged.
+ *
+ * Code for the scaling algorithm:
+ * Imlib2 is (C) Carsten Haitzler and various contributors. The MMX code
+ * is by Willem Monsuwe <willem@stack.nl>. Additional modifications are by
+ * (C) Daniel M. Duley.
+ *
+ * Port to Rockbox
+ * Copyright (C) 2007 Jonas Hurrelmann (j@outpo.st)
+ * GNU General Public License (version 2+)
+ *
+ * Smooth (area-average) bitmap scaler used when fitting a decoded image to
+ * the screen. Separate from draw/resize.c, which serves album art.
+ ****************************************************************************/
 
 #include "lcd.h"
 #include "image_viewer.h"

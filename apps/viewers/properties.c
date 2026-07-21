@@ -1,13 +1,8 @@
-/* was: apps/properties.c */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
- * $Id$
+ * RockPod-Lite
  *
+ * Original code from RockBox
+ * was: apps/properties.c
  * Copyright (C) 2006 Peter D'Hoye
  *
  * Core File/Directory/Track Properties screen, ported from the properties
@@ -15,15 +10,10 @@
  * a GO_TO_* code, and renders as a normal themed core list (the theme stays
  * enabled, unlike the full-screen viewers) -- individual fields are still shown
  * full-screen via the core view_text().
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * File and directory properties: size, dates and, for audio, the full tag
+ * set. Aggregates whole directories via metadata/mul_id3.c.
  ****************************************************************************/
 #include <stdio.h>
 #include <string.h>

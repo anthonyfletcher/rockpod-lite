@@ -1,14 +1,12 @@
-/* was: apps/text_viewer/ts_io_core.c */
-/* ts_io_core.c -- ts_io over the core file API.
+/***************************************************************************
+ * RockPod-Lite
  *
- * A port of ts_io_rockbox.c with rb->read/lseek/close replaced by the core's
- * own calls; see ts_io_core.h. The whole platform dependency of the engine is
- * this file: everything else needs only <stddef.h>, <stdint.h> and <string.h>.
+ * was: apps/text_viewer/ts_io_core.c
+ * GNU General Public License (version 2+)
  *
- * The arena handed to ts_open() must not move while the source is open --
- * every stage holds pointers to its neighbours -- so callers taking it from
- * buflib must pin the handle for the lifetime of the ts_source.
- */
+ * Implements the engine's ts_io abstraction over the core file API. The
+ * only file in the engine that knows about Rockbox.
+ ****************************************************************************/
 
 #include "file.h"
 #include "ts_io_core.h"

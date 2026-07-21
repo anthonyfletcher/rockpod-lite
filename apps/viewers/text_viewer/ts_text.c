@@ -1,6 +1,12 @@
-/* was: apps/text_viewer/ts_text.c */
-/* ts_text.c -- the three back ends that need no container: plain text,
- * Markdown and RTF. */
+/***************************************************************************
+ * RockPod-Lite
+ *
+ * was: apps/text_viewer/ts_text.c
+ * GNU General Public License (version 2+)
+ *
+ * Back ends for the formats that need no container: plain text, markdown
+ * and RTF.
+ ****************************************************************************/
 
 #include "ts_internal.h"
 
