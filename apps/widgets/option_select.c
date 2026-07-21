@@ -1,24 +1,15 @@
-/* was: apps/gui/option_select.c */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
- * $Id$
+ * RockPod-Lite
  *
+ * Original code from RockBox
+ * was: apps/gui/option_select.c
  * Copyright (C) 2005 by Kevin Ferrare
  * Copyright (C) 2007 by Jonathan Gordon
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * Edits one setting's value: renders it as text or a chooser list, speaks
+ * it, and applies the result. The bridge between settings_list.c and the
+ * menu.
  ****************************************************************************/
 #include <stdlib.h>
 #include "string-extra.h"

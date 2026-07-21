@@ -1,30 +1,21 @@
-/* was: apps/gui/album_covers.c */
 /***************************************************************************
-*             __________               __   ___.
-*   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
-*   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
-*   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
-*   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
-*                     \/            \/     \/    \/            \/
-* $Id$
-*
-* Copyright (C) 2007 Jonas Hurrelmann (j@outpo.st)
-* Copyright (C) 2007 Nicolas Pennequin
-* Copyright (C) 2007 Ariya Hidayat (ariya@kde.org) (original Qt Version)
-*
-* Original code: http://code.google.com/p/pictureflow/
-*
-* Formerly apps/plugins/pictureflow/pictureflow.c -- ported to core  - MIT License
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
-* KIND, either express or implied.
-*
-****************************************************************************/
+ * RockPod-Lite
+ *
+ * Original code from RockBox
+ * was: apps/gui/album_covers.c
+ * Copyright (C) 2007 Jonas Hurrelmann (j@outpo.st)
+ * Copyright (C) 2007 Nicolas Pennequin
+ * Copyright (C) 2007 Ariya Hidayat (ariya@kde.org) (original Qt Version)
+ *
+ * Original code: http://code.google.com/p/pictureflow/
+ *
+ * Formerly apps/plugins/pictureflow/pictureflow.c -- ported to core  - MIT License
+ * GNU General Public License (version 2+)
+ *
+ * Cover-flow album browser built on carousel.c. Supplies the slide model
+ * -- album list, art loading and its disk cache, sort order -- and what
+ * happens on select.
+ ****************************************************************************/
 
 #include <stdio.h>
 #include <stdint.h>

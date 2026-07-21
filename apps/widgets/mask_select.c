@@ -1,24 +1,16 @@
-/* was: apps/gui/mask_select.c */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
+ * RockPod-Lite
+ *
+ * Original code from RockBox
+ * was: apps/gui/mask_select.c
  * Copyright (C) 2016 William Wilgus
  * Derivative of folder_select.c by:
  * Copyright (C) 2012 Jonathan Gordon
  * Copyright (C) 2012 Thomas Martitz
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * Generic checkbox tree over a bitmask. Presents nested categories and
+ * returns the edited mask; used for selective-backlight style settings.
  ****************************************************************************/
 /* TODO add language defines */
 

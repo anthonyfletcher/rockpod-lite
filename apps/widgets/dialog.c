@@ -1,23 +1,14 @@
-/* was: apps/gui/dialog.c */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
- * $Id$
+ * RockPod-Lite
  *
+ * Original code from RockBox
+ * was: apps/gui/dialog.c
  * Copyright (C) 2026 by the Rockbox project
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * Modal box primitive shared by the popup, yes/no and text-input dialogs.
+ * Draws a centred bordered box and returns its content viewport; owns the
+ * dialog style defaults.
  ****************************************************************************/
 
 /* Modal box primitive: a framed box (dialog_frame_box) plus the interactive

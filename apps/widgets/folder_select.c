@@ -1,12 +1,8 @@
-/* was: apps/folder_select.c */
 /***************************************************************************
- *             __________               __   ___.
- *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
- *   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
- *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
- *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
- *                     \/            \/     \/    \/            \/
+ * RockPod-Lite
  *
+ * Original code from RockBox
+ * was: apps/folder_select.c
  * Copyright (C) 2012 Jonathan Gordon
  * Copyright (C) 2012 Thomas Martitz
  * Copyright (C) 2021 William Wilgus
@@ -18,15 +14,11 @@
  * excluded. Included folders are shown bracketed, e.g. [Music]. Used by the
  * database "Directories to Scan" setting and the custom autoresume folder list
  * (both in apps/menus/settings_menu.c), which call folder_select() directly.
+ * GNU General Public License (version 2+)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
+ * Tri-state folder picker used by the database scan list and autoresume.
+ * Walks the filesystem into a collapsible tree and serialises the minimal
+ * include/exclude path set back into a setting string.
  ****************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>

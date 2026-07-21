@@ -1,4 +1,11 @@
-/* was: apps/gui/album_covers.h */
+/***************************************************************************
+ * RockPod-Lite
+ *
+ * was: apps/gui/album_covers.h
+ * GNU General Public License (version 2+)
+ *
+ * Interface to album_covers.c and the album-name display setting values.
+ ****************************************************************************/
 #ifndef _ALBUM_COVERS_H_
 #define _ALBUM_COVERS_H_
 

@@ -1,27 +1,19 @@
-/* was: apps/view_text.c */
 /***************************************************************************
-*             __________               __   ___.
-*   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
-*   Source     |       _//  _ \_/ ___\|  |/ /| __ \ /  _ \  \/  /
-*   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
-*   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
-*                     \/            \/     \/    \/            \/
-*
-* Copyright (C) 2010 Teruaki Kawashima
-*
-* Core (non-plugin) full-screen scrollable text viewer, ported from the
-* simple_viewer plugin lib (apps/plugins/lib/simple_viewer.c). Used by the
-* Track Info screen (browse_id3) to display a single tag value full-screen.
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
-* KIND, either express or implied.
-*
-****************************************************************************/
+ * RockPod-Lite
+ *
+ * Original code from RockBox
+ * was: apps/view_text.c
+ * Copyright (C) 2010 Teruaki Kawashima
+ *
+ * Core (non-plugin) full-screen scrollable text viewer, ported from the
+ * simple_viewer plugin lib (apps/plugins/lib/simple_viewer.c). Used by the
+ * Track Info screen (browse_id3) to display a single tag value full-screen.
+ * GNU General Public License (version 2+)
+ *
+ * Full-screen scrollable display for a string already in memory: word
+ * wraps, paginates and scrolls. Distinct from viewers/text_viewer, which
+ * streams documents from a file.
+ ****************************************************************************/
 
 #include <ctype.h>
 #include <string.h>
