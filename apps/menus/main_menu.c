@@ -165,16 +165,16 @@ static int refresh_data(struct info_data *info)
     int drive = 0;
     for (i = 0 ; i < NUM_VOLUMES ; i++)
     {
-	volume_size(IF_MV(i,) &info->size[i], &info->free[i]);
-	if (drive > 0)
-	    info->name[i] = LANG_DISK_NAME_MMC;
-	else
-	    info->name[i] = LANG_DISK_NAME_INTERNAL;
-            if (volume_partition(i) == -1)
-	    {
-                    info->name[i] = 0;
-                break; /* ie stop when we run out of valid partitions */
-            }
+        volume_size(IF_MV(i,) &info->size[i], &info->free[i]);
+        if (drive > 0)
+            info->name[i] = LANG_DISK_NAME_MMC;
+        else
+            info->name[i] = LANG_DISK_NAME_INTERNAL;
+        if (volume_partition(i) == -1)
+        {
+            info->name[i] = 0;
+            break; /* ie stop when we run out of valid partitions */
+        }
     }
 
     info->new_data = false;
