@@ -40,7 +40,6 @@
 /*#define LOGF_ENABLE*/
 #include "logf.h"
 #include "bitswap.h"
-#include "plugin_buffer.h" /* plugin_get_buffer() */
 #include "debug.h"
 #include "panic.h"
 #include "misc.h" /* time_split_units() */

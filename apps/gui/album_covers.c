@@ -36,7 +36,6 @@
 #include "screen_access.h"    /* FOR_NB_SCREENS, screens[] */
 #include "kernel.h"           /* threads, mutex, queue, current_tick */
 #include "core_alloc.h"       /* buflib types for buf_ctx (see init()) */
-#include "plugin_buffer.h"           /* plugin_get_buffer() -- see init() */
 #include "tagcache.h"
 #include "playlist.h"
 #include "playlist_catalog.h"
