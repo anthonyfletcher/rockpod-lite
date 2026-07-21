@@ -24,6 +24,7 @@
 #include "string-extra.h"
 #include "config.h"
 #include "system.h"          /* MIN/MAX/ALIGN_BUFFER/ALIGN_DOWN */
+#include "rbpaths.h"
 #include "input/action.h"           /* get_action/get_custom_action/button_mapping */
 #include "draw/screen_access.h"    /* FOR_NB_SCREENS, screens[] */
 #include "kernel.h"           /* threads, mutex, queue, current_tick */

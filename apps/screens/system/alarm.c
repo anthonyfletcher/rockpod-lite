@@ -14,6 +14,7 @@
 #include <stdbool.h>
 
 #include "lcd.h"
+#include "timefuncs.h"
 #include "input/action.h"
 #include "kernel.h"
 #include <string.h>

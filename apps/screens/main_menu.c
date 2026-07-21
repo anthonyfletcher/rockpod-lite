@@ -17,6 +17,8 @@
 #include "timefuncs.h" /* get_time, valid_time */
 #include "string.h"
 #include "lang.h"
+#include "kernel.h"
+#include "rbpaths.h"
 #include "input/action.h"
 #include "settings/settings.h"
 #include "power.h"

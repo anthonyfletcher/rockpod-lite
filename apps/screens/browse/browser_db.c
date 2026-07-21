@@ -23,6 +23,7 @@
 #include "config.h"
 #include "system.h"
 #include "kernel.h"
+#include "rbpaths.h"
 #include "widgets/splash.h"
 #include "draw/icon_bitmaps.h"
 #include "browser.h"

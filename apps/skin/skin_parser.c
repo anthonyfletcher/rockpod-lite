@@ -17,6 +17,7 @@
 #include "config.h"
 #include "core_alloc.h"
 #include "file.h"
+#include "kernel.h"
 #include "system/app_util.h"
 #include "draw/color.h"
 #include "system/strutil.h"

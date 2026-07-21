@@ -18,6 +18,7 @@
 #include <string-extra.h>
 #include "lcd.h"
 #include "lang.h"
+#include "rbpaths.h"
 #include "widgets/menu.h"
 #include "debug_menu.h"
 #include "kernel.h"

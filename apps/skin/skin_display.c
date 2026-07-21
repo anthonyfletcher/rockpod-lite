@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include "string-extra.h"
 #include "core_alloc.h"
+#include "kernel.h"
 #include "system/volume.h"
 #include "font.h"
 #include "system.h"

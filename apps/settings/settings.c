@@ -22,6 +22,7 @@
 #include "inttypes.h"
 #include "config.h"
 #include "rbpaths.h"
+#include "kernel.h"
 #include "input/action.h"
 #include "crc32.h"
 #include "sound.h"

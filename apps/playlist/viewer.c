@@ -17,6 +17,7 @@
 #include <string.h>
 #include "playlist.h"
 #include "audio.h"
+#include "kernel.h"
 #include "widgets/text_box.h"
 #include "settings/settings.h"
 #include "draw/icon_bitmaps.h"

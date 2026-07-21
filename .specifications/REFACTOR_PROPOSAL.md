@@ -26,13 +26,21 @@
 > stage; hardware-tested on ipodvideo (the only device available, see §9.1).
 >
 > **Known follow-ups, deliberately not done** — each is its own decision:
-> - ~65 files still use `kernel.h`/`rbpaths.h`/`timefuncs.h` symbols without
->   including them (§9.3). Any future header move will break a few of them.
+> - ~~~65 files still use `kernel.h`/`rbpaths.h`/`timefuncs.h` symbols without
+>   including them (§9.3).~~ **Done** in backlog stage 7: 51 includes across
+>   46 files. See §9.3 for the survey method and the verification.
 > - `system/app_util.c` (437 lines, ~17 functions) is the residual grab-bag;
 >   colour parsing and `core_load_bmp` arguably belong in `draw/`.
-> - `CONTEXT_FM`, `FILE_ATTR_FMS`/`RFMS`, `SHOW_FMS`/`SHOW_FMR` and the five
->   `ACTION_REC_*` actions are all dead but out of stage 7's remit. The
->   `SHOW_*` ordering is persisted in `config.cfg`, so it needs care.
+> - ~~`CONTEXT_FM`, `FILE_ATTR_FMS`/`RFMS`, `SHOW_FMS`/`SHOW_FMR` and the five
+>   `ACTION_REC_*` actions are all dead~~ **Done** in backlog stages 5 and 6.
+>
+>   The note here used to say "the `SHOW_*` ordering is persisted in
+>   `config.cfg`, so it needs care". **That was wrong**, and stage 6 checked it
+>   rather than inheriting it: only the entries *before* `NUM_FILTER_MODES`
+>   are ever stored (they are the values of the "show files" setting), and
+>   `CHOICE_SETTING` writes its name rather than its ordinal in any case.
+>   Everything after that boundary is a compile-time argument to
+>   `browse_folder_info`, so renumbering that half touches no saved config.
 > - Duplicate JPEG decode and a second vendored TLSF remain (§7).
 
 ---
@@ -588,7 +596,7 @@ previous stage.** Diff `grep -oE 'warning: .*' | sort -u` between build logs.
 Use `make -k` so one build reports every failure instead of stopping at the
 first — stage 5 wasted four full clean builds discovering one file at a time.
 
-### 9.3 Undeclared transitive dependencies (known, not fixed)
+### 9.3 Undeclared transitive dependencies (fixed in backlog stage 7)
 
 `screens.h` was included by 30 files, **18 of which used nothing from it**. It
 pulled in `timefuncs.h`, `metadata.h` and `playlist/playlist.h`, and through
@@ -611,10 +619,45 @@ luck:
 | `timefuncs.h` (`struct tm`, `get_time`, …) | 12 |
 
 Only the files that actually failed were fixed (7 in stage 5). The remaining
-~65 still compile via other paths. **This is deliberate**: fixing them all is a
-large diff not traceable to any current request, and belongs in its own commit
-if wanted. Until then, expect any future header move to break a handful of
-apparently unrelated files.
+~65 still compiled via other paths.
+
+**Fixed in backlog stage 7**: 51 includes across 46 files. The survey matched
+each header's symbols against the files that use them without including them,
+then filtered matches that occur only inside comments — that filter mattered,
+because `widgets/list.h` and `widgets/dialog.h` mention `HZ` only in a doc
+comment, and `metadata/art_cache.h`, `root_menu.c`, `settings/settings.h`,
+`system/app_util.c` and `system/app_util.h` were likewise comment-only. Placing
+the include is done by `add_include.pl`, which anchors to the last flat include
+before the first apps-relative one (the firmware group) and **refuses rather
+than guesses** when there is no anchor — it declined `playlist/viewer.c` and
+`metadata/cuesheet.c`, both of which open with an apps-relative include; those
+two were placed by hand.
+
+Verification is worth recording, because the two targets disagreed:
+
+- **ipodvideo: byte-identical.** Expected — these symbols already resolved
+  transitively, so making the include direct changes nothing.
+- **ipod6g: the binary changed.** Not a regression. `CPU_BOOST_LOGGING` is
+  enabled only on 6g (it needs `ROCKBOX_HAS_LOGF`), and it passes `__LINE__`
+  into every `cpu_boost()` call. Inserting one line shifts every call below it.
+
+Rebuilding a stage-6 baseline on 6g and comparing objects: 47 differed, against
+a prediction of 23 — so the prediction was wrong and had to be explained, not
+waved through. Classifying them:
+
+| Category | Count | Cause |
+|---|---|---|
+| Allocatable sections identical | 36 | GCC's static-symbol UID suffix (`last_act.7758` → `last_act.7775`); new declarations bump the counter. Local symbol names only. |
+| Real content differences | 11 | Exactly the `cpu_boost` callers. |
+
+Every `cpu_boost` call site in those 11 files shifted by exactly +1, matching
+the observed constants (`properties.c` 94, 96, 321, 325 → 95, 97, 322, 326
+against `mov r2,#94`→`#95` and `.word 0x141`→`0x142`). `playlist/viewer.c`
+also changed instruction *selection*: line 1167 → 1168 crosses `0x48F` → `0x490`,
+which is encodable as an ARM immediate, so a literal-pool load became a `mov`
+and the pool offsets shifted with it. `logf` callers landed in the identical
+category, which confirms `logf` does not embed `__LINE__` — only `cpu_boost`
+does.
 
 **The control must clear everything it claims to.** The stage 2 control deleted only `apps/*.o`, `apps/gui/*.o` and `apps/menus/*.o`, leaving `recorder/`, `iap/`, `image_viewer/` and `text_viewer/` objects in place, and so proved less than it appeared to. Stage 3 also hit a stale `make.dep` that resurrected a deleted header as a phantom make target (`-MG` records unresolvable includes as build-dir-relative dependencies, so they persist). **Use `make clean`, not selective deletion.**
 

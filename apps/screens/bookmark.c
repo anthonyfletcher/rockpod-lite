@@ -17,6 +17,8 @@
 #include <stdbool.h>
 
 #include "config.h"
+#include "kernel.h"
+#include "rbpaths.h"
 #include "input/action.h"
 #include "audio.h"
 #include "playlist/playlist.h"

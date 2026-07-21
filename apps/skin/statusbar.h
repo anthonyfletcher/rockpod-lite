@@ -14,6 +14,7 @@
 
 #include "config.h"
 #include "button.h"
+#include "timefuncs.h"
 #include "audio/play_status.h"
 #include "draw/screen_access.h"
 #include "events.h"

@@ -16,6 +16,7 @@
 #include "system.h"
 #include "lcd.h"
 #include "file.h"
+#include "kernel.h"
 #include "draw/bmp.h"
 #include "tinf.h"
 #include "png_decoder.h"

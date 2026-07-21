@@ -21,6 +21,7 @@
 #include "file.h"
 #include "system.h"
 #include "kernel.h"
+#include "timefuncs.h"
 #include "settings/settings.h"
 #include "settings/settings_list.h"
 #include "widgets/splash.h"

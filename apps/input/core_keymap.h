@@ -15,6 +15,7 @@
 #include <inttypes.h>
 #include "config.h"
 #include "action.h"
+#include "rbpaths.h"
 #define KEYREMAP_VERSION 1
 #define KEYREMAP_HEADERID (LAST_ACTION_PLACEHOLDER | (TARGET_ID << 8))
 

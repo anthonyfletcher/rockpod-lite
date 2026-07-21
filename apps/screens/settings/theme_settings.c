@@ -15,6 +15,7 @@
 #include <limits.h>
 #include "config.h"
 #include "lang.h"
+#include "kernel.h"
 #include "input/action.h"
 #include "settings/settings.h"
 #include "rbpaths.h"

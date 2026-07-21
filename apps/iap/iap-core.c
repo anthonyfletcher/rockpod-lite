@@ -26,6 +26,7 @@
 #include "kernel.h"
 #include "thread.h"
 #include "serial.h"
+#include "timefuncs.h"
 #include "system/appevents.h"
 #include "core_alloc.h"
 

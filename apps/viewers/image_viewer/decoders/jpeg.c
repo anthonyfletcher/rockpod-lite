@@ -18,6 +18,7 @@
 #include "system.h"
 #include "lcd.h"
 #include "file.h"
+#include "kernel.h"
 #include "../image_viewer.h"
 #include "jpeg_decoder.h"
 #include "yuv2rgb.h"

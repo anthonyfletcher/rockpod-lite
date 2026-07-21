@@ -19,6 +19,7 @@
 #include "tag_table.h"
 #include "skin_parser.h"
 #include "core_alloc.h"
+#include "kernel.h"
 
 struct wps_data;
 

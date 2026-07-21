@@ -70,6 +70,7 @@
 #include "playlist.h"
 #include "ata_idle_notify.h"
 #include "file.h"
+#include "rbpaths.h"
 #include "input/action.h"
 #include "mv.h"
 #include "debug.h"

@@ -20,6 +20,7 @@
 #include "system.h"
 #include "audio.h"
 #include "kernel.h"
+#include "rbpaths.h"
 #include "logf.h"
 #include "system/strutil.h"
 #include "widgets/list.h"

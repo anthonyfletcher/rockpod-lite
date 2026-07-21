@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "config.h"
+#include "kernel.h"
 #include "draw/icon.h"
 #include "skin_engine.h"
 

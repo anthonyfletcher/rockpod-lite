@@ -17,6 +17,8 @@
 #include "system.h"
 #include "powermgmt.h"
 #include "power.h"
+#include "kernel.h"
+#include "rbpaths.h"
 #include "input/action.h"
 #include "ata_idle_notify.h"
 #include "screens/system/debug_menu.h"

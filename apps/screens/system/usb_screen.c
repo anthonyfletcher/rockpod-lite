@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include "kernel.h"
 #include "input/action.h"
 #include "font.h"
 #include "lang.h"

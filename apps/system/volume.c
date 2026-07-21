@@ -22,6 +22,7 @@
 #include "metadata.h"
 #include "fixedpoint.h"
 #include "debug.h"
+#include "kernel.h"
 #include "settings/settings.h"
 #include "speech/talk.h"
 #include "volume.h"

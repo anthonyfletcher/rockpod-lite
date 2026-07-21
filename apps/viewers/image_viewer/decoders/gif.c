@@ -13,6 +13,7 @@
 
 #include "system.h"
 #include "lcd.h"
+#include "kernel.h"
 #include "draw/bmp.h"        /* struct bitmap */
 #include "../image_viewer.h"
 

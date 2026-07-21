@@ -24,6 +24,7 @@
 #include "codec_thread.h"
 #include "voice_thread.h"
 #include "metadata.h"
+#include "rbpaths.h"
 #include "metadata/cuesheet.h"
 #include "buffering.h"
 #include "speech/talk.h"

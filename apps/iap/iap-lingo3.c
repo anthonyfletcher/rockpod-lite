@@ -30,6 +30,7 @@
 #include "system.h"
 #include "audio.h"
 #include "powermgmt.h"
+#include "timefuncs.h"
 #include "settings/settings.h"
 #include "metadata.h"
 #include "audio/playback.h"

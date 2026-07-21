@@ -20,6 +20,7 @@
 #include "lcd.h"
 #include "font.h"
 #include "backlight.h"
+#include "rbpaths.h"
 #include "input/action.h"
 #include "kernel.h"
 #include "files/filetypes.h"

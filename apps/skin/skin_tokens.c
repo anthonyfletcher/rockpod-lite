@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include "string-extra.h"
 #include <stdlib.h>
+#include "kernel.h"
 #include "input/action.h"
 #include "system.h"
 #include "settings/settings.h"

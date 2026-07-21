@@ -13,6 +13,7 @@
 
 #include "action.h"
 #include "lang.h"
+#include "kernel.h"
 #include "system/app_util.h"
 #include "usbstack/usb_hid.h"
 #include "usb_keymaps.h"

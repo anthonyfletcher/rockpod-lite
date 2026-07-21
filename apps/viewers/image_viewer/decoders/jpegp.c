@@ -14,6 +14,7 @@
 #include <string.h>
 #include "system.h"
 #include "lcd.h"
+#include "kernel.h"
 #include "../image_viewer.h"
 
 #include "jpeg81.h"

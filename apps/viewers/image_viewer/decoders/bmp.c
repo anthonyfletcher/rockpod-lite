@@ -14,6 +14,7 @@
 #include "system.h"
 #include "lcd.h"
 #include "file.h"
+#include "kernel.h"
 #include "draw/bmp.h"        /* struct bitmap, read_bmp_fd, FORMAT_* */
 #include "draw/resize.h"     /* format_native */
 #include "../image_viewer.h"

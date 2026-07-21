@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include "time.h"
+#include "timefuncs.h"
 
 #define VOICE_VERSION 400 /* 4.00 - if you change this, change it in voicefont too */
 

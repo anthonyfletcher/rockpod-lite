@@ -15,6 +15,7 @@
 #include "iap-core.h"
 #include "iap-lingo.h"
 #include "dir.h"
+#include "kernel.h"
 #include "settings/settings.h"
 #include "screens/browse/browser_disk.h"
 #include "screens/playback/wps.h"

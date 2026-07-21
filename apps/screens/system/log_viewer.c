@@ -16,6 +16,7 @@
 #include <timefuncs.h>
 #include <string.h>
 #include <kernel.h>
+#include "rbpaths.h"
 #include "input/action.h"
 
 #include <lcd.h>

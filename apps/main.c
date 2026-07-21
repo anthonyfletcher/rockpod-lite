@@ -21,6 +21,8 @@
 #include "rtc.h"
 #include "debug.h"
 #include "led.h"
+#include "kernel.h"
+#include "rbpaths.h"
 #include "../kernel-internal.h"
 #include "button.h"
 #include "input/core_keymap.h"

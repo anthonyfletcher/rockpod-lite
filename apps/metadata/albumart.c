@@ -15,6 +15,7 @@
 #include "system.h"
 #include "albumart.h"
 #include "metadata.h"
+#include "rbpaths.h"
 #include "audio/buffering.h"
 #include "dircache.h"
 #include "system/strutil.h"

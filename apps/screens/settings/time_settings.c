@@ -16,6 +16,8 @@
 #include "config.h"
 #include "string.h"
 #include "lang.h"
+#include "kernel.h"
+#include "timefuncs.h"
 #include "input/action.h"
 #include "settings/settings.h"
 #include "widgets/menu.h"

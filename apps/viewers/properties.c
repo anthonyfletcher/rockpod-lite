@@ -22,6 +22,7 @@
 #include "system.h"          /* ARRAYLEN */
 #include "kernel.h"          /* TIMEOUT_BLOCK */
 #include "lang.h"            /* LANG_*, str */
+#include "timefuncs.h"
 #include "settings/settings.h"        /* global_settings, ID2P/P2ID/P2STR */
 #include "input/action.h"          /* get_action, action_userabort */
 #include "widgets/splash.h"          /* splash, splashf, splash_progress_set_delay */

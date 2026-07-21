@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include "string-extra.h"
 #include "panic.h"
+#include "rbpaths.h"
 
 #include "system/applimits.h"
 #include "dir.h"

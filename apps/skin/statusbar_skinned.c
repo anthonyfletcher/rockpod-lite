@@ -11,6 +11,7 @@
  ****************************************************************************/
 
 #include "config.h"
+#include "kernel.h"
 
 #include "input/action.h"
 #include "system.h"
