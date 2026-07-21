@@ -13,6 +13,25 @@
  * Voice output: loads the .voice clip file, queues and mixes clips, and
  * provides the talk_* vocabulary (numbers, dates, spelling) the UI speaks
  * with.
+ *
+ * Speech is assembled from pre-recorded clips, not synthesised. Saying
+ * "3:45" means queuing the clips for "three", "forty", "five" in order, which
+ * is what the talk_number/talk_value vocabulary below is for -- and why
+ * languages needing a different word order need their own logic here rather
+ * than just a different .voice file.
+ *
+ * Clips come from two places: the .voice file (UI vocabulary, indexed by
+ * lang id) and .talk files on disk (directory and file names, "talkbox").
+ * Both are decoded through the same queue and mixed into the PCM stream on
+ * the voice thread, so nothing here blocks the caller -- talk_id() returns
+ * immediately having only queued.
+ *
+ * Parts, in order:
+ *   - constants, macros, types and module state
+ *   - the .voice file: loading it and finding a clip by id
+ *   - the clip queue and its locking
+ *   - .talk file (talkbox) handling for directories and files
+ *   - the talk_* vocabulary the UI calls: ids, numbers, dates, spelling
  ****************************************************************************/
 
 #include <stdio.h>
@@ -45,7 +64,7 @@
 #include "rbunicode.h"
 #include "core_alloc.h"
 
-/***************** Constants *****************/
+/** Constants **/
 
 #define QUEUE_SIZE 128 /* must be a power of two */
 
@@ -53,7 +72,7 @@
 const char* const dir_thumbnail_name = "_dirname.talk";
 const char* const file_thumbnail_ext = ".talk";
 
-/***************** Functional Macros *****************/
+/** Functional macros **/
 
 #define QUEUE_LEVEL ((queue_write - queue_read) & QUEUE_MASK)
 
@@ -63,7 +82,7 @@ const char* const file_thumbnail_ext = ".talk";
 #define DEFAULT_VOICE_LANG "english"
 #endif
 
-/***************** Data types *****************/
+/** Data types **/
 
 struct clip_entry /* one entry of the index table */
 {
@@ -82,7 +101,7 @@ struct voicefile_header /* file format of our voice file */
      * which is followed by the mp3/speex encoded clip data */
 };
 
-/***************** Globals *****************/
+/** Globals **/
 
 
 #ifndef MAX_CLIP_BUFFER_SIZE
@@ -137,7 +156,7 @@ static int cache_hits, cache_misses;
 static struct queue_entry queue[QUEUE_SIZE]; /* queue of scheduled clips */
 static struct queue_entry silence, *last_clip;
 
-/***************** Private implementation *****************/
+/** Private implementation **/
 
 static int index_handle, talk_handle;
 
@@ -710,7 +729,7 @@ static void mp3_callback(const void** start, size_t* size)
     talk_queue_unlock();
 }
 
-/***************** Private routines *****************/
+/** Private routines **/
 
 /* return if a voice codec is required or not */
 static bool talk_voice_required(void)
@@ -821,7 +840,7 @@ static int talk_year(long year, bool enqueue)
     return talk_number(rem, true);
 }
 
-/***************** Public routines *****************/
+/** Public routines **/
 
 /* stop the playback and the pending clips */
 void talk_force_shutup(void)
@@ -883,7 +902,7 @@ static void queue_clip(struct queue_entry *clip, bool enqueue)
     return;
 }
 
-/***************** Public implementation *****************/
+/** Public implementation **/
 
 void talk_init(void)
 {

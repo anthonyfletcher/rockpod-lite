@@ -10,6 +10,28 @@
  *
  * The Apple accessory protocol core: framing, checksums, authentication
  * and the device state shared by the lingo handlers.
+ *
+ * iAP is the serial protocol Apple dock accessories speak. A packet is
+ * {0x55 start-of-frame, length, lingo id, command, payload, checksum}; the
+ * "lingo" is which command vocabulary the packet belongs to, and each has its
+ * own file here (iap-lingo0.c through iap-lingo4.c). This file does the parts
+ * common to all of them: recognising a packet in the byte stream, verifying
+ * and generating checksums, the authentication handshake an accessory must
+ * pass, and the shared state the lingo handlers read.
+ *
+ * Framing is a byte-at-a-time state machine (ST_SOF -> ... -> ST_CHECK), so a
+ * packet is recognised as bytes arrive rather than by buffering and scanning.
+ *
+ * Incoming bytes arrive from the serial interrupt, so iap_handlepkt() runs on
+ * the main thread against a buffer the ISR fills -- the two are kept apart by
+ * only handing over complete packets.
+ *
+ * Parts, in order:
+ *   - packet buffers and the shared accessory/device state
+ *   - receiving: framing bytes into packets and checking them
+ *   - sending: building, checksumming and transmitting a response
+ *   - authentication and identification
+ *   - the dispatch that hands a packet to its lingo handler
  ****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>

@@ -4,20 +4,35 @@
  * Original code from RockBox
  * was: apps/image_viewer/image_viewer.c
  * Core image viewer -- scene / event loop.
- *
- * Ported from the imageviewer plugin. Notable differences from the plugin:
- *   - it is a plain core app, entered as image_viewer(file) and returning a
- *     GO_TO_* code, dispatched from the file browser like the text viewer;
- *   - the greylib / non-colour paths are gone (colour 320x240 iPods only);
- *   - decoders are linked in and picked from a static table, not loaded as
- *     .ovl overlays;
- *   - it owns the whole screen (theme disabled), shows a branded splash on
- *     first load, and uses the shared splash_progress dialog for decode/zoom
- *     progress over the retained image instead of blanking the screen.
+ * Ported from the imageviewer plugin.
  * GNU General Public License (version 2+)
  *
  * The image viewer UI: loads a picture through the decoder registry, then
  * handles zoom, pan, slideshow and next/previous within a directory.
+ *
+ * How it is built:
+ *   - A plain core app, entered as image_viewer(file) and returning a GO_TO_*
+ *     code, dispatched from the file browser like the text viewer.
+ *   - Colour 320x240 only; there are no greylib or mono paths.
+ *   - Decoders are linked in and chosen from a static table (image_decoder.h),
+ *     not loaded as overlays.
+ *   - It owns the whole screen with the theme disabled, shows a branded splash
+ *     on first load, and draws decode/zoom progress as a dialog over the
+ *     retained image rather than blanking the screen.
+ *
+ * The single memory allocation is the thing to understand: one
+ * core_alloc_maximum() block holds both the file-name list and the decoded
+ * image, carved up by get_pic_list() advancing `buf` past the list. It is
+ * pinned for the whole session -- see the comment at the allocation for why
+ * that is mandatory rather than cautious.
+ *
+ * Parts, in order:
+ *   - session state and the shared iv_settings
+ *   - the directory file list, and moving between files
+ *   - the decode progress callback
+ *   - pan, zoom and the redraw path
+ *   - the settings menu
+ *   - screen ownership (theme off, splash) and the image_viewer() entry point
  ****************************************************************************/
 
 #include <stdbool.h>
@@ -62,7 +77,7 @@
 #define DIR_NEXT -1
 #define DIR_NONE  0
 
-/******************************* Globals ***********************************/
+/** Globals **/
 
 /* Viewer iv_settings + slideshow state, shared with the decoders (declared extern
  * in image_viewer.h). Session-scoped; not persisted across launches. */
@@ -110,7 +125,7 @@ static struct viewport iv_vp;
 /* forward declarations */
 static int show_menu(void); /* returns 1 to quit the viewer */
 
-/************************* Implementation ***************************/
+/** Implementation **/
 
 /* Read directory contents for scrolling. */
 static void get_pic_list(bool single_file)
@@ -455,7 +470,7 @@ static int scroll_bmp(struct image_info *info, bool initial_frame)
     } /* while (true) */
 }
 
-/********************* main function *************************/
+/** Main function **/
 
 /* how far can we zoom in without running out of memory */
 static int min_downscale(int bufsize)
@@ -713,7 +728,7 @@ static bool find_album_art(int *offset, int *filesize, int *status)
     return true;
 }
 
-/************************* iv_settings menu ***************************/
+/** Iv_settings menu **/
 
 /* return 1 to quit */
 static int show_menu(void)
@@ -786,7 +801,7 @@ static int show_menu(void)
     return (result == 1) ? 1 : 0;
 }
 
-/************************* screen ownership ***************************/
+/** Screen ownership **/
 
 /* Full-screen branded "loading" splash, shown once before the first decode.
  * Mirrors the text viewer's rockpodtext splash. */
@@ -841,7 +856,7 @@ static void iv_setup_screen(void)
     lcd_update();
 }
 
-/******************** Core entry point *********************/
+/** Core entry point **/
 
 /* file == NULL requests the current track's album art. */
 int image_viewer(const char *file)
@@ -876,13 +891,9 @@ int image_viewer(const char *file)
      * invokes the shrink callback playback.c registers on the audio buffer.
      * The audio buffer therefore gives up its space and PLAYBACK STOPS as the
      * viewer opens -- observed on device, and unavoidable while we ask for the
-     * maximum.
-     *
-     * An earlier version of this comment claimed the viewer coexists with
-     * playback, taking only "whatever the audio buffer leaves free". That is
-     * not what happens; it takes most of RAM either way. If coexisting with
-     * playback is ever wanted, this needs to request a bounded size rather
-     * than the maximum. */
+     * maximum. The viewer takes most of RAM either way; it does not coexist
+     * with playback. Coexisting would mean requesting a bounded size here
+     * rather than the maximum. */
     buf_handle = core_alloc_maximum(&buf_size, NULL);
     if (buf_handle <= 0)
     {
@@ -896,8 +907,7 @@ int image_viewer(const char *file)
      * (firmware/buflib_mempool.c). We cache `buf` here and hold it, plus every
      * pointer derived from it, for the whole viewing session; the session
      * yields constantly and can run while playback is buffering, so a
-     * compaction is reachable and would leave all of them dangling. This is
-     * the failure that killed the ported video viewer. */
+     * compaction is reachable and would leave all of them dangling. */
     core_pin(buf_handle);
     buf = core_get_data(buf_handle);
 
