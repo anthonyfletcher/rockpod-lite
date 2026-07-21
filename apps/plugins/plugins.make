@@ -6,12 +6,15 @@
 #                     \/            \/     \/    \/            \/
 # $Id$
 #
-# The plugin system has been removed from this fork. This file builds no
-# plugins; it survives only because tools/root.make still includes it. The one
-# rule kept here generates credits.raw from docs/CREDITS -- the core credits
-# screen (apps/credits.c) #includes it, so it is not plugin-specific.
+# The plugin system has been removed from this fork. This file builds nothing.
+#
+# It survives only because tools/root.make:135 `include`s it by exact path, and
+# a missing (non-optional) include is a fatal make error. tools/ is outside the
+# scope this fork's cleanup is confined to, so the file stays.
+#
+# The credits.raw rule that used to live here moved to apps/apps.make -- it was
+# never plugin-specific, and keeping it here tied it to ENABLEDPLUGINS=yes.
+#
+# See apps/plugins/README for the rest of this directory.
 
 ROCKS :=
-
-$(BUILDDIR)/credits.raw credits.raw: $(DOCSDIR)/CREDITS
-	$(call PRINTS,Create credits.raw)perl $(APPSDIR)/plugins/credits.pl < $< > $(BUILDDIR)/$(@F)

@@ -1,3 +1,19 @@
+/* *** DO NOT DELETE. DO NOT MOVE. THIS FILE IS STILL LIVE. ***
+ *
+ * Despite living in apps/plugins/ -- a directory that no longer contains a
+ * plugin -- this linker script is what every .codec in the build links with:
+ *
+ *     lib/rbcodec/codecs/codecs.make:168
+ *         CODEC_LDS := $(APPSDIR)/plugins/plugin.lds
+ *
+ * Codecs and plugins shared one script upstream. The plugins were removed from
+ * this fork; the codecs were not. lib/ is outside the scope this fork's cleanup
+ * is confined to, so this path cannot be changed from inside apps/.
+ *
+ * Removing or renaming it breaks codec linking at package time, not at compile
+ * time. See apps/plugins/README.
+ */
+
 #include "config.h"
 
 /* These output formats should be in the config-files */

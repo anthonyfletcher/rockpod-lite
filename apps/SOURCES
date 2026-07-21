@@ -86,7 +86,6 @@ gui/mask_select.c
 gui/wps.c
 gui/scrollbar.c
 gui/dialog.c
-gui/dialog_test.c
 gui/splash.c
 gui/statusbar.c
 gui/statusbar-skinned.c

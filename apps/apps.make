@@ -34,9 +34,14 @@ $(BUILDDIR)/apps/features: $(APPSDIR)/features.txt  $(BUILDDIR)/firmware/common/
 $(BUILDDIR)/apps/genlang-features:  $(BUILDDIR)/apps/features
 	$(call PRINTS,GEN $(subst $(BUILDDIR)/,,$@))tr \\n : < $< > $@
 
-# credits.c pulls in the generated name list. The rule that builds credits.raw
-# lives in apps/plugins/plugins.make (still shared with docs/CREDITS); this just
-# makes the core object wait for it on a clean build.
+# The core credits screen (apps/credits.c) #includes this generated name list.
+# The rule used to live in apps/plugins/plugins.make, which meant credits.raw
+# was only generated when ENABLEDPLUGINS=yes -- a tie to the dead plugin build
+# that would have silently stopped generating it if that flag ever flipped.
+# Nothing about it is plugin-specific, so it lives here now.
+$(BUILDDIR)/credits.raw credits.raw: $(DOCSDIR)/CREDITS
+	$(call PRINTS,Create credits.raw)perl $(APPSDIR)/plugins/credits.pl < $< > $(BUILDDIR)/$(@F)
+
 $(BUILDDIR)/apps/credits.o: $(BUILDDIR)/credits.raw
 
 ASMDEFS_SRC += $(APPSDIR)/core_asmdefs.c

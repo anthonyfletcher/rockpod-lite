@@ -1,0 +1,46 @@
+apps/plugins/ -- contains no plugin, and no plugin code.
+
+The plugin system was removed from this fork. The rb-> API struct, the .rock
+loader, plugin_crt0.c, the plugin lib and every plugin source are gone. What is
+left in this directory is here because something OUTSIDE apps/ names these
+exact paths, and this fork's cleanup work is confined to apps/.
+
+Do not "tidy up" this directory. Each file below breaks something if removed.
+
+  plugin.lds
+      *** STILL LIVE. NOT SCAFFOLDING. ***
+      lib/rbcodec/codecs/codecs.make:168 sets
+          CODEC_LDS := $(APPSDIR)/plugins/plugin.lds
+      Codecs and plugins shared one linker script upstream. The plugins went
+      away; the codecs did not. This script still links every .codec in the
+      build. Delete or move it and codec linking breaks -- and it breaks late,
+      at package time, not at compile time.
+
+  plugins.make
+  bitmaps/pluginbitmaps.make
+      tools/root.make:134-135 `include`s both by exact path. A missing include
+      (as opposed to -include) is a fatal make error. Both are inert.
+
+  viewers.config
+  CATEGORIES
+      tools/buildzip.pl:497,550 open both with `or die`, so `make zip` fails
+      outright if either is missing. Both are inert: CATEGORIES is a comment
+      block, and the extension -> viewer map viewers.config used to carry was
+      compiled into apps/filetypes.c in commit a86c1ab3fa.
+      buildzip.pl is deliberately kept byte-identical to upstream (see
+      CLAUDE.md); this fork's packaging lives in bundle-theme.sh instead.
+
+  rockbox-fonts.config
+      Copied by tools/buildzip.pl:590 into rocks/viewers/. Non-fatal if absent,
+      but it is real content, so it stays.
+
+  credits.pl
+      Generates credits.raw from docs/CREDITS for the CORE credits screen
+      (apps/credits.c). Nothing outside apps/ reads it, so this one is free to
+      move -- and will, to apps/viewers/, in the apps/ reorganisation. The make
+      rule that drives it already moved to apps/apps.make.
+
+The whole directory can go the moment tools/ and lib/ become editable, and not
+one file before then.
+
+See .specifications/REFACTOR_PROPOSAL.md sections 3.1, 3.2 and 3.2a.
