@@ -44,7 +44,7 @@
 #include "widgets/spectrum_meter.h"
 #include "playlist/playlist.h"
 #include "root_menu.h"
-#include "system/misc.h"
+#include "system/activity.h"
 #include "widgets/list.h"
 #include "screens/wps.h"
 #include "strmemccpy.h"

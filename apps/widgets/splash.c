@@ -33,7 +33,7 @@
 #include "strptokspn_r.h"
 #include "draw/scrollbar.h"
 #include "font.h"
-#include "system/misc.h" /* get_current_activity */
+#include "system/activity.h"
 #include "dialog.h"
 
 static long progress_next_tick, talked_tick;

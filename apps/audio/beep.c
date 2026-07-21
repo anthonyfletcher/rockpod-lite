@@ -24,7 +24,7 @@
 #include "settings/settings.h"
 #include "pcm.h"
 #include "pcm_mixer.h"
-#include "system/misc.h"
+#include "system/app_util.h"
 #include "fixedpoint.h"
 
 /** Beep generation, CPU optimized **/

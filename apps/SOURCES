@@ -35,7 +35,11 @@ screens/menus/sound_menu.c
 #if CONFIG_RTC
 screens/menus/time_menu.c
 #endif
-system/misc.c
+system/shutdown.c
+system/volume.c
+system/strutil.c
+system/format_time.c
+system/activity.c
 screens/context_menu.c
 playlist/playlist.c
 playlist/catalog.c

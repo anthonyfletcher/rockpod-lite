@@ -45,7 +45,9 @@
 #include "dircache.h"
 #include "widgets/folder_select.h"
 #include "screens/context_menu.h"
-#include "system/misc.h"
+#include "system/activity.h"
+#include "system/format_time.h"
+#include "system/volume.h"
 #include "pathfuncs.h"
 
 

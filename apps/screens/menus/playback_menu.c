@@ -34,7 +34,7 @@
 #include "playlist/playlist.h"
 #include "audio.h"
 #include "metadata/cuesheet.h"
-#include "system/misc.h"
+#include "system/volume.h"
 #include "audio/playback.h"
 #include "pcm_sampr.h"
 #include "speech/talk.h"

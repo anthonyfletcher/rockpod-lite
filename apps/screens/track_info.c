@@ -40,7 +40,10 @@
 #include "draw/viewport.h"
 #include "widgets/list.h"
 #include "playlist/playlist.h"
-#include "system/misc.h"
+#include "system/activity.h"
+#include "system/app_util.h"
+#include "system/format_time.h"
+#include "system/shutdown.h"
 #include "track_info.h"
 
 static const int id3_headers[]=

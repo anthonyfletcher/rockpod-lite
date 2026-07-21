@@ -33,7 +33,8 @@
 #include "speech/language.h" /* lang_is_rtl */
 #include "draw/screen_access.h"
 #include "draw/viewport.h"
-#include "system/misc.h"
+#include "system/app_util.h"
+#include "system/shutdown.h"
 #include "time_set.h"
 
 /* little helper function for voice output */

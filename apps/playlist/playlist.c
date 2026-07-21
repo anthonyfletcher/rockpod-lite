@@ -89,7 +89,8 @@
 #include "audio/play_status.h"
 #include "system/applimits.h"
 #include "core_alloc.h"
-#include "system/misc.h"
+#include "system/app_util.h"
+#include "system/strutil.h"
 #include "pathfuncs.h"
 #include "button.h"
 #include "screens/browser_files.h"
@@ -99,7 +100,6 @@
 #include "screens/filetypes.h"
 #include "draw/icon_bitmaps.h"
 #include "system.h"
-#include "system/misc.h"
 
 #include "lang.h"
 #include "speech/talk.h"

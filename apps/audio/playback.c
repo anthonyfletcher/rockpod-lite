@@ -43,7 +43,7 @@
 #include "audio_thread.h"
 #include "playback.h"
 #include "storage.h"
-#include "system/misc.h"
+#include "system/app_util.h"
 #include "settings/settings.h"
 #include "audiohw.h"
 #include "general.h"

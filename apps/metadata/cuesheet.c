@@ -30,7 +30,7 @@
 #include "audio.h"
 #include "kernel.h"
 #include "logf.h"
-#include "system/misc.h"
+#include "system/strutil.h"
 #include "widgets/list.h"
 #include "input/action.h"
 #include "lang.h"

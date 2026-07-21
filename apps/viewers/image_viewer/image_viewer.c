@@ -50,7 +50,8 @@
 #include "draw/screen_access.h"   /* screens[] */
 #include "font.h"            /* font_get_ui_bold, FONT_UI */
 #include "widgets/menu.h"            /* do_menu, MENUITEM_STRINGLIST */
-#include "system/misc.h"            /* default_event_handler_ex, push/pop_current_activity */
+#include "system/activity.h"
+#include "system/shutdown.h"
 #include "root_menu.h"       /* GO_TO_*, MENU_ATTACHED_USB */
 #include "screens/browser.h"            /* tree_get_context/entries */
 #include "core_alloc.h"

@@ -23,7 +23,7 @@
 
 #include "action.h"
 #include "lang.h"
-#include "system/misc.h"
+#include "system/app_util.h"
 #include "usbstack/usb_hid.h"
 #include "usb_keymaps.h"
 /*#define LOGF_ENABLE*/

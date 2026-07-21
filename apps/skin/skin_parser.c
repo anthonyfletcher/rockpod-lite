@@ -27,7 +27,8 @@
 #include "config.h"
 #include "core_alloc.h"
 #include "file.h"
-#include "system/misc.h"
+#include "system/app_util.h"
+#include "system/strutil.h"
 #include "system/app_buffer.h"
 #include "draw/viewport.h"
 

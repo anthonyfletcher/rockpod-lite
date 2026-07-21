@@ -41,7 +41,7 @@
 #include "widgets/splash.h"
 #include "metadata/cuesheet.h"
 #include "browser_files.h"
-#include "system/misc.h"
+#include "system/app_util.h"
 #include "strnatcmp.h"
 #include "widgets/keyboard.h"
 

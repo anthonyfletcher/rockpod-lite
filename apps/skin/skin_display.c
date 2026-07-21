@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include "string-extra.h"
 #include "core_alloc.h"
-#include "system/misc.h"
+#include "system/volume.h"
 #include "font.h"
 #include "system.h"
 #include "rbunicode.h"

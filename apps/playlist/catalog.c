@@ -32,7 +32,7 @@
 #include "widgets/keyboard.h"
 #include "lang.h"
 #include "widgets/list.h"
-#include "system/misc.h"
+#include "system/strutil.h"
 #include "pathfuncs.h"
 #include "screens/context_menu.h"
 #include "playlist.h"

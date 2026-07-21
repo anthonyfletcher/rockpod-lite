@@ -33,7 +33,7 @@
 #include "bmp.h"
 #include "screens/filetypes.h"
 #include "speech/language.h"
-#include "system/misc.h"
+#include "system/app_util.h"
 
 #include "bitmaps/default_icons.h"
 

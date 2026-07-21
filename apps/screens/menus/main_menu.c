@@ -32,7 +32,7 @@
 #include "power.h"
 #include "powermgmt.h"
 #include "widgets/menu.h"
-#include "system/misc.h"
+#include "system/app_util.h"
 #include "exported_menus.h"
 #include "screens/browser.h"
 #include "storage.h"

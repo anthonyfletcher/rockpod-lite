@@ -40,7 +40,9 @@
 #include "core_alloc.h"
 #include "audio/abrepeat.h"
 #include "lang.h"
-#include "system/misc.h"
+#include "system/activity.h"
+#include "system/format_time.h"
+#include "system/volume.h"
 #include "led.h"
 #include "widgets/peakmeter.h"
 /* Image stuff */

@@ -46,7 +46,9 @@
 #include "widgets/splash.h"
 #include "draw/viewport.h"
 #include "font.h"
-#include "system/misc.h"            /* push_current_activity, read_line */
+#include "system/activity.h"
+#include "system/shutdown.h"
+#include "system/strutil.h"
 #include "root_menu.h"       /* GO_TO_*, MENU_ATTACHED_USB */
 #include "widgets/menu.h"            /* do_menu */
 #include "screens/menus/exported_menus.h" /* text_viewer_menu */

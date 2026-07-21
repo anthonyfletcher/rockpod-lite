@@ -43,7 +43,8 @@
 #include "bitswap.h"
 #include "debug.h"
 #include "panic.h"
-#include "system/misc.h" /* time_split_units() */
+#include "system/format_time.h"
+#include "system/strutil.h"
 #include "rbpaths.h" /* LANG_DIR */
 #include "mv.h"
 #include "pathfuncs.h"

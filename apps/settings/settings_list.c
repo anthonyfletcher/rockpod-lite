@@ -40,7 +40,7 @@
 #include "power.h"
 #include "powermgmt.h"
 #include "kernel.h"
-#include "system/misc.h"
+#include "system/volume.h"
 #include "audio/playback.h"
 #include "widgets/list.h"
 #include "rbunicode.h"
@@ -49,7 +49,6 @@
 #include "iap.h"
 #include "skin/statusbar.h"
 #include "screens/context_menu.h"
-#include "system/misc.h" /* current activity */
 #include "playlist/playlist.h"
 #include "screens/browser.h"
 

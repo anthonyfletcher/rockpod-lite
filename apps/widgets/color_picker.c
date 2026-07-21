@@ -28,7 +28,7 @@
 #include "draw/screen_access.h"
 #include "font.h"
 #include "debug.h"
-#include "system/misc.h"
+#include "system/shutdown.h"
 #include "settings/settings.h"
 #include "draw/scrollbar.h"
 #include "lang.h"

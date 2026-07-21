@@ -34,7 +34,9 @@
 #include "input/action.h"          /* get_action, action_userabort */
 #include "widgets/splash.h"          /* splash, splashf, splash_progress */
 #include "speech/talk.h"            /* talk_*, TALK_ID, TALK_IDARRAY, UNIT_* */
-#include "system/misc.h"            /* default_event_handler, format_time_auto, output_dyn_value */
+#include "system/app_util.h"
+#include "system/format_time.h"
+#include "system/shutdown.h"
 #include "metadata.h"        /* struct mp3entry, get_metadata */
 #include "playlist/playlist.h"        /* playlist_*, struct playlist_track_info */
 #include "audio.h"           /* audio_status, audio_current_track */

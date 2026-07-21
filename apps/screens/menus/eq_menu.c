@@ -37,7 +37,7 @@
 #include "font.h"
 #include "lang.h"
 #include "speech/talk.h"
-#include "system/misc.h"
+#include "system/shutdown.h"
 #include "sound.h"
 #include "dsp_proc_settings.h"
 #include "screens/browser.h"

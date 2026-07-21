@@ -30,7 +30,7 @@
 #include "debug.h"
 #include "powermgmt.h"
 
-#include "system/misc.h"
+#include "system/app_util.h"
 #include "system/app_buffer.h"
 #include "dir.h"
 #include "browser.h"

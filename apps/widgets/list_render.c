@@ -38,7 +38,6 @@
 #include "draw/scrollbar.h"
 #include "lang.h"
 #include "sound.h"
-#include "system/misc.h"
 #include "draw/viewport.h"
 #include "skin/statusbar_skinned.h"
 #include "debug.h"

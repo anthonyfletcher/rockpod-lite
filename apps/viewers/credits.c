@@ -30,7 +30,7 @@
 #include "settings/settings.h"
 #include "backlight.h"
 #include "powermgmt.h"
-#include "system/misc.h"            /* default_event_handler */
+#include "system/shutdown.h"
 #include "credits.h"
 
 /* The left-hand artwork panel, shipped for the 320x240 iPods only. It fills the

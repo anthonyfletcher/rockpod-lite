@@ -30,7 +30,7 @@
 #include "speech/talk.h"
 #include "widgets/list.h"
 #include "widgets/yesno.h"
-#include "system/misc.h"
+#include "system/format_time.h"
 #include "runtime_info.h"
 
 

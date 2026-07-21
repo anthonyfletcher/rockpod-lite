@@ -31,7 +31,6 @@
 #include "power.h"
 #include "draw/icon_bitmaps.h"
 #include "rtc.h"
-#include "system/misc.h"
 #include "time_set.h"
 #include "speech/talk.h"
 #include "lang.h"

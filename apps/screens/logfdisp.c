@@ -36,7 +36,7 @@
 #include "logfdisp.h"
 #include "input/action.h"
 #include "widgets/splash.h"
-#include "system/misc.h"
+#include "system/strutil.h"
 int compute_nb_lines(int w, struct font* font)
 {
     int i, nb_lines;

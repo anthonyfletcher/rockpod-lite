@@ -35,7 +35,6 @@
 #include "dir.h"
 #include "file.h"
 #include "kernel.h"
-#include "system/misc.h"
 #include "codecs.h"
 #include "lang.h"
 #include "widgets/keyboard.h"

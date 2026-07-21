@@ -31,7 +31,7 @@
 #include "rbpaths.h"
 #include "screens/wps.h"
 #include "file.h"
-#include "system/misc.h"
+#include "system/activity.h"
 #include "widgets/list.h"
 #include "skin_engine.h"
 #include "skin_buffer.h"

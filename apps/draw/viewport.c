@@ -27,7 +27,6 @@
 #include "viewport.h"
 #include "screen_access.h"
 #include "settings/settings.h"
-#include "system/misc.h"
 #include "widgets/list.h"
 
 /*some short cuts for fg/bg/line selector handling */

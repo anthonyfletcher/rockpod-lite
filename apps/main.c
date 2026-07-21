@@ -60,7 +60,7 @@
 #include "screens/usb_screen.h"
 #include "power.h"
 #include "speech/talk.h"
-#include "system/misc.h"
+#include "system/shutdown.h"
 #include "dircache.h"
 #include "database/tagcache.h"
 #include "metadata/albumart_cache.h"

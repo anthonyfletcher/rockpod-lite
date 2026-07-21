@@ -37,7 +37,7 @@
 #include "rbunicode.h"       /* utf8decode, utf8seek */
 #include "diacritic.h"       /* is_diacritic */
 #include "draw/scrollbar.h"
-#include "system/misc.h"            /* default_event_handler */
+#include "system/shutdown.h"
 #include "screens/track_info.h"
 #include "text_box.h"         /* view_text prototype */
 

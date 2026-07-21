@@ -34,7 +34,8 @@
 #include "usb_screen.h"
 #include "skin/skin_engine.h"
 #include "playlist/playlist.h"
-#include "system/misc.h"
+#include "system/activity.h"
+#include "system/shutdown.h"
 #include "draw/icon_bitmaps.h"
 
 #include "bitmaps/usblogo.h"

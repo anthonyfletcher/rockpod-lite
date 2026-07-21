@@ -49,7 +49,7 @@
 #include "system.h"
 #include "font.h"
 #include "settings/settings.h"
-#include "system/misc.h"
+#include "system/shutdown.h"
 #include "rbunicode.h"
 #include "input/action.h"
 #include "lang.h"

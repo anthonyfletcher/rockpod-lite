@@ -42,7 +42,7 @@
 #include "widgets/list.h"
 #include "dir.h"
 #include "panic.h"
-#include "system/misc.h"
+#include "system/strutil.h"
 #include "widgets/splash.h"
 #include "shortcuts.h"
 #include "dircache.h"

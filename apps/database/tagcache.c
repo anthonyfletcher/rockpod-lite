@@ -76,7 +76,7 @@
 #include "widgets/yesno.h"
 #include "core_alloc.h"
 #include "crc32.h"
-#include "system/misc.h"
+#include "system/strutil.h"
 #include "settings/settings.h"
 #include "dir.h"
 #include "pathfuncs.h"

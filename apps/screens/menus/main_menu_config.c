@@ -29,7 +29,7 @@
 #include "input/action.h"
 #include "settings/settings.h"
 #include "widgets/menu.h"
-#include "system/misc.h"
+#include "system/shutdown.h"
 #include "speech/talk.h"
 #include "widgets/yesno.h"
 #include "widgets/splash.h"

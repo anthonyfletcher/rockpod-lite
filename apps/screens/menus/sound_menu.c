@@ -37,7 +37,7 @@
 #include "kernel.h"
 #include "speech/talk.h"
 #include "widgets/option_select.h"
-#include "system/misc.h"
+#include "system/volume.h"
 
 static const char* vol_limit_format(char* buffer, size_t buffer_size, int value,
                       const char* unit)

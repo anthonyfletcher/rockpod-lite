@@ -27,7 +27,7 @@
 #include "metadata.h"
 #include "audio/buffering.h"
 #include "dircache.h"
-#include "system/misc.h"
+#include "system/strutil.h"
 #include "pathfuncs.h"
 #include "settings/settings.h"
 #include "screens/wps.h"

@@ -43,7 +43,8 @@
 #include "playlist/playlist.h"        /* playlist_entries_iterate */
 #include "database/tagtree.h"         /* tagtree_subentries_do_action */
 #include "draw/viewport.h"        /* viewportmanager_theme_enable/undo */
-#include "system/misc.h"            /* default_event_handler, MAKE_ACT_STR */
+#include "system/activity.h"
+#include "system/shutdown.h"
 #include "speech/talk.h"
 #include "screens/track_info.h"
 #include "widgets/text_box.h"         /* browse_id3, view_text */

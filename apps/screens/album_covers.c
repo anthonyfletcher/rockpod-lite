@@ -45,7 +45,10 @@
 #include "widgets/splash.h"
 #include "bitmaps/no_album_cover.h" /* bm_no_album_cover -- see create_empty_slide() */
 #include "draw/viewport.h"
-#include "system/misc.h"             /* default_event_handler, warn_on_pl_erase, fix_path_part */
+#include "system/activity.h"
+#include "system/app_util.h"
+#include "system/shutdown.h"
+#include "system/strutil.h"
 #include "context_menu.h"           /* onplay_show_playlist_cat_menu/menu */
 #include "metadata/albumart.h"         /* find_albumart / search_albumart_files */
 #include "metadata/albumart_cache.h"   /* shared database-driven thumbnail cache */
