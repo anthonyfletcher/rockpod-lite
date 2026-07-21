@@ -30,7 +30,7 @@
 #include "settings.h"
 #include "icons.h"
 #include "menu.h"
-#include "plugin_buffer.h"
+#include "app_buffer.h"
 #include "keyboard.h"
 #include "filetypes.h"
 #include "onplay.h"
@@ -401,7 +401,7 @@ static bool playlist_viewer_init(struct playlist_viewer * viewer,
 
     size_t id3_size = ALIGN_UP(sizeof(*viewer->id3), 4);
 
-    buffer = plugin_get_buffer(&buffer_size);
+    buffer = app_claim_buffer(&buffer_size, "playlist viewer");
     if (!buffer || buffer_size <= MAX_PATH + id3_size)
         return false;
 
@@ -592,6 +592,13 @@ static void close_playlist_viewer(void)
         }
         playlist_close(viewer.playlist);
     }
+
+    /* viewer.id3 and the track name buffer both point into the shared app
+     * buffer, claimed for this screen's lifetime. Hand it back here: the
+     * album covers screen is reachable from this one and claims the same
+     * buffer, so holding on would panic. */
+    viewer.id3 = NULL;
+    app_release_buffer("playlist viewer");
 }
 
 static enum pv_context_result open_pictureflow(const struct playlist_entry *current_track)

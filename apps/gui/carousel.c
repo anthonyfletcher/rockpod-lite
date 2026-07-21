@@ -36,7 +36,7 @@
 #include "screen_access.h"    /* FOR_NB_SCREENS, screens[] */
 #include "kernel.h"           /* threads, mutex, queue, current_tick */
 #include "core_alloc.h"       /* buflib types for buf_ctx (see init()) */
-#include "plugin_buffer.h"           /* plugin_get_buffer() -- see init() */
+#include "app_buffer.h"           /* app_get_buffer() -- see init() */
 #include "tagcache.h"
 #include "playlist.h"
 #include "playlist_catalog.h"
@@ -2088,7 +2088,7 @@ static void update_scroll_animation(void)
      * out in fewer, larger jumps whenever the loop itself runs slower,
      * which is exactly what happens now that playback stays active
      * and competes with this screen for CPU time (see
-     * plugin_get_buffer()'s comment in init()). A true fix would make
+     * app_claim_buffer()'s comment in init()). A true fix would make
      * this frame-rate independent (scale by measured elapsed ticks
      * rather than a flat per-iteration constant); this is the cheaper,
      * targeted version of that: a flat multiplier specifically while
@@ -2199,10 +2199,12 @@ static void cleanup(void)
     backlight_set_timeout(global_settings.backlight_timeout);
     backlight_set_timeout_plugged(global_settings.backlight_timeout_plugged);
 
-    /* Nothing to free: pf_idx.buf points into plugin_get_buffer()'s static
-     * pluginbuf[] (see init()), not a buflib handle. The bold album-name font
-     * is the shared font_get_ui_bold() -- owned by settings.c, not unloaded
-     * here. */
+    /* Nothing to free: pf_idx.buf points into the shared app buffer (see
+     * init()), not a buflib handle. But that buffer was claimed for this
+     * screen's lifetime, so hand it back -- otherwise the next screen to want
+     * it panics. The bold album-name font is the shared font_get_ui_bold() --
+     * owned by settings.c, not unloaded here. */
+    app_release_buffer("album covers");
 }
 
 enum {
@@ -2309,7 +2311,7 @@ static bool init(void)
 
     pf_update_dynamic_colors();
 
-    /* plugin_get_buffer() -- exactly what the original plugin used in its
+    /* app_claim_buffer() -- the same region the original plugin used in its
      * PF_PLAYBACK_CAPABLE branch (pictureflow.c's init(), guarded by
      * PLUGIN_BUFFER_SIZE > 0x10000: true for both of this fork's targets,
      * ipod6g at 3 MiB and ipodvideo at 512 KiB, per firmware/export/config/
@@ -2319,7 +2321,7 @@ static bool init(void)
      * its own buffer first, stopping playback (and, with it, the dynamic
      * colour scheme that depends on a current track).
      *
-     * pluginbuf[] (apps/plugin.c) is a plain static array -- a fixed,
+     * pluginbuf[] (see app_buffer.c) is a plain static array -- a fixed,
      * always-resident region completely separate from the audio buffer
      * pool, reserved for whichever plugin is currently loaded, or, when
      * none is (current_plugin_handle is NULL -- true here, since this is
@@ -2328,7 +2330,7 @@ static bool init(void)
      * reserved for plugin use, sitting idle whenever no plugin is loaded;
      * Album covers is simply borrowing it back the same way the original
      * plugin did. Not a buflib handle, so nothing to free in cleanup(). */
-    buf = plugin_get_buffer(&buf_size);
+    buf = app_claim_buffer(&buf_size, "album covers");
     if (!buf)
     {
         error_wait("Not enough memory");

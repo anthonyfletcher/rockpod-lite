@@ -39,7 +39,7 @@
 #include "splash.h"
 #include "yesno.h"
 #include "list.h"
-#include "plugin_buffer.h"
+#include "app_buffer.h"
 #include "file.h"
 #include "pathfuncs.h"
 #include "playlist_menu.h"
@@ -966,7 +966,7 @@ static int select_bookmark(const char* bookmark_file_name,
     bool refresh = true;
     int ret = BOOKMARK_FAIL;
 
-    bookmarks = plugin_get_buffer(&size);
+    bookmarks = app_get_buffer(&size, "bookmarks");
     bookmarks->buffer_size = size;
     bookmarks->show_dont_resume = show_dont_resume;
     bookmarks->filename = bookmark_file_name;

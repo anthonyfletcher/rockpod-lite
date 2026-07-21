@@ -35,7 +35,7 @@
 #include "lang.h"
 #include "debug.h"
 #include "settings.h"
-#include "plugin_buffer.h"
+#include "app_buffer.h"
 #include "playback.h"
 #include "cuesheet.h"
 #include "gui/wps.h"
@@ -527,7 +527,7 @@ bool display_cuesheet_content(char* filename)
 {
     size_t bufsize = 0;
     struct cuesheet_file cue_file;
-    struct cuesheet *cue = (struct cuesheet *)plugin_get_buffer(&bufsize);
+    struct cuesheet *cue = (struct cuesheet *)app_get_buffer(&bufsize, "cuesheet");
     if (!cue || bufsize < sizeof(struct cuesheet))
         return false;
 

@@ -26,7 +26,7 @@
  * includes; all of it was dead and has been removed. Its two genuinely live
  * exports moved out:
  *
- *   plugin_get_buffer()   -> plugin_buffer.h
+ *   plugin_get_buffer()   -> app_get_buffer() in app_buffer.h
  *   enum plugin_status    -> deleted; its last user, playlist_viewer.c, had
  *                            its own private protocol inlined instead
  *

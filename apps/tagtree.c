@@ -57,7 +57,7 @@
 #include "strnatcmp.h"
 #include "panic.h"
 #include "onplay.h"
-#include "plugin_buffer.h"
+#include "app_buffer.h"
 #include "language.h"
 #include "playlist_catalog.h"
 #include "crc32.h"
@@ -2726,7 +2726,7 @@ static bool insert_all_playlist(struct tree_context *c,
         {
             srand(current_tick);
             size_t bufsize = 0;
-            bool *buffer = (bool *) plugin_get_buffer(&bufsize);
+            bool *buffer = (bool *) app_get_buffer(&bufsize, "playlist insert");
             rand_bool_array = fill_random_playlist_indexes(buffer, bufsize,
                                                            n, slots_remaining);
 

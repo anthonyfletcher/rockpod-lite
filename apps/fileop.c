@@ -29,7 +29,7 @@
 #include "powermgmt.h"
 
 #include "misc.h"
-#include "plugin_buffer.h"
+#include "app_buffer.h"
 #include "dir.h"
 #include "tree.h"
 #include "fileop.h"
@@ -296,7 +296,7 @@ static int copy_move_file(struct file_op_params *src, const char *dst_path,
 
     /* See if we can get the plugin buffer for the file copy buffer */
     size_t buffersize;
-    char *buffer = (char *) plugin_get_buffer(&buffersize);
+    char *buffer = (char *) app_get_buffer(&buffersize, "file copy");
     if (buffer == NULL || buffersize < 512) {
         /* Not large enough, try for a disk sector worth of stack
            instead */

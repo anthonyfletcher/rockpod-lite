@@ -27,7 +27,7 @@
 #include "core_alloc.h"
 #include "file.h"
 #include "misc.h"
-#include "plugin_buffer.h"
+#include "app_buffer.h"
 #include "viewport.h"
 
 #include "skin_buffer.h"
@@ -2003,7 +2003,7 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
     skin_clear_stats(stats);
     /* get buffer space from the plugin buffer */
     size_t buffersize = 0;
-    wps_buffer = (char *)plugin_get_buffer(&buffersize);
+    wps_buffer = (char *)app_get_buffer(&buffersize, "skin parser");
 
     if (!wps_buffer)
         return false;
