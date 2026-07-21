@@ -57,7 +57,7 @@
 #include "root_menu.h"
 #include "browser.h"
 #include "database/tagtree.h"
-#include "screens.h"          /* browse_id3 */
+#include "track_info.h"          /* browse_id3 */
 #include "audio.h"            /* audio_status, audio_current_track */
 #include "lcd.h"
 #include "font.h"

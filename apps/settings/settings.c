@@ -46,7 +46,6 @@
 #include "power.h"
 #include "ata_idle_notify.h"
 #include "storage.h"
-#include "screens/screens.h"
 #include "ctype.h"
 #include "file.h"
 #include "system.h"

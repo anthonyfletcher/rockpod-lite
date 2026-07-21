@@ -38,7 +38,7 @@
 #include "usb.h"
 #include "audio/play_status.h"
 #include "storage.h"
-#include "screens.h"
+#include "track_info.h"
 #include "playlist/playlist.h"
 #include "draw/icon_bitmaps.h"
 #include "lang.h"

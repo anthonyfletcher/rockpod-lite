@@ -38,7 +38,8 @@
 #include "diacritic.h"       /* is_diacritic */
 #include "draw/scrollbar.h"
 #include "system/misc.h"            /* default_event_handler */
-#include "screens/screens.h"         /* view_text prototype */
+#include "screens/track_info.h"
+#include "text_box.h"         /* view_text prototype */
 
 struct view_info {
     struct font* pf;

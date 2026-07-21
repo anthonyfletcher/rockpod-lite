@@ -37,7 +37,6 @@
 #include "playlist/playlist.h"
 #include "lang.h"
 #include "speech/language.h"
-#include "screens.h"
 #include "rolo.h"
 #include "widgets/splash.h"
 #include "metadata/cuesheet.h"

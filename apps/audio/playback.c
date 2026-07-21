@@ -22,6 +22,7 @@
  *
  ****************************************************************************/
 #include "config.h"
+#include "timefuncs.h" /* get_time, mktime */
 #include "system.h"
 #include "version.h"
 #include "kernel.h"

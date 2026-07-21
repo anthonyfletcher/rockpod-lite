@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "string-extra.h"    /* strlcpy, strlcat */
+#include "kernel.h"   /* HZ */
 #include "system.h"          /* ALIGN_UP */
 #include "core_alloc.h"
 #include "crc32.h"

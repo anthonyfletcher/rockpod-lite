@@ -24,9 +24,13 @@
 #define _CUESHEET_H_
 
 #include <stdbool.h>
-#include "screens/screens.h"
 #include "file.h"
 #include "metadata.h"
+
+/* cue_draw_markers() takes a screen by pointer only, so a forward declaration
+ * is enough. This used to arrive via screens.h, which cuesheet.h included
+ * without needing anything else from it. */
+struct screen;
 
 #define MAX_NAME 80    /* Max length of information strings */
 #define MAX_TRACKS 99  /* Max number of tracks in a cuesheet */

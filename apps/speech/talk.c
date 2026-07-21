@@ -44,6 +44,7 @@
 #include "debug.h"
 #include "panic.h"
 #include "system/misc.h" /* time_split_units() */
+#include "rbpaths.h" /* LANG_DIR */
 #include "mv.h"
 #include "pathfuncs.h"
 #include "dir.h"

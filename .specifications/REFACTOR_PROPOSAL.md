@@ -538,6 +538,55 @@ Consequences:
 - **ipod6g needs the object-level check instead**: compare per-object hashes, mapping old paths to new. Stage 3's result was 0/558 non-apps objects changed, 134/153 apps objects identical, and the 19 differing ones diffing only in the embedded path string.
 - Grepping `apps/` for `__FILE__` is **not** sufficient to predict this — the expansion lives in a `firmware/` macro. Check the macros `apps/` *uses*, not just the text it contains.
 
+### 9.2 "Exit 0" is not a pass — check the warning set
+
+Learned in stage 5, one commit away from shipping broken code.
+
+Splitting `screens.c` deleted `screens.h`, and the build then returned **exit 0
+with four files containing implicit declarations**. C lets a call to an
+undeclared function compile: the compiler assumes `int` return and checks no
+arguments. What that hid:
+
+| File | Symptom | Reality |
+|---|---|---|
+| `screens/menus/main_menu.c` | `struct tm *` assigned from `int` | pointer truncation; "works" only because ARM pointers are 32-bit |
+| `audio/playback.c` | `mktime` passed an int | same |
+| `playlist/viewer.c` | `browse_id3_ex` implicit | assumed `int`, actually `bool`, arguments unchecked |
+| `screens/time_set.c` | `lang_is_rtl` implicit | same class |
+
+**Gate for every remaining stage: exit 0 AND the warning set unchanged from the
+previous stage.** Diff `grep -oE 'warning: .*' | sort -u` between build logs.
+Use `make -k` so one build reports every failure instead of stopping at the
+first — stage 5 wasted four full clean builds discovering one file at a time.
+
+### 9.3 Undeclared transitive dependencies (known, not fixed)
+
+`screens.h` was included by 30 files, **18 of which used nothing from it**. It
+pulled in `timefuncs.h`, `metadata.h` and `playlist/playlist.h`, and through
+the last of those, `rbpaths.h`. Deleting it broke files up to three hops away:
+
+```
+talk.c -> widgets/splash.h -> draw/line.h -> screens.h -> playlist/playlist.h -> rbpaths.h -> LANG_DIR
+```
+
+`talk.c` had used `LANG_DIR` for years without ever including `rbpaths.h`.
+
+A survey of the whole tree found this shape is widespread — files using a
+symbol without including the header that defines it, surviving on transitive
+luck:
+
+| Header | apps/ files using its symbols without including it |
+|---|---|
+| `kernel.h` (`HZ`, `current_tick`, `queue_*`) | 40 |
+| `rbpaths.h` (`ROCKBOX_DIR`, `THEME_DIR`, …) | 20 |
+| `timefuncs.h` (`struct tm`, `get_time`, …) | 12 |
+
+Only the files that actually failed were fixed (7 in stage 5). The remaining
+~65 still compile via other paths. **This is deliberate**: fixing them all is a
+large diff not traceable to any current request, and belongs in its own commit
+if wanted. Until then, expect any future header move to break a handful of
+apparently unrelated files.
+
 **The control must clear everything it claims to.** The stage 2 control deleted only `apps/*.o`, `apps/gui/*.o` and `apps/menus/*.o`, leaving `recorder/`, `iap/`, `image_viewer/` and `text_viewer/` objects in place, and so proved less than it appeared to. Stage 3 also hit a stale `make.dep` that resurrected a deleted header as a phantom make target (`-MG` records unresolvable includes as build-dir-relative dependencies, so they persist). **Use `make clean`, not selective deletion.**
 
 ---

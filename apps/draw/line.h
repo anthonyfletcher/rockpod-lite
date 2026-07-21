@@ -28,7 +28,11 @@
 #include <stdarg.h>
 
 #include "lcd.h"
-#include "screens/screens.h"
+
+/* put_line()/vput_line() take a screen by pointer only, so a forward
+ * declaration is enough. This used to arrive via screens.h, which line.h
+ * included without needing anything else from it. */
+struct screen;
 
 /* Possible line decoration styles. Specify one of
  * STYLE_NONE, _DEFAULT, _INVERT, _COLORBAR or _GRADIENT, and optionally

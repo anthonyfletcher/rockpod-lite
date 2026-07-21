@@ -20,6 +20,7 @@
  *
  ****************************************************************************/
 
+#include "draw/screen_access.h"
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -29,7 +30,6 @@
 #include "line.h"
 #include "gcc_extensions.h"
 #include "icon.h"
-#include "screens/screens.h"
 #include "settings/settings.h"
 #include "debug.h"
 #include "viewport.h"

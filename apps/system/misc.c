@@ -38,7 +38,7 @@
 #include "dir.h"
 #include "input/action.h"
 #include "timefuncs.h"
-#include "screens/screens.h"
+#include "app_util.h"
 #include "screens/usb_screen.h"
 #include "speech/talk.h"
 #include "audio.h"

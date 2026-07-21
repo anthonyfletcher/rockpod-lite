@@ -20,6 +20,7 @@
  *
  ****************************************************************************/
 
+#include "draw/screen_access.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -30,7 +31,6 @@
 #include "kernel.h"
 #include "logf.h"
 #include "system/misc.h"
-#include "screens/screens.h"
 #include "widgets/list.h"
 #include "input/action.h"
 #include "lang.h"

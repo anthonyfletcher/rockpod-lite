@@ -88,7 +88,6 @@
 #include "settings/settings.h"
 #include "audio/play_status.h"
 #include "system/applimits.h"
-#include "screens/screens.h"
 #include "core_alloc.h"
 #include "system/misc.h"
 #include "pathfuncs.h"

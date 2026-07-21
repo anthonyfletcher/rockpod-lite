@@ -41,7 +41,6 @@
 #include "speech/talk.h"
 #include "powermgmt.h"
 #include "audio/playback.h"
-#include "screens/screens.h"
 #include "screens/quickscreen.h"
 #include "dircache.h"
 #include "widgets/folder_select.h"

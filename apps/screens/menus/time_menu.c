@@ -37,7 +37,7 @@
 #include "draw/viewport.h"
 #include "widgets/list.h"
 #include "screens/alarm.h"
-#include "screens/screens.h"
+#include "screens/time_set.h"
 #include "font.h"
 #include "system.h"
 

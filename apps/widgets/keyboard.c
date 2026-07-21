@@ -41,13 +41,13 @@
  * keyboard's loadable layouts, morse input and touchscreen grid are
  * intentionally gone. */
 
+#include "draw/screen_access.h"
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
 #include "kernel.h"
 #include "system.h"
 #include "font.h"
-#include "screens/screens.h"
 #include "settings/settings.h"
 #include "system/misc.h"
 #include "rbunicode.h"

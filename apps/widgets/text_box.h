@@ -1,4 +1,4 @@
-/* was: apps/screens.h */
+/* was: apps/screens.h (view_text declaration) */
 /***************************************************************************
  *             __________               __   ___.
  *   Open      \______   \ ____   ____ |  | _\_ |__   _______  ___
@@ -19,38 +19,13 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#ifndef _SCREENS_H_
-#define _SCREENS_H_
 
-#include "config.h"
-#include "timefuncs.h"
-#include "metadata.h"
-#ifndef WARBLE
-#include "playlist/playlist.h"
-#endif
+#ifndef _TEXT_BOX_H_
+#define _TEXT_BOX_H_
 
-struct screen;
-
-void charging_splash(void);
-
-
-bool set_time_screen(const char* title, struct tm *tm, bool set_date);
-
-#ifndef WARBLE
-bool browse_id3_ex(struct mp3entry *id3, struct playlist_info *playlist,
-                int playlist_display_index, int playlist_amount,
-                struct tm *modified, int track_ct,
-                int (*view_text)(const char *title, const char *text));
-#endif
-bool browse_id3(struct mp3entry *id3, int playlist_display_index, int playlist_amount,
-                struct tm *modified, int track_ct,
-                int (*view_text)(const char *title, const char *text));
-int  view_runtime(void);
-
-/* Core full-screen scrollable text viewer (apps/view_text.c). Passed as the
- * browse_id3 view_text callback; replaces the old view_text plugin. */
+/* Full-screen scrollable display for a string already in memory. Not to be
+ * confused with viewers/text_viewer/, which streams documents from a file.
+ * Returns 1 if USB was connected while displaying, 0 otherwise. */
 int view_text(const char *title, const char *text);
 
-
-#endif
-
+#endif /* _TEXT_BOX_H_ */

@@ -57,7 +57,6 @@
 #include "playlist/playlist.h"
 #include "core_alloc.h"
 #include "rolo.h"
-#include "screens/screens.h"
 #include "screens/usb_screen.h"
 #include "power.h"
 #include "speech/talk.h"

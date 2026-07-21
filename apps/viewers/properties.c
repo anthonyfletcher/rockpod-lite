@@ -45,7 +45,8 @@
 #include "draw/viewport.h"        /* viewportmanager_theme_enable/undo */
 #include "system/misc.h"            /* default_event_handler, MAKE_ACT_STR */
 #include "speech/talk.h"
-#include "screens/screens.h"         /* browse_id3, view_text */
+#include "screens/track_info.h"
+#include "widgets/text_box.h"         /* browse_id3, view_text */
 #include "root_menu.h"       /* GO_TO_* */
 #include "widgets/list.h"        /* gui_synclist */
 #include "metadata/mul_id3.h"

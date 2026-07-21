@@ -42,7 +42,6 @@
 #include "settings/settings.h"
 #include "settings/settings_list.h"
 #include "option_select.h"
-#include "screens/screens.h"
 #include "speech/talk.h"
 #include "lang.h"
 #include "system/misc.h"

@@ -28,7 +28,6 @@
 #include "root_menu.h"
 #include "lang.h"
 #include "settings/settings.h"
-#include "screens/screens.h"
 #include "kernel.h"
 #include "debug.h"
 #include "system/misc.h"

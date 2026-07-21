@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "rbpaths.h"  /* THEME_DIR, ICON_DIR */
 #include "string.h"
 
 #include "settings/settings.h"
@@ -34,7 +35,6 @@
 #include "filetypes.h"
 #include "viewers/text_viewer/text_viewer.h"
 #include "viewers/image_viewer/image_viewer_pub.h"
-#include "screens.h"
 #include "dir.h"
 #include "file.h"
 #include "draw/icon_bitmaps.h"

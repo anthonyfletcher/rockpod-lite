@@ -24,10 +24,11 @@
  * Kevin Ferrare 2005/10/16
  * multi-screen support, rewrote a lot of code
  */
+#include "screens/track_info.h"
 #include <string.h>
 #include "playlist.h"
 #include "audio.h"
-#include "screens/screens.h"
+#include "widgets/text_box.h"
 #include "settings/settings.h"
 #include "draw/icon_bitmaps.h"
 #include "widgets/menu.h"

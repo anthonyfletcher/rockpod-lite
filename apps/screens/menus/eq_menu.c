@@ -33,7 +33,6 @@
 #include "input/action.h"
 #include "settings/settings.h"
 #include "rbpaths.h"
-#include "screens/screens.h"
 #include "draw/icon_bitmaps.h"
 #include "font.h"
 #include "lang.h"

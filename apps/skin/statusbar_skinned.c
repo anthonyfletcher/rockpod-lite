@@ -26,7 +26,6 @@
 #include "system.h"
 #include "settings/settings.h"
 #include "system/appevents.h"
-#include "screens/screens.h"
 #include "draw/screen_access.h"
 #include "skin_parser.h"
 #include "skin_buffer.h"

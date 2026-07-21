@@ -42,7 +42,10 @@ playlist/catalog.c
 playlist/viewer.c
 system/app_buffer.c
 root_menu.c
-screens/screens.c
+screens/time_set.c
+screens/track_info.c
+screens/runtime_info.c
+system/app_util.c
 widgets/text_box.c
 viewers/properties.c
 metadata/mul_id3.c

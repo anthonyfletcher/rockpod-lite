@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "kernel.h"   /* HZ, current_tick */
 #include <string.h>
 #include "string-extra.h"
 #include "debug.h"

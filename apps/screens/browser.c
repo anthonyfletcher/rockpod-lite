@@ -44,7 +44,6 @@
 #include "rolo.h"
 #include "draw/icon_bitmaps.h"
 #include "lang.h"
-#include "screens.h"
 #include "widgets/keyboard.h"
 #include "bookmark.h"
 #include "context_menu.h"

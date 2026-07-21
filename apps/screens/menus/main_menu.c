@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <limits.h>
 #include "config.h"
+#include "timefuncs.h" /* get_time, valid_time */
 #include "string.h"
 #include "lang.h"
 #include "input/action.h"
@@ -37,7 +38,7 @@
 #include "storage.h"
 #include "widgets/yesno.h"
 #include "widgets/keyboard.h"
-#include "screens/screens.h"
+#include "screens/runtime_info.h"
 #include "speech/talk.h"
 #include "widgets/splash.h"
 #include "screens/debug_menu.h"

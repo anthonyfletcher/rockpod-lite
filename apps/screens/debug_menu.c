@@ -21,6 +21,7 @@
  ****************************************************************************/
 
 #include "config.h"
+#include "timefuncs.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -41,7 +42,6 @@
 #include "widgets/list.h"
 #include "dir.h"
 #include "panic.h"
-#include "screens.h"
 #include "system/misc.h"
 #include "widgets/splash.h"
 #include "shortcuts.h"
