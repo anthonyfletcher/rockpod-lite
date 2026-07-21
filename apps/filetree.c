@@ -37,7 +37,6 @@
 #include "lang.h"
 #include "language.h"
 #include "screens.h"
-#include "plugin.h"
 #include "rolo.h"
 #include "splash.h"
 #include "cuesheet.h"
@@ -49,6 +48,9 @@
 #include "mv.h"
 
 #include "wps.h"
+#include "viewport.h"
+#include "pathfuncs.h"
+#include "root_menu.h"
 
 static struct compare_data
 {

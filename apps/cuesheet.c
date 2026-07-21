@@ -35,10 +35,14 @@
 #include "lang.h"
 #include "debug.h"
 #include "settings.h"
-#include "plugin.h"
+#include "plugin_buffer.h"
 #include "playback.h"
 #include "cuesheet.h"
 #include "gui/wps.h"
+#include "string-extra.h"
+#include "rbunicode.h"
+#include "bookmark.h"
+#include "tree.h"
 
 #define CUE_DIR ROCKBOX_DIR "/cue"
 

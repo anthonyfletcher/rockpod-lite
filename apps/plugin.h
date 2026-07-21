@@ -5,9 +5,8 @@
  *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
  *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
  *                     \/            \/     \/    \/            \/
- * $Id$
  *
- * Copyright (C) 2002 Björn Stenberg
+ * Copyright (C) 2002 by Björn Stenberg
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,116 +17,30 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
+
+/*
+ * Scaffolding only -- deliberately empty.
+ *
+ * The plugin system is gone from this fork. This header once carried the
+ * plugin API struct, the loader declarations and a block of ~60 convenience
+ * includes; all of it was dead and has been removed. Its two genuinely live
+ * exports moved out:
+ *
+ *   plugin_get_buffer()   -> plugin_buffer.h
+ *   enum plugin_status    -> deleted; its last user, playlist_viewer.c, had
+ *                            its own private protocol inlined instead
+ *
+ * The file itself survives for exactly one reason: lib/rbcodec/metadata/hes.c
+ * still has a vestigial #include "plugin.h". That include needs nothing from
+ * here -- the build succeeds with this file empty -- but lib/ is outside the
+ * scope this fork's cleanup work is confined to, so the include stays and this
+ * stub keeps it satisfied.
+ *
+ * To finish the job: delete the include at lib/rbcodec/metadata/hes.c:12, then
+ * delete this file.
+ */
+
 #ifndef _PLUGIN_H_
 #define _PLUGIN_H_
 
-/* instruct simulator code to not redefine any symbols when compiling plugins.
-   (the PLUGIN macro is defined in apps/plugins/Makefile) */
-
-#include <stdbool.h>
-#include <inttypes.h>
-#include <sys/types.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include "string-extra.h"
-#include "gcc_extensions.h"
-
-
-
-
-
-void* plugin_get_buffer(size_t *buffer_size);
-
-#include "config.h"
-#include "system.h"
-#include "dir.h"
-#include "general.h"
-#include "kernel.h"
-#include "thread.h"
-#include "button.h"
-#include "action.h"
-#include "load_code.h"
-#include "usb.h"
-#include "font.h"
-#include "lcd.h"
-#include "scroll_engine.h"
-#include "metadata.h"
-#include "sound.h"
-#include "audio.h"
-#include "voice_thread.h"
-#include "root_menu.h"
-#include "talk.h"
-#include "lang_enum.h"
-#ifdef RB_PROFILE
-#include "profile.h"
-#endif
-#include "misc.h"
-#include "pathfuncs.h"
-#include "pcm_mixer.h"
-#include "dsp-util.h"
-#include "dsp_core.h"
-#include "dsp_proc_settings.h"
-#include "codecs.h"
-#include "playback.h"
-#include "codec_thread.h"
-#include "settings.h"
-#include "timer.h"
-#include "playlist.h"
-#include "screendump.h"
-#include "scrollbar.h"
-#include "jpeg_load.h"
-#include "../recorder/bmp.h"
-#include "menu.h"
-#include "rbunicode.h"
-#include "list.h"
-#include "statusbar-skinned.h"
-#include "tree.h"
-#include "color_picker.h"
-#include "buflib.h"
-#include "buffering.h"
-#include "tagcache.h"
-#include "tagtree.h"
-#include "viewport.h"
-#include "ata_idle_notify.h"
-#include "settings_list.h"
-#include "timefuncs.h"
-#include "crc32.h"
-#include "rbpaths.h"
-#include "core_alloc.h"
-#include "screen_access.h"
-#include "onplay.h"
-#include "screens.h"
-#include "vuprintf.h"
-
-#include "albumart.h"
-
-
-#include "yesno.h"
-
-#include "filetypes.h"
-
-#include "usbstack/usb_hid_usage_tables.h"
-
-
-
-/* plugin return codes */
-/* internal returns start at 0x100 to make exit(1..255) work */
-#define INTERNAL_PLUGIN_RETVAL_START 0x100
-enum plugin_status {
-    PLUGIN_OK = 0, /* PLUGIN_OK == EXIT_SUCCESS */
-    /* 1...255 reserved for exit() */
-    PLUGIN_USB_CONNECTED = INTERNAL_PLUGIN_RETVAL_START,
-    PLUGIN_POWEROFF,
-    PLUGIN_GOTO_WPS,
-    PLUGIN_GOTO_PLUGIN,
-    PLUGIN_GOTO_ROOT,
-    PLUGIN_ERROR = -1,
-};
-
-
-
-
-#endif
+#endif /* _PLUGIN_H_ */

@@ -27,7 +27,7 @@
 #include "core_alloc.h"
 #include "file.h"
 #include "misc.h"
-#include "plugin.h"
+#include "plugin_buffer.h"
 #include "viewport.h"
 
 #include "skin_buffer.h"
@@ -56,6 +56,7 @@
 
 #include "backdrop.h"
 #include "statusbar-skinned.h"
+#include "string-extra.h"
 
 #define WPS_ERROR_INVALID_PARAM         -1
 

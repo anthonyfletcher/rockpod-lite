@@ -39,13 +39,16 @@
 #include "splash.h"
 #include "yesno.h"
 #include "list.h"
-#include "plugin.h"
+#include "plugin_buffer.h"
 #include "file.h"
 #include "pathfuncs.h"
 #include "playlist_menu.h"
 
 /*#define LOGF_ENABLE*/
 #include "logf.h"
+#include "crc32.h"
+#include "sound.h"
+#include "string-extra.h"
 
 #define MAX_BOOKMARKS 10
 #define MAX_BOOKMARK_SIZE  350

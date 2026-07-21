@@ -37,7 +37,6 @@
 #include "yesno.h"
 #include "keyboard.h"
 #include "screens.h"
-#include "plugin.h"
 #include "talk.h"
 #include "splash.h"
 #include "debug_menu.h"
@@ -50,6 +49,7 @@
 #include "credits.h"
 #include "root_menu.h"
 #include "text_viewer/text_viewer.h"
+#include "dir.h"
 
 static const struct browse_folder_info config = {ROCKBOX_DIR, SHOW_CFG};
 static int show_info(void);

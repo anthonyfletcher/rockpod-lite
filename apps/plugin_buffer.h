@@ -5,9 +5,8 @@
  *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
  *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
  *                     \/            \/     \/    \/            \/
- * $Id$
  *
- * Copyright (C) 2002 Björn Stenberg
+ * Copyright (C) 2026 by the Rockbox contributors
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,20 +17,15 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#include "pitchscreen.h"
-#include "sound.h"
-#include "dsp_proc_settings.h"
 
-int gui_syncpitchscreen_run(void)
-{
-    /* The pitch screen UI was a plugin (pitch_screen.rock); with the plugin
-     * system gone it is not available. reset_pitch() below still works. */
-    return 0;
-}
+#ifndef _PLUGIN_BUFFER_H_
+#define _PLUGIN_BUFFER_H_
 
-int reset_pitch(void)
-{
-    sound_set_pitch(PITCH_SPEED_100);
-    dsp_set_timestretch(PITCH_SPEED_100);
-    return 0;
-}
+#include <stddef.h>
+
+/* Scratch buffer, formerly the memory a loadable plugin ran in. The plugin
+   system is gone, but several core screens still borrow this region as
+   temporary working space. */
+void* plugin_get_buffer(size_t *buffer_size);
+
+#endif /* _PLUGIN_BUFFER_H_ */

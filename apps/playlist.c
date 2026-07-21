@@ -106,11 +106,13 @@
 #include "splash.h"
 #include "rbunicode.h"
 #include "root_menu.h"
-#include "plugin.h" /* To borrow a temp buffer to rewrite a .m3u8 file */
 #include "logdiskf.h"
 #include "dircache.h"
 #include "logf.h"
 #include "panic.h"
+#include "crc32.h"
+#include "yesno.h"
+#include "dir.h"
 
 #if 0//def ROCKBOX_HAS_LOGDISKF
 #undef DEBUGF

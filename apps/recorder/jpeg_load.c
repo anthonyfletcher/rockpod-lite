@@ -27,7 +27,6 @@
 *
 ****************************************************************************/
 #include "metadata_common.h"
-#include "plugin.h"
 #include "debug.h"
 #include "jpeg_load.h"
 /*#define JPEG_BS_DEBUG*/

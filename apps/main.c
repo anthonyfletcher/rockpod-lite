@@ -61,7 +61,6 @@
 #include "usb_screen.h"
 #include "power.h"
 #include "talk.h"
-#include "plugin.h"
 #include "misc.h"
 #include "dircache.h"
 #include "tagcache.h"
@@ -90,6 +89,8 @@
 
 
 #include "piezo.h"
+#include "dsp_core.h"
+#include "rbunicode.h"
 
 #define MAIN_NORETURN_ATTR NORETURN_ATTR
 

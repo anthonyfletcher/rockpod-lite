@@ -40,11 +40,15 @@
 /*#define LOGF_ENABLE*/
 #include "logf.h"
 #include "bitswap.h"
-#include "plugin.h" /* plugin_get_buffer() */
+#include "plugin_buffer.h" /* plugin_get_buffer() */
 #include "debug.h"
 #include "panic.h"
 #include "misc.h" /* time_split_units() */
 #include "mv.h"
+#include "pathfuncs.h"
+#include "dir.h"
+#include "rbunicode.h"
+#include "core_alloc.h"
 
 /***************** Constants *****************/
 

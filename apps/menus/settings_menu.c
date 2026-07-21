@@ -43,10 +43,10 @@
 #include "screens.h"
 #include "quickscreen.h"
 #include "dircache.h"
-#include "plugin.h"
 #include "folder_select.h"
 #include "onplay.h"
 #include "misc.h"
+#include "pathfuncs.h"
 
 
 /***********************************/

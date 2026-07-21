@@ -60,9 +60,9 @@
 #include "tagcache.h"
 #include "gui/album_covers.h"
 #include "language.h"
-#include "plugin.h"
 #include "filetypes.h"
 #include "disk.h"
+#include "sound.h"
 
 struct root_items {
     int (*function)(void* param);

@@ -55,7 +55,6 @@
 #include "replaygain.h"
 
 #include "ctype.h"
-#include "plugin.h"
 
 void charging_splash(void)
 {

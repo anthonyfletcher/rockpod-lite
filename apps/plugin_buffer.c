@@ -13,12 +13,11 @@
  * the core is the plugin RAM region (pluginbuf, from the linker script), which
  * a handful of core screens still borrow as a scratch buffer via
  * plugin_get_buffer() -- bookmark.c, cuesheet.c, fileop.c and the album-art
- * carousel. No plugin is ever loaded now, so the whole region is always free.
+ * carousel among them. No plugin is ever loaded now, so the whole region is
+ * always free.
  *
- * The former rb-> plugin API struct, the .rock loader and the rest of the
- * plugin machinery are gone; the API struct *type* still lives in plugin.h
- * because the plugin lib (apps/plugins/lib/) is still compiled as build
- * scaffolding (tools/ drives that and is out of scope here).
+ * The rb-> API struct, the .rock loader, plugin.h and the rest of the plugin
+ * machinery are all gone.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,20 +28,11 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#define DIRFUNCTIONS_DEFINED
-#define FILEFUNCTIONS_DEFINED
-#include "plugin.h"
+#include "config.h"
+#include "plugin_buffer.h"
 
 /* The plugin RAM region, laid out by the linker script. */
 extern unsigned char pluginbuf[];
-
-/* Historically locked part of the plugin buffer for a resident plugin. With no
- * plugins the whole buffer is always available. */
-size_t plugin_reserve_buffer(size_t buffer_size)
-{
-    (void)buffer_size;
-    return PLUGIN_BUFFER_SIZE;
-}
 
 /* Returns the plugin buffer for use as core scratch space. */
 void* plugin_get_buffer(size_t *buffer_size)

@@ -29,7 +29,7 @@
 #include "powermgmt.h"
 
 #include "misc.h"
-#include "plugin.h"
+#include "plugin_buffer.h"
 #include "dir.h"
 #include "tree.h"
 #include "fileop.h"
@@ -40,6 +40,7 @@
 #include "yesno.h"
 #include "splash.h"
 #include "keyboard.h"
+#include "action.h"
 
 /* Used for directory move, copy and delete */
 struct file_op_params

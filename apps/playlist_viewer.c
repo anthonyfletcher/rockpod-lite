@@ -30,7 +30,7 @@
 #include "settings.h"
 #include "icons.h"
 #include "menu.h"
-#include "plugin.h"
+#include "plugin_buffer.h"
 #include "keyboard.h"
 #include "filetypes.h"
 #include "onplay.h"
@@ -54,6 +54,7 @@
 #include "tagcache.h"
 #include "root_menu.h"
 #include "gui/album_covers.h"
+#include "string-extra.h"
 
 /* Maximum number of tracks we can have loaded at one time                   */
 #define MAX_PLAYLIST_ENTRIES 200
@@ -593,49 +594,21 @@ static void close_playlist_viewer(void)
     }
 }
 
-static enum pv_context_result
-    open_with_plugin(const struct playlist_entry *current_track,
-                     const char* plugin_name,
-                     int (*loadplugin)(const char* plugin, const char* file))
+static enum pv_context_result open_pictureflow(const struct playlist_entry *current_track)
 {
     char selected_track[MAX_PATH];
-    close_playlist_viewer(); /* don't pop activity yet – relevant for plugin_load */
+    close_playlist_viewer(); /* don't pop activity yet */
 
     strmemccpy(selected_track, current_track->name, sizeof(selected_track));
 
-    int plugin_return = loadplugin(plugin_name, selected_track);
+    int ret = album_covers(selected_track);
     pop_current_activity_without_refresh();
 
-    switch (plugin_return)
-    {
-        case PLUGIN_USB_CONNECTED:
-            return PV_CONTEXT_USB_CLOSED;
-        case PLUGIN_GOTO_WPS:
-            return PV_CONTEXT_WPS_CLOSED;
-        default:
-            return PV_CONTEXT_CLOSED;
-    }
-}
-
-/* Album covers is core-linked, not a loadable plugin, so it doesn't match
- * open_with_plugin()'s loadplugin(plugin_name, file) callback shape or its
- * PLUGIN_*-return-code switch -- this adapts both, translating
- * album_covers()'s GO_TO_* results into the PLUGIN_* ones open_with_plugin()
- * already understands, rather than changing that generic function. */
-static int open_album_covers_adapter(const char *plugin_name, const char *file)
-{
-    int ret;
-    (void)plugin_name;
-    ret = album_covers(file);
     if (ret == GO_TO_ROOT)
-        return PLUGIN_USB_CONNECTED;
+        return PV_CONTEXT_USB_CLOSED;
     if (ret == GO_TO_WPS)
-        return PLUGIN_GOTO_WPS;
-    return PLUGIN_OK;
-}
-static enum pv_context_result open_pictureflow(const struct playlist_entry *current_track)
-{
-    return open_with_plugin(current_track, "", &open_album_covers_adapter);
+        return PV_CONTEXT_WPS_CLOSED;
+    return PV_CONTEXT_CLOSED;
 }
 
 static enum pv_context_result delete_track(int current_track_index,

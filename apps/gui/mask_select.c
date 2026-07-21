@@ -27,9 +27,10 @@
 #include "lang.h"
 #include "language.h"
 #include "list.h"
-#include "plugin.h"
 #include "mask_select.h"
 #include "talk.h"
+#include "settings.h"
+#include "string-extra.h"
 
 /*
  * Order for changing child states:

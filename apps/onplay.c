@@ -46,7 +46,6 @@
 #include "properties.h"
 #include "playing_time.h"
 #include "fileop.h"
-#include "plugin.h"
 #include "bookmark.h"
 #include "action.h"
 #include "splash.h"
@@ -66,6 +65,9 @@
 #include "shortcuts.h"
 #include "misc.h"
 #include "storage.h"
+#include "sound.h"
+#include "string-extra.h"
+#include "dir.h"
 
 static int onplay_result = ONPLAY_OK;
 static bool in_queue_submenu = false;
