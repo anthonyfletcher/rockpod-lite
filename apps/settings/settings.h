@@ -147,9 +147,14 @@ enum
 /* Note: Any new filter modes need to be added before NUM_FILTER_MODES.
  *       Any new rockbox browse filter modes (accessible through the menu)
  *       must be added after NUM_FILTER_MODES. */
+/* Only the entries before NUM_FILTER_MODES reach disk: they are the values of
+ * the "show files" setting. Everything after it is a compile-time argument to
+ * browse_folder_info, so renumbering that half is free. SHOW_RWPS, SHOW_FMS,
+ * SHOW_RFMS, SHOW_RSBS and SHOW_FMR were dropped from there -- the remote-LCD
+ * and tuner browse modes, neither of which this fork has. */
 enum { SHOW_ALL, SHOW_SUPPORTED, SHOW_MUSIC, SHOW_PLAYLIST, SHOW_ID3DB,
        NUM_FILTER_MODES,
-       SHOW_WPS, SHOW_RWPS, SHOW_FMS, SHOW_RFMS, SHOW_SBS, SHOW_RSBS, SHOW_FMR, SHOW_CFG,
+       SHOW_WPS, SHOW_SBS, SHOW_CFG,
        SHOW_LNG, SHOW_MOD, SHOW_FONT, SHOW_PLUGINS, SHOW_M3U};
 
 /* file and dir sort options */
