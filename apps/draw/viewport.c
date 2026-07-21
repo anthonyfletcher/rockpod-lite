@@ -43,7 +43,7 @@
 #include "system/appevents.h"
 #include "panic.h"
 #include "speech/language.h"
-#include "skin/statusbar-skinned.h"
+#include "skin/statusbar_skinned.h"
 #include "skin/skin_engine.h"
 #include "debug.h"
 

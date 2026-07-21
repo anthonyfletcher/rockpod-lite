@@ -43,7 +43,7 @@
 #include "string-extra.h"
 #include "rbunicode.h"
 #include "screens/bookmark.h"
-#include "screens/tree.h"
+#include "screens/browser.h"
 
 #define CUE_DIR ROCKBOX_DIR "/cue"
 

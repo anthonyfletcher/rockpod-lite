@@ -19,8 +19,8 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#ifndef _ICONS_H_
-#define _ICONS_H_
+#ifndef _ICON_BITMAPS_H_
+#define _ICON_BITMAPS_H_
 
 
 #include <lcd.h>
@@ -113,4 +113,4 @@ extern const unsigned char bitmap_icon_disk[];
 #error "Icons larger than statusbar!"
 #endif
 
-#endif /*  _ICONS_H_ */
+#endif /*  _ICON_BITMAPS_H_ */

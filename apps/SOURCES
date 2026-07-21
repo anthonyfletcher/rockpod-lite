@@ -3,7 +3,7 @@ screens/logfdisp.c
 #endif
 input/action.c
 #ifdef HAVE_RTC_ALARM
-screens/alarm_menu.c
+screens/alarm.c
 #endif
 audio/abrepeat.c
 screens/bookmark.c
@@ -36,29 +36,29 @@ screens/menus/sound_menu.c
 screens/menus/time_menu.c
 #endif
 system/misc.c
-screens/onplay.c
+screens/context_menu.c
 playlist/playlist.c
-playlist/playlist_catalog.c
-playlist/playlist_viewer.c
+playlist/catalog.c
+playlist/viewer.c
 system/app_buffer.c
 root_menu.c
 screens/screens.c
-widgets/view_text.c
+widgets/text_box.c
 viewers/properties.c
 metadata/mul_id3.c
 viewers/playing_time.c
 settings/settings.c
 settings/settings_list.c
 screens/shortcuts.c
-audio/status.c
+audio/play_status.c
 metadata/cuesheet.c
 speech/talk.c
-screens/tree.c
+screens/browser.c
 #ifdef HAVE_TAGCACHE
 database/tagtree.c
 widgets/folder_select.c
 #endif
-screens/filetree.c
+screens/browser_files.c
 #ifdef IPOD_ACCESSORY_PROTOCOL
 iap/iap-core.c
 iap/iap-lingo0.c
@@ -71,7 +71,7 @@ draw/icon.c
 widgets/list.c
 draw/line.c
 widgets/list_render.c
-widgets/list-skinned.c
+widgets/list_skinned.c
 widgets/option_select.c
 #ifdef HAVE_PITCHCONTROL
 screens/pitchscreen.c
@@ -88,7 +88,7 @@ draw/scrollbar.c
 widgets/dialog.c
 widgets/splash.c
 skin/statusbar.c
-skin/statusbar-skinned.c
+skin/statusbar_skinned.c
 widgets/yesno.c
 draw/viewport.c
 
@@ -166,7 +166,7 @@ skin/backdrop.c
 #endif
 
 draw/bmp.c
-draw/icons.c
+draw/icon_bitmaps.c
 widgets/keyboard.c
 widgets/peakmeter.c
 widgets/spectrum_meter.c
@@ -211,7 +211,7 @@ screens/usb_screen.c
 database/tagcache.c
 #endif
 #if (CONFIG_KEYPAD == IPOD_4G_PAD)
-input/keymap-ipod.c
+input/keymap_ipod.c
 #else
 #error "Unsupported CONFIG_KEYPAD for this fork (expected IPOD_4G_PAD)"
 #endif

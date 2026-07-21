@@ -30,7 +30,7 @@
 #include "button.h"
 #include "system.h"
 #include "font.h"
-#include "draw/icons.h"
+#include "draw/icon_bitmaps.h"
 #include "lang.h"
 #include "peakmeter.h"
 #include "audio.h"

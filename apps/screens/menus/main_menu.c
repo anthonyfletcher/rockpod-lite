@@ -33,7 +33,7 @@
 #include "widgets/menu.h"
 #include "system/misc.h"
 #include "exported_menus.h"
-#include "screens/tree.h"
+#include "screens/browser.h"
 #include "storage.h"
 #include "widgets/yesno.h"
 #include "widgets/keyboard.h"

@@ -22,7 +22,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "config.h"
-#include "status.h"
+#include "play_status.h"
 #include "audio.h"
 
 static enum playmode ff_mode = 0;

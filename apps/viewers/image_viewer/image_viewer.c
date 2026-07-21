@@ -52,7 +52,7 @@
 #include "widgets/menu.h"            /* do_menu, MENUITEM_STRINGLIST */
 #include "system/misc.h"            /* default_event_handler_ex, push/pop_current_activity */
 #include "root_menu.h"       /* GO_TO_*, MENU_ATTACHED_USB */
-#include "screens/tree.h"            /* tree_get_context/entries */
+#include "screens/browser.h"            /* tree_get_context/entries */
 #include "core_alloc.h"
 #include "audio.h"           /* audio_current_track, audio_status, audio_hard_stop */
 #include "metadata/albumart.h"        /* search_albumart_files */

@@ -34,8 +34,8 @@
 #include "system.h"
 #include "kernel.h"
 #include "widgets/splash.h"
-#include "draw/icons.h"
-#include "screens/tree.h"
+#include "draw/icon_bitmaps.h"
+#include "screens/browser.h"
 #include "input/action.h"
 #include "settings/settings.h"
 #include "tagcache.h"
@@ -57,10 +57,10 @@
 #include "audio/playback.h"
 #include "strnatcmp.h"
 #include "panic.h"
-#include "screens/onplay.h"
+#include "screens/context_menu.h"
 #include "system/app_buffer.h"
 #include "speech/language.h"
-#include "playlist/playlist_catalog.h"
+#include "playlist/catalog.h"
 #include "crc32.h"
 #include <ctype.h>
 

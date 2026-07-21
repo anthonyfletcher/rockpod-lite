@@ -39,14 +39,14 @@
 #include "core_alloc.h"       /* buflib types for buf_ctx (see init()) */
 #include "database/tagcache.h"
 #include "playlist/playlist.h"
-#include "playlist/playlist_catalog.h"
+#include "playlist/catalog.h"
 #include "settings/settings.h"
 #include "lang.h"
 #include "widgets/splash.h"
 #include "bitmaps/no_album_cover.h" /* bm_no_album_cover -- see create_empty_slide() */
 #include "draw/viewport.h"
 #include "system/misc.h"             /* default_event_handler, warn_on_pl_erase, fix_path_part */
-#include "onplay.h"           /* onplay_show_playlist_cat_menu/menu */
+#include "context_menu.h"           /* onplay_show_playlist_cat_menu/menu */
 #include "metadata/albumart.h"         /* find_albumart / search_albumart_files */
 #include "metadata/albumart_cache.h"   /* shared database-driven thumbnail cache */
 #include "metadata.h"         /* struct mp3entry, get_metadata */
@@ -54,13 +54,13 @@
 #include "file.h"
 #include "widgets/yesno.h"            /* gui_syncyesno_run */
 #include "root_menu.h"
-#include "tree.h"
+#include "browser.h"
 #include "database/tagtree.h"
 #include "screens.h"          /* browse_id3 */
 #include "audio.h"            /* audio_status, audio_current_track */
 #include "lcd.h"
 #include "font.h"
-#include "draw/icons.h"
+#include "draw/icon_bitmaps.h"
 #include "widgets/menu.h"             /* do_menu */
 #include "screens/menus/exported_menus.h" /* album_covers_menu (shared settings menu) */
 #include "draw/bmp.h"              /* read_bmp_file */
@@ -71,7 +71,7 @@
 #include "cpu.h"
 #include "skin/skin_engine.h"  /* skin_render_inhibit_flush */
 #include "skin/skin_albumart_color.h" /* dynamic_colors_resolve */
-#include "skin/statusbar-skinned.h" /* sb_set_persistent_title */
+#include "skin/statusbar_skinned.h" /* sb_set_persistent_title */
 #include "album_covers.h"
 #include "carousel.h"     /* shared carousel engine interface (pf_idx, model, ...) */
 

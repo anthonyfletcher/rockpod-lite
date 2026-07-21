@@ -48,10 +48,10 @@
 #include "screens/menus/eq_menu.h"
 #include "iap.h"
 #include "skin/statusbar.h"
-#include "screens/onplay.h"
+#include "screens/context_menu.h"
 #include "system/misc.h" /* current activity */
 #include "playlist/playlist.h"
-#include "screens/tree.h"
+#include "screens/browser.h"
 
 #include "audio/voice_thread.h"
 

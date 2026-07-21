@@ -25,10 +25,10 @@
 #include "lang.h"
 #include "settings/settings.h"
 #include "widgets/menu.h"
-#include "screens/tree.h"            /* browse_context, rockbox_browse */
+#include "screens/browser.h"            /* browse_context, rockbox_browse */
 #include "screens/filetypes.h"       /* SHOW_FONT */
 #include "rbpaths.h"         /* FONT_DIR */
-#include "draw/icons.h"
+#include "draw/icon_bitmaps.h"
 
 MENUITEM_SETTING(text_viewer_colour_mode,
                  &global_settings.text_viewer_colour_mode, NULL);

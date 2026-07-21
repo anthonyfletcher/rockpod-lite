@@ -37,7 +37,7 @@
 #include "screens.h"
 #include "dir.h"
 #include "file.h"
-#include "draw/icons.h"
+#include "draw/icon_bitmaps.h"
 /*#define LOGF_ENABLE*/
 #include "logf.h"
 

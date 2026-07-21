@@ -38,7 +38,7 @@
 #include "sound.h"
 #include "system/misc.h"
 #include "draw/viewport.h"
-#include "skin/statusbar-skinned.h"
+#include "skin/statusbar_skinned.h"
 #include "skin/skin_engine.h"
 #include "skin/skin_display.h"
 #include "skin/skin_albumart_color.h"

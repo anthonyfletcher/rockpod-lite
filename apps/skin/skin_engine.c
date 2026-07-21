@@ -35,7 +35,7 @@
 #include "widgets/list.h"
 #include "skin_engine.h"
 #include "skin_buffer.h"
-#include "statusbar-skinned.h"
+#include "statusbar_skinned.h"
 #include "wps_internals.h"
 #include "skin_albumart_color.h"
 

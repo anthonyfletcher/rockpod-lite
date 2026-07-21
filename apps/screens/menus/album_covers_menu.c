@@ -29,7 +29,7 @@
 #include "widgets/menu.h"
 #include "widgets/yesno.h"
 #include "widgets/splash.h"
-#include "draw/icons.h"
+#include "draw/icon_bitmaps.h"
 #include "screens/album_covers.h"
 
 MENUITEM_SETTING(album_covers_center_margin, &global_settings.album_covers_center_margin, NULL);

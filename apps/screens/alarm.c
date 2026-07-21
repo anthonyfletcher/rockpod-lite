@@ -29,13 +29,13 @@
 #include <string.h>
 #include "settings/settings.h"
 #include "power.h"
-#include "draw/icons.h"
+#include "draw/icon_bitmaps.h"
 #include "rtc.h"
 #include "system/misc.h"
 #include "screens.h"
 #include "speech/talk.h"
 #include "lang.h"
-#include "alarm_menu.h"
+#include "alarm.h"
 #include "widgets/splash.h"
 #include "draw/viewport.h"
 

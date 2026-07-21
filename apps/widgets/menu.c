@@ -54,9 +54,9 @@
 #include "draw/viewport.h"
 #include "screens/quickscreen.h"
 #include "screens/shortcuts.h"
-#include "skin/statusbar-skinned.h"
+#include "skin/statusbar_skinned.h"
 
-#include "draw/icons.h"
+#include "draw/icon_bitmaps.h"
 
 /* gui api */
 #include "list.h"

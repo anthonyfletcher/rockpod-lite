@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include "wps_internals.h"
 #include "skin_engine.h"
-#include "statusbar-skinned.h"
+#include "statusbar_skinned.h"
 
 #ifndef _SKIN_DISPLAY_H_
 #define _SKIN_DISPLAY_H_

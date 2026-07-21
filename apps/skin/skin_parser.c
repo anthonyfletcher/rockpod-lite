@@ -56,7 +56,7 @@
 #include "audio/playback.h"
 
 #include "backdrop.h"
-#include "statusbar-skinned.h"
+#include "statusbar_skinned.h"
 #include "string-extra.h"
 
 #define WPS_ERROR_INVALID_PARAM         -1

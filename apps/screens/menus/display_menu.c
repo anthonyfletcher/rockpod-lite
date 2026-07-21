@@ -29,7 +29,7 @@
 #include "input/action.h"
 #include "settings/settings.h"
 #include "widgets/menu.h"
-#include "screens/tree.h"
+#include "screens/browser.h"
 #include "widgets/list.h"
 #include "widgets/peakmeter.h"
 #include "speech/talk.h"

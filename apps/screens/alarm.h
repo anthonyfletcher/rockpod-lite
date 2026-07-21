@@ -19,8 +19,8 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#ifndef _ALARM_MENU_H
-#define _ALARM_MENU_H
+#ifndef _ALARM_H
+#define _ALARM_H
 
 int alarm_screen(void);
 

@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include "config.h"
 #include "system.h"
-#include "draw/icons.h"
+#include "draw/icon_bitmaps.h"
 #include "font.h"
 #include "kernel.h"
 #include "system/misc.h"

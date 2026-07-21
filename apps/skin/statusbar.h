@@ -25,7 +25,7 @@
 
 #include "config.h"
 #include "button.h"
-#include "audio/status.h"
+#include "audio/play_status.h"
 #include "draw/screen_access.h"
 #include "events.h"
 

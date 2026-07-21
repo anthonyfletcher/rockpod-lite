@@ -19,8 +19,8 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#ifndef _STATUS_H
-#define _STATUS_H
+#ifndef _PLAY_STATUS_H
+#define _PLAY_STATUS_H
 
 /* Do not reorder these, inbuilt statusbar icons and the
  * skin engine %mp tag depend on this ordering. */
@@ -42,4 +42,4 @@ enum playmode status_get_ffmode(void);
 int current_playmode(void);
 
 
-#endif /* _STATUS_H */
+#endif /* _PLAY_STATUS_H */

@@ -30,7 +30,7 @@
 #include "settings/settings_list.h"
 #include "rbunicode.h"
 #include "timefuncs.h"
-#include "audio/status.h"
+#include "audio/play_status.h"
 #include "power.h"
 #include "powermgmt.h"
 #include "sound.h"
@@ -54,7 +54,7 @@
 
 #include "wps_internals.h"
 #include "skin_engine.h"
-#include "statusbar-skinned.h"
+#include "statusbar_skinned.h"
 #include "root_menu.h"
 #include "speech/language.h"
 #include "usb.h"

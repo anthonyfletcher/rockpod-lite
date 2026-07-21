@@ -40,7 +40,7 @@
 #include "speech/talk.h"
 #include "draw/viewport.h"
 #include "system/appevents.h"
-#include "skin/statusbar-skinned.h"
+#include "skin/statusbar_skinned.h"
 #include "skin/skin_albumart_color.h"
 #include "database/tagcache.h"
 #include "metadata/albumart_cache.h"

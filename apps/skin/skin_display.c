@@ -64,7 +64,7 @@
 #include "screens/wps.h"
 #include "wps_internals.h"
 #include "skin_engine.h"
-#include "statusbar-skinned.h"
+#include "statusbar_skinned.h"
 #include "skin_display.h"
 #include "skin_albumart_color.h"
 

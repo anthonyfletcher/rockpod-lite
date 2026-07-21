@@ -27,7 +27,7 @@
 #include "core_alloc.h"
 #include "icon.h"
 #include "screen_access.h"
-#include "icons.h"
+#include "icon_bitmaps.h"
 #include "settings/settings.h"
 #include "rbpaths.h"
 #include "bmp.h"

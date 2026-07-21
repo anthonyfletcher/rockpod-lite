@@ -35,7 +35,7 @@
 #include "skin/skin_engine.h"
 #include "playlist/playlist.h"
 #include "system/misc.h"
-#include "draw/icons.h"
+#include "draw/icon_bitmaps.h"
 
 #include "bitmaps/usblogo.h"
 /* This fork ships a full-screen custom USB (eject) screen for the 320x240

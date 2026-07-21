@@ -29,7 +29,7 @@
 #include <font.h>
 #include <limits.h>
 #include "bookmark.h"
-#include "tree.h"
+#include "browser.h"
 #include "core_alloc.h"
 #include "settings/settings.h"
 #include "filetypes.h"
@@ -41,7 +41,7 @@
 #include "rolo.h"
 #include "widgets/splash.h"
 #include "metadata/cuesheet.h"
-#include "filetree.h"
+#include "browser_files.h"
 #include "system/misc.h"
 #include "strnatcmp.h"
 #include "widgets/keyboard.h"

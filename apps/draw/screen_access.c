@@ -28,7 +28,7 @@
 #include <button.h>
 #include "settings/settings.h"
 #include <kernel.h>
-#include "icons.h"
+#include "icon_bitmaps.h"
 
 #include "backlight.h"
 #include "screen_access.h"

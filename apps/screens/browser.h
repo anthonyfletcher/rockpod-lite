@@ -19,8 +19,8 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#ifndef _TREE_H_
-#define _TREE_H_
+#ifndef _BROWSER_H_
+#define _BROWSER_H_
 
 #include <stdbool.h>
 #include "system/applimits.h"

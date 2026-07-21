@@ -29,13 +29,13 @@
 #include "settings/settings.h"
 #include "draw/viewport.h"
 #include "metadata.h"
-#include "draw/icons.h"
+#include "draw/icon_bitmaps.h"
 #include "powermgmt.h"
 #include "usb.h"
 #include "led.h"
 #include "draw/screen_access.h"
 
-#include "audio/status.h" /* needed for battery_state global var */
+#include "audio/play_status.h" /* needed for battery_state global var */
 #include "input/action.h" /* for keys_locked */
 #include "statusbar.h"
 #include "system/appevents.h"

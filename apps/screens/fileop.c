@@ -32,7 +32,7 @@
 #include "system/misc.h"
 #include "system/app_buffer.h"
 #include "dir.h"
-#include "tree.h"
+#include "browser.h"
 #include "fileop.h"
 #include "pathfuncs.h"
 

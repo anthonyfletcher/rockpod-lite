@@ -42,7 +42,7 @@
 #include "draw/screen_access.h"   /* FOR_NB_SCREENS */
 #include "draw/icon.h"            /* Icon_NOICON, NOICON */
 #include "widgets/list.h"        /* gui_synclist */
-#include "skin/statusbar-skinned.h" /* sb_set_persistent_title */
+#include "skin/statusbar_skinned.h" /* sb_set_persistent_title */
 #include "playing_time.h"
 
 #define pt_talk_ids(enqueue, ids...) talk_idarray(TALK_IDARRAY(ids), enqueue)

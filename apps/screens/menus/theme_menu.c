@@ -31,7 +31,7 @@
 #include "rbpaths.h"
 #include "widgets/menu.h"
 #include "dir.h"
-#include "screens/tree.h"
+#include "screens/browser.h"
 #include "widgets/list.h"
 #include "widgets/color_picker.h"
 #include "lcd.h"
@@ -39,10 +39,10 @@
 #include "exported_menus.h"
 #include "system/appevents.h"
 #include "draw/viewport.h"
-#include "skin/statusbar-skinned.h"
+#include "skin/statusbar_skinned.h"
 #include "skin/skin_engine.h"
 #include "widgets/splash.h"
-#include "draw/icons.h"
+#include "draw/icon_bitmaps.h"
 #include "screens/filetypes.h"
 
 /**

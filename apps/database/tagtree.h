@@ -24,7 +24,7 @@
 
 #include "config.h"
 #include "tagcache.h"
-#include "screens/tree.h"
+#include "screens/browser.h"
 
 #define TAGNAVI_VERSION    "#! rockbox/tagbrowser/2.0"
 #define TAGMENU_MAX_ITEMS  64

@@ -25,7 +25,7 @@
 
 #include <stdbool.h>
 #include "draw/icon.h"
-#include "draw/icons.h"
+#include "draw/icon_bitmaps.h"
 #include "root_menu.h" /* needed for MENU_* return codes */
 #include "settings/settings_list.h"
 #include "list.h"

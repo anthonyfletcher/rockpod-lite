@@ -19,9 +19,9 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#ifndef FILETREE_H
-#define FILETREE_H
-#include "tree.h"
+#ifndef BROWSER_FILES_H
+#define BROWSER_FILES_H
+#include "browser.h"
 
 int ft_load(struct tree_context* c, const char* tempdir);
 int ft_enter(struct tree_context* c);

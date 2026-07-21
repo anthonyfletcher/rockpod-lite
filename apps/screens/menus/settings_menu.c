@@ -33,7 +33,7 @@
 #include "widgets/keyboard.h"
 #include "settings/sound_menu.h"
 #include "exported_menus.h"
-#include "screens/tree.h"
+#include "screens/browser.h"
 #include "database/tagtree.h"
 #include "usb.h"
 #include "widgets/splash.h"
@@ -45,7 +45,7 @@
 #include "screens/quickscreen.h"
 #include "dircache.h"
 #include "widgets/folder_select.h"
-#include "screens/onplay.h"
+#include "screens/context_menu.h"
 #include "system/misc.h"
 #include "pathfuncs.h"
 

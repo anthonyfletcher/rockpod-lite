@@ -21,7 +21,7 @@
 #include "iap-lingo.h"
 #include "dir.h"
 #include "settings/settings.h"
-#include "screens/filetree.h"
+#include "screens/browser_files.h"
 #include "screens/wps.h"
 #include "audio/playback.h"
 #include "string-extra.h"

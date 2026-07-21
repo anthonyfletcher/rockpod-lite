@@ -29,7 +29,7 @@
 #include "settings/settings.h"
 
 #include "metadata.h"
-#include "icons.h"
+#include "icon_bitmaps.h"
 
 const unsigned char bitmap_icons_5x8[][5] =
 {

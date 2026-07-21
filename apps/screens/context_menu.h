@@ -19,8 +19,8 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#ifndef _ONPLAY_H_
-#define _ONPLAY_H_
+#ifndef _CONTEXT_MENU_H_
+#define _CONTEXT_MENU_H_
 
 #include "widgets/menu.h"
 

@@ -63,13 +63,13 @@
 
 #include "iap.h"
 
-#include "screens/tree.h"
+#include "screens/browser.h"
 #include "eeprom_settings.h"
 #include "draw/bmp.h"
-#include "draw/icons.h"
+#include "draw/icon_bitmaps.h"
 #include "screens/bookmark.h"
 #include "screens/wps.h"
-#include "skin/statusbar-skinned.h"
+#include "skin/statusbar_skinned.h"
 #include "audio/playback.h"
 #include "audio/voice_thread.h"
 

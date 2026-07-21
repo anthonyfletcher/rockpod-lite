@@ -33,7 +33,7 @@
 #include "input/action.h"
 #include "backlight.h"
 #include "draw/icon.h"          /* Icon_NOICON */
-#include "skin/statusbar-skinned.h"
+#include "skin/statusbar_skinned.h"
 #include "skin/skin_engine.h" /* skin_render_inhibit_flush */
 #include "dialog.h"
 

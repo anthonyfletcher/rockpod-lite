@@ -40,7 +40,7 @@
 #include "sound.h"
 #include "system/misc.h"
 #include "draw/viewport.h"
-#include "skin/statusbar-skinned.h"
+#include "skin/statusbar_skinned.h"
 #include "debug.h"
 #include "draw/line.h"
 #include "skin/skin_albumart_color.h"

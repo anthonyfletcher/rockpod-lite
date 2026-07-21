@@ -46,13 +46,13 @@
 #include "widgets/yesno.h"
 #include "draw/viewport.h"
 
-#include "screens/tree.h"
+#include "screens/browser.h"
 #include "database/tagtree.h"
 #include "screens/wps.h"
 #include "screens/bookmark.h"
 #include "playlist/playlist.h"
-#include "playlist/playlist_viewer.h"
-#include "playlist/playlist_catalog.h"
+#include "playlist/viewer.h"
+#include "playlist/catalog.h"
 #include "screens/menus/exported_menus.h"
 #ifdef HAVE_RTC_ALARM
 #include "rtc.h"
