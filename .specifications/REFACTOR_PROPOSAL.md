@@ -8,6 +8,35 @@
 
 ---
 
+> ## STATUS: all eight stages executed (2026-07-21)
+>
+> | Stage | Commit | Result |
+> |---|---|---|
+> | 1 Sweep plugin residue | `ce084571e9` | credits.raw rule relocated, dialog_test deleted, plugins/README added |
+> | 2 Own the include path | `9f289537cb` | 259 includes qualified; **binaries byte-identical** |
+> | 3 Move into the layout | `a41c03b969` | 250 files moved; 5g byte-identical, 6g diff fully accounted for |
+> | 4 Rename misleading files | `dde21bffd4` | 21 renames; 5g byte-identical, 6g differs by exactly 4 bytes |
+> | 5 Split `screens.c` | `9dd16f31cb` | → 4 files; exposed 2 pre-existing pointer-truncation bugs |
+> | 6 Split `misc.c` | `299e2d8f1a` | → 6 files; 12 under-declared symbols fixed |
+> | 7 Radio action sweep | `fd072ac788` | 11 dead actions removed; invalidates custom `.kmf` keymaps |
+> | 8 README + SOURCES | `9f71046057` | layout documented; object set identical to stage 7 |
+>
+> `apps/` went from ~95 loose files to 16 directories plus `main.c`,
+> `root_menu.c/.h` and the build files. Verified on both targets at every
+> stage; hardware-tested on ipodvideo (the only device available, see §9.1).
+>
+> **Known follow-ups, deliberately not done** — each is its own decision:
+> - ~65 files still use `kernel.h`/`rbpaths.h`/`timefuncs.h` symbols without
+>   including them (§9.3). Any future header move will break a few of them.
+> - `system/app_util.c` (437 lines, ~17 functions) is the residual grab-bag;
+>   colour parsing and `core_load_bmp` arguably belong in `draw/`.
+> - `CONTEXT_FM`, `FILE_ATTR_FMS`/`RFMS`, `SHOW_FMS`/`SHOW_FMR` and the five
+>   `ACTION_REC_*` actions are all dead but out of stage 7's remit. The
+>   `SHOW_*` ordering is persisted in `config.cfg`, so it needs care.
+> - Duplicate JPEG decode and a second vendored TLSF remain (§7).
+
+---
+
 ## 1. Executive summary
 
 The plugin system is gone. What's left is the problem rev. 1 identified but never fixed: **`apps/` is flat and its names don't say what the code does.** Ninety-odd loose files at the top level mix the audio engine, the tag database, UI infrastructure, settings, and individual feature screens with nothing to distinguish them. The three subdirectories that exist are each wrong in a different way — `recorder/` is named for hardware these iPods don't have, `gui/` holds five different altitudes in one flat list, and `plugins/` no longer contains a plugin.
