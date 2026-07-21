@@ -1352,7 +1352,7 @@ int context_menu_show(char* file, int attr, int from_context, bool hotkey, int c
     {
         int returnCode = add_to_playlist(&addtopl_replace_shuffled);
         if (returnCode == 1)
-            // User did not want to erase his current playlist, so let's show again the database main menu
+            /* User did not want to erase his current playlist, so let's show again the database main menu */
             return ONPLAY_RELOAD_DIR;
         return ONPLAY_START_PLAY;
     }

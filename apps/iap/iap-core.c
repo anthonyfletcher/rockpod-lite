@@ -348,7 +348,7 @@ void iap_reset_state(IF_IAP_MP_NONVOID(int port))
     iap_reset_device(&device);
     iap_bitrate_set(global_settings.serial_bitrate);
 
-#if 0  // XXX this is still screwed up
+#if 0 /* XXX this is still screwed up */
     memset(&frame_state, 0, sizeof(frame_state));
     interface_state = IST_STANDARD;
     frame_state.state = ST_SYNC;
@@ -1624,8 +1624,8 @@ bool dbg_iap(void)
         lcd_putsf(0, 2, "notif: %08x", device.notifications);
         lcd_putsf(0, 3, "cap: %08x/%08x", device.capabilities, device.capabilities_queried);
 
-        // frame_state.state
-        // serial state
+        /* frame_state.state */
+        /* serial state */
 
         lcd_update();
     }

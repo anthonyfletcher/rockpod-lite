@@ -373,17 +373,17 @@ static int browser_voice_cb(int selected_item, void * data)
         /* Otherwise, it is either a custom "header" or a database entry,
            so try to look up a talk clip for it. */
 
-        // XXX this needs further work, so disable it for now
-        // -- need to distinguish between "headers" and entries
-        // each entry type ("artist", "album", etc) should be delineated
-        // so we can split the clips into subdirs.
+        /* XXX this needs further work, so disable it for now */
+        /* -- need to distinguish between "headers" and entries */
+        /* each entry type ("artist", "album", etc) should be delineated */
+        /* so we can split the clips into subdirs. */
 #if 0
         if (global_settings.talk_file_clip) {
             if (talk_file(LANG_DIR"/database/", NULL,
                           P2STR(name), file_thumbnail_ext, NULL, true) > 0)
                 return 0;
 
-            // XXX fall back to spelling it out?
+            /* XXX fall back to spelling it out? */
             return 0;
         }
 #endif
@@ -724,11 +724,7 @@ void resume_directory(const char *dir)
  *
  * Returns the current working directory and also writes cwd to buf if
  * non-NULL.  In case of error, returns NULL. */
-#ifdef CTRU
-char *__wrap_getcwd(char *buf, getcwd_size_t size)
-#else
 char *getcwd(char *buf, getcwd_size_t size)
-#endif
 {
     if (!buf)
         return tc.currdir;

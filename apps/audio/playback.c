@@ -1956,8 +1956,8 @@ static int load_album_art_from_path(char *path, struct bufopen_bitmap_data *user
     if (same_path && last_folder_aa_hid[i] != 0)
         return last_folder_aa_hid[i];
 
-    // To simplify caching logic a bit we keep track only for first AA path
-    // If other album arts use different path (like dimension specific arts) just skip caching for them
+    /* To simplify caching logic a bit we keep track only for first AA path */
+    /* If other album arts use different path (like dimension specific arts) just skip caching for them */
     bool is_cacheable = i == 0 && (is_current_track || last_folder_aa_path[0] == 0);
     if (!same_path && is_cacheable)
     {
@@ -2339,11 +2339,11 @@ static int audio_finish_load_track(struct track_info *infop)
     bool is_current_user = infop->self_hid == user_cur.self_hid;
     if (audio_auto_change_frequency(track_id3, is_current_user))
     {
-        // frequency switch requires full re-buffering, so stop buffering
+        /* frequency switch requires full re-buffering, so stop buffering */
         filling = STATE_STOPPED;
         logf("buffering stopped (current_track: %b, current_user: %b)", infop->self_hid == cur_info.self_hid, is_current_user);
         if (is_current_user)
-            // audio_finish_load_track_exit not needed as playback restart is already initiated
+            /* audio_finish_load_track_exit not needed as playback restart is already initiated */
             return trackstat;
 
         goto audio_finish_load_track_exit;
@@ -3488,7 +3488,7 @@ static void audio_on_ff_rewind(long time)
         bool finish_load = cur_info.audio_hid < 0;
         if (finish_load)
         {
-            // track is not yet loaded so simply update resume details for upcoming finish_load_track and quit
+            /* track is not yet loaded so simply update resume details for upcoming finish_load_track and quit */
             playing_id3_sync(&cur_info, &(struct audio_resume_info){ time, 0 }, true);
             return;
         }

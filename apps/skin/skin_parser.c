@@ -1639,7 +1639,7 @@ static bool skin_load_fonts(struct wps_data *data)
             snprintf(path, sizeof path, FONT_DIR "/%s", font->name);
             font->id = font_load_ex(path, 0, skinfonts[font_id-2].glyphs);
 
-            //printf("[%d] %s -> %d\n",font_id, font->name, font->id);
+            /* printf("[%d] %s -> %d\n",font_id, font->name, font->id); */
             id_array[font_count++] = font->id;
         }
 

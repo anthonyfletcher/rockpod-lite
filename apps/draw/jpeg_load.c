@@ -43,7 +43,7 @@
 #include "debug.h"
 #include "jpeg_load.h"
 /*#define JPEG_BS_DEBUG*/
-//#define ROCKBOX_DEBUG_JPEG
+/* #define ROCKBOX_DEBUG_JPEG */
 /* for portability of below JPEG code */
 #define MEMSET(p,v,c) memset(p,v,c)
 #define MEMCPY(d,s,c) memcpy(d,s,c)
@@ -1617,7 +1617,7 @@ int clip_jpeg_fd(int fd, int flags,
         struct ogg_file* ogg = alloca(sizeof(*ogg));
         off_t pic_pos = lseek(fd, 0, SEEK_CUR);
 
-        // we need 92 bytes for format probing, reuse some available space
+        /* we need 92 bytes for format probing, reuse some available space */
         unsigned char* buf_format = (unsigned char*) p_jpeg->quanttable;
         int type = get_ogg_format_and_move_to_comments(fd, buf_format);
 

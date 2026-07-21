@@ -25,9 +25,26 @@
 #include <stddef.h>
 #include "config.h"
 #include "lcd.h"        /* fb_data */
+#include "rbpaths.h"    /* ROCKBOX_DIR, for CACHE_PREFIX */
 #include "database/tagcache.h"   /* struct tagcache_search */
 
 typedef fb_data pix_t;
+
+/* Fixed-point type used for slide positions and angles throughout the engine.
+ * See carousel.c for the shift and the arithmetic helpers. */
+#define PFreal long
+
+/* The on-disk slide cache, shared because a model writes into it during
+ * build_index() and the engine reads it back while rendering. Bumping
+ * CACHE_VERSION invalidates every cached slide; CACHE_REBUILD is the stored
+ * value meaning "no valid cache". */
+#define CACHE_PREFIX     ROCKBOX_DIR "/album_covers"
+#define EMPTY_SLIDE      CACHE_PREFIX "/emptyslide.pfraw"
+#define CACHE_VERSION    5
+#define CACHE_REBUILD    0
+
+/* Number of slide slots the engine keeps decoded at once. */
+#define SLIDE_CACHE_SIZE 100
 
 /* build_index / count return codes */
 #define SUCCESS              0

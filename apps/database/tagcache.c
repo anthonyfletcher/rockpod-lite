@@ -1574,7 +1574,7 @@ static bool add_uniqbuf(struct tagcache_search *tcs, uint32_t id)
         /* Return false if entry is found. */
         if (tcs->unique_list[i] == id)
         {
-            //logf("%d Exists @ %d", id, i);
+            /* logf("%d Exists @ %d", id, i); */
             return false;
         }
     }
@@ -2201,7 +2201,7 @@ static void NO_INLINE add_tagcache(char *path, unsigned long mtime)
         struct index_entry idx;
 
         /* TODO: Mark that the index exists (for fast reverse scan) */
-        //found_idx[idx_id/8] |= idx_id%8;
+        /* found_idx[idx_id/8] |= idx_id%8; */
 
         if (!get_index(-1, idx_id, &idx, true))
         {
@@ -3096,7 +3096,7 @@ static int build_index(int index_type, struct tagcache_header *h, int tmpfd)
                 if (idxbuf[j].flag & FLAG_DELETED)
                 {
                     /* We can just ignore deleted entries. */
-                    // idxbuf[j].tag_seek[index_type] = 0;
+                    /* idxbuf[j].tag_seek[index_type] = 0; */
                     continue;
                 }
 
@@ -3130,7 +3130,7 @@ static int build_index(int index_type, struct tagcache_header *h, int tmpfd)
     /**
      * Walk through the temporary file containing the new tags.
      */
-    // build_normal_index(h, tmpfd, masterfd, idx);
+    /* build_normal_index(h, tmpfd, masterfd, idx); */
     logf("updating new indices...");
     lseek(masterfd, masterfd_pos, SEEK_SET);
     lseek(tmpfd, sizeof(struct tagcache_header), SEEK_SET);
@@ -4415,10 +4415,10 @@ static bool load_tagcache(void)
             if (rc != fe->tag_length)
             {
                 logf("read error #13");
-                logf("rc=0x%04x", (unsigned int)rc); // 0x431
-                logf("len=0x%04" PRIx32, fe->tag_length); // 0x4000
-                logf("pos=0x%04lx", (unsigned long) lseek(fd, 0, SEEK_CUR)); // 0x433
-                logf("tag=0x%02x", tag); // 0x00
+                logf("rc=0x%04x", (unsigned int)rc); /* 0x431 */
+                logf("len=0x%04" PRIx32, fe->tag_length); /* 0x4000 */
+                logf("pos=0x%04lx", (unsigned long) lseek(fd, 0, SEEK_CUR)); /* 0x433 */
+                logf("tag=0x%02x", tag); /* 0x00 */
                 goto failure;
             }
         }
@@ -4860,7 +4860,7 @@ void tagcache_unload_ramcache(void)
 {
     tc_stat.ramcache = false;
     /* Just to make sure there is no statefile present. */
-    // remove_db_file(TAGCACHE_STATEFILE);
+    /* remove_db_file(TAGCACHE_STATEFILE); */
 }
 
 

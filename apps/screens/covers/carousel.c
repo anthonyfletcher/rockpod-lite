@@ -102,7 +102,6 @@ static fb_data *lcd_fb;
 #define PF_NEXT ACTION_STD_NEXT
 #define PF_NEXT_REPEAT ACTION_STD_NEXTREPEAT
 #define PF_SELECT ACTION_STD_OK
-#define PF_CONTEXT ACTION_STD_CONTEXT
 #define PF_BACK ACTION_STD_CANCEL
 #define PF_MENU ACTION_STD_MENU
 #define PF_WPS ACTION_TREE_WPS
@@ -147,12 +146,8 @@ const struct button_mapping *pf_contexts[] =
 };
 
 #define LCD_BUF lcd_fb
-#define G_PIX LCD_RGBPACK
-#define N_PIX LCD_RGBPACK
 #define G_BRIGHT(y) LCD_RGBPACK(y,y,y)
-#define N_BRIGHT(y) LCD_RGBPACK(y,y,y)
 #define BUFFER_WIDTH LCD_WIDTH
-#define BUFFER_HEIGHT LCD_HEIGHT
 /* pix_t, the index structs, the scroll-line enum, the SUCCESS/ERROR_* codes and
  * struct carousel_model now live in carousel.h (shared with artist_portraits.c). */
 
@@ -183,9 +178,7 @@ static void pf_update_dynamic_colors(void)
 
 /* for fixed-point arithmetic, we need minimum 32-bit long
    long long (64-bit) might be useful for multiplication and division */
-#define PFreal long
 #define PFREAL_SHIFT 10
-#define PFREAL_FACTOR (1 << PFREAL_SHIFT)
 #define PFREAL_ONE (1 << PFREAL_SHIFT)
 #define PFREAL_HALF (PFREAL_ONE >> 1)
 
@@ -200,7 +193,6 @@ static void pf_update_dynamic_colors(void)
 #define DISPLAY_LEFT_R (PFREAL_HALF - LCD_WIDTH * PFREAL_HALF)
 #define MAXSLIDE_LEFT_R (PFREAL_HALF - DISPLAY_WIDTH * PFREAL_HALF)
 
-#define SLIDE_CACHE_SIZE 100
 
 #define MAX_SLIDES_COUNT 10
 /* Number of side slides rendered per side (3 visible + 1 animation buffer).
@@ -222,13 +214,10 @@ static void pf_update_dynamic_colors(void)
  * screen preceded this one bleeds through. Themeable layout means giving up
  * the per-frame raw redraw first. */
 #define THREAD_STACK_SIZE DEFAULT_STACK_SIZE + 0x200
-#define CACHE_PREFIX ROCKBOX_DIR "/album_covers"
-#define ALBUM_INDEX CACHE_PREFIX "/album_covers.idx"
 
 #define EV_EXIT 9999
 #define EV_WAKEUP 1337
 
-#define EMPTY_SLIDE CACHE_PREFIX "/emptyslide.pfraw"
 /* "?" slide source bitmap: compiled in as bm_no_album_cover (apps/bitmaps/
  * native/SOURCES) rather than read from a file -- see create_empty_slide().
  * Used to live under the old pictureflow plugin's demos-category folder
@@ -244,13 +233,9 @@ static const unsigned char pf_dither_table[16] =
 #define PF_DITHERXDY(x,dy) (PF_DITHERX(x) ^ dy)
 
 /* some magic numbers for cache_version. */
-#define CACHE_REBUILD   0
 
 /* current version for cover cache */
-#define CACHE_VERSION 5
-#define CONFIG_VERSION 1
 #define CONFIG_FILE ROCKBOX_DIR "/album_covers.cfg"
-#define INDEX_HDR "PFID"
 
 /** structs we use */
 struct albumart_t {
@@ -665,7 +650,6 @@ static inline PFreal fdiv(PFreal num, PFreal den)
 #define fabs(a) (a < 0 ? -a : a)
 #define fbound(min,val,max) (fmax((min),fmin((max),(val))))
 
-#define MULUQ(a, b) ((a) * (b))
 
 /* warning: regenerate the table if IANGLE_MAX and PFREAL_SHIFT are changed! */
 static const short sin_tab[] = {
@@ -858,11 +842,6 @@ static void update_scroll_lines(void)
     }
 }
 
-#define STR_STEP_INDEXING_UNTAGGED "1/5 Find " UNTAGGED
-#define STR_STEP_ASSIGNING_ALBUMS "2/5 Find Albums"
-#define STR_STEP_ASSIGNING_ALBUM_YEAR "3/5 Check Album Year"
-#define STR_STEP_REMOVING_DUPLICATES "4/5 Remove Duplicates"
-#define STR_STEP_PREPARING_ARTWORK "5/5 Prepare Artwork"
 
 /**
  Save the given bitmap as filename in the pfraw format

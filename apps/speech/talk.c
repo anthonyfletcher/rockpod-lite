@@ -1193,7 +1193,7 @@ int talk_volume_id(int volume)
         return 0;
 
     int drive = volume_drive(volume);
-    // XXX voice "VOLUME" or something like that?
+    /* XXX voice "VOLUME" or something like that? */
 
     talk_id(drive? LANG_DISK_NAME_MMC : LANG_DISK_NAME_INTERNAL, true);
     talk_value(volume, UNIT_INT, true);

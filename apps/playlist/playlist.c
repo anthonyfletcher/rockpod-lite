@@ -87,7 +87,7 @@
       flushed to disk when required.
  */
 
-// #define LOGF_ENABLE
+/* #define LOGF_ENABLE */
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -131,7 +131,7 @@
 #include "widgets/yesno.h"
 #include "dir.h"
 
-#if 0//def ROCKBOX_HAS_LOGDISKF
+#if 0 /* def ROCKBOX_HAS_LOGDISKF */
 #undef DEBUGF
 #undef ERRORF
 #undef WARNF
@@ -573,7 +573,7 @@ static ssize_t format_track_path(char *dest, char *src, int buf_length,
     {
         const char *p;
         path_strip_last_volume(dir, &p, false);
-        //dir = strmemdupa(dir, p - dir);
+        /* dir = strmemdupa(dir, p - dir); */
         dlen = (p-dir);  /* empty if no volspec on dir */
     }
 
@@ -2537,7 +2537,7 @@ bool playlist_entries_iterate(const char *filename,
     lseek(fd, start, SEEK_SET);
     /* we need the directory name for formatting purposes */
     size_t dirlen = path_dirname(filename, (const char **)&dir);
-    //dir = strmemdupa(dir, dirlen);
+    /* dir = strmemdupa(dir, dirlen); */
 
 
     if (action_cb)
@@ -4071,7 +4071,7 @@ int playlist_save(struct playlist_info* playlist, char *filename)
     rc = pl_save_playlist(playlist, save_path, tmpbuf, sizeof(tmpbuf));
     if (rc < 0)
     {
-        // TODO: If we fail here, we just need to reparse the old playlist file
+        /* TODO: If we fail here, we just need to reparse the old playlist file */
         panicf("Failed to save playlist: %d", rc);
         goto error;
     }
@@ -4083,17 +4083,17 @@ int playlist_save(struct playlist_info* playlist, char *filename)
     rc = pl_save_update_control(playlist, tmpbuf, sizeof(tmpbuf));
     if (rc)
     {
-        // TODO: If we fail here, then there are two possibilities depending on
-        // whether we overwrote the old playlist file:
-        //
-        // - if it still exists, we could reparse it + old control file
-        // - otherwise, we need to selectively reload the old control file
-        //   and somehow make use of the new playlist file
-        //
-        // The latter case poses other issues though, like what happens after we
-        // resume, because replaying the old control file over the new playlist
-        // won't work properly. We could simply choose to reset the control file,
-        // seeing as by this point it only contains transient data (queued tracks).
+        /* TODO: If we fail here, then there are two possibilities depending on */
+        /* whether we overwrote the old playlist file: */
+        /* */
+        /* - if it still exists, we could reparse it + old control file */
+        /* - otherwise, we need to selectively reload the old control file */
+        /* and somehow make use of the new playlist file */
+        /* */
+        /* The latter case poses other issues though, like what happens after we */
+        /* resume, because replaying the old control file over the new playlist */
+        /* won't work properly. We could simply choose to reset the control file, */
+        /* seeing as by this point it only contains transient data (queued tracks). */
         panicf("Failed to update control file: %d", rc);
         goto error;
     }

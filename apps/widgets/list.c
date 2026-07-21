@@ -366,7 +366,7 @@ static void edge_beep(struct gui_synclist * gui_list, bool wrap)
 
             /* Somehow, the following voice utterance is suppressed on e200,
                but not on x5. Work around... */
-            sleep((40*HZ +999)/1000); // FIXME:  Is this really needed?
+            sleep((40*HZ +999)/1000); /* FIXME:  Is this really needed? */
             talk_force_shutup();
         }
         else

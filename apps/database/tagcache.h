@@ -89,7 +89,7 @@ struct tagcache_stat {
     int  total_entries;      /* Total entries in tagcache */
     int  queue_length;       /* Command queue length */
 
-    //const char *uimessage;   /* Pending error message. Implement soon. */
+    /* const char *uimessage;   Pending error message. Implement soon. */
 };
 
 enum source_type {source_constant, 

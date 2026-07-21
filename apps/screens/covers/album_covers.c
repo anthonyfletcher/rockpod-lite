@@ -88,60 +88,11 @@
 #include "album_covers.h"
 #include "carousel.h"     /* shared carousel engine interface (pf_idx, model, ...) */
 
-/******************************* Globals ***********************************/
+/** Globals **/
 
-#define PF_PREV ACTION_STD_PREV
-#define PF_PREV_REPEAT ACTION_STD_PREVREPEAT
-#define PF_NEXT ACTION_STD_NEXT
-#define PF_NEXT_REPEAT ACTION_STD_NEXTREPEAT
-#define PF_SELECT ACTION_STD_OK
-#define PF_CONTEXT ACTION_STD_CONTEXT
-#define PF_BACK ACTION_STD_CANCEL
-#define PF_MENU ACTION_STD_MENU
-#define PF_WPS ACTION_TREE_WPS
-#define PF_JMP ACTION_LISTTREE_PGDOWN
-#define PF_JMP_PREV ACTION_LISTTREE_PGUP
-
-#define PF_QUIT (LAST_ACTION_PLACEHOLDER + 1)
-#define PF_TRACKLIST (LAST_ACTION_PLACEHOLDER + 2)
-#define PF_SORTING_NEXT (LAST_ACTION_PLACEHOLDER + 3)
-#define PF_SORTING_PREV (LAST_ACTION_PLACEHOLDER + 4)
-
-#define LCD_BUF lcd_fb
-#define G_PIX LCD_RGBPACK
-#define N_PIX LCD_RGBPACK
-#define G_BRIGHT(y) LCD_RGBPACK(y,y,y)
-#define N_BRIGHT(y) LCD_RGBPACK(y,y,y)
-#define BUFFER_WIDTH LCD_WIDTH
-#define BUFFER_HEIGHT LCD_HEIGHT
-
-/* for fixed-point arithmetic, we need minimum 32-bit long
-   long long (64-bit) might be useful for multiplication and division */
-#define PFreal long
-#define PFREAL_SHIFT 10
-#define PFREAL_FACTOR (1 << PFREAL_SHIFT)
-#define PFREAL_ONE (1 << PFREAL_SHIFT)
-#define PFREAL_HALF (PFREAL_ONE >> 1)
-
-#define IANGLE_MAX 1024
-#define IANGLE_MASK 1023
-
-#define DISPLAY_HEIGHT (LCD_HEIGHT * 2 / 3)
-#define DISPLAY_WIDTH MAX((LCD_HEIGHT * LCD_PIXEL_ASPECT_HEIGHT / \
-    LCD_PIXEL_ASPECT_WIDTH / 2), (LCD_WIDTH * 2 / 5))
-#define CAM_DIST MAX(MIN(LCD_HEIGHT,LCD_WIDTH),120)
-#define CAM_DIST_R (CAM_DIST << PFREAL_SHIFT)
-#define DISPLAY_LEFT_R (PFREAL_HALF - LCD_WIDTH * PFREAL_HALF)
-#define MAXSLIDE_LEFT_R (PFREAL_HALF - DISPLAY_WIDTH * PFREAL_HALF)
-
-#define SLIDE_CACHE_SIZE 100
-
-#define MAX_SLIDES_COUNT 10
-/* Number of side slides rendered per side (3 visible + 1 animation buffer).
- * Was a user-configurable field in the original plugin's config struct, but
- * was never actually exposed in any settings menu, so it's now a fixed
- * constant. */
-#define ALBUM_COVERS_NUM_SLIDES 4
+/* The engine's shared constants -- PFreal, the slide cache size and the
+ * on-disk cache paths -- come from carousel.h. Only what is specific to the
+ * album model is defined here. */
 
 /* Not theme-controlled: layout is fixed/proportional (see init()) and
  * colours come from the theme's normal fg/bg + the dynamic (album-art
@@ -155,25 +106,8 @@
  * screen's own lcd_update(), and %Vd()'d content left "shown" by whatever
  * screen preceded this one bleeds through. Themeable layout means giving up
  * the per-frame raw redraw first. */
-#define THREAD_STACK_SIZE DEFAULT_STACK_SIZE + 0x200
-#define CACHE_PREFIX ROCKBOX_DIR "/album_covers"
+/* The album index file, and the four-byte magic at its start. */
 #define ALBUM_INDEX CACHE_PREFIX "/album_covers.idx"
-
-#define EV_EXIT 9999
-#define EV_WAKEUP 1337
-
-#define EMPTY_SLIDE CACHE_PREFIX "/emptyslide.pfraw"
-#define PF_DITHERY(y) (pf_dither_table[(y) & 15] & 0xAA)
-#define PF_DITHERX(x) (pf_dither_table[(x) & 15])
-#define PF_DITHERXDY(x,dy) (PF_DITHERX(x) ^ dy)
-
-/* some magic numbers for cache_version. */
-#define CACHE_REBUILD   0
-
-/* current version for cover cache */
-#define CACHE_VERSION 5
-#define CONFIG_VERSION 1
-#define CONFIG_FILE ROCKBOX_DIR "/album_covers.cfg"
 #define INDEX_HDR "PFID"
 
 /** structs we use */
@@ -311,9 +245,6 @@ static const struct carousel_model album_model = {
  * the exact same line-parsing core functions (read_line/settings_parseline,
  * apps/misc.h) the plugin-lib version itself wraps via the plugin API's
  * function-pointer indirection. */
-#define TYPE_INT  1
-#define TYPE_ENUM 2
-#define TYPE_BOOL 4
 
 struct configdata
 {
@@ -328,7 +259,6 @@ struct configdata
     const char * const *values; /* enum only */
 };
 
-#define CONFIG_NUM_ITEMS (sizeof(config) / sizeof(struct configdata))
 
 static bool progress_cancel(int step, int count, char *msg)
 {
@@ -348,24 +278,6 @@ static bool progress_cancel(int step, int count, char *msg)
 
     return false;
 }
-
-/* ARMv5+ has a clz instruction equivalent to our function.
- */
-#if (defined(CPU_ARM) && (ARM_ARCH > 4))
-
-/* Otherwise, use our clz, which can be inlined */
-#else
-#endif
-
-#define fmin(a,b) (((a) < (b)) ? (a) : (b))
-#define fmax(a,b) (((a) > (b)) ? (a) : (b))
-#define fabs(a) (a < 0 ? -a : a)
-#define fbound(min,val,max) (fmax((min),fmin((max),(val))))
-
-#define MULUQ(a, b) ((a) * (b))
-
-
-/* Create the lookup table with the scaling values for the reflections */
 
 static int compare_albums (const void *a_v, const void *b_v)
 {
@@ -514,7 +426,6 @@ static int get_tcs_search_res(int type, struct tagcache_search *tcs,
 #define STR_STEP_ASSIGNING_ALBUMS "2/5 Find Albums"
 #define STR_STEP_ASSIGNING_ALBUM_YEAR "3/5 Check Album Year"
 #define STR_STEP_REMOVING_DUPLICATES "4/5 Remove Duplicates"
-#define STR_STEP_PREPARING_ARTWORK "5/5 Prepare Artwork"
 
 /*adds <untagged> albums/artist to existing album index */
 static int create_album_untagged(struct tagcache_search *tcs, size_t *bufsz)
@@ -909,7 +820,7 @@ static int load_album_index(void){
                 if (name_sz + album_idx_sz > bufstart_sz)
                     goto failure;
 
-                //lseek(fr, sizeof(data) + 1, SEEK_SET);
+                /* lseek(fr, sizeof(data) + 1, SEEK_SET); */
                 /* artist names */
                 if (read2buf(fr, buf, data.artist_len) == 0)
                     goto failure;
@@ -1131,7 +1042,7 @@ static int id3_get_index(struct mp3entry *id3)
         if (id3->album && strlen(id3->album) > 0)
             current_album = id3->album;
 
-        //splashf(1000, "%s, %s", current_album, current_artist);
+        /* splashf(1000, "%s, %s", current_album, current_artist); */
 
         int i;
         int album_idx, artist_idx;
@@ -1184,7 +1095,7 @@ static void draw_progressbar(int step, int count, char *msg)
 static unsigned int mfnv(char *str)
 {
     const unsigned int p = 16777619;
-    unsigned int hash = 0x811C9DC5; // 2166136261;
+    unsigned int hash = 0x811C9DC5; /* 2166136261; */
 
     if (!str)
         return 0;
@@ -1198,42 +1109,6 @@ static unsigned int mfnv(char *str)
     hash += hash << 5;
     return hash;
 }
-
-
-/*
- * The following functions implement the linked-list-in-array used to manage
- * the LRU cache of slides, and the list of free cache slots.
- */
-
-#define _SEEK_RIGHT_WHILE(start, cond) \
-({ \
-    int ind_, next_ = (start); \
-    int i_ = 0; \
-    do { \
-        ind_ = next_; \
-        next_ = pf_sldcache.cache[ind_].next; \
-        i_++; \
-    } while (next_ != pf_sldcache.used && (cond) && i_ < SLIDE_CACHE_SIZE); \
-    if (i_ >= SLIDE_CACHE_SIZE) \
-    /* TODO: Not supposed to happen */ \
-        ind_ = -1; \
-    ind_; \
-})
-
-#define _SEEK_LEFT_WHILE(start, cond) \
-({ \
-    int ind_, next_ = (start); \
-    int i_ = 0; \
-    do { \
-        ind_ = next_; \
-        next_ = pf_sldcache.cache[ind_].prev; \
-        i_++; \
-    } while (ind_ != pf_sldcache.used && (cond) && i_ < SLIDE_CACHE_SIZE); \
-    if (i_ >= SLIDE_CACHE_SIZE) \
-    /* TODO: Not supposed to happen */ \
-        ind_ = -1; \
-    ind_; \
-})
 
 
 /* Resolve the album's folder (directory of its first track) for a slide, so
