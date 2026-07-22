@@ -74,9 +74,7 @@ int lang_load(const char *filename, const unsigned char *builtin,
             retcode = 4;
         }
         /* read in information about the requested lang */
-#if 0   /* unused */
-        unsigned int num_strings = (sub_header[0]<<8) | sub_header[1];
-#endif
+        /* sub_header[0..1] is a big-endian string count, not read here. */
         lang_size = (sub_header[2]<<8) | sub_header[3];
         foffset = (sub_header[4]<<8) | sub_header[5];
         if(lang_size <= max_lang_size) {
@@ -89,10 +87,6 @@ int lang_load(const char *filename, const unsigned char *builtin,
                 id = ((buffer[0]<<8) | buffer[1]); /* get two-byte id */
                 buffer += 2;                       /* pass the id */
                 if(id < max_id) {
-#if 0
-                    DEBUGF("%2x New: %30s ", id, buffer);
-                    DEBUGF("Replaces: %s\n", dest[id]);
-#endif
                     dest[id] = buffer; /* point to this string */
                 }
                 while(*buffer) {               /* pass the string */

@@ -370,23 +370,10 @@ static int browser_voice_cb(int selected_item, void * data)
             return 0;
         }
 
-        /* Otherwise, it is either a custom "header" or a database entry,
-           so try to look up a talk clip for it. */
-
-        /* XXX this needs further work, so disable it for now */
-        /* -- need to distinguish between "headers" and entries */
-        /* each entry type ("artist", "album", etc) should be delineated */
-        /* so we can split the clips into subdirs. */
-#if 0
-        if (global_settings.talk_file_clip) {
-            if (talk_file(LANG_DIR"/database/", NULL,
-                          P2STR(name), file_thumbnail_ext, NULL, true) > 0)
-                return 0;
-
-            /* XXX fall back to spelling it out? */
-            return 0;
-        }
-#endif
+        /* Otherwise it is a custom "header" or a database entry, and there is
+           no talk clip for it: doing so needs headers told apart from entries,
+           and a subdirectory of clips per entry type (artist, album, ...).
+           Not implemented, so such rows are silent. */
     }
     else
     {

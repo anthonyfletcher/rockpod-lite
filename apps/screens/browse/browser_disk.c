@@ -104,13 +104,6 @@ int browser_disk_build_playlist(struct browser_context* c, int start_index)
             int item = i;
             if (exceeds_pl)
                 item = (i + start) % c->filesindir;
-#if 0 /*only needed if displaying progress */
-            /* user abort */
-            if (action_userabort(TIMEOUT_NOBLOCK))
-            {
-                break;
-            }
-#endif
             if((entries[item].attr & FILE_ATTR_MASK) == FILE_ATTR_AUDIO)
             {
                 res = playlist_insert_context_add(&pl_context, entries[item].name);

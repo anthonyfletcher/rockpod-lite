@@ -8,37 +8,18 @@
  ****************************************************************************/
 #ifndef RBCODECPLATFORM_H_INCLUDED
 #define RBCODECPLATFORM_H_INCLUDED
-#if 0
-/* assert */
-#include <assert.h>
 
-/* isdigit, islower, isprint, isspace, toupper */
-#include <ctype.h>
-
-/* {UCHAR,USHRT,UINT,ULONG,SCHAR,SHRT,INT,LONG}_{MIN,MAX} */
-#include <limits.h>
-
-/* memchr, memcmp, memcpy, memmove, memset, strcasecmp, strcat, strchr, strcmp,
- * strcpy, strlen, strncmp, strrchr, strlcpy */
-#include <string.h>
-#include "string-extra.h"
-
-/* snprintf */
-#include <stdio.h>
-#endif
-/* abs, atoi, labs, rand */
+/* rbcodec also expects assert, the ctype predicates, the {TYPE}_{MIN,MAX}
+ * limits, the mem and str function families, and snprintf. It does not include
+ * <assert.h>, <ctype.h>, <limits.h>, <string.h> or <stdio.h> for them --
+ * everything that includes this already has them, and pulling them in again
+ * here only lengthens the build. Only <stdlib.h> is needed on its own account,
+ * for abs/atoi/labs/rand.
+ *
+ * debugf and logf are likewise expected but come from debug.h and logf.h via
+ * the includer. HAVE_CLIP_SAMPLE_16 is deliberately NOT defined: there is no
+ * platform-optimised clip_sample_16 here, so rbcodec uses its own. */
 #include <stdlib.h>
-#if 0
-/* debugf */
-#include "debug.h"
-
-/* logf */
-#include "logf.h"
-
-/* clip_sample_16 */
-#include "dsp-util.h"
-#define HAVE_CLIP_SAMPLE_16
-#endif
 
 bool tdspeed_alloc_buffers(int32_t **buffers, const int *buf_s, int nbuf);
 void tdspeed_free_buffers(int32_t **buffers, int nbuf);

@@ -131,13 +131,6 @@ const char *format_time_auto(char *buffer, int buf_len, long value,
                         [UNIT_IDX_MS]  = UNIT_MS,
                    }; /* units */
 
-#if 0 /* unused */
-    if (idx_pos != NULL)
-    {
-        (*idx_pos)[0] = MIN((*idx_pos)[0], UNIT_IDX_TIME_COUNT - 1);
-        unit_idx |= unitlock[(*idx_pos)[0]];
-    }
-#endif
 
     base_idx = time_split_units(unit_idx, labs(value), &units_in);
 
@@ -223,13 +216,6 @@ const char *format_time_auto(char *buffer, int buf_len, long value,
 
         strlcat(buffer, sign, buf_len);
     }
-#if 0 /* unused */
-    if (idx_pos != NULL)
-    {
-        (*idx_pos)[1]= fwidth[*(idx_pos)[0]];
-        (*idx_pos)[0]= left_offset + offsets[(*idx_pos)[0]];
-    }
-#endif
 
     return buffer;
 }

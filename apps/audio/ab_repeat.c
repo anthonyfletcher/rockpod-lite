@@ -36,16 +36,6 @@ void ab_end_of_track_report(void)
     }
 }
 
-#if 0
-void ab_repeat_init(void)
-{
-    static bool ab_initialized = false;
-    if ( ! ab_initialized )
-    {
-        ab_initialized = true;
-    }
-}
-#endif
 
 /* determines if the given song position is earlier than the A mark;
 intended for use in handling the jump NEXT and PREV commands */

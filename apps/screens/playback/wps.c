@@ -965,12 +965,6 @@ long gui_wps_show(void)
                     restore = true;
                 }
                 break;
-#if 0 /* original stop behavior */
-            case ACTION_WPS_STOP:
-                bookmark = true;
-                exit = true;
-                break;
-#endif
 
             case ACTION_WPS_LIST_BOOKMARKS:
                 gwps_leave_wps(true);

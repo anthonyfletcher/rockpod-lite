@@ -187,12 +187,11 @@ static int INIT_ATTR init_dircache(bool preinit)
 }
 
 static void init_tagcache(void) INIT_ATTR;
+/* Progress is shown, never spoken: this runs before audio is initialised, and
+ * the database commit is using the audio buffer anyway. */
 static void init_tagcache(void)
 {
     bool clear = false;
-#if 0
-    long talked_tick = 0;
-#endif
     tagcache_init();
     art_cache_init();
 
@@ -202,20 +201,6 @@ static void init_tagcache(void)
 
         if (ret > 0)
         {
-#if 0 /* FIXME: Audio isn't even initialized yet! */
-            /* hwcodec can't use voice here, as the database commit
-             * uses the audio buffer. */
-            if(global_settings.talk_menu
-               && (talked_tick == 0
-                   || TIME_AFTER(current_tick, talked_tick+7*HZ)))
-            {
-                talked_tick = current_tick;
-                talk_id(LANG_TAGCACHE_INIT, false);
-                talk_number(ret, true);
-                talk_id(VOICE_OF, true);
-                talk_number(tagcache_get_max_commit_step(), true);
-            }
-#endif
             if (lang_is_rtl())
             {
                 splash_progress(ret, tagcache_get_max_commit_step(),

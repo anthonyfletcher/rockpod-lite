@@ -3473,21 +3473,6 @@ static bool modify_numeric_entry(int masterfd, int idx_id, int tag, long data)
     return write_index(masterfd, idx_id, &idx);
 }
 
-#if 0
-bool tagcache_modify_numeric_entry(struct tagcache_search *tcs,
-                                   int tag, long data)
-{
-    struct master_header myhdr;
-
-    if (tcs->masterfd < 0)
-    {
-        if ( (tcs->masterfd = open_master_fd(&myhdr, true)) < 0)
-            return false;
-    }
-
-    return modify_numeric_entry(tcs->masterfd, tcs->idx_id, tag, data);
-}
-#endif
 
 static bool command_queue_is_full(void)
 {

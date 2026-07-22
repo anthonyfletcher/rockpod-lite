@@ -1168,15 +1168,10 @@ static bool alloc_menu_parse_buf(char *buf, int type)
 
 static void build_firstletter_menu(char *buf, size_t bufsz)
 {
-#if 0 /* GCC complains about this I can't find a definitive answer */
-    const char *subitem = buf;
-    size_t l = strlen(buf) + 1;
-    buf+=l;
-    bufsz-=l;
-#else
+    /* Copied out rather than pointed at: the format string built below is
+     * written back into buf, so subitem must not alias it. */
     char subitem[32]; /* canonicalartist longest subitem we expect add a bit extra..*/
     strmemccpy(subitem, buf, sizeof(subitem));
-#endif
 
     const char * const fmt ="\"%s\"-> %s ? %s %c\"%c\"-> %s =\"fmt_title\"";
     const char * const showsub = /* album subitem for canonicalartist */

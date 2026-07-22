@@ -72,15 +72,6 @@ void push_activity_without_refresh(enum current_activity screen)
 void pop_current_activity(void)
 {
     pop_current_activity_refresh(true);
-#if 0
-    current_activity_top--;
-    FOR_NB_SCREENS(i)
-    {
-        skinlist_set_cfg(i, NULL);
-        if (ACTIVITY_REFRESH_NOW == refresh)
-            skin_update(CUSTOM_STATUSBAR, i, SKIN_REFRESH_ALL);
-    }
-#endif
 }
 
 void pop_current_activity_without_refresh(void)

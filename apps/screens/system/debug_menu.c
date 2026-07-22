@@ -1765,12 +1765,6 @@ static int menu_get_talk(int item, void *data)
     {
         talk_number(item + 1, true);
         talk_id(VOICE_PAUSE, true);
-#if 0 /* no debug items currently have lang ids */
-        long id = P2ID((const unsigned char *)(menuitems[item].desc));
-        if(id>=0)
-            talk_id(id, true);
-        else
-#endif
         talk_spell(menuitems[item].desc, true);
      }
     return 0;

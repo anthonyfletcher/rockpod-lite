@@ -26,13 +26,11 @@ static int handles[4] = { 0, 0, 0, 0 };
  * still refers to the block. */
 static int move_callback(int handle, void *current, void *new)
 {
-#if 0
-    /* Should not currently need to block this since DSP loop completes an
-       iteration before yielding and begins again at its input buffer */
-    if (dsp_is_busy(tdspeed_state.dsp))
-        return BUFLIB_CB_CANNOT_MOVE; /* DSP processing in progress */
-#endif
-
+    /* Never refuses. A move can only land here while the owner has yielded,
+     * and the DSP loop finishes an iteration before it yields and restarts
+     * from its input buffer -- so there is no partly-processed state pointing
+     * into the block. If that ever stops holding, this needs to return
+     * BUFLIB_CB_CANNOT_MOVE while the DSP is busy. */
     for (unsigned int i = 0; i < ARRAYLEN(handles); i++)
     {
         if (handle != handles[i])

@@ -150,11 +150,10 @@ enum {
     ACTION_WPS_LIST_BOOKMARKS,/* optional */
     ACTION_WPS_CREATE_BOOKMARK,/* optional */
     ACTION_WPS_REC,
-#if 0
-    ACTION_WPSAB_SINGLE, /* This needs to be #defined in
-                            the config-<target>.h to one of the ACTION_WPS_ actions
-                            so it can be used */
-#endif
+    /* ACTION_WPSAB_SINGLE is deliberately NOT an entry here. It is #defined by
+     * each target's config header to one of the ACTION_WPS_ actions, naming
+     * the single button that cycles the A-B markers; both this fork's targets
+     * set it to ACTION_WPS_BROWSE. wps.c consumes it under #ifdef. */
     ACTION_WPS_ABSETA_PREVDIR, /* these should be safe to put together seen as */
     ACTION_WPS_ABSETB_NEXTDIR, /* you shouldnt want to change dir in ab-mode */
     ACTION_WPS_ABRESET,

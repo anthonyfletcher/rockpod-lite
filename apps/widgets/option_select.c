@@ -69,14 +69,6 @@ const char *option_get_valuestring(const struct settings_list *setting,
         strmemccpy(buffer, str(val? setting->bool_setting->lang_yes :
                                     setting->bool_setting->lang_no), buf_len);
     }
-#if 0 /* probably dont need this one */
-    else if (HASFLAG(setting, F_FILENAME))
-    {
-        struct filename_setting *info = setting->filename_setting;
-        snprintf(buffer, buf_len, "%s%s%s", info->prefix,
-                 (char*)temp_var, info->suffix);
-    }
-#endif
     else if ((HASFLAG(setting, F_INT_SETTING)) ||
               HASFLAG(setting, F_TABLE_SETTING))
     {
@@ -145,11 +137,6 @@ void option_talk_value(const struct settings_list *setting, int value, bool enqu
         talk_id(val? setting->bool_setting->lang_yes :
                 setting->bool_setting->lang_no, enqueue);
     }
-#if 0 /* probably dont need this one */
-    else if (HASFLAG(setting, F_FILENAME))
-    {
-}
-#endif
     else if ((HASFLAG(setting, F_INT_SETTING)) ||
               HASFLAG(setting, F_TABLE_SETTING))
     {
