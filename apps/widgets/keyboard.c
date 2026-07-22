@@ -343,10 +343,10 @@ static void kbd_draw(struct dialog *d, struct screen *display,
     if (bw > 0)
     {
         dialog_draw_button(display, &d->style, 0, by, bw, bh,
-                           str(LANG_KBD_CANCEL),
+                           str(LANG_DIAG_CANCEL),
                            s->on_buttons && !s->btn_ok);
         dialog_draw_button(display, &d->style, bw + KBD_BTN_GAP, by, bw, bh,
-                           str(LANG_KBD_OK),
+                           str(LANG_DIAG_OK),
                            s->on_buttons && s->btn_ok);
     }
 

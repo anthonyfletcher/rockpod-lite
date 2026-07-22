@@ -11309,7 +11309,7 @@
     touchscreen: "OK"
   </source>
   <dest>
-    *: "OK"
+    *: none
     touchscreen: "OK"
   </dest>
   <voice>
@@ -11343,7 +11343,7 @@
     touchscreen: "Cancel"
   </source>
   <dest>
-    *: "Cancel"
+    *: none
     touchscreen: "Cancel"
   </dest>
   <voice>
@@ -17454,5 +17454,33 @@
   </dest>
   <voice>
     *: "Third-Party Licenses"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_DIAG_OK
+  desc: generic
+  user: core
+  <source>
+    *: "OK"
+  </source>
+  <dest>
+    *: "OK"
+  </dest>
+  <voice>
+    *: "OK"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_DIAG_CANCEL
+  desc: generic
+  user: core
+  <source>
+    *: "Cancel"
+  </source>
+  <dest>
+    *: "Cancel"
+  </dest>
+  <voice>
+    *: "Cancel"
   </voice>
 </phrase>
