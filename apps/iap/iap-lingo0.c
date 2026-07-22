@@ -671,7 +671,9 @@ void iap_handlepkt_mode0(const unsigned int len, const unsigned char *buf)
 
             /* In IDPS mode, a 2-byte transID precedes the auth data.
              * All responses must echo it. */
-            int off = 2;
+            /* Unsigned: it is a buffer offset, and CHECKLEN() compares it
+             * against the unsigned packet length. */
+            unsigned int off = 2;
             uint8_t tid_hi = 0, tid_lo = 0;
             if (device.auth.idps) {
                 off = 4;

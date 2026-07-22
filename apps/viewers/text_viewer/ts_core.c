@@ -47,9 +47,12 @@ const char *ts_strerror(int err)
 
 const char *ts_format_name(ts_format f)
 {
+    /* One entry per ts_format, in enum order. ts_format has no negative
+     * members, so it is an unsigned type and the upper bound is the only
+     * check needed. */
     static const char *n[] = { "unknown", "text", "markdown", "html", "rtf",
                                "fb2", "epub", "docx", "pdf" };
-    return (f >= 0 && (size_t)f < sizeof n / sizeof *n) ? n[f] : "unknown";
+    return ((size_t)f < sizeof n / sizeof *n) ? n[f] : "unknown";
 }
 
 ts_config ts_config_default(void)
