@@ -95,6 +95,36 @@ void list_init(void)
     add_event_ex(GUI_EVENT_THEME_CHANGED, false, list_force_reinit, &last_dirty_tick);
 }
 
+/* Has the .sbs moved the UI viewport out from under us?
+ *
+ * A skin can switch %VI from inside a conditional, so the themed viewport can
+ * change shape while a list is on screen. %VI is SKIN_REFRESH_STATIC and only
+ * reaches us through list_init_viewports(), but the row config (%Lb) is
+ * DYNAMIC and takes effect immediately -- so the skin can widen its rows while
+ * our parent is still narrow. The rows then draw outside the parent, and since
+ * list_skinned_draw() clears only the parent, whatever lands beyond it is never
+ * erased and accumulates as the selection moves.
+ *
+ * This is checked on the draw path rather than driven by an event, because the
+ * event that would announce it (GUI_EVENT_NEED_UI_UPDATE) is only sent on a
+ * full statusbar refresh, which does not happen for every skin state change.
+ * Only lists on the shared themed parent follow the UI viewport. */
+static bool list_ui_viewport_moved(struct gui_synclist *list)
+{
+    if (*list->parent != &parent[SCREEN_MAIN])
+        return false;
+
+    FOR_NB_SCREENS(i)
+    {
+        struct viewport vp;
+        viewport_set_defaults(&vp, i);
+        if (vp.x != parent[i].x || vp.y != parent[i].y ||
+            vp.width != parent[i].width || vp.height != parent[i].height)
+            return true;
+    }
+    return false;
+}
+
 static void list_init_viewports(struct gui_synclist *list)
 {
     bool parent_used = (*list->parent == &parent[SCREEN_MAIN]);
@@ -280,7 +310,7 @@ bool gui_synclist_flush_inhibited(void)
  */
 void gui_synclist_draw(struct gui_synclist *gui_list)
 {
-    if (list_is_dirty(gui_list))
+    if (list_is_dirty(gui_list) || list_ui_viewport_moved(gui_list))
     {
         list_init_viewports(gui_list);
         FOR_NB_SCREENS(i)
