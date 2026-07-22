@@ -1432,7 +1432,7 @@ const struct settings_list settings[] = {
                 "album covers scroll speed", UNIT_PERCENT, 100, 400, 25,
                 NULL, NULL, NULL),
     INT_SETTING(0, album_covers_transition_speed,
-                LANG_ALBUM_COVERS_TRANSITION_SPEED, 400,
+                LANG_CAROUSEL_TRANSITION_SPEED, 400,
                 "album covers transition speed", UNIT_PERCENT, 100, 400, 25,
                 NULL, NULL, NULL),
     CHOICE_SETTING(0, album_covers_show_album_name, LANG_SHOW_ALBUM_TITLE,

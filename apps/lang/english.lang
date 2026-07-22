@@ -332,7 +332,7 @@
   <source>
     *: "PLAY = Yes"
     cowond2*: "MENU, or top-right = Yes"
-    creativezen*,gigabeat*,iaudiom5,iaudiox5,ipod*,iriverh10,iriverh10_5gb,mrobe100,sansac200*,sansaclip*,sansaconnect,sansae200*,sansafuze*: "Yes (select)"
+    creativezen*,gigabeat*,iaudiom5,iaudiox5,ipod*,iriverh10,iriverh10_5gb,mrobe100,sansac200*,sansaclip*,sansaconnect,sansae200*,sansafuze*: "SELECT = Yes"
     iriverh100,iriverh120,iriverh300: "NAVI = Yes"
     mrobe500: "PLAY, POWER, or top-right = Yes"
     vibe500: "OK = Yes"
@@ -340,7 +340,7 @@
   <dest>
     *: "PLAY = Yes"
     cowond2*: "MENU, or top-right = Yes"
-    creativezen*,gigabeat*,iaudiom5,iaudiox5,ipod*,iriverh10,iriverh10_5gb,mrobe100,sansac200*,sansaclip*,sansaconnect,sansae200*,sansafuze*: "Yes (select)"
+    creativezen*,gigabeat*,iaudiom5,iaudiox5,ipod*,iriverh10,iriverh10_5gb,mrobe100,sansac200*,sansaclip*,sansaconnect,sansae200*,sansafuze*: "SELECT = Yes"
     iriverh100,iriverh120,iriverh300: "NAVI = Yes"
     mrobe500: "PLAY, POWER, or top-right = Yes"
     vibe500: "OK = Yes"
@@ -354,10 +354,10 @@
   desc: Generic string to use to cancel
   user: core
   <source>
-    *: "No (any other key)"
+    *: "Any Other = No"
   </source>
   <dest>
-    *: "No (any other key)"
+    *: "Any Other = No"
   </dest>
   <voice>
     *: ""
@@ -1754,16 +1754,16 @@
 </phrase>
 <phrase>
   id: LANG_AUDIOSCROBBLER
-  desc: Settings menu row and lastfm_scrobbler.rock's own menu title
+  desc: "Last.fm Logger" in Plugin/apps/scrobbler
   user: core
   <source>
-    *: "Last.fm Settings"
+    *: "Last.fm Logger"
   </source>
   <dest>
-    *: "Last.fm Settings"
+    *: "Last.fm Logger"
   </dest>
   <voice>
-    *: "Last.fm Settings"
+    *: "Last.fm Logger"
   </voice>
 </phrase>
 <phrase>
@@ -2077,14 +2077,14 @@
     *: "Building database... %d found (OFF to return)"
     gigabeat*,iaudiom5,iaudiox5,mrobe100,samsungyh*: "Building database... %d found (LEFT to return)"
     gogearsa9200: "Building database... %d found (REW to return)"
-    ipod*,iriverh10,iriverh10_5gb,sansac200*,sansae200*,sansafuze*,vibe500: "Building database... %d found"
+    ipod*,iriverh10,iriverh10_5gb,sansac200*,sansae200*,sansafuze*,vibe500: "Building database... %d found (PREV to return)"
     iriverh100,iriverh120,iriverh300: "Building database... %d found (STOP to return)"
   </source>
   <dest>
     *: "Building database... %d found (OFF to return)"
     gigabeat*,iaudiom5,iaudiox5,mrobe100,samsungyh*: "Building database... %d found (LEFT to return)"
     gogearsa9200: "Building database... %d found (REW to return)"
-    ipod*,iriverh10,iriverh10_5gb,sansac200*,sansae200*,sansafuze*,vibe500: "Building database... %d found"
+    ipod*,iriverh10,iriverh10_5gb,sansac200*,sansae200*,sansafuze*,vibe500: "Building database... %d found (PREV to return)"
     iriverh100,iriverh120,iriverh300: "Building database... %d found (STOP to return)"
   </dest>
   <voice>
@@ -3546,11 +3546,11 @@
 </phrase>
 <phrase>
   id: LANG_TIME_MENU
-  desc: Settings menu row and its own submenu title
+  desc: in the system sub menu
   user: core
   <source>
     *: none
-    rtc: "Time & Date Settings"
+    rtc: "Time & Date"
   </source>
   <dest>
     *: none
@@ -7279,7 +7279,7 @@
     gigabeatfx: "POWER to abort"
     gigabeats,sansafuzeplus: "BACK to abort"
     iaudiom5,iaudiox5: "Long PLAY to abort"
-    ipod*: ""
+    ipod*: "PLAY/PAUSE to abort"
     iriverh10,iriverh10_5gb,sansac200*,sansae200*,vibe500: "PREV to abort"
     iriverh100,iriverh120,iriverh300: "STOP to abort"
   </source>
@@ -7288,7 +7288,7 @@
     gigabeatfx: "POWER to abort"
     gigabeats,sansafuzeplus: "BACK to abort"
     iaudiom5,iaudiox5: "Long PLAY to abort"
-    ipod*: ""
+    ipod*: "PLAY/PAUSE to abort"
     iriverh10,iriverh10_5gb,sansac200*,sansae200*,vibe500: "PREV to abort"
     iriverh100,iriverh120,iriverh300: "STOP to abort"
   </dest>
@@ -11305,10 +11305,12 @@
   desc: in keyboard
   user: core
   <source>
-    *: "OK"
+    *: none
+    touchscreen: "OK"
   </source>
   <dest>
     *: "OK"
+    touchscreen: "OK"
   </dest>
   <voice>
     *: none
@@ -11337,10 +11339,12 @@
   desc: in keyboard
   user: core
   <source>
-    *: "Cancel"
+    *: none
+    touchscreen: "Cancel"
   </source>
   <dest>
     *: "Cancel"
+    touchscreen: "Cancel"
   </dest>
   <voice>
     *: none
@@ -14291,7 +14295,7 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "Path"
+    *: "[Path]"
   </source>
   <dest>
     *: "Path"
@@ -14305,7 +14309,7 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "Filename"
+    *: "[Filename]"
   </source>
   <dest>
     *: "Filename"
@@ -14319,7 +14323,7 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "Size"
+    *: "[Size]"
   </source>
   <dest>
     *: "Size"
@@ -14333,7 +14337,7 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "Date"
+    *: "[Date]"
   </source>
   <dest>
     *: "Date"
@@ -14347,7 +14351,7 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "Time"
+    *: "[Time]"
   </source>
   <dest>
     *: "Time"
@@ -14361,7 +14365,7 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "Subdirs"
+    *: "[Subdirs]"
   </source>
   <dest>
     *: "Subdirs"
@@ -14375,7 +14379,7 @@
   desc: in properties plugin
   user: core
   <source>
-    *: "Files"
+    *: "[Files]"
   </source>
   <dest>
     *: "Files"
@@ -17164,17 +17168,17 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_ALBUM_COVER_SETTINGS
+  id: LANG_CAROUSEL_SETTINGS
   desc: in the main menu
   user: core
   <source>
-    *: "Album Cover Settings"
+    *: "Carousel Settings"
   </source>
   <dest>
-    *: "Album Cover Settings"
+    *: "Carousel Settings"
   </dest>
   <voice>
-    *: "Album Cover Settings"
+    *: "Carousel Settings"
   </voice>
 </phrase>
 <phrase>
@@ -17195,7 +17199,7 @@
   </voice>
 </phrase>
 <phrase>
-  id: LANG_ALBUM_COVERS_TRANSITION_SPEED
+  id: LANG_CAROUSEL_TRANSITION_SPEED
   desc: in apps/menus/album_covers_menu.c
   user: core
   <source>

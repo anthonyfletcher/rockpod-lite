@@ -50,7 +50,7 @@ static int album_covers_menu_update(void)
 MENUITEM_FUNCTION(album_covers_update_item, 0, ID2P(LANG_UPDATE_CACHE),
                   album_covers_menu_update, NULL, Icon_NOICON);
 
-MAKE_MENU(album_covers_menu, ID2P(LANG_ALBUM_COVER_SETTINGS), NULL, Icon_Audio,
+MAKE_MENU(album_covers_menu, ID2P(LANG_CAROUSEL_SETTINGS), NULL, Icon_Audio,
             &album_covers_show_album_name,
             &album_covers_show_year,
             &album_covers_year_sort_order,

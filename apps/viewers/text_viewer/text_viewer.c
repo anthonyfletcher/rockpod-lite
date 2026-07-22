@@ -7,9 +7,6 @@
  *
  * The text reader UI: paging, scrolling, bookmarking and settings, drawing
  * text pulled from the ts_* extraction engine.
- ****************************************************************************/
-
-/* Core text viewer.
  *
  * The ts_* engine (txt_source.h) is a one-way stream: ts_read() goes forward
  * and ts_rewind() goes back to the start, with nothing in between. Rather
