@@ -13,6 +13,7 @@
 #	$SB - Status Bar Logic
 #	$ME - Menu Engine
 #	$SE - Scroll Engine
+#	$NP - Now Playing Panel
 #	$US - USB Screen Logic
 #	$SD - System Dialog Box
 #	$QS - Quickscreen Engine
@@ -43,15 +44,29 @@
 # CC: battery + loading/sleep icons, so they exist before anything draws.
 %?if(%cs, =, 10)<%Vd(Quickscreen)%VI(Default_Menu_Supression)%?or(%if(%Ql,=,0),%if(%Ql,=,%Sx(No)),%if(%Ql,=,%Sx(Off)),%if(%Ql,=,ERR))<%Vd(Quickitem_Left_Flush)|%Vd(Quickitem_Left)>%?or(%if(%Qt,=,0),%if(%Qt,=,%Sx(No)),%if(%Qt,=,%Sx(Off)),%if(%Qt,=,ERR))<%Vd(Quickitem_Top_Flush)|%Vd(Quickitem_Top)>%?or(%if(%Qb,=,0),%if(%Qb,=,%Sx(No)),%if(%Qb,=,%Sx(Off)),%if(%Qb,=,ERR))<%Vd(Quickitem_Bottom_Flush)|%Vd(Quickitem_Bottom)>%?or(%if(%Qr,=,0),%if(%Qr,=,%Sx(No)),%if(%Qr,=,%Sx(Off)),%if(%Qr,=,ERR))<%Vd(Quickitem_Right_Flush)|%Vd(Quickitem_Right)>>%?St(battery display)<%Vd(Battery_Graphical)|%Vd(Battery_Numeric)>%?lh<%Vd(Loading_Notification)|%?lb<%Vd(Loading_Notification)|%?lw<%Vd(Loading_Notification)|%?bs<%Vd(Sleep)|%Vd(Loading_Notification_Flush)>>>>
 #
-# Now-playing widget removed from the main menu: the menu below uses the
-# full screen width unconditionally, which would otherwise collide with
-# this panel's art/track-info display whenever something is playing.
-#
 #- Home Menu Initialisation -#
-# CC: Home menu (cs=1): choose full-width vs left/right-scrollbar viewport
-# CC: (by font size + scrollbar setting), then load the matching menu body
-# CC: via %Lb (icons/no-icons, scroll/no-scroll).
-%?if(%cs, =, 1)<%?and(%if(%ss(0,2,%St(font)),!=,22),%if(%ss(0,2,%St(font)),!=,24))<%VI(Home_Menu_Viewport_Full)|%Vd(Home_Corners)%?St(scrollbar)<%VI(Home_Menu_Viewport_Full)|%VI(Home_Menu_Viewport_Right)%Vd(Scrollbar_Tall_Left)|%VI(Home_Menu_Viewport_Left)%Vd(Scrollbar_Tall_Right)>%?St(scrollbar)<%?St(show icons)<%Lb(No_Scroll_Home_Menu_With_Icons,302,30)|%Lb(No_Scroll_Home_Menu_No_Icons,302,30)>|%?St(show icons)<%Lb(Home_Menu_With_Icons,302,30)|%Lb(Home_Menu_No_Icons,302,30)>>>>
+# CC: The home menu (cs=1) has two layouts, chosen by playback state:
+# CC:   %mp = 1 (stopped)      -> the menu uses the full screen width.
+# CC:   %mp > 1 (track loaded, -> the menu shrinks to the left and the
+# CC:            paused too)      now-playing panel ($NP) takes x=200..320.
+# CC: Note %mp counts from 1 here (stop=1, play=2, pause=3): inside %if() a
+# CC: tag is compared by its internal enum value, NOT by the number it would
+# CC: print. A bare %mp renders one less than these.
+# CC: Each branch then picks a viewport by font size + scrollbar setting and
+# CC: loads the matching row config via %Lb (icons/no-icons, scroll/no-scroll).
+# CC: The %mp test sits inside the same %and() as %cs rather than wrapping the
+# CC: line, so both layouts keep the nesting depth the single line had before:
+# CC: skin_render_line recurses once per level, so depth here is not free.
+%?and(%if(%cs,=,1),%if(%mp,=,1))<%?and(%if(%ss(0,2,%St(font)),!=,22),%if(%ss(0,2,%St(font)),!=,24))<%VI(Home_Menu_Viewport_Full)|%Vd(Home_Corners)%?St(scrollbar)<%VI(Home_Menu_Viewport_Full)|%VI(Home_Menu_Viewport_Right)%Vd(Scrollbar_Tall_Left)|%VI(Home_Menu_Viewport_Left)%Vd(Scrollbar_Tall_Right)>%?St(scrollbar)<%?St(show icons)<%Lb(No_Scroll_Home_Menu_With_Icons,302,30)|%Lb(No_Scroll_Home_Menu_No_Icons,302,30)>|%?St(show icons)<%Lb(Home_Menu_With_Icons,302,30)|%Lb(Home_Menu_No_Icons,302,30)>>>>
+#
+# CC: Track loaded: enable the panel backdrop and frame, then the real
+# CC: cover (%C true) or the placeholder art, and use the narrow menu.
+%?and(%if(%cs,=,1),%if(%mp,>,1))<%Vd(Widgets_Backdrop)%Vd(Miniplayer_Widget)%?C<%Vd(Miniplayer_Album_Art)|%Vd(Miniplayer_Album_Fallback_Art)>%?and(%if(%ss(0,2,%St(font)),!=,22),%if(%ss(0,2,%St(font)),!=,24))<%VI(Home_Menu_Viewport_Full_Panel)|%Vd(Home_Corners_Panel)%?St(scrollbar)<%VI(Home_Menu_Viewport_Full_Panel)|%VI(Home_Menu_Viewport_Right_Panel)%Vd(Scrollbar_Tall_Left)|%VI(Home_Menu_Viewport_Left_Panel)%Vd(Scrollbar_Tall_Right_Panel)>%?St(scrollbar)<%?St(show icons)<%Lb(No_Scroll_Home_Menu_With_Icons_Panel,182,30)|%Lb(No_Scroll_Home_Menu_No_Icons_Panel,182,30)>|%?St(show icons)<%Lb(Home_Menu_With_Icons_Panel,182,30)|%Lb(Home_Menu_No_Icons_Panel,182,30)>>>>
+#
+# CC: Panel title: one line if it fits, otherwise break on the last space
+# CC: (searched from 9 down to 3), else a hard split. Kept on its own
+# CC: line so the search chain does not deepen the panel line above.
+%?and(%if(%cs,=,1),%if(%mp,>,1))<%?if(%ss(0,9,%it),=,%it)<%Vd(Panel_Title_Single)|%?if(%ss(0,27,%it),=,%it)<%?if(%ss(9,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_9)|%?if(%ss(8,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_8)|%?if(%ss(7,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_7)|%?if(%ss(6,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_6)|%?if(%ss(5,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_5)|%?if(%ss(4,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_4)|%?if(%ss(3,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_3)|%Vd(Panel_Title_Long)>>>>>>>|%Vd(Panel_Title_Long)>>>
 #
 #- Sub Menu Initialisation -#
 # CC: Sub-menu init: for any list screen that isn't home/quickscreen/usb/
@@ -180,8 +195,8 @@
 %Vi(USB_Screen_Supression,-1,-1,1,1,7)
 # No Scrollbar
 %Vi(Sub_Menu_Viewport_Full,3,55,-3,-,-)
-# Widened to match Sub_Menu_Viewport_Full -- the main menu no longer
-# reserves a right-hand gutter for the now-playing widget.
+# Full screen width, used while playback is stopped. The _Panel twins below
+# stop short of x=200 to leave room for the now-playing panel.
 %Vi(Home_Menu_Viewport_Full,3,28,-3,-,-)
 %Vi(System_Menu_Viewport_Full,3,55,-3,137,-)
 # Left Scrollbar
@@ -191,6 +206,10 @@
 # Right Scrollbar
 %Vi(Sub_Menu_Viewport_Right,15,55,302,-,-)
 %Vi(Home_Menu_Viewport_Right,15,28,302,-,-)
+# Narrow variants, used while the now-playing panel is on screen.
+%Vi(Home_Menu_Viewport_Full_Panel,3,28,194,-,-)
+%Vi(Home_Menu_Viewport_Left_Panel,3,28,182,-,-)
+%Vi(Home_Menu_Viewport_Right_Panel,15,28,182,-,-)
 %Vi(System_Menu_Viewport_Right,15,55,302,137,-)
 #
 #-- Menu Drawing with Scrollbar --#
@@ -207,9 +226,8 @@
 %Vl(Menu_With_Icons,29,4,265,22,-)%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT
 #
 # Home Menu with Scrollbar
-# Widened to match Menu_With_Icons (302) now that the main menu no longer
-# reserves a right-hand gutter; text width scaled up keeping this row's
-# original 8px right margin (182-29-145=8 -> 302-29-8=265).
+# 302 wide to match Menu_With_Icons, with an 8px right margin on the text
+# (302-29-8=265). Home_Menu_With_Icons_Panel is the 182-wide twin.
 %Vl(Home_Menu_With_Icons,0,0,302,30,6)%?Lc<%Vs(invert)A%aRB>
 # icon display
 # CC: Home-menu row icon by title. Database categories first, then the
@@ -224,8 +242,8 @@
 #- Menus with no Icons -#
 #
 # Home Menu with no icons
-# Widened to match Menu_No_Icons (302); text width scaled up keeping this
-# row's original 10px right margin (182-9-163=10 -> 302-9-10=283).
+# 302 wide to match Menu_No_Icons, with a 10px right margin on the text
+# (302-9-10=283). Home_Menu_No_Icons_Panel is the 182-wide twin.
 %Vl(Home_Menu_No_Icons,0,0,302,30,6)%?Lc<%Vs(invert)A%aRB>
 %Vl(Home_Menu_No_Icons,9,4,283,22,-)%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT
 #
@@ -273,8 +291,8 @@
 #
 #
 # No Scroll Home Menu
-# Widened to match No_Scroll_Menu_With_Icons (314); text width scaled up
-# keeping this row's original 7px right margin (194-30-157=7 -> 314-30-7=277).
+# 314 wide to match No_Scroll_Menu_With_Icons, with a 7px right margin on the
+# text (314-30-7=277). No_Scroll_Home_Menu_With_Icons_Panel is the 194 twin.
 %Vl(No_Scroll_Home_Menu_With_Icons,0,0,314,30,6)%?Lc<%Vs(invert)A%aRB>
 # icon display
 %Vl(No_Scroll_Home_Menu_With_Icons,9,9,14,14,8)%?Lc<%Vs(invert)>%?if(%LT,=,%Sx(Album Artist))<Í|%?or(%if(%LT,=,%Sx(Artist)),%if(%LT,=,%Sx(Composer)))<s|%?if(%LT,=,%Sx(Album))<Î|%?if(%LT,=,%Sx(Genre))<Ï|%?if(%LT,=,%Sx(Year))<Ð|%?if(%LT,=,%Sx(First Letter))<Ñ|%?if(%LT,=,%Sx(Tracks by))<b|%?if(%LT,=,%Sx(Album Covers))<Î|%?if(%LT,=,%Sx(Recently Added))<Ò|%?if(%LT,=,%Sx(User Rating))<w|%?if(%LT,=,%Sx(Now Playing))<r|%?if(%LT,=,%Sx(Resume Playback))<r|%?if(%LT,=,%Sx(Music))<0|%?if(%LT,=,%Sx(Playlists))<4|%?if(%LT,=,%Sx(Files))<5|%?if(%LT,=,%Sx(Shortcuts))<z|%?if(%LT,=,%Sx(Settings))<7|%?if(%LT,=,%Sx(System))<8|%?if(%LT,=,%Sx(Artist Portraits))<s|0>>>>>>>>>>>>>>>>>>>
@@ -284,10 +302,25 @@
 #- Menus with no Icons -#
 #
 # no scroll home menu
-# Widened to match No_Scroll_Menu_No_Icons (314); text width scaled up
-# keeping this row's original 10px right margin (194-9-175=10 -> 314-9-10=295).
+# 314 wide to match No_Scroll_Menu_No_Icons, with a 10px right margin on the
+# text (314-9-10=295). No_Scroll_Home_Menu_No_Icons_Panel is the 194 twin.
 %Vl(No_Scroll_Home_Menu_No_Icons,0,0,314,30,6)%?Lc<%Vs(invert)A%aRB>
 %Vl(No_Scroll_Home_Menu_No_Icons,9,4,295,22,-)%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT
+#
+#- Home Menu rows, narrow (now-playing panel on screen) -#
+# CC: Identical to the four home-menu row configs above, only narrower:
+# CC: row viewport widths are baked into %Vl, so the two layouts cannot
+# CC: share a name. Widths here are the pre-panel-removal ones.
+%Vl(Home_Menu_With_Icons_Panel,0,0,182,30,6)%?Lc<%Vs(invert)A%aRB>
+%Vl(Home_Menu_With_Icons_Panel,9,9,14,14,8)%?Lc<%Vs(invert)>%?if(%LT,=,%Sx(Album Artist))<Í|%?or(%if(%LT,=,%Sx(Artist)),%if(%LT,=,%Sx(Composer)))<s|%?if(%LT,=,%Sx(Album))<Î|%?if(%LT,=,%Sx(Genre))<Ï|%?if(%LT,=,%Sx(Year))<Ð|%?if(%LT,=,%Sx(First Letter))<Ñ|%?if(%LT,=,%Sx(Tracks by))<b|%?if(%LT,=,%Sx(Album Covers))<Î|%?if(%LT,=,%Sx(Recently Added))<Ò|%?if(%LT,=,%Sx(User Rating))<w|%?if(%LT,=,%Sx(Now Playing))<r|%?if(%LT,=,%Sx(Resume Playback))<r|%?if(%LT,=,%Sx(Music))<0|%?if(%LT,=,%Sx(Playlists))<4|%?if(%LT,=,%Sx(Files))<5|%?if(%LT,=,%Sx(Shortcuts))<z|%?if(%LT,=,%Sx(Settings))<7|%?if(%LT,=,%Sx(System))<8|%?if(%LT,=,%Sx(Artist Portraits))<s|0>>>>>>>>>>>>>>>>>>>
+%Vl(Home_Menu_With_Icons_Panel,29,4,145,22,-)%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%?if(%LT,=,%Sx(Now Playing))<%Sx(Now Playing): %?it<%it|%fn>|%LT>
+%Vl(Home_Menu_No_Icons_Panel,0,0,182,30,6)%?Lc<%Vs(invert)A%aRB>
+%Vl(Home_Menu_No_Icons_Panel,9,4,163,22,-)%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT
+%Vl(No_Scroll_Home_Menu_With_Icons_Panel,0,0,194,30,6)%?Lc<%Vs(invert)A%aRB>
+%Vl(No_Scroll_Home_Menu_With_Icons_Panel,9,9,14,14,8)%?Lc<%Vs(invert)>%?if(%LT,=,%Sx(Album Artist))<Í|%?or(%if(%LT,=,%Sx(Artist)),%if(%LT,=,%Sx(Composer)))<s|%?if(%LT,=,%Sx(Album))<Î|%?if(%LT,=,%Sx(Genre))<Ï|%?if(%LT,=,%Sx(Year))<Ð|%?if(%LT,=,%Sx(First Letter))<Ñ|%?if(%LT,=,%Sx(Tracks by))<b|%?if(%LT,=,%Sx(Album Covers))<Î|%?if(%LT,=,%Sx(Recently Added))<Ò|%?if(%LT,=,%Sx(User Rating))<w|%?if(%LT,=,%Sx(Now Playing))<r|%?if(%LT,=,%Sx(Resume Playback))<r|%?if(%LT,=,%Sx(Music))<0|%?if(%LT,=,%Sx(Playlists))<4|%?if(%LT,=,%Sx(Files))<5|%?if(%LT,=,%Sx(Shortcuts))<z|%?if(%LT,=,%Sx(Settings))<7|%?if(%LT,=,%Sx(System))<8|%?if(%LT,=,%Sx(Artist Portraits))<s|0>>>>>>>>>>>>>>>>>>>
+%Vl(No_Scroll_Home_Menu_With_Icons_Panel,30,4,157,22,-)%?Lc<%Vs(invert)%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT
+%Vl(No_Scroll_Home_Menu_No_Icons_Panel,0,0,194,30,6)%?Lc<%Vs(invert)A%aRB>
+%Vl(No_Scroll_Home_Menu_No_Icons_Panel,9,4,175,22,-)%?Lc<%Vs(invert)>%?if(%St(scroll speed),=,1)<|%s>%LT
 #
 #
 # no scroll menu
@@ -318,6 +351,10 @@
 # CC: side (if any) the scrollbar is on.
 %Vl(Home_Corners,0,25,-,12,6)%VB%?St(scrollbar)<S%aRV|U%aRV|S%aRT>
 %Vl(Home_Corners,0,25,-,12,6)
+#
+# CC: Corners stop at x=200 when the panel is on screen.
+%Vl(Home_Corners_Panel,0,25,200,12,6)%VB%?St(scrollbar)<S%aRV|U%aRV|S%aRT>
+%Vl(Home_Corners_Panel,0,25,200,12,6)
 #
 #
 %Vl(Sub_Menu_Corners,0,52,-,12,6)%VB%?St(scrollbar)<S%aRV|U%aRV|S%aRT>
@@ -352,6 +389,21 @@
 # CC: The actual moving thumb (%LB slider) over the track, or the Flush
 # CC: wipe image when the scrollbar is off.
 %Vl(Scrollbar_Tall_Right,310,30,5,205,-)%?LB<%LB(0,0,5,205,invert,noborder,nobar,slider,Thumb)|%xd(Scrollbar_Flush)>
+#
+#- Right side Tall Scrollbar, shifted left of the panel -#
+# CC: Same track and thumb as above, moved from x=310 to x=190 so it sits
+# CC: beside the narrow menu instead of underneath the panel.
+%Vl(Scrollbar_Tall_Right_Panel,190,30,5,205,9)%VB
+%?LB<C|>
+%?LB<D|>
+%?LB<D|>
+%?LB<D|>
+%?LB<D|>
+%?LB<D|>
+%?LB<D|>
+%?LB<D|>
+%?LB<E|>
+%Vl(Scrollbar_Tall_Right_Panel,190,30,5,205,-)%?LB<%LB(0,0,5,205,invert,noborder,nobar,slider,Thumb)|%xd(Scrollbar_Flush)>
 #
 #- Left side Tall Scrollbar -#
 %Vl(Scrollbar_Tall_Left,5,30,5,205,9)%VB
@@ -392,6 +444,88 @@ D
 %Vl(Scrollbar_Short_Left,5,230,5,5,9)%VBE
 %Vl(Scrollbar_Short_Left,5,57,5,178,-)%?LB<%LB(0,0,5,178,invert,noborder,nobar,slider,Thumb)|>
 #
+#--- END ---#
+#
+#
+#--- Now Playing Panel ---# $NP
+# CC: Enabled from $VD only while a track is loaded. Widgets_Backdrop fills
+# CC: the strip right of the menu; Miniplayer_Widget draws the rounded caps
+# CC: above and below the art. The art box is square (111x111 at the top of
+# CC: the strip) so covers are scaled whole rather than centre-cropped, with
+# CC: a glyph placeholder when no cover is found.
+#
+%Vl(Widgets_Backdrop,200,25,-,-,-)%VB%dr(0,0,-,-)
+%Vl(Widgets_Backdrop,200,25,-,-,-)
+#
+%Vl(Miniplayer_Album_Art,205,25,111,111,9)%VB%Cl(0,0,111,111,c,c)%Cdvvvvv
+vvvvv
+vvvvv
+vvvvv
+vvvvv
+%Vl(Miniplayer_Album_Art,205,25,111,111,-)
+#
+%Vl(Miniplayer_Album_Fallback_Art,205,25,111,111,-)%VB
+%Vl(Miniplayer_Album_Fallback_Art,205,25,111,111,9)%VB
+bcdeu
+ghiju
+lmnop
+uqrst
+uuuuu
+%Vl(Miniplayer_Album_Fallback_Art,205,25,111,111,-)
+%Vl(Miniplayer_Widget,205,25,111,10,6)W%aRX
+%Vl(Miniplayer_Widget,205,126,111,10,6)Y%aRZ
+#
+# CC: Track name under the art, word-wrapped rather than scrolled.
+# CC: The skin engine has no wrap tag, so this follows the WPS approach:
+# CC: pick a viewport whose %ss slices break on a space. $VD chooses.
+# CC: 9 chars is what fits on a 103px line at font 3
+# CC: (22-LeagueSpartan-Bold, maxwidth 24) -- the average glyph runs about
+# CC: 0.45 of maxwidth, which is what gave font 4 its working 12.
+# CC: Change the font and this width together, they are one decision.
+# CC: %Vf is the theme BACKGROUND colour: the panel fill is %dr, which
+# CC: defaults to the theme FOREGROUND, so default-coloured text would be
+# CC: invisible against it. Setting it as the viewport fg (not
+# CC: %Vs(color,..)) keeps it going through dynamic_colors_resolve(), so
+# CC: it follows the album-art palette instead of freezing as navy.
+%Vl(Panel_Title_Single,209,148,103,20,3)%Vf(000c21)%aL%?it<%it|%fn>
+#
+# CC: Break on a space, then hard-split whatever is left over the
+# CC: remaining lines. Slices past the end of the string come back empty,
+# CC: so a short remainder simply leaves the last line blank.
+%Vl(Panel_Title_Space_9,209,148,103,62,3)%Vf(000c21)
+%ss(0,10,%it)
+%ss(10,19,%it)
+%ss(19,28,%it)
+%Vl(Panel_Title_Space_8,209,148,103,62,3)%Vf(000c21)
+%ss(0,9,%it)
+%ss(9,18,%it)
+%ss(18,27,%it)
+%Vl(Panel_Title_Space_7,209,148,103,62,3)%Vf(000c21)
+%ss(0,8,%it)
+%ss(8,17,%it)
+%ss(17,26,%it)
+%Vl(Panel_Title_Space_6,209,148,103,62,3)%Vf(000c21)
+%ss(0,7,%it)
+%ss(7,16,%it)
+%ss(16,25,%it)
+%Vl(Panel_Title_Space_5,209,148,103,62,3)%Vf(000c21)
+%ss(0,6,%it)
+%ss(6,15,%it)
+%ss(15,24,%it)
+%Vl(Panel_Title_Space_4,209,148,103,62,3)%Vf(000c21)
+%ss(0,5,%it)
+%ss(5,14,%it)
+%ss(14,23,%it)
+%Vl(Panel_Title_Space_3,209,148,103,62,3)%Vf(000c21)
+%ss(0,4,%it)
+%ss(4,13,%it)
+%ss(13,22,%it)
+#
+# CC: No space to break on, or too long to wrap: hard split, no scrolling.
+%Vl(Panel_Title_Long,209,148,103,62,3)%Vf(000c21)
+%ss(0,9,%it)
+%ss(9,18,%it)
+%ss(18,27,%it)
 #--- END ---#
 #
 #
