@@ -330,14 +330,11 @@ static void pan_view_down(struct image_info *info)
 }
 
 /* interactively scroll around the image */
-static int scroll_bmp(struct image_info *info, bool initial_frame)
+static int scroll_bmp(struct image_info *info)
 {
     static long ss_timeout = 0;
 
     int button;
-    static int lastbutton;
-    if (initial_frame)
-        lastbutton = BUTTON_NONE;
 
     if (!ss_timeout && iv_slideshow_enabled)
         ss_timeout = current_tick + iv_settings.ss_timeout * HZ;
@@ -464,9 +461,6 @@ static int scroll_bmp(struct image_info *info, bool initial_frame)
             break;
 
         } /* switch */
-
-        if (button != BUTTON_NONE)
-            lastbutton = button;
     } /* while (true) */
 }
 
@@ -614,7 +608,6 @@ reload_decoder:
 
     /* used to loop through subimages in animated gifs */
     int frame = 0;
-    bool initial_frame = true;
     do  /* loop the image prepare and decoding when zoomed */
     {
         /* a re-entry here after ZOOM_IN/OUT is a zoom re-decode -> show progress */
@@ -642,8 +635,7 @@ reload_decoder:
          */
         while (1)
         {
-            status = scroll_bmp(info, initial_frame);
-            initial_frame = false;
+            status = scroll_bmp(info);
 
             if (status == ZOOM_IN)
             {

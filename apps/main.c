@@ -144,7 +144,6 @@ int main(void)
 int show_logo_boot( void ) INIT_ATTR;
 int show_logo_boot( void )
 {
-    unsigned char version[32];
     lcd_clear_display();
     lcd_bmp(&bm_rockpodlogo, (LCD_WIDTH - BMPWIDTH_rockpodlogo) / 2,
                              (LCD_HEIGHT - BMPHEIGHT_rockpodlogo) / 2);
