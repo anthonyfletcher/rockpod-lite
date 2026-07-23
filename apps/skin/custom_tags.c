@@ -54,6 +54,11 @@ static const struct tag_info custom_tags[] =
     TAG(SKIN_TOKEN_STRFIND,            "sf", "[ITS][ITS]", 0),
     TAG(SKIN_TOKEN_PAD,                "pd", "I[ITS]",     SKIN_REFRESH_DYNAMIC),
 
+    /* %wt(text[,align]): draw text word-wrapped and aligned to fill the current
+     * viewport, ellipsised on overflow. A drawing tag (renders directly like
+     * %Sb), so DYNAMIC to redraw as the text changes. */
+    TAG(SKIN_TOKEN_TEXT_BOX,           "wt", "T|S",        SKIN_REFRESH_DYNAMIC),
+
     TAG(SKIN_TOKEN_UNKNOWN,            "",   "",      0)   /* terminator */
 };
 #undef TAG

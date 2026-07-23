@@ -272,6 +272,14 @@ struct spectrum_bars {
     bool center_aligned;
 };
 
+/* %wt(text, align): the text token to draw, plus vertical ('t'/'c'/'b') and
+ * horizontal ('l'/'c'/'r') alignment of the wrapped block within its viewport. */
+struct skin_textbox {
+    OFFSETTYPE(struct wps_token *) token;
+    char valign;
+    char halign;
+};
+
 struct listitem_viewport_cfg {
     struct wps_data *data;
     OFFSETTYPE(char *)   label;

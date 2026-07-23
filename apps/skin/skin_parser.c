@@ -831,6 +831,33 @@ static int parse_wordwrap(struct skin_element *element,
     return 0;
 }
 
+/* %wt(text[,align]) -- store the text token plus a 2-char alignment code
+ * (vertical t/c/b then horizontal l/c/r); the render side wraps and draws it. */
+static int parse_textbox(struct skin_element *element,
+                         struct wps_token *token,
+                         struct wps_data *wps_data)
+{
+    (void)wps_data;
+    struct skin_textbox *tb = skin_buffer_alloc(sizeof(*tb));
+    if (!tb)
+        return 1;
+    tb->token = get_param_code(element, 0)->data;
+    tb->valign = 't';
+    tb->halign = 'l';
+    if (element->params_count > 1)
+    {
+        const char *a = get_param_text(element, 1);
+        if (a && a[0])
+        {
+            tb->valign = tolower(a[0]);
+            if (a[1])
+                tb->halign = tolower(a[1]);
+        }
+    }
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, tb);
+    return 0;
+}
+
 /* %sel(subject, key1, value1, ..., [default]) -- the whole argument list is
  * kept and walked at render time, so this only has to check the shape. After
  * the subject the arguments pair up; a lone trailing one is the default. */
@@ -1917,6 +1944,9 @@ static int skin_element_callback(struct skin_element* element, void* data)
                 case SKIN_TOKEN_STRFIND:
                 case SKIN_TOKEN_PAD:
                     function = parse_store_element;
+                    break;
+                case SKIN_TOKEN_TEXT_BOX:
+                    function = parse_textbox;
                     break;
                 case SKIN_TOKEN_PROGRESSBAR:
                 case SKIN_TOKEN_VOLUME:

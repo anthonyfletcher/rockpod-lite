@@ -61,6 +61,10 @@
 #include "screens/playback/wps.h"
 #include "strmemccpy.h"
 #include "skin_albumart_color.h"
+#include "font.h"
+#include "rbunicode.h"
+#include "diacritic.h"
+#include "custom_tokens.h"
 
 #define MAX_LINE 1024
 
@@ -109,6 +113,130 @@ get_child(OFFSETTYPE(struct skin_element**) children, int child)
     return SKINOFFSETTOPTR(skin_buffer, kids[child]);
 }
 
+
+#define WT_MAX_LINES 8
+#define WT_BUF 512
+
+/* Truncate line so line + "..." fits maxwidth, then append the "...". */
+static void wt_ellipsize(char *line, int size, struct font *pf, int maxwidth)
+{
+    int ellw = 3 * font_get_width(pf, '.');
+    int width = 0;
+    unsigned char *p = (unsigned char *)line;
+    unsigned char *cut = p;
+    ucschar_t ch;
+
+    while (*p)
+    {
+        unsigned char *prev = p;
+        p = (unsigned char *)utf8decode(p, &ch);
+        if (IS_DIACRITIC(ch))
+            continue;
+        if (width + font_get_width(pf, ch) + ellw > maxwidth)
+        {
+            p = prev;
+            break;
+        }
+        width += font_get_width(pf, ch);
+        cut = p;
+    }
+    if ((cut - (unsigned char *)line) + 4 <= size)
+        strcpy((char *)cut, "...");
+    else if (size >= 4)
+        strcpy(line + size - 4, "...");
+}
+
+/* %wt: word-wrap text to the current viewport, align the block vertically
+ * (valign t/c/b) and each line horizontally (halign l/c/r), ellipsise if it
+ * overflows the height, and draw it. Wrapping is one forward pass (as %wr):
+ * accumulate pixel width, remember the last space, break there on overflow.
+ *
+ * noinline and with its own buffers so the ~1KB of scratch lives here, on the
+ * stack only while a %wt actually renders -- NOT baked into do_non_text_tags's
+ * frame, which runs at every level of the (deeply nested) skin render and would
+ * otherwise overflow the tight skin stack even on screens with no %wt. */
+static void __attribute__((noinline))
+draw_textbox(struct gui_wps *gwps, struct skin_draw_info *info,
+             struct skin_textbox *tb)
+{
+    struct screen *display = gwps->display;
+    struct viewport *vp = &info->skin_vp->vp;
+    struct wps_token *ttok = SKINOFFSETTOPTR(skin_buffer, tb->token);
+    struct font *pf = font_get(vp->font);
+    int fh = pf->height;
+    int maxlines, nlines = 0, yoff = 0, i;
+    const char *lstart[WT_MAX_LINES];
+    int llen[WT_MAX_LINES];
+    char src[WT_BUF], line[WT_BUF];
+    const char *text;
+    const unsigned char *p;
+    bool overflow;
+
+    display->set_viewport(vp);
+    display->clear_viewport();          /* box may have held a longer title */
+    if (fh <= 0)
+        return;
+    text = get_token_value(gwps, ttok, info->offset, src, sizeof(src), NULL);
+    if (!text || !*text)
+        return;
+    if (text != src)
+        strmemccpy(src, text, sizeof(src));
+
+    maxlines = vp->height / fh;
+    if (maxlines < 1) maxlines = 1;
+    if (maxlines > WT_MAX_LINES) maxlines = WT_MAX_LINES;
+
+    font_lock(vp->font, true);
+    p = (const unsigned char *)src;
+    while (*p && nlines < maxlines)
+    {
+        const unsigned char *cursor = p, *last_space = NULL, *lend, *next;
+        int width = 0;
+        ucschar_t ch;
+        for (;;)
+        {
+            const unsigned char *prev = cursor;
+            cursor = utf8decode(cursor, &ch);
+            if (ch == 0) { lend = next = prev; break; }
+            if (IS_DIACRITIC(ch)) continue;
+            if (ch == ' ') last_space = prev;
+            width += font_get_width(pf, ch);
+            if (width > vp->width)
+            {
+                if (last_space && last_space > p) { lend = last_space; next = last_space + 1; }
+                else if (prev > p)                { lend = next = prev; }
+                else                              { lend = next = cursor; }
+                break;
+            }
+        }
+        lstart[nlines] = (const char *)p;
+        llen[nlines] = lend - p;
+        nlines++;
+        p = next;
+    }
+    overflow = (*p != 0);
+
+    if (tb->valign == 'b')      yoff = vp->height - nlines * fh;
+    else if (tb->valign == 'c') yoff = (vp->height - nlines * fh) / 2;
+    if (yoff < 0) yoff = 0;
+
+    display->set_drawmode(DRMODE_SOLID);
+    for (i = 0; i < nlines; i++)
+    {
+        int w, h, x = 0;
+        int len = llen[i] < WT_BUF ? llen[i] : WT_BUF - 1;
+        memcpy(line, lstart[i], len);
+        line[len] = '\0';
+        if (overflow && i == nlines - 1)
+            wt_ellipsize(line, WT_BUF, pf, vp->width);
+        display->getstringsize((const unsigned char *)line, &w, &h);
+        if (tb->halign == 'r')      x = vp->width - w;
+        else if (tb->halign == 'c') x = (vp->width - w) / 2;
+        if (x < 0) x = 0;
+        display->putsxy(x, yoff + i * fh, (const unsigned char *)line);
+    }
+    font_lock(vp->font, false);
+}
 
 static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                              struct skin_element *element)
@@ -378,6 +506,15 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
             }
             break;
         }
+        case SKIN_TOKEN_TEXT_BOX:
+            if (do_refresh)
+            {
+                struct skin_textbox *tb = (struct skin_textbox *)
+                        SKINOFFSETTOPTR(skin_buffer, token->value.data);
+                if (tb)
+                    draw_textbox(gwps, info, tb);
+            }
+            break;
         case SKIN_TOKEN_DRAW_INBUILTBAR:
             gui_statusbar_draw(&(statusbars.statusbars[gwps->display->screen_type]),
                                info->refresh_type == SKIN_REFRESH_ALL,
