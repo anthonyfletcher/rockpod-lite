@@ -58,6 +58,7 @@
 #include "font.h"
 
 #include "wps_internals.h"
+#include "custom_tokens.h"
 #include "skin_engine.h"
 #include "settings/settings.h"
 #include "settings/settings_list.h"
@@ -804,6 +805,46 @@ static int parse_logical_andor(struct skin_element *element,
     return 0;
 }
 
+/* %tw(tag) -- keep just the token being measured, the way %ss keeps its own
+ * text argument, so the render side has no argument list to walk. */
+/* Tags whose whole argument list is walked at render time and whose arg count
+ * is already enforced by their param spec: just stash the element. */
+static int parse_store_element(struct skin_element *element,
+                               struct wps_token *token,
+                               struct wps_data *wps_data)
+{
+    (void)wps_data;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, element);
+    return 0;
+}
+
+/* %wr(n, text) -- keep the whole element; the render side reads the line index
+ * (param 0) and wraps the text (param 1) to the current viewport width. */
+static int parse_wordwrap(struct skin_element *element,
+                          struct wps_token *token,
+                          struct wps_data *wps_data)
+{
+    (void)wps_data;
+    if (element->params_count != 2)
+        return WPS_ERROR_INVALID_PARAM;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, element);
+    return 0;
+}
+
+/* %sel(subject, key1, value1, ..., [default]) -- the whole argument list is
+ * kept and walked at render time, so this only has to check the shape. After
+ * the subject the arguments pair up; a lone trailing one is the default. */
+static int parse_select(struct skin_element *element,
+                        struct wps_token *token,
+                        struct wps_data *wps_data)
+{
+    (void)wps_data;
+    if (element->params_count < 3)
+        return WPS_ERROR_INVALID_PARAM;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, element);
+    return 0;
+}
+
 static int parse_logical_if(struct skin_element *element,
                              struct wps_token *token,
                              struct wps_data *wps_data)
@@ -1209,7 +1250,16 @@ static int parse_filetext(struct skin_element *element,
         {
             search_text = get_param_text(element, 1);
             line = 0x3FF; /* 1k lines is a pretty large file */
+            /* Trim whitespace around the key so "key:" and "key: " match the
+             * same line -- the value's own whitespace is skipped after the
+             * match below. Without this the key had to be written to include
+             * the exact spacing used in the file. */
+            while (*search_text == ' ' || *search_text == '\t')
+                search_text++;
             search_len = strlen(search_text);
+            while (search_len > 0 && (search_text[search_len - 1] == ' '
+                                   || search_text[search_len - 1] == '\t'))
+                search_len--;
             DEBUGF("%s: found search text %s\n", __func__, search_text);
         }
         else
@@ -1243,6 +1293,12 @@ static int parse_filetext(struct skin_element *element,
         {
             buf_start += search_len;
             rd -= search_len;
+            /* skip whitespace between the key and its value */
+            while (*buf_start == ' ' || *buf_start == '\t')
+            {
+                buf_start++;
+                rd--;
+            }
             DEBUGF("%s: found '%s' Reading '%s'\n", __func__, search_text, buf);
             break;
         }
@@ -1846,6 +1902,21 @@ static int skin_element_callback(struct skin_element* element, void* data)
                     break;
                 case SKIN_TOKEN_SUBSTRING:
                     function = parse_substring_tag;
+                    break;
+                case SKIN_TOKEN_SELECT:
+                    function = parse_select;
+                    break;
+                case SKIN_TOKEN_TEXT_WIDTH:
+                    function = parse_store_element;
+                    break;
+                case SKIN_TOKEN_WORD_WRAP:
+                    function = parse_wordwrap;
+                    break;
+                case SKIN_TOKEN_MATH:
+                case SKIN_TOKEN_STRLEN:
+                case SKIN_TOKEN_STRFIND:
+                case SKIN_TOKEN_PAD:
+                    function = parse_store_element;
                     break;
                 case SKIN_TOKEN_PROGRESSBAR:
                 case SKIN_TOKEN_VOLUME:

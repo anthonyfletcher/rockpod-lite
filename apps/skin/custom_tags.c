@@ -15,6 +15,7 @@
 
 #include <string.h>
 #include "tag_table.h"
+#include "custom_tokens.h"
 
 /* Same row layout as legal_tags[] in tag_table.c: param_pos is the name's
  * length including the '\0', and name holds "name\0params". */
@@ -26,6 +27,33 @@ static const struct tag_info custom_tags[] =
     TAG(SKIN_TOKEN_LOADING_ANIM,       "la", "",     SKIN_REFRESH_DYNAMIC),
     TAG(SKIN_TOKEN_SPECTRUM_BARS,      "Sb", "i|S",  SKIN_REFRESH_SPECTRUM),
     TAG(SKIN_TOKEN_LIST_ITEM_ALBUMART, "La", "|IS",  SKIN_REFRESH_DYNAMIC),
+
+    /* %tw/%Vw/%Vh transform or report their arguments and are consumed by an
+     * enclosing %if/%sel, whose conditional render path drives the redraw, so
+     * flag 0 (inherit) is right: the line's refresh follows its arguments.
+     *
+     * %sel is different -- its result is drawn directly. Render-time redraw
+     * (skin_render.c: needs_update) reads only the top-level tag's OWN flag,
+     * NOT its nested arguments, so a directly-drawn flag-0 tag would never mark
+     * its line dirty and would redraw only erratically. %ss, the visible tag
+     * that also takes a T arg, is DYNAMIC for exactly this reason; match it. */
+    TAG(SKIN_TOKEN_TEXT_WIDTH,         "tw", "T|i",    0),
+    TAG(SKIN_TOKEN_VIEWPORT_WIDTH,     "Vw", "",       0),
+    TAG(SKIN_TOKEN_VIEWPORT_HEIGHT,    "Vh", "",       0),
+    TAG(SKIN_TOKEN_SELECT,             "sel","T[ITS]*",SKIN_REFRESH_DYNAMIC),
+
+    /* %wr(n, text): the nth word-wrapped line of text, wrapped to the current
+     * viewport width. Drawn directly, so DYNAMIC for the same reason as %sel. */
+    TAG(SKIN_TOKEN_WORD_WRAP,          "wr", "I[ITS]", SKIN_REFRESH_DYNAMIC),
+
+    /* String/arithmetic helpers. Flag rationale as in %tw vs %sel: %sl/%sf are
+     * measurement fed to a conditional (the conditional drives redraw -> 0);
+     * %ma/%pd can be drawn directly, so they carry DYNAMIC to redraw reliably. */
+    TAG(SKIN_TOKEN_MATH,               "ma", "[IT]S[IT]", SKIN_REFRESH_DYNAMIC),
+    TAG(SKIN_TOKEN_STRLEN,             "sl", "[ITS]",      0),
+    TAG(SKIN_TOKEN_STRFIND,            "sf", "[ITS][ITS]", 0),
+    TAG(SKIN_TOKEN_PAD,                "pd", "I[ITS]",     SKIN_REFRESH_DYNAMIC),
+
     TAG(SKIN_TOKEN_UNKNOWN,            "",   "",      0)   /* terminator */
 };
 #undef TAG

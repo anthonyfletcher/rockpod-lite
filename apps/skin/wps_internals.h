@@ -66,7 +66,10 @@ struct wps_token {
         void *xdata;
     } value;
 
-    enum skin_token_type type; /* enough to store the token type */
+    /* An enum skin_token_type id, or one of the out-of-enum ids in
+     * custom_tokens.h. Widened from the enum so both sets fit; matches the
+     * unsigned short that struct tag_info carries the id in. */
+    unsigned short type;
     /* Whether the tag (e.g. track name or the album) refers the
        current or the next song (false=current, true=next) */
     bool next;

@@ -40,6 +40,7 @@
 #include "settings/settings.h"
 #include "settings/settings_list.h"
 #include "rbunicode.h"
+#include "diacritic.h"
 #include "timefuncs.h"
 #include "audio/play_status.h"
 #include "power.h"
@@ -66,6 +67,7 @@
 #include "database/tagcache.h"
 
 #include "wps_internals.h"
+#include "custom_tokens.h"
 #include "skin_engine.h"
 #include "statusbar_skinned.h"
 #include "root_menu.h"
@@ -547,6 +549,260 @@ free_id3_outtext:
     return out_text;
 }
 
+/* Render one %sel argument to text. Keys and values may each be written as a
+ * literal, a number, or a tag, so all three parameter shapes are accepted. */
+static const char* eval_select_param(struct gui_wps *gwps, char *skinbuffer,
+                                     struct skin_tag_parameter *param,
+                                     int offset, char *buf, int buf_size)
+{
+    switch (param->type)
+    {
+        case STRING:
+            return SKINOFFSETTOPTR(skinbuffer, param->data.text);
+        case INTEGER:
+        case DECIMAL:
+        case PERCENT:
+            itoa_buf(buf, buf_size, param->data.number);
+            return buf;
+        case CODE:
+        {
+            struct skin_element *element =
+                    SKINOFFSETTOPTR(skinbuffer, param->data.code);
+            if (!element) return NULL;
+            return get_token_value(gwps,
+                                   SKINOFFSETTOPTR(skinbuffer, element->data),
+                                   offset, buf, buf_size, NULL);
+        }
+        default:
+            return NULL;
+    }
+}
+
+/* A numeric %ma operand: a literal int, or a tag rendered to text and atoi'd. */
+static int eval_param_int(struct gui_wps *gwps, char *skinbuffer,
+                          struct skin_tag_parameter *param,
+                          int offset, char *buf, int buf_size)
+{
+    if (param->type == INTEGER)
+        return param->data.number;
+    const char *s = eval_select_param(gwps, skinbuffer, param, offset,
+                                      buf, buf_size);
+    return s ? atoi(s) : 0;
+}
+
+/* %sf(haystack, needle) -- 0-based character index of the first occurrence of
+ * needle in haystack, or -1. NOINLINE for the haystack buffer (recursive). */
+static int NOINLINE get_strfind_value(struct gui_wps *gwps,
+                                      struct skin_element *element,
+                                      int offset, char *buf, int buf_size)
+{
+    char *skinbuffer = get_skin_buffer(gwps->data);
+    char haystack[MAX_PATH];
+    const char *s, *needle, *hit;
+    int cidx = 0;
+    const unsigned char *c;
+    ucschar_t ch;
+
+    if (!element || !element->params) return -1;
+    struct skin_tag_parameter *params =
+            SKINOFFSETTOPTR(skinbuffer, element->params);
+
+    /* Copy the haystack out: evaluating the needle reuses buf. */
+    s = eval_select_param(gwps, skinbuffer, &params[0], offset, buf, buf_size);
+    if (!s) return -1;
+    strmemccpy(haystack, s, sizeof(haystack));
+    needle = eval_select_param(gwps, skinbuffer, &params[1], offset,
+                               buf, buf_size);
+    if (!needle) return -1;
+    hit = strstr(haystack, needle);
+    if (!hit) return -1;
+
+    for (c = (const unsigned char *)haystack; (const char *)c < hit; cidx++)
+        c = utf8decode(c, &ch);
+    return cidx;
+}
+
+/* %pd(n, text) -- text padded with trailing spaces or truncated to exactly n
+ * characters. NOINLINE for the source buffer (recursive). */
+static const char* NOINLINE get_pad_value(struct gui_wps *gwps,
+                                          struct skin_element *element,
+                                          int offset, char *buf, int buf_size)
+{
+    char *skinbuffer = get_skin_buffer(gwps->data);
+    char src[MAX_PATH];
+    const char *t;
+    int n, len, bytes;
+
+    if (!element || !element->params) return NULL;
+    struct skin_tag_parameter *params =
+            SKINOFFSETTOPTR(skinbuffer, element->params);
+
+    n = params[0].data.number;
+    if (n < 0) n = 0;
+    t = eval_select_param(gwps, skinbuffer, &params[1], offset, buf, buf_size);
+    strmemccpy(src, t ? t : "", sizeof(src));
+    len = (int)utf8length((const unsigned char *)src);
+
+    if (len >= n)                                   /* truncate to n chars */
+    {
+        bytes = utf8seek((const unsigned char *)src, n);
+        if (bytes >= buf_size) bytes = buf_size - 1;
+        memcpy(buf, src, bytes);
+        buf[bytes] = '\0';
+    }
+    else                                            /* pad to n chars */
+    {
+        int pad = n - len;
+        bytes = strlen(src);
+        if (bytes + pad >= buf_size) pad = buf_size - 1 - bytes;
+        if (pad < 0) pad = 0;
+        memcpy(buf, src, bytes);
+        memset(buf + bytes, ' ', pad);
+        buf[bytes + pad] = '\0';
+    }
+    return buf;
+}
+
+/* %wr(n, text) -- return the nth (0-based) word-wrapped line of text, wrapped
+ * to the current viewport width in its font. One forward pass per call: walk
+ * the text accumulating pixel width (mirroring font_getstringnsize), remember
+ * the last space, and break there on overflow -- never re-measuring prefixes.
+ * NOINLINE to keep the two work buffers off get_token_value's recursive frame. */
+static const char* NOINLINE get_wordwrap_token_value(struct gui_wps *gwps,
+                                                     struct skin_element *element,
+                                                     int offset, char *buf,
+                                                     int buf_size)
+{
+    char *skinbuffer = get_skin_buffer(gwps->data);
+    struct viewport *vp = *gwps->display->current_viewport;
+    char source[MAX_PATH];
+    const char *text;
+    int target_line = 0, cur_line = 0;
+    struct font *pf;
+    const unsigned char *line_start;
+
+    if (!element || !element->params) return NULL;
+    struct skin_tag_parameter *params =
+            SKINOFFSETTOPTR(skinbuffer, element->params);
+
+    target_line = params[0].data.number;
+
+    /* Copy the source out: evaluating a tag arg may hand back buf itself, which
+     * we overwrite with the result, and we walk the text more than once. */
+    text = eval_select_param(gwps, skinbuffer, &params[1], offset,
+                             buf, buf_size);
+    if (!text) return NULL;
+    strmemccpy(source, text, sizeof(source));
+
+    pf = font_get(vp->font);
+    font_lock(vp->font, true);
+
+    line_start = (const unsigned char *)source;
+    for (;;)
+    {
+        const unsigned char *cursor = line_start;
+        const unsigned char *last_space = NULL;   /* break just before this */
+        const unsigned char *line_end, *next_start;
+        ucschar_t ch;
+        int width = 0;
+        bool at_end = false;
+
+        for (;;)
+        {
+            const unsigned char *prev = cursor;
+            cursor = utf8decode(cursor, &ch);
+            if (ch == 0)
+            {
+                line_end = next_start = prev;      /* text ends this line */
+                at_end = true;
+                break;
+            }
+            if (IS_DIACRITIC(ch))
+                continue;
+            if (ch == ' ')
+                last_space = prev;
+            width += font_get_width(pf, ch);
+            if (width > vp->width)
+            {
+                if (last_space && last_space > line_start)
+                {
+                    line_end = last_space;         /* break at the space, */
+                    next_start = last_space + 1;   /* which is dropped */
+                }
+                else if (prev > line_start)
+                {
+                    line_end = next_start = prev;  /* hard break before ch */
+                }
+                else
+                {
+                    line_end = next_start = cursor; /* lone too-wide glyph */
+                }
+                break;
+            }
+        }
+
+        if (cur_line == target_line)
+        {
+            int len = line_end - line_start;
+            font_lock(vp->font, false);
+            if (len >= buf_size)
+                len = buf_size - 1;
+            memcpy(buf, line_start, len);
+            buf[len] = '\0';
+            return buf;
+        }
+
+        if (at_end)                 /* asked for a line past the wrapped text */
+            break;
+        cur_line++;
+        line_start = next_start;
+    }
+    font_lock(vp->font, false);
+    return NULL;
+}
+
+/* %sel(subject, key1, value1, ..., [default]) -- return the value paired with
+ * the first key equal to the subject, else the trailing default, else nothing.
+ * NOINLINE, like get_lif_token_value below, to keep the subject buffer out of
+ * get_token_value()'s frame; that function recurses. */
+static const char* NOINLINE get_select_token_value(struct gui_wps *gwps,
+                                                   struct skin_element *element,
+                                                   int offset, char *buf,
+                                                   int buf_size)
+{
+    char *skinbuffer = get_skin_buffer(gwps->data);
+    char subject[MAX_PATH];
+    const char *val;
+    int i;
+
+    if (!element || !element->params) return NULL;
+    struct skin_tag_parameter* params =
+            SKINOFFSETTOPTR(skinbuffer, element->params);
+
+    /* The subject needs storage of its own: evaluating each key below reuses
+     * buf, which would otherwise overwrite it part-way through the search. */
+    val = eval_select_param(gwps, skinbuffer, &params[0],
+                            offset, buf, buf_size);
+    if (!val) return NULL;
+    strmemccpy(subject, val, sizeof(subject));
+
+    /* Arguments after the subject pair up as key, value. */
+    for (i = 1; i + 1 < element->params_count; i += 2)
+    {
+        val = eval_select_param(gwps, skinbuffer, &params[i],
+                                offset, buf, buf_size);
+        if (val && !strcmp(subject, val))
+            return eval_select_param(gwps, skinbuffer, &params[i+1],
+                                     offset, buf, buf_size);
+    }
+
+    /* An odd argument left over at the end is the default. */
+    if (i < element->params_count)
+        return eval_select_param(gwps, skinbuffer, &params[i],
+                                 offset, buf, buf_size);
+    return NULL;
+}
+
 /* Don't inline this; it was broken out of get_token_value to reduce stack
  * usage.
  */
@@ -884,6 +1140,113 @@ const char *get_token_value(struct gui_wps *gwps,
             return truecount ? "true" : NULL;
         }
         break;
+
+        case SKIN_TOKEN_TEXT_WIDTH:
+        {
+            char *skinbuffer = get_skin_buffer(data);
+            struct skin_element *el =
+                    SKINOFFSETTOPTR(skinbuffer, token->value.data);
+            int w = 0, h;
+            if (!el || !el->params) return NULL;
+            struct skin_tag_parameter *p =
+                    SKINOFFSETTOPTR(skinbuffer, el->params);
+            /* Measure in an explicit font when %tw(text, fontid) is given,
+             * else in the current viewport's font. The explicit form lets a
+             * caller measure in a font the current viewport does not use --
+             * e.g. deciding a title's layout from $VD, which does not run in
+             * the title's font. */
+            int fontid = (*gwps->display->current_viewport)->font;
+            if (el->params_count >= 2 && p[1].type == INTEGER)
+                fontid = p[1].data.number;
+            out_text = eval_select_param(gwps, skinbuffer, &p[0], offset,
+                                         buf, buf_size);
+            if (out_text)
+                font_getstringsize(out_text, &w, &h, fontid);
+            numeric_ret = w;
+            itoa_buf(buf, buf_size, numeric_ret);
+            numeric_buf = buf;
+            goto gtv_ret_numeric_tag_info;
+        }
+
+        case SKIN_TOKEN_VIEWPORT_WIDTH:
+            numeric_ret = (*gwps->display->current_viewport)->width;
+            itoa_buf(buf, buf_size, numeric_ret);
+            numeric_buf = buf;
+            goto gtv_ret_numeric_tag_info;
+
+        case SKIN_TOKEN_VIEWPORT_HEIGHT:
+            numeric_ret = (*gwps->display->current_viewport)->height;
+            itoa_buf(buf, buf_size, numeric_ret);
+            numeric_buf = buf;
+            goto gtv_ret_numeric_tag_info;
+
+        case SKIN_TOKEN_SELECT:
+            return get_select_token_value(gwps,
+                    SKINOFFSETTOPTR(get_skin_buffer(data), token->value.data),
+                                          offset, buf, buf_size);
+
+        case SKIN_TOKEN_WORD_WRAP:
+            return get_wordwrap_token_value(gwps,
+                    SKINOFFSETTOPTR(get_skin_buffer(data), token->value.data),
+                                            offset, buf, buf_size);
+
+        case SKIN_TOKEN_MATH:
+        {
+            char *skinbuffer = get_skin_buffer(data);
+            struct skin_element *el =
+                    SKINOFFSETTOPTR(skinbuffer, token->value.data);
+            if (!el || !el->params) return NULL;
+            struct skin_tag_parameter *p =
+                    SKINOFFSETTOPTR(skinbuffer, el->params);
+            int a = eval_param_int(gwps, skinbuffer, &p[0], offset,
+                                   buf, buf_size);
+            const char *ops = eval_select_param(gwps, skinbuffer, &p[1],
+                                                offset, buf, buf_size);
+            char op = ops ? ops[0] : 0;       /* before p[2] reuses buf */
+            int b = eval_param_int(gwps, skinbuffer, &p[2], offset,
+                                   buf, buf_size);
+            switch (op)
+            {
+                case '+': numeric_ret = a + b; break;
+                case '-': numeric_ret = a - b; break;
+                case '*': numeric_ret = a * b; break;
+                case '/': numeric_ret = b ? a / b : 0; break;
+                case '%': numeric_ret = b ? a % b : 0; break;
+                default:  numeric_ret = 0; break;
+            }
+            itoa_buf(buf, buf_size, numeric_ret);
+            numeric_buf = buf;
+            goto gtv_ret_numeric_tag_info;
+        }
+
+        case SKIN_TOKEN_STRLEN:
+        {
+            char *skinbuffer = get_skin_buffer(data);
+            struct skin_element *el =
+                    SKINOFFSETTOPTR(skinbuffer, token->value.data);
+            if (!el || !el->params) return NULL;
+            struct skin_tag_parameter *p =
+                    SKINOFFSETTOPTR(skinbuffer, el->params);
+            const char *t = eval_select_param(gwps, skinbuffer, &p[0],
+                                              offset, buf, buf_size);
+            numeric_ret = t ? (int)utf8length((const unsigned char *)t) : 0;
+            itoa_buf(buf, buf_size, numeric_ret);
+            numeric_buf = buf;
+            goto gtv_ret_numeric_tag_info;
+        }
+
+        case SKIN_TOKEN_STRFIND:
+            numeric_ret = get_strfind_value(gwps,
+                    SKINOFFSETTOPTR(get_skin_buffer(data), token->value.data),
+                                            offset, buf, buf_size);
+            itoa_buf(buf, buf_size, numeric_ret);
+            numeric_buf = buf;
+            goto gtv_ret_numeric_tag_info;
+
+        case SKIN_TOKEN_PAD:
+            return get_pad_value(gwps,
+                    SKINOFFSETTOPTR(get_skin_buffer(data), token->value.data),
+                                   offset, buf, buf_size);
 
         case SKIN_TOKEN_SUBSTRING:
         {
