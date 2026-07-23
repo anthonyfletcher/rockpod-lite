@@ -139,6 +139,75 @@ zero yield 0). `a` and `b` may be numbers or tags.
 
 ---
 
+## Widgets and indicators
+
+### `%Sb(bars[, center])` — spectrum analyser
+
+Draws an audio spectrum analyser filling the current viewport. `bars` is the
+number of bands, 1–8 (values outside that range are clamped). Pass `center` as a
+second argument to grow the bars from the middle rather than up from the bottom.
+
+```
+%V(20,40,120,60,-)%Sb(7)
+%V(20,40,120,60,-)%Sb(5, center)
+```
+
+### `%La(offset[, nowrap])` — list-item album art
+
+Album art for a menu/list row, for use in list-skinning viewports (alongside the
+standard `%LT` list text and `%LI` list icon). `offset` selects the row relative
+to the one being drawn (0 = that row); it defaults to 0. Pass `nowrap` to stop
+the offset wrapping around the ends of the list. Advanced — only meaningful
+inside a list viewport (`%Vi`).
+
+```
+%La(0)          # album art of the current list row
+```
+
+### `%pP` — playlist progress
+
+Overall progress through the current playlist. Like the other bar tags (`%pb`,
+`%bl`): used bare it yields a 0–100 value; used with bar parameters it draws a
+bar.
+
+```
+%pP                          # value, 0..100
+%pP(10,0,100,4,invert)       # drawn as a bar
+```
+
+### `%lb` — database / cache building
+
+Non-empty (`"b"`) while the music database or the album-art cache is being built
+in the background, otherwise empty. Use as a conditional to show a "busy" glyph:
+
+```
+%?lb<...building indicator...>
+```
+
+### `%lw` — generic working flag
+
+Non-empty (`"w"`) while a generic "working" flag is set in the firmware. Nothing
+in normal playback sets it, so it's mainly for custom builds that call the
+internal `ui_set_working()`.
+
+```
+%?lw<...busy...>
+```
+
+### `%la` — animated spinner frame
+
+A frame index that advances about ten times a second. Combine it with a
+conditional that lists the frames; `%la` cycles through however many you provide,
+so the spinner animates through ordinary refreshes:
+
+```
+%?la<Ð|Ñ|Ò|Ó>        # a 4-frame spinner
+```
+
+Best placed in a viewport that is only shown while something is loading.
+
+---
+
 ## Changed behaviour: `%ft` key matching
 
 `%ft(file, key)` (read the text following `key` in a file) now **trims
@@ -152,3 +221,18 @@ value**. In practice this means:
 If you previously relied on `%ft` returning a value's leading space verbatim
 (e.g. reading a line whose value is a single space), that no longer works —
 compute spacing in the skin instead.
+
+---
+
+## Completeness and source of truth
+
+The tags in the first sections (`%tw`, `%Vw`, `%Vh`, `%sel`, `%wr`, `%ma`, `%sl`,
+`%sf`, `%pd`, `%Sb`, `%La`, `%lb`, `%lw`, `%la`) are the fork's dedicated custom
+tags, registered together in `apps/skin/custom_tags.c` — that file is the
+authoritative list if you're checking for additions. `%pP` is a fork-added tag
+that lives with the standard tags in `lib/skin_parser/tag_table.c`.
+
+A few otherwise-standard tags also carry fork enhancements rather than being new
+tags — most notably `%ft` (documented above; it also gained file-line and
+prefix-search forms). Those aren't listed here beyond `%ft`; consult the Rockbox
+skin manual for the standard tags and treat this document as the delta on top.
