@@ -487,7 +487,7 @@ uuuuu
 # CC: %Vf routes the theme BACKGROUND colour through the viewport fg so the text
 # CC: stays visible on the %dr fill and follows the album-art palette.
 %Vl(Panel_Title,209,140,103,40,3)%Vf(000c21)
-%wt(%it,bl)
+%wt(%it,bl,%fn)
 %Vl(Panel_Artist,209,182,103,18,4)%Vf(000c21)
 %?if(%St(scroll speed),=,1)<|%s>%aL%?ia<%ia|%d(1)>
 #--- END ---#

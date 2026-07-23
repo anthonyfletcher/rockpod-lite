@@ -312,7 +312,7 @@ uuuuuuu
 #
 #- Single Line Title when one subline active -#
 # CC: $SI: single-line track title (%it, or filename %fn if untagged).
-%Vl(Single_Line_Song_Title,180,64,132,40,2)%wt(%it,bl)
+%Vl(Single_Line_Song_Title,180,64,132,40,2)%wt(%it,bl,%fn)
 #
 # CC: The subline text, filled from whichever field the sub-line-mode pref
 # CC: selects (artist/album/genre/playlist/bitrate/playtime).
@@ -338,7 +338,7 @@ uuuuuuu
 #
 #-- Single Line Title when two sublines active --#
 #
-%Vl(High_Single_Line_Song_Title,180,54,132,40,2)%wt(%it,bl)
+%Vl(High_Single_Line_Song_Title,180,54,132,40,2)%wt(%it,bl,%fn)
 #
 %Vl(High_Single_Line_Subline_Text,180,102,132,16,3)%?if(%St(scroll speed),=,1)<|%s>%aL%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,artist)<%?ia<%ia|%d(1)>>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,album)<%?id<%id|%d(1)>>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,genre)<%?ig<%ig|%d(1)>>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,playlist_name)<%?pn<%pn|%d(1)>>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,bitrate)<%fbkbps>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,song_playtime)<%pc/%pt>
 #
@@ -354,47 +354,6 @@ uuuuuuu
 %Vl(High_Single_Line_Song_Year,181,126,50,20,-)
 %Vl(High_Single_Line_Song_Year,187,130,37,16,3)%ac%?if(%ss(0,4,%iy),=,%iy)<%iy|%ss(0,4,%iy)>
 #
-#-- Dual Line Title --#
-#
-#- Dual Line Titles when one subline active -#
-#
-# CC: Dual-line title: %wr wraps %it to the 132px viewport in font 2, so one
-# CC: viewport replaces the former Space_14..Space_3 break-column variants.
-%Vl(Dual_Line_Song_Title,180,62,132,60,2)%wt(%it,bl)
-#
-%Vl(Dual_Line_Subline_Text,180,112,132,16,3)%?if(%St(scroll speed),=,1)<|%s>%aL%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,off)<%?if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,artist)<%?ia<%ia|%d(1)>>%?if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,album)<%?id<%id|%d(1)>>%?if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,genre)<%?ig<%ig|%d(1)>>%?if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,playlist_name)<%?pn<%pn|%d(1)>>%?if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,bitrate)<%fbkbps>%?if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,song_playtime)<%pc/%pt>|%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,artist)<%?ia<%ia|%d(1)>>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,album)<%?id<%id|%d(1)>>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,genre)<%?ig<%ig|%d(1)>>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,playlist_name)<%?pn<%pn|%d(1)>>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,bitrate)<%fbkbps>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,song_playtime)<%pc/%pt>>
-#
-%Vl(Dual_Line_Subline_Volume_Meter,180,114,132,18,6)%aL%?pS(0.2)<|%?if(%pL,=,0)<%t(2.5);%t(2)k|%?pL<k|kk|kkk|kkkk|kkkkk|kkkkkk|kkkkkkk|kkkkkkkk|kkkkkkkkk|kkkkkkkkkk|kkkkkkkkkkk|kkkkkkkkkkkk|kkkkkkkkkkkkk|kkkkkkkkkkkkkk|kkkkkkkkkkkkkkk|kkkkkkkkkkkkkkkk|kkkkkkkkkkkkkkkkk|kkkkkkkkkkkkkkkkkk>>>
-%Vl(Dual_Line_Subline_Volume_Meter,180,114,132,18,6)%VB%aLllllllllllllllllll
-#
-%Vl(Dual_Line_File_Format,181,114,120,18,6)%aL%VBÚÛÛÛÛ%?if(%ss(8,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ|%?if(%ss(7,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛÛÛÛÛÛÛ|%?if(%ss(6,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛÛÛÛÛ|%?if(%ss(5,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛÛÛ|%?if(%ss(4,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛ|%?if(%ss(3,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛ|%?if(%ss(2,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛ|%?if(%ss(1,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛ>>>>>>>>Ü
-%Vl(Dual_Line_File_Format,181,114,120,18,-)
-%Vl(Dual_Line_File_Format,188,117,120,18,3)%aL%fc
-#
-%Vl(Dual_Line_Song_Year,181,114,50,20,6)%VB%aL%?iy<ÝÞÞÞÞÞß>
-%Vl(Dual_Line_Song_Year,181,114,50,20,-)
-%Vl(Dual_Line_Song_Year,187,118,37,16,3)%ac%?if(%ss(0,4,%iy),=,%iy)<%iy|%ss(0,4,%iy)>
-#
-%Vl(Dual_Line_Subline_Rating,180,114,132,18,8)%aL%?rr<uuuuu|vuuuu|wuuuu|wvuuu|wwuuu|wwvuu|wwwuu|wwwvu|wwwwu|wwwwv|wwwww>
-#
-#
-#- Dual Line Title when two sublines active -#
-# CC: Same dual-line title, positioned higher ('High_') when two sublines show.
-%Vl(High_Dual_Line_Song_Title,180,52,132,60,2)%wt(%it,bl)
-#
-%Vl(High_Dual_Line_Subline_Text,180,102,132,16,3)%?if(%St(scroll speed),=,1)<|%s>%aL%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,artist)<%?ia<%ia|%d(1)>>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,album)<%?id<%id|%d(1)>>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,genre)<%?ig<%ig|%d(1)>>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,playlist_name)<%?pn<%pn|%d(1)>>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,bitrate)<%fbkbps>%?if(%ft(themes/Themify_2.preferences,sub-line mode:),=,song_playtime)<%pc/%pt>
-#
-%Vl(High_Dual_Line_Extra_Subline_Text,180,127,132,16,3)%?if(%St(scroll speed),=,1)<|%s>%aL%?if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,artist)<%?ia<%ia|%d(1)>>%?if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,album)<%?id<%id|%d(1)>>%?if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,genre)<%?ig<%ig|%d(1)>>%?if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,playlist_name)<%?pn<%pn|%d(1)>>%?if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,bitrate)<%fbkbps>%?if(%ft(themes/Themify_2.preferences,extra sub-line mode:),=,song_playtime)<%pc/%pt>
-#
-%Vl(High_Dual_Line_File_Format,181,126,120,18,6)%aL%VBÚÛÛÛÛ%?if(%ss(8,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛÛ|%?if(%ss(7,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛÛÛÛÛÛÛ|%?if(%ss(6,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛÛÛÛÛ|%?if(%ss(5,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛÛÛ|%?if(%ss(4,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛÛÛ|%?if(%ss(3,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛÛÛ|%?if(%ss(2,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛÛ|%?if(%ss(1,2,%fc),=,%ss(-2,-,%fc))<ÛÛÛ>>>>>>>>Ü
-%Vl(High_Dual_Line_File_Format,181,126,120,18,-)
-%Vl(High_Dual_Line_File_Format,188,129,120,18,3)%aL%fc
-#
-%Vl(High_Dual_Line_Song_Year,181,126,50,20,6)%VB%aL%?iy<ÝÞÞÞÞÞß>
-%Vl(High_Dual_Line_Song_Year,181,126,50,20,-)
-%Vl(High_Dual_Line_Song_Year,187,130,37,16,3)%ac%?if(%ss(0,4,%iy),=,%iy)<%iy|%ss(0,4,%iy)>
-#
-%Vl(High_Dual_Line_Subline_Rating,180,126,132,18,8)%aL%?rr<uuuuu|vuuuu|wuuuu|wvuuu|wwuuu|wwvuu|wwwuu|wwwvu|wwwwu|wwwwv|wwwww>
 #--- END ---#
 #
 #
