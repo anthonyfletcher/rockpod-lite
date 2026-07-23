@@ -63,10 +63,11 @@
 # CC: cover (%C true) or the placeholder art, and use the narrow menu.
 %?and(%if(%cs,=,1),%if(%mp,>,1))<%Vd(Widgets_Backdrop)%Vd(Miniplayer_Widget)%?C<%Vd(Miniplayer_Album_Art)|%Vd(Miniplayer_Album_Fallback_Art)>%?and(%if(%ss(0,2,%St(font)),!=,22),%if(%ss(0,2,%St(font)),!=,24))<%VI(Home_Menu_Viewport_Full_Panel)|%Vd(Home_Corners_Panel)%?St(scrollbar)<%VI(Home_Menu_Viewport_Full_Panel)|%VI(Home_Menu_Viewport_Right_Panel)%Vd(Scrollbar_Tall_Left)|%VI(Home_Menu_Viewport_Left_Panel)%Vd(Scrollbar_Tall_Right_Panel)>%?St(scrollbar)<%?St(show icons)<%Lb(No_Scroll_Home_Menu_With_Icons_Panel,182,30)|%Lb(No_Scroll_Home_Menu_No_Icons_Panel,182,30)>|%?St(show icons)<%Lb(Home_Menu_With_Icons_Panel,182,30)|%Lb(Home_Menu_No_Icons_Panel,182,30)>>>>
 #
-# CC: Panel title: one line if it fits, otherwise break on the last space
-# CC: (searched from 9 down to 3), else a hard split. Kept on its own
-# CC: line so the search chain does not deepen the panel line above.
-%?and(%if(%cs,=,1),%if(%mp,>,1))<%?if(%ss(0,9,%it),=,%it)<%Vd(Panel_Title_Single)|%?if(%ss(0,27,%it),=,%it)<%?if(%ss(9,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_9)|%?if(%ss(8,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_8)|%?if(%ss(7,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_7)|%?if(%ss(6,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_6)|%?if(%ss(5,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_5)|%?if(%ss(4,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_4)|%?if(%ss(3,1,%it),=,%ft(themes/Themify_2.preferences,space:))<%Vd(Panel_Title_Space_3)|%Vd(Panel_Title_Long)>>>>>>>|%Vd(Panel_Title_Long)>>>
+# CC: Panel title enable: the title viewport when the track is tagged, else the
+# CC: filename one. %wr sizes the wrap to the viewport, so the old character-
+# CC: count probe (Panel_Title_Single vs Space_3..9 vs Long) is gone.
+%?and(%if(%cs,=,1),%if(%mp,>,1))<%?it<%Vd(Panel_Title)%?if(%tw(%it,3), >, 206)<%Vd(Panel_Artist_3)|%?if(%tw(%it,3), >, 103)<%Vd(Panel_Artist_2)|%Vd(Panel_Artist_1)>>|%Vd(Panel_Title_Filename)>>
+# was: a 771-char %?if(%ss..)/%ft(space:) chain choosing one of nine viewports.
 #
 #- Sub Menu Initialisation -#
 # CC: Sub-menu init: for any list screen that isn't home/quickscreen/usb/
@@ -141,9 +142,9 @@
 %Vl(Loading_Notification,110,2,94,21,7)
 # CC: Disk-activity spinner: animate frames unless the theme's 'animations'
 # CC: preference is off (then show a single static glyph t).
-%Vl(Loading_Notification,118,5,13,13,8)%VB%?or(%if(%ft(themes/Themify_2.preferences,animations: ),=,off),%if(%ft(themes/Themify_2.preferences,animations:),=,off))<%Vs(invert)t|%?la<Â|Ã|Ä|Å|Æ|Ç|È|É|Ê|Ë|Ì>>
+%Vl(Loading_Notification,118,5,13,13,8)%VB%?if(%ft(themes/Themify_2.preferences,animations:),=,off)<%Vs(invert)t|%?la<Â|Ã|Ä|Å|Æ|Ç|È|É|Ê|Ë|Ì>>
 %Vl(Loading_Notification,118,5,13,13,8)
-%?or(%if(%ft(themes/Themify_2.preferences,animations: ),=,off),%if(%ft(themes/Themify_2.preferences,animations:),=,off))<%Vs(invert)t|%t(0.1)Á;%t(0.1)Á>
+%?if(%ft(themes/Themify_2.preferences,animations:),=,off)<%Vs(invert)t|%t(0.1)Á;%t(0.1)Á>
 #
 %Vl(Loading_Notification,135,5,69,15,4)%VB%Vs(invert)%?lw<Working..|%?lb<Building..|Loading..>>
 %Vl(Loading_Notification,135,5,69,15,4)%Vs(invert)%?lw<Working..|%?lb<Building..|Loading..>>
@@ -174,11 +175,16 @@
 %Vl(Header_without_Icon,13,29,300,18,3)%t(0.1)%Vs(invert)%?if(%Lt,=,%Sx([All tracks]))<All Tracks|%?if(%Lt,=,%Sx([Untagged]))<Untagged|%?if(%Lt,=,%Sx([By album]))<By Album|%?if(%cs,=,3)<%Sx(Recording)|%Lt>>>>;%t(3600)%Vs(invert)%?if(%St(scroll speed),=,1)<|%s>%?if(%Lt,=,%Sx([All tracks]))<All Tracks|%?if(%Lt,=,%Sx([Untagged]))<Untagged|%?if(%Lt,=,%Sx([By album]))<By Album|%?if(%cs,=,3)<%Sx(Recording)|%Lt>>>>
 #
 #- Icons for Sub menu Header -#
-#!!! Maybe change out to prevent too deep logic
-# CC: Sub-menu header ICON, chosen by the header title (%Lt) via %Sx.
-# CC: NOTE: still ends in a %?Li<...> positional (by-index) fallback -- the
-# CC: same fragile pattern removed from the home menu; worth converting too.
-%Vl(Header_with_Icon,10,30,14,14,8)%VB%Vs(invert)%?if(%Lt,=,%Sx(Same as currently played track))<Ô|%?if(%Lt,=,%Sx(Playback History))<Ó|%?if(%Lt,=,%Sx(Recently Added))<Ò|%?if(%Lt,=,%Sx(User Rating))<Õ|%?if(%Lt,=,%Sx(Tracks by))<b|%?if(%Lt,=,%Sx(By First Letter...))<Ñ|%?if(%Lt,=,%Sx(Year))<Ð|%?if(%Lt,=,%Sx(Genre))<Ï|%?if(%Lt,=,%Sx(Album))<Î|%?if(%Lt,=,%Sx(Album Artist))<Í|%?if(%Lt,=,%Sx(Search by...))<y|%?if(%Lt,=,themes)<i|%?or(%if(%Lt,=,%Sx(Artist)),%if(%Lt,=,%Sx(Composer)))<s|%?if(%Lt,=,%Sx([All tracks]))<b|%?if(%Lt,=,%Sx([Untagged]))<e|%?if(%Lt,=,%Sx([By album]))<Î|%?if(%Lt,=,%Sx(Music))<0|%?if(%Lt,=,%Sx(Database))<0|%?if(%cs,=,3)<7|%?if(%Lt,=,%Sx(Playlist Catalogue))<2|%?Li<3|8|1|2|5|i|7|8|5|4|5|%?if(%Lt,=,%Sx(Shortcuts))<z|6>|13|14|15|16|17|%?if(%Lt,=,%Sx(Brightness))<l|f>|19|20|21|%?if(%cs, =, 17)<c|4>|7|f|4|k|3|h|29|9|1|g|x>>>>>>>>>>>>>>>>>>>>>
+# CC: Sub-menu header ICON. %sel picks the glyph paired with the first key
+# CC: equal to the header title (%Lt), each key a %Sx language string.
+# CC: Folder and playlist names are user data, so no language string can
+# CC: match them; the default is therefore a second %sel keyed on %Li, the
+# CC: Rockbox title-icon id (the enum in apps/draw/icon.h, offset by one).
+# CC: Ids 13-16, 19-21 never appear as a title icon and fall through to x.
+%Vl(Header_with_Icon,10,30,14,14,8)%VB%Vs(invert)%sel(%Lt,%Sx(Same as currently played track),Ô,%Sx(Playback History),Ó,%Sx(Recently Added),Ò,%Sx(User Rating),Õ,%Sx(Tracks by),b,%Sx(By First Letter...),Ñ,%Sx(Year),Ð,%Sx(Genre),Ï,%Sx(Album),Î,%Sx(Album Artist),Í,%Sx(Search by...),y,themes,i,%Sx(Artist),s,%Sx(Composer),s,%Sx([All tracks]),b,%Sx([Untagged]),e,%Sx([By album]),Î,%Sx(Music),0,%Sx(Database),0,%Sx(Playlist Catalogue),2,%sel(%cs,3,7,%sel(%Li,1,3,2,8,3,1,4,2,5,5,6,i,7,7,8,8,9,5,10,4,11,5,12,%sel(%Lt,%Sx(Shortcuts),z,6),17,7,18,%sel(%Lt,%Sx(Brightness),l,f),22,%sel(%cs,17,c,4),23,7,24,f,25,4,26,k,27,3,28,h,29,5,30,9,31,1,32,g,x)))
+# was: the same mapping as 21 nested %?if conditionals; restore this line
+# was: in place of the %sel above to revert.
+#%Vl(Header_with_Icon,10,30,14,14,8)%VB%Vs(invert)%?if(%Lt,=,%Sx(Same as currently played track))<Ô|%?if(%Lt,=,%Sx(Playback History))<Ó|%?if(%Lt,=,%Sx(Recently Added))<Ò|%?if(%Lt,=,%Sx(User Rating))<Õ|%?if(%Lt,=,%Sx(Tracks by))<b|%?if(%Lt,=,%Sx(By First Letter...))<Ñ|%?if(%Lt,=,%Sx(Year))<Ð|%?if(%Lt,=,%Sx(Genre))<Ï|%?if(%Lt,=,%Sx(Album))<Î|%?if(%Lt,=,%Sx(Album Artist))<Í|%?if(%Lt,=,%Sx(Search by...))<y|%?if(%Lt,=,themes)<i|%?or(%if(%Lt,=,%Sx(Artist)),%if(%Lt,=,%Sx(Composer)))<s|%?if(%Lt,=,%Sx([All tracks]))<b|%?if(%Lt,=,%Sx([Untagged]))<e|%?if(%Lt,=,%Sx([By album]))<Î|%?if(%Lt,=,%Sx(Music))<0|%?if(%Lt,=,%Sx(Database))<0|%?if(%cs,=,3)<7|%?if(%Lt,=,%Sx(Playlist Catalogue))<2|%?Li<3|8|1|2|5|i|7|8|5|4|5|%?if(%Lt,=,%Sx(Shortcuts))<z|6>|13|14|15|16|17|%?if(%Lt,=,%Sx(Brightness))<l|f>|19|20|21|%?if(%cs, =, 17)<c|4>|7|f|4|k|3|h|29|9|1|g|x>>>>>>>>>>>>>>>>>>>>>
 %Vl(Header_with_Icon,10,30,14,14,8)
 #
 #
@@ -475,57 +481,33 @@ uuuuu
 %Vl(Miniplayer_Widget,205,25,111,10,6)W%aRX
 %Vl(Miniplayer_Widget,205,126,111,10,6)Y%aRZ
 #
-# CC: Track name under the art, word-wrapped rather than scrolled.
-# CC: The skin engine has no wrap tag, so this follows the WPS approach:
-# CC: pick a viewport whose %ss slices break on a space. $VD chooses.
-# CC: 9 chars is what fits on a 103px line at font 3
-# CC: (22-LeagueSpartan-Bold, maxwidth 24) -- the average glyph runs about
-# CC: 0.45 of maxwidth, which is what gave font 4 its working 12.
-# CC: Change the font and this width together, they are one decision.
+# CC: Track name under the art, word-wrapped to the 103px viewport in font 3.
+# CC: %wr(n,%it) is the nth pixel-measured wrapped line; a title that fits lands
+# CC: wholly on line 0. This pair (title, or filename when untagged) replaces the
+# CC: former Panel_Title_Single + Space_3..9 + Long set and the width-probe selector.
 # CC: %Vf is the theme BACKGROUND colour: the panel fill is %dr, which
 # CC: defaults to the theme FOREGROUND, so default-coloured text would be
 # CC: invisible against it. Setting it as the viewport fg (not
 # CC: %Vs(color,..)) keeps it going through dynamic_colors_resolve(), so
 # CC: it follows the album-art palette instead of freezing as navy.
-%Vl(Panel_Title_Single,209,148,103,20,3)%Vf(000c21)%aL%?it<%it|%fn>
+%Vl(Panel_Title,209,148,103,62,3)%Vf(000c21)
+%wr(0,%it)
+%wr(1,%it)
+%wr(2,%it)
+%Vl(Panel_Title_Filename,209,148,103,62,3)%Vf(000c21)
+%wr(0,%fn)
+%wr(1,%fn)
+%wr(2,%fn)
 #
-# CC: Break on a space, then hard-split whatever is left over the
-# CC: remaining lines. Slices past the end of the string come back empty,
-# CC: so a short remainder simply leaves the last line blank.
-%Vl(Panel_Title_Space_9,209,148,103,62,3)%Vf(000c21)
-%ss(0,10,%it)
-%ss(10,19,%it)
-%ss(19,28,%it)
-%Vl(Panel_Title_Space_8,209,148,103,62,3)%Vf(000c21)
-%ss(0,9,%it)
-%ss(9,18,%it)
-%ss(18,27,%it)
-%Vl(Panel_Title_Space_7,209,148,103,62,3)%Vf(000c21)
-%ss(0,8,%it)
-%ss(8,17,%it)
-%ss(17,26,%it)
-%Vl(Panel_Title_Space_6,209,148,103,62,3)%Vf(000c21)
-%ss(0,7,%it)
-%ss(7,16,%it)
-%ss(16,25,%it)
-%Vl(Panel_Title_Space_5,209,148,103,62,3)%Vf(000c21)
-%ss(0,6,%it)
-%ss(6,15,%it)
-%ss(15,24,%it)
-%Vl(Panel_Title_Space_4,209,148,103,62,3)%Vf(000c21)
-%ss(0,5,%it)
-%ss(5,14,%it)
-%ss(14,23,%it)
-%Vl(Panel_Title_Space_3,209,148,103,62,3)%Vf(000c21)
-%ss(0,4,%it)
-%ss(4,13,%it)
-%ss(13,22,%it)
-#
-# CC: No space to break on, or too long to wrap: hard split, no scrolling.
-%Vl(Panel_Title_Long,209,148,103,62,3)%Vf(000c21)
-%ss(0,9,%it)
-%ss(9,18,%it)
-%ss(18,27,%it)
+# CC: Artist under the title in the smaller font 4, colour-matched via %Vf.
+# CC: One of three positions by title line count -- %tw(%it,3) measures the
+# CC: title in font 3 against the 103px width: <=103 one line, <=206 two.
+%Vl(Panel_Artist_1,209,170,103,18,4)%Vf(000c21)
+%?if(%St(scroll speed),=,1)<|%s>%aL%?ia<%ia|%d(1)>
+%Vl(Panel_Artist_2,209,192,103,18,4)%Vf(000c21)
+%?if(%St(scroll speed),=,1)<|%s>%aL%?ia<%ia|%d(1)>
+%Vl(Panel_Artist_3,209,214,103,18,4)%Vf(000c21)
+%?if(%St(scroll speed),=,1)<|%s>%aL%?ia<%ia|%d(1)>
 #--- END ---#
 #
 #
