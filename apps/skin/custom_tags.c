@@ -57,7 +57,7 @@ static const struct tag_info custom_tags[] =
     /* %wt(text[,align]): draw text word-wrapped and aligned to fill the current
      * viewport, ellipsised on overflow. A drawing tag (renders directly like
      * %Sb), so DYNAMIC to redraw as the text changes. */
-    TAG(SKIN_TOKEN_TEXT_BOX,           "wt", "T|S",        SKIN_REFRESH_DYNAMIC),
+    TAG(SKIN_TOKEN_TEXT_BOX,           "wt", "T|ST",       SKIN_REFRESH_DYNAMIC),
 
     TAG(SKIN_TOKEN_UNKNOWN,            "",   "",      0)   /* terminator */
 };

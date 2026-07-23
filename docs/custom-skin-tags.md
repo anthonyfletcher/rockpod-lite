@@ -71,6 +71,36 @@ correctly regardless of the font or which letters the title uses.
 > own lines — don't put `%wr(0,...)` on the same physical line as `%Vf`, or the
 > no-break will merge the first two output lines together.
 
+### `%wt(text[, align[, fallback]])` — wrapped, aligned text box
+
+Draws `text` to **fill the current viewport**: word-wrapped to the viewport
+width, the whole block aligned within the viewport, and ellipsised (`...`) if it
+is taller than fits. Unlike `%wr` (which returns one line at a time for you to
+place), `%wt` draws the entire block itself, which is what makes vertical
+alignment possible.
+
+- `align` — two characters: **vertical** `t`/`c`/`b` (top/centre/bottom) then
+  **horizontal** `l`/`c`/`r` (left/centre/right). Default `tl`. E.g. `bl` =
+  bottom-left, `cc` = centred, `tr` = top-right.
+- `fallback` — an optional tag drawn when `text` is empty (e.g. the filename
+  when a track has no title tag).
+
+Because it fills the viewport, `%wt` goes *on* the viewport, not on its own
+content line:
+
+```
+%Vl(Song_Title,180,54,132,40,2)%wt(%it, bl, %fn)
+```
+
+**Why `bl` is useful for a title.** Size the box to two lines and bottom-align
+it: a one-line title sits at the box bottom, a two-line title grows upward, and
+the box *bottom* never moves. Put the artist at a fixed spot just below the box
+and it stays snug to the title whether the title is one line or two — no
+per-length layout switching, so nothing can get out of sync as the title loads.
+
+It measures/wraps in the viewport's own font and colour (`%Vf` etc. apply), and
+redraws as the text changes.
+
 ---
 
 ## Select / case

@@ -272,10 +272,12 @@ struct spectrum_bars {
     bool center_aligned;
 };
 
-/* %wt(text, align): the text token to draw, plus vertical ('t'/'c'/'b') and
- * horizontal ('l'/'c'/'r') alignment of the wrapped block within its viewport. */
+/* %wt(text[,align[,fallback]]): the text token to draw, an optional fallback
+ * token used when text is empty (e.g. %fn when %it has no title), plus vertical
+ * ('t'/'c'/'b') and horizontal ('l'/'c'/'r') alignment within the viewport. */
 struct skin_textbox {
     OFFSETTYPE(struct wps_token *) token;
+    OFFSETTYPE(struct wps_token *) fallback;
     char valign;
     char halign;
 };

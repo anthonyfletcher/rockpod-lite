@@ -47,6 +47,7 @@
 #include "skin_display.h"
 #include "skin_engine.h"
 #include "skin_parser.h"
+#include "skin_buffer.h"
 #include "tag_table.h"
 #include "skin_scan.h"
 #include "draw/viewport.h"
@@ -177,6 +178,13 @@ draw_textbox(struct gui_wps *gwps, struct skin_draw_info *info,
     if (fh <= 0)
         return;
     text = get_token_value(gwps, ttok, info->offset, src, sizeof(src), NULL);
+    if ((!text || !*text) && tb->fallback != INVALID_OFFSET)
+    {
+        struct wps_token *ftok = SKINOFFSETTOPTR(skin_buffer, tb->fallback);
+        if (ftok)
+            text = get_token_value(gwps, ftok, info->offset, src,
+                                   sizeof(src), NULL);
+    }
     if (!text || !*text)
         return;
     if (text != src)

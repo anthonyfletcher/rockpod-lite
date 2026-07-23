@@ -842,6 +842,7 @@ static int parse_textbox(struct skin_element *element,
     if (!tb)
         return 1;
     tb->token = get_param_code(element, 0)->data;
+    tb->fallback = INVALID_OFFSET;
     tb->valign = 't';
     tb->halign = 'l';
     if (element->params_count > 1)
@@ -854,6 +855,8 @@ static int parse_textbox(struct skin_element *element,
                 tb->halign = tolower(a[1]);
         }
     }
+    if (element->params_count > 2)
+        tb->fallback = get_param_code(element, 2)->data;
     token->value.data = PTRTOSKINOFFSET(skin_buffer, tb);
     return 0;
 }
